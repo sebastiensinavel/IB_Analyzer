@@ -242,9 +242,8 @@
     "noneLink": "Go to data sources"
   },
   "history": {
-    "filterPlaceholder": "Filter by symbol…",
-    "startDate": "Start date",
-    "endDate": "End date",
+    "searchLabel": "Search a ticker",
+    "searchPlaceholder": "Search a ticker: AAPL, AAPL|MSFT…",
     "noResults": "No transactions match.",
     "columns": {
       "dateTime": "Date/Time",
@@ -259,12 +258,6 @@
       "usdCash": "USD Cash",
       "eurCash": "EUR Cash",
       "balanceHint": "Running balance over every transaction on record — filters do not change it. It is anchored on the ending cash of the latest file carrying a Cash Report; the Consistency page says whether it comes back to the starting cash."
-    },
-    "presets": {
-      "label": "Period",
-      "all": "All",
-      "last30Days": "Last 30 days",
-      "last12Months": "Last 12 months"
     },
     "timeline": "Timeline",
     "kindFilter": "Type",

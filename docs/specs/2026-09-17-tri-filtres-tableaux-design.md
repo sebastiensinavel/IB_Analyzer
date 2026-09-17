@@ -328,9 +328,12 @@ de page). Aucun rendu quand aucun critère n'est actif.
 - **Barre temporelle** : affichée seulement quand `view.sort` est vide. Sous tout autre tri, date
   croissante comprise, `TimelineScrubber` n'est pas rendu et seule la barre de défilement native
   reste. `HISTORY_ROW_HEIGHT` et la règle de hauteur constante ne changent pas.
-- **Remontage** : la clé de `HistoryTable` devient `JSON.stringify([accountId, search, view])`.
-  Tout changement de vue remonte le défilement en haut ; une ligne arrivée en direct ne change pas
-  la clé.
+- **Retour en haut** : la clé de `HistoryTable` ne porte plus que le compte. Un changement de
+  recherche, de critère ou de tri remet `scrollTop` à 0 dans un `useLayoutEffect` sur une
+  `resetKey` (`JSON.stringify([search, view])`) et émet un événement `scroll` synchrone pour que
+  le virtualiseur suive avant la peinture. Remonter le tableau à chaque frappe fermerait le
+  popover de filtre, qui vit dans son en-tête. Une ligne arrivée en direct ne change pas la
+  `resetKey`.
 - **Aucun résultat** : le tableau reste affiché — en-têtes, popovers, `ActiveFilters` — et
   `history.noResults` s'affiche dans son corps, sous l'en-tête. La carte « Aucun résultat » qui
   remplaçait le tableau disparaît. `HistoryTable` reçoit donc aussi zéro ligne.

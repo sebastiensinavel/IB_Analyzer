@@ -2153,7 +2153,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   }
   ```
 
-- [ ] **Step 1: Rewrite the page tests**
+- [x] **Step 1: Rewrite the page tests**
 
 Dans `apps/web/src/pages/HistoryPage.test.tsx` :
 
@@ -2330,12 +2330,12 @@ et les tests :
 
 Ajouter `cleanup` à l'import de `@testing-library/react`. Le solde USD de MSFT (`-491.65`) se vérifie à la main sur `SAMPLE_TRANSACTIONS` : dépôt EUR (USD 0), TSLA `-1101` → `-1101`, MSFT `+609.35` → `-491.65`. Si le calcul réel diffère, lire la valeur dans le test existant `"computes the running balances…"` et la cellule avant filtre, jamais ajuster pour faire passer.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/pages/HistoryPage.test.tsx`
 Expected: FAIL sur les nouveaux tests (pas de bouton de tri, pas de champ « Rechercher un ticker »).
 
-- [ ] **Step 3: Rewrite `HistoryTable`**
+- [x] **Step 3: Rewrite `HistoryTable`**
 
 Dans `apps/web/src/components/history/HistoryTable.tsx` :
 
@@ -2398,7 +2398,7 @@ Dans `apps/web/src/components/history/HistoryTable.tsx` :
 
 - `getItemKey` doit supporter zéro ligne (le virtualiseur ne l'appelle pas avec `count: 0`, rien à changer).
 
-- [ ] **Step 4: Rewrite `HistoryPage`**
+- [x] **Step 4: Rewrite `HistoryPage`**
 
 Remplacer le contenu de `apps/web/src/pages/HistoryPage.tsx` par :
 
@@ -2531,7 +2531,7 @@ Points à vérifier en écrivant :
 - dans le test `"keeps the Type list…"`, l'option du `Select` porte le nombre (`Dépôt/Retrait (1)`), d'où la regex ;
 - si la règle `react-hooks/exhaustive-deps` n'existe pas dans le dépôt, retirer la directive `eslint-disable-next-line` et garder la dépendance `JSON.stringify(checkedTypes)` calculée dans une variable avant le `useMemo`.
 
-- [ ] **Step 5: Translations and removals**
+- [x] **Step 5: Translations and removals**
 
 Dans `fr.json`, section `history` : supprimer `filterPlaceholder`, `startDate`, `endDate`, `presets` ; ajouter :
 
@@ -2567,7 +2567,7 @@ export function dayOf(when: string): string {
 
 et `filter.test.ts` à son seul bloc `describe("dayOf")`, import `import { dayOf } from "./filter.ts";`. Relancer le `grep` : aucune occurrence.
 
-- [ ] **Step 6: Correct the spec**
+- [x] **Step 6: Correct the spec**
 
 Dans `docs/specs/2026-09-17-tri-filtres-tableaux-design.md` §5.4, remplacer le point **Remontage** par :
 
@@ -2580,12 +2580,12 @@ Dans `docs/specs/2026-09-17-tri-filtres-tableaux-design.md` §5.4, remplacer le 
   `resetKey`.
 ```
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/pages/HistoryPage.test.tsx src/components/history && pnpm --filter @ib/ledger test && pnpm --filter web typecheck`
 Expected: PASS, y compris les tests existants de défilement (`"brings the table back to its top when a filter changes"`, `"…when the account changes"`, `"keeps the reader's scroll position when a row arrives live"`, `"jumps from the timeline…"`). Le nom du paquet ledger est à lire dans `packages/ledger/package.json` si `@ib/ledger` ne répond pas.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A apps/web/src/components/history apps/web/src/pages/HistoryPage.tsx apps/web/src/pages/HistoryPage.test.tsx apps/web/src/lib/periodPresets.ts apps/web/src/lib/periodPresets.test.ts packages/ledger/src/filter.ts packages/ledger/src/filter.test.ts apps/web/src/i18n/fr.json apps/web/src/i18n/en.json docs/specs/2026-09-17-tri-filtres-tableaux-design.md docs/plans/2026-09-17-tri-filtres-tableaux.md

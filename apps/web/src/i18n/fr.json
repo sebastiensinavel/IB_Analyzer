@@ -242,9 +242,8 @@
     "noneLink": "Aller aux sources de données"
   },
   "history": {
-    "filterPlaceholder": "Filtrer par symbole…",
-    "startDate": "Date de début",
-    "endDate": "Date de fin",
+    "searchLabel": "Rechercher un ticker",
+    "searchPlaceholder": "Rechercher un ticker : AAPL, AAPL|MSFT…",
     "noResults": "Aucune transaction ne correspond.",
     "columns": {
       "dateTime": "Date/Heure",
@@ -259,12 +258,6 @@
       "usdCash": "Cash USD",
       "eurCash": "Cash EUR",
       "balanceHint": "Solde cumulé sur toutes les transactions en base — les filtres ne le modifient pas. Il est calé sur le cash de fin du fichier le plus récent qui porte un Cash Report ; la page Consistance dit s'il retombe sur le cash de début."
-    },
-    "presets": {
-      "label": "Période",
-      "all": "Tout",
-      "last30Days": "30 derniers jours",
-      "last12Months": "12 derniers mois"
     },
     "timeline": "Frise chronologique",
     "kindFilter": "Type",
