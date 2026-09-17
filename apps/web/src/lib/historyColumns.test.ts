@@ -33,6 +33,12 @@ describe("historyColumnSpecs", () => {
     expect(specs.eurCash.value(row())).toBe(10000);
   });
 
+  it("labels an unknown kind by the kind itself, as its row does", () => {
+    const translate = (key: string, options?: { defaultValue?: string }) => (key.startsWith("history.kinds.") ? (options?.defaultValue ?? key) : key);
+    const type = historyColumnSpecs(translate).find((spec) => spec.key === "type");
+    expect(type?.label?.("mystery_kind")).toBe("mystery_kind");
+  });
+
   it("reads the ticker of a row, the underlying for a packed option, null without a symbol", () => {
     expect(historyTicker(row({ ...SAMPLE_TRANSACTIONS[0], symbol: "OQZA  261016C00012000", secType: "OPT" }))).toBe("OQZA");
     expect(historyTicker(row(SAMPLE_DEPOSIT))).toBeNull();

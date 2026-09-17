@@ -24,7 +24,7 @@ export function ActiveFilters<Row>({ specs, view, columnLabel, onClearColumn, on
         const column = columnLabel(spec.key);
         return (
           <Badge key={spec.key} variant="secondary" className="gap-1 pr-0.5">
-            <span>{`${column} : ${criterionSummary(spec, criterion, "—")}`}</span>
+            <span>{t("tableFilter.pill", { column, summary: criterionSummary(spec, criterion, "—") })}</span>
             <button
               type="button"
               aria-label={t("tableFilter.clearColumn", { column })}

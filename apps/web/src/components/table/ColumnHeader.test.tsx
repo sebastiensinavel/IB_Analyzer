@@ -54,7 +54,24 @@ describe("ColumnHeader", () => {
   it("numbers the keys of a multiple sort, aria-sort staying on the first key's header", () => {
     renderHeader({ view: { sort: [{ column: "name", dir: "asc" }, { column: "amount", dir: "asc" }], criteria: {} } });
     expect(screen.getByRole("columnheader")).not.toHaveAttribute("aria-sort");
-    expect(screen.getByLabelText("Tri n°2")).toHaveTextContent("2");
+    const sort = screen.getByRole("button", { name: /^Montant/ });
+    expect(sort).toHaveAccessibleName("Montant Tri n°2");
+    expect(sort).not.toHaveAccessibleName("Montant2");
+  });
+
+  it("keeps the filter trigger in the accessibility tree while its column is not filtered", () => {
+    renderHeader();
+    const trigger = screen.getByRole("button", { name: "Filtrer Montant" });
+    expect(trigger).toHaveAttribute("data-active", "false");
+    expect(trigger).toBeVisible();
+    // Faded out until hover or focus, never removed: `invisible` or `hidden` would take it out of the tab order.
+    expect(trigger.className).not.toMatch(/(^|\s)(invisible|hidden)(\s|$)/);
+  });
+
+  it("names the filter popover after its column", async () => {
+    renderHeader();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Filtrer Montant" }));
+    expect(await screen.findByRole("dialog", { name: "Filtrer Montant" })).toBeInTheDocument();
   });
 
   it("has no sort button on a non-sortable column, only its filter", () => {

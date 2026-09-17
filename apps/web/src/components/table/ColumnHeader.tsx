@@ -17,6 +17,8 @@ export interface ColumnHeaderProps {
   /** Values offered by an enum column's filter. */
   facets?: readonly Facet[];
   numeric?: boolean;
+  /** The label wraps onto several lines instead of being clipped (Positions); History keeps one line. */
+  wrap?: boolean;
   className?: string;
   title?: string;
   onSort: (additive: boolean) => void;
@@ -26,8 +28,14 @@ export interface ColumnHeaderProps {
 /**
  * A sortable, filterable column header: the label sorts (shift adds a key), the funnel opens the
  * column's filter. Renders its own TableHead so aria-sort sits on the header cell.
+ *
+ * The funnel lies over the cell's edge, out of the layout, so the label keeps the column's whole
+ * width: faded out until the header is hovered or focused from the keyboard, shown while its filter
+ * is open, and always on a touch screen. Faded, never hidden: it stays in the tab order. A filtered
+ * column shows it for good and makes room for it, so it never covers the label.
+ * It sits on the left of a numeric column, whose label, arrow and order number are right-aligned.
  */
-export function ColumnHeader({ meta, label, view, facets = [], numeric = false, className, title, onSort, onCriterion }: ColumnHeaderProps) {
+export function ColumnHeader({ meta, label, view, facets = [], numeric = false, wrap = false, className, title, onSort, onCriterion }: ColumnHeaderProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const sortIndex = view.sort.findIndex((key) => key.column === meta.key);
@@ -36,22 +44,35 @@ export function ColumnHeader({ meta, label, view, facets = [], numeric = false, 
   const active = isActiveCriterion(meta, criterion);
   const ariaSort = sortIndex === 0 && sortKey ? (sortKey.dir === "asc" ? "ascending" : "descending") : undefined;
   const Arrow = sortKey?.dir === "desc" ? ArrowDownIcon : ArrowUpIcon;
+  const labelText = <span className={wrap ? "break-words whitespace-normal" : "truncate"}>{label}</span>;
 
   return (
-    <TableHead className={className} title={title} aria-sort={ariaSort}>
-      <div className={cn("flex min-w-0 items-center gap-1", numeric && "justify-end")}>
+    <TableHead className={cn("group relative", className)} title={title} aria-sort={ariaSort}>
+      <div className={cn("flex min-w-0 items-center", numeric && "justify-end", active && (numeric ? "pl-4" : "pr-4"))}>
         {meta.sortable ? (
-          <button type="button" className="inline-flex min-w-0 items-center gap-0.5 hover:text-foreground" onClick={(event) => onSort(event.shiftKey)}>
-            <span className="truncate">{label}</span>
+          <button
+            type="button"
+            className={cn(
+              "inline-flex min-w-0 items-center gap-0.5 rounded outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+              numeric && "text-right",
+            )}
+            onClick={(event) => onSort(event.shiftKey)}
+          >
+            {labelText}
             {sortKey && <Arrow aria-hidden="true" className="size-3.5 shrink-0" />}
             {sortKey && view.sort.length > 1 && (
-              <span aria-label={t("tableFilter.sortOrder", { order: sortIndex + 1 })} className="text-[0.65rem] tabular-nums">
-                {sortIndex + 1}
-              </span>
+              <>
+                <span aria-hidden="true" className="text-[0.65rem] tabular-nums">
+                  {sortIndex + 1}
+                </span>
+                {/* A space of its own, so the name reads "Montant Tri n°2"; a flex container renders none. */}
+                {" "}
+                <span className="sr-only">{t("tableFilter.sortOrder", { order: sortIndex + 1 })}</span>
+              </>
             )}
           </button>
         ) : (
-          <span className="truncate">{label}</span>
+          labelText
         )}
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
@@ -60,13 +81,18 @@ export function ColumnHeader({ meta, label, view, facets = [], numeric = false, 
                 type="button"
                 aria-label={t("tableFilter.open", { column: label })}
                 data-active={active}
-                className={cn("shrink-0 rounded p-0.5 hover:bg-muted", active ? "text-primary" : "text-muted-foreground/60")}
+                className={cn(
+                  "absolute top-1/2 -translate-y-1/2 rounded bg-card p-0.5 outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+                  numeric ? "left-0.5" : "right-0.5",
+                  "opacity-0 group-hover:opacity-100 group-has-focus-visible:opacity-100 data-popup-open:opacity-100 pointer-coarse:opacity-100",
+                  active ? "text-primary opacity-100" : "text-muted-foreground",
+                )}
               />
             }
           >
             <FunnelIcon aria-hidden="true" className={cn("size-3.5", active && "fill-current")} />
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-3" align={numeric ? "end" : "start"}>
+          <PopoverContent className="w-64 p-3" align={numeric ? "start" : "end"} aria-label={t("tableFilter.open", { column: label })}>
             {meta.type === "enum" ? (
               <EnumFilter facets={facets} checked={Array.isArray(criterion) ? criterion : []} onCriterion={onCriterion} />
             ) : (

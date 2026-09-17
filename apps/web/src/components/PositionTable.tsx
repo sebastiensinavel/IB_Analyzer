@@ -51,6 +51,7 @@ export function PositionTableHeader({ interactive }: { interactive?: Interactive
               view={interactive.view}
               facets={interactive.facets[column.key]}
               numeric={column.numeric}
+              wrap
               className={cn(column.numeric && "text-right")}
               onSort={(additive) => interactive.onSort(column.key, additive)}
               onCriterion={(criterion) => interactive.onCriterion(column.key, criterion)}

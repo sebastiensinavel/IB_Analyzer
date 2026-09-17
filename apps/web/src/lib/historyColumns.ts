@@ -35,7 +35,7 @@ export const HISTORY_HEADER_HEIGHT = 40;
 /** How long the timeline's floating month lingers once a scroll stops. */
 export const SCRUB_LABEL_LINGER_MS = 1000;
 
-export type Translate = (key: string) => string;
+export type Translate = (key: string, options?: { defaultValue?: string }) => string;
 
 /**
  * What each column of the history compares, filters and sorts on: what its cell shows. Same keys and
@@ -50,7 +50,7 @@ export function historyColumnSpecs(t: Translate): ColumnSpec<LedgerRow>[] {
       type: "enum",
       sortable: true,
       value: (row) => row.transaction.kind,
-      label: (kind) => t(`history.kinds.${kind}`),
+      label: (kind) => t(`history.kinds.${kind}`, { defaultValue: kind }),
     },
     { key: "symbol", type: "text", sortable: true, value: (row) => formatContract(row.transaction) || row.transaction.description },
     { key: "quantity", type: "number", sortable: true, value: (row) => row.transaction.quantity },

@@ -557,6 +557,7 @@
     "clearAll": "Tout effacer",
     "clearColumn": "Retirer le filtre {{column}}",
     "empty": "— (vide)",
+    "pill": "{{column}} : {{summary}}",
     "sortOrder": "Tri n°{{order}}",
     "help": {
       "text": "aap · =AAPL · =AA* · A|B · —",

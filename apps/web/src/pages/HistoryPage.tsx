@@ -20,7 +20,7 @@ export function HistoryPage() {
   const titleId = useId();
   const ledger = useLedger(accountId);
   const points = useCashPoints(accountId);
-  const specs = useMemo(() => historyColumnSpecs((key) => t(key)), [t]);
+  const specs = useMemo(() => historyColumnSpecs((key, options) => t(key, options)), [t]);
   const table = useTableView(tableViewKey(accountId, "history"), specs);
   const search = usePageSearch(pageSearchKey(accountId, "history"));
 

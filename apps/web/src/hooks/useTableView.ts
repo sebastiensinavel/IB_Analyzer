@@ -34,13 +34,12 @@ export function useTableView(storageKey: string, columns: readonly ColumnMeta[])
   const update = useCallback(
     (change: (view: TableView) => TableView) => {
       setState((previous) => {
-        const base = previous.key === storageKey ? previous.view : readTableView(storageKey, columns);
-        const next = change(base);
+        if (previous.key !== storageKey) return previous;
+        const next = change(previous.view);
         writeTableView(storageKey, next);
         return { key: storageKey, view: next };
       });
     },
-    // `columns` is read only to sanitize a stored view; its identity may change every render.
     [storageKey],
   );
 

@@ -557,6 +557,7 @@
     "clearAll": "Clear all",
     "clearColumn": "Remove the {{column}} filter",
     "empty": "— (empty)",
+    "pill": "{{column}}: {{summary}}",
     "sortOrder": "Sort #{{order}}",
     "help": {
       "text": "aap · =AAPL · =AA* · A|B · —",
