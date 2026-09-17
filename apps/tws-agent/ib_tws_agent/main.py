@@ -42,9 +42,21 @@ CONNECT_TIMEOUT_S = 5
 CASH_TAGS = ("TotalCashBalance", "CashBalance", "AvailableFunds")
 
 
+class ReadOnlyIB(IB):
+    """An IB that never asks TWS for anything its "Read-Only API" mode refuses.
+
+    With `clientId 0`, ib_async's `connectAsync` binds the orders of the TWS window to the API
+    (`reqAutoOpenOrders(True)`), even with `readonly=True`. The agent reads positions and fills,
+    never orders, so the binding is skipped here.
+    """
+
+    def reqAutoOpenOrders(self, autoBind: bool = True):  # noqa: N802 - ib_async's own naming
+        pass
+
+
 def get_ib_factory() -> Callable[[], IB]:
     """Overridden in tests with a FakeIB factory."""
-    return IB
+    return ReadOnlyIB
 
 
 FlexCaller = Callable[[str, dict[str, str]], Awaitable[tuple[bytes, str]]]
@@ -189,7 +201,9 @@ def create_app(config: Config) -> FastAPI:
         # session, so the agent never holds a connection (spec fondateur §3.4).
         ib = ib_factory()
         try:
-            await ib.connectAsync(IB_HOST, port, clientId=CLIENT_ID, timeout=CONNECT_TIMEOUT_S)
+            # readonly: otherwise ib_async requests the open and completed orders, which a TWS
+            # in "Read-Only API" mode refuses with an error 321 on every sync.
+            await ib.connectAsync(IB_HOST, port, clientId=CLIENT_ID, timeout=CONNECT_TIMEOUT_S, readonly=True)
         except Exception as exc:  # noqa: BLE001 - whatever ib_async raises, the answer is the same
             ib.disconnect()
             return JSONResponse(

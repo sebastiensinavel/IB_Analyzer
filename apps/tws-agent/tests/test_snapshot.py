@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 
-from ib_tws_agent.main import CASH_TAGS, extract_usd_cash
+from unittest.mock import MagicMock
+
+from ib_tws_agent.main import CASH_TAGS, ReadOnlyIB, extract_usd_cash, get_ib_factory
 from tests.conftest import (
     ORIGIN,
     FakeAccountValue,
@@ -41,6 +43,28 @@ def test_snapshot_connects_once_on_the_requested_port_with_client_id_zero_and_di
     assert response.status_code == 200
     assert fake_ib.connected_to == ("127.0.0.1", 7502, 0, 5)
     assert fake_ib.disconnected is True
+
+
+def test_snapshot_connects_in_read_only_mode(make_client):
+    # Without it, ib_async's connectAsync requests open and completed orders, which a TWS with
+    # "Read-Only API" ticked refuses (error 321) and signals on every sync.
+    fake_ib = FakeIB()
+
+    make_client(fake_ib).get("/snapshot", params={"port": 7502}, headers=HEADERS)
+
+    assert fake_ib.readonly is True
+
+
+def test_the_real_factory_never_binds_the_tws_orders():
+    # ib_async's connectAsync sends reqAutoOpenOrders(True) whenever clientId is 0, readonly or
+    # not: binding the orders of the TWS window is a write the agent never needs.
+    ib = get_ib_factory()()
+    ib.client = MagicMock()
+
+    ib.reqAutoOpenOrders(True)
+
+    assert isinstance(ib, ReadOnlyIB)
+    ib.client.reqAutoOpenOrders.assert_not_called()
 
 
 def test_snapshot_envelope(make_client):

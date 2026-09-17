@@ -25,6 +25,10 @@ Deux endpoints : `GET /health` (gratuit) et `GET /snapshot?port=<port TWS>` (une
 TWS en `clientId 0`, refermée aussitôt). Données brutes, noms `ib_async` ; toute conversion
 vit dans `packages/ib-parsers/src/agent.ts`.
 
+La connexion est en `readonly=True` et `ReadOnlyIB` n'envoie pas `reqAutoOpenOrders` : sans
+cela, `ib_async` demande à chaque connexion les ordres ouverts et terminés, que TWS refuse en
+mode *Read-Only API* (erreur 321, signalée dans TWS à chaque synchro).
+
 ## Validation contre un vrai TWS
 
 Impossible depuis la machine de développement. Sur une machine où TWS tourne avec l'API

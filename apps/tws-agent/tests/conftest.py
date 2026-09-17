@@ -92,10 +92,12 @@ class FakeIB:
         self._connect_error = connect_error
         self._portfolio_error = portfolio_error
         self.connected_to: tuple | None = None
+        self.readonly: bool | None = None
         self.disconnected = False
 
-    async def connectAsync(self, host, port, clientId=0, timeout=4):
+    async def connectAsync(self, host, port, clientId=0, timeout=4, readonly=False):
         self.connected_to = (host, port, clientId, timeout)
+        self.readonly = readonly
         if self._connect_error is not None:
             raise self._connect_error
 
