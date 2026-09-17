@@ -1,0 +1,21 @@
+{
+  "name": "@ib/ib-parsers",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ib/ledger": "workspace:*",
+    "@noble/hashes": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "jsdom": "^30.0.1",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.11"
+  }
+}

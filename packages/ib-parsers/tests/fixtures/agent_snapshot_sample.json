@@ -1,0 +1,46 @@
+{
+  "accounts": ["U0000001"],
+  "fetchedAt": "2026-09-06T13:02:11.482Z",
+  "cashAvailable": 16284.37,
+  "positions": [
+    {
+      "conId": 265598, "symbol": "SYMA", "localSymbol": "SYMA", "secType": "STK", "right": "", "strike": 0.0,
+      "lastTradeDateOrContractMonth": "", "multiplier": "", "currency": "USD",
+      "position": 100.0, "averageCost": 150.25, "marketPrice": 172.1, "marketValue": 17210.0, "unrealizedPNL": 2185.0
+    },
+    {
+      "conId": 700000001, "symbol": "SYMB", "localSymbol": "SYMB  261218C00180000", "secType": "OPT", "right": "C",
+      "strike": 180.0, "lastTradeDateOrContractMonth": "20261218", "multiplier": "100", "currency": "USD",
+      "position": -1.0, "averageCost": 250.0, "marketPrice": 2.0, "marketValue": -200.0, "unrealizedPNL": 50.0
+    }
+  ],
+  "executions": [
+    {
+      "execId": "0000e1a7.68bc1234.01.01", "time": "2026-09-06T14:31:02+00:00", "acctNumber": "U0000001",
+      "side": "SLD", "shares": 1.0, "price": 2.5, "cumQty": 1.0, "avgPrice": 2.5, "orderRef": "",
+      "contract": {
+        "conId": 700000001, "symbol": "SYMB", "localSymbol": "SYMB  261218C00180000", "secType": "OPT", "right": "C",
+        "strike": 180.0, "lastTradeDateOrContractMonth": "20261218", "multiplier": "100", "currency": "USD"
+      },
+      "commission": 1.05, "commissionCurrency": "USD"
+    },
+    {
+      "execId": "0000e1a7.68bc1234.01.02", "time": "2026-09-06T15:00:00+00:00", "acctNumber": "U0000001",
+      "side": "BOT", "shares": 10.0, "price": 172.0, "cumQty": 10.0, "avgPrice": 172.0, "orderRef": "",
+      "contract": {
+        "conId": 265598, "symbol": "SYMA", "localSymbol": "SYMA", "secType": "STK", "right": "", "strike": 0.0,
+        "lastTradeDateOrContractMonth": "", "multiplier": "", "currency": "USD"
+      },
+      "commission": null, "commissionCurrency": null
+    },
+    {
+      "execId": "0000e1a7.68bc1234.01.03", "time": "2026-09-06T15:10:00+00:00", "acctNumber": "U0000001",
+      "side": "SLD", "shares": 1000.0, "price": 1.1, "cumQty": 1000.0, "avgPrice": 1.1, "orderRef": "",
+      "contract": {
+        "conId": 12087792, "symbol": "EUR", "localSymbol": "EUR.USD", "secType": "CASH", "right": "", "strike": 0.0,
+        "lastTradeDateOrContractMonth": "", "multiplier": "", "currency": "USD"
+      },
+      "commission": 2.0, "commissionCurrency": "EUR"
+    }
+  ]
+}

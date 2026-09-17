@@ -1,0 +1,559 @@
+{
+  "nav": {
+    "sections": {
+      "overview": "Vue d'ensemble",
+      "strategyWheel": "Stratégie Wheel",
+      "strategyLeaps": "Stratégie LEAPS",
+      "strategyCondors": "Stratégie Condors",
+      "strategyOthers": "Stratégie Autre",
+      "configuration": "Configuration"
+    },
+    "dashboard": "Tableau de bord",
+    "positions": "Positions",
+    "history": "Historique",
+    "journal": "Journal",
+    "stats": "Statistiques",
+    "wheel": "Journal Wheel",
+    "leaps": "Journal LEAPS",
+    "condors": "Journal Condors",
+    "others": "Journal Autres",
+    "sources": "Sources de données",
+    "sectors": "Secteur et Score",
+    "consistency": "Consistance",
+    "settings": "Paramètres",
+    "help": "Aide"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "cancel": "Annuler"
+  },
+  "accounts": {
+    "title": "Comptes",
+    "empty": "Aucun compte pour l'instant. Créez le premier ci-dessous.",
+    "label": "Libellé",
+    "ibAccountId": "Identifiant de compte IB",
+    "ibAccountIdHint": "Tel qu'affiché dans le Client Portal, ex. U1234567",
+    "create": "Créer le compte",
+    "open": "Ouvrir",
+    "add": "Ajouter un compte…",
+    "errors": {
+      "label-empty": "Le libellé doit contenir au moins une lettre ou un chiffre.",
+      "ib-account-id-invalid": "Ce n'est pas un identifiant de compte IB.",
+      "slug-taken": "Un compte porte déjà ce libellé."
+    }
+  },
+  "unknownAccount": {
+    "title": "Compte inconnu",
+    "hint": "Aucun compte ne correspond à {{id}} sur cet appareil.",
+    "link": "Gérer les comptes"
+  },
+  "dashboard": {
+    "cashCard": {
+      "title": "Couverture en Cash",
+      "portfolio": "Cash en portefeuille",
+      "required": "Cash requis",
+      "available": "Cash disponible",
+      "ok": "Couvert",
+      "short": "Cash insuffisant",
+      "unknown": "Cash inconnu"
+    },
+    "suggestions": {
+      "title": "Suggestion de Position",
+      "rule": "Jusqu'à {{max}} tickers de la table sectorielle, de score ≥ {{score}} et de statut « on », hors actions pesant déjà {{share}} ou plus du risque du portefeuille. Tri par exposition croissante du secteur, puis score décroissant, puis exposition croissante du ticker ; expositions mesurées en valeur de risque.",
+      "empty": "Aucune suggestion : aucune ligne de la table sectorielle ne remplit les critères.",
+      "emptyLink": "Aller à Secteur et Score",
+      "columns": {
+        "rank": "#",
+        "ticker": "Ticker",
+        "sector": "Secteur",
+        "score": "Score",
+        "sectorShare": "% Secteur exposé",
+        "tickerShare": "% Ticker exposé"
+      }
+    }
+  },
+  "positions": {
+    "filterPlaceholder": "Filtrer sur la colonne Position…",
+    "asOf": "Données du {{date}}",
+    "empty": "Aucune position — importez un relevé HTML ou une réponse de Flex Query avec Open Positions.",
+    "emptyLink": "Aller aux sources de données",
+    "noResults": "Aucune position ne correspond.",
+    "groups": {
+      "long": "Positions longues",
+      "optionBuys": "Achats d'options",
+      "optionSells": "Ventes d'options",
+      "other": "Autres positions"
+    },
+    "columns": {
+      "position": "Position",
+      "type": "Type",
+      "sector": "Secteur",
+      "marketValue": "Valeur de marché",
+      "quantity": "Quantité",
+      "avgPrice": "Prix initial moy.",
+      "lastPrice": "Dernier prix",
+      "unrealizedPnl": "P&L latent",
+      "decision": "Décision",
+      "coverage": "Couverture"
+    },
+    "cash": {
+      "title": "Cash",
+      "anchored": "calé sur le Cash Report du {{date}}",
+      "unanchored": "aucun Cash Report, le solde part de 0"
+    }
+  },
+  "strategyPositions": {
+    "title": { "wheel": "Positions Wheel", "leaps": "Positions LEAPS" },
+    "groups": {
+      "assignedShares": "Actions assignées",
+      "optionSales": "Ventes d'options",
+      "optionBuys": "Achats d'options",
+      "shares": "Actions"
+    },
+    "columns": {
+      "position": "Position",
+      "sector": "Secteur",
+      "quantity": "Quantité",
+      "averageAssignmentPrice": "Prix moyen",
+      "averageCallStrike": "Prix moyen des calls",
+      "assignedTotal": "Prix total assigné",
+      "lastPrice": "Dernier prix",
+      "unrealizedPnl": "P&L latent",
+      "coverage": "Couverture"
+    },
+    "callBelowAssignment": "Strike moyen des calls sous le prix d'assignation",
+    "empty": "Aucune position ouverte dans cette stratégie."
+  },
+  "journal": {
+    "filterPlaceholder": "Filtrer sur le ticker…",
+    "empty": "Aucune position pour cette stratégie.",
+    "noResults": "Aucune position ne correspond.",
+    "expand": "Voir les jambes",
+    "collapse": "Masquer les jambes",
+    "columns": {
+      "startWhen": "Date début",
+      "label": "Label",
+      "ticker": "Ticker",
+      "quantity": "Quantité",
+      "openPrice": "Prix initial",
+      "openTotal": "Prix total initial",
+      "openCommission": "Commission initiale",
+      "assigned": "Assigné",
+      "openNet": "Prix total initial net",
+      "endWhen": "Date fin",
+      "closePrice": "Prix final",
+      "closeTotal": "Prix total final",
+      "closeCommission": "Commission finale",
+      "closeNet": "Prix total final net",
+      "pnl": "Gain/Perte",
+      "ongoing": "En cours",
+      "note": "Commentaire"
+    },
+    "notes": {
+      "takenOverAtStrike": "Actions déjà détenues, reprises au strike du call {{contract}}",
+      "handedToWheel": "Reprises par la stratégie Wheel au strike du call {{contract}}",
+      "nakedCall": "Call nu : ni actions ni LEAPS pour le couvrir",
+      "truncatedHistory": "Historique tronqué : aucun lot à clôturer"
+    }
+  },
+  "stats": {
+    "title": { "wheel": "Statistiques Wheel", "leaps": "Statistiques LEAPS", "condors": "Statistiques Condors" },
+    "total": "Profit/Perte total",
+    "monthly": "Profits/pertes mensuels",
+    "currency": "Devise",
+    "incomplete_one": "{{count}} montant absent ignoré",
+    "incomplete_other": "{{count}} montants absents ignorés",
+    "empty": "Aucune donnée pour cette stratégie.",
+    "exposure": {
+      "title": "Exposition par secteur",
+      "empty": {
+        "wheel": "Aucune position Wheel ouverte.",
+        "leaps": "Aucune position LEAPS ouverte.",
+        "portfolio": "Aucune position ouverte."
+      },
+      "sector": "Secteur",
+      "assigned": "Assigné",
+      "putCash": "Couverture des puts",
+      "total": "Total",
+      "share": "Part",
+      "unclassified": "Non classé",
+      "other": "Autres"
+    },
+    "capital": {
+      "title": "Capital de la stratégie",
+      "titlePortfolio": "Capital de toutes les stratégies",
+      "cumulativePnl": "Cumul des profits/pertes",
+      "assigned": "Assigné",
+      "allocated": "Alloué",
+      "invested": "Cash investi"
+    },
+    "return": {
+      "title": "Rendement mensuel"
+    }
+  },
+  "consistency": {
+    "uncovered": {
+      "title": "Positions non couvertes",
+      "empty": "Aucune position non couverte."
+    },
+    "reconciliation": {
+      "title": "Reconstitution du portefeuille"
+    },
+    "cash": {
+      "title": "Cohérence du cash"
+    },
+    "indicators": {
+      "coverage": {
+        "label": "Couverture",
+        "ok": "Couverture : aucune position non couverte",
+        "alert_one": "Couverture : {{count}} position non couverte",
+        "alert_other": "Couverture : {{count}} positions non couvertes",
+        "unknown": "Couverture : aucun snapshot de positions",
+        "loading": "Couverture : chargement…"
+      },
+      "reconstitution": {
+        "label": "Reconstitution",
+        "ok": "Reconstitution : conforme au snapshot du {{date}}",
+        "alert_one": "Reconstitution : {{count}} écart avec le snapshot du {{date}}",
+        "alert_other": "Reconstitution : {{count}} écarts avec le snapshot du {{date}}",
+        "unknown": "Reconstitution : aucun snapshot de positions",
+        "loading": "Reconstitution : chargement…"
+      }
+    }
+  },
+  "reconciliation": {
+    "ok": "Portefeuille reconstitué conforme au snapshot du {{date}}",
+    "differences_one": "{{count}} écart entre le portefeuille reconstitué et le snapshot du {{date}}",
+    "differences_other": "{{count}} écarts entre le portefeuille reconstitué et le snapshot du {{date}}",
+    "hint": "Un historique qui ne remonte pas à l'ouverture du compte suffit à l'expliquer.",
+    "difference": "{{label}} : ledger {{ledger}}, snapshot {{snapshot}}",
+    "orphans_one": "{{count}} ligne d'origine inconnue",
+    "orphans_other": "{{count}} lignes d'origine inconnue",
+    "none": "Aucun snapshot de positions : importez un relevé HTML ou une réponse Flex, ou lancez l'agent.",
+    "noneLink": "Aller aux sources de données"
+  },
+  "cashCheck": {
+    "ok": "{{currency}} : solde calé sur le cash de fin du {{end}} ({{endAmount}}), retrouvé au {{start}} sur le Starting Cash ({{startAmount}}) à {{gap}} près",
+    "gap": "{{currency}} : solde calé sur le cash de fin du {{end}} ({{endAmount}}), mais {{balance}} au {{start}} contre un Starting Cash de {{startAmount}}",
+    "anchored": "{{currency}} : solde calé sur le cash de fin du {{end}} ({{endAmount}}), début non vérifié",
+    "none": "{{currency}} : aucun Cash Report, le solde part de 0",
+    "hint": "Un historique incomplet, ou un relevé qui finit après la dernière synchro Flex, suffit à l'expliquer.",
+    "noneHint": "Ajoutez la section Cash Report à la Flex Query, ou importez un relevé HTML.",
+    "noneLink": "Aller aux sources de données"
+  },
+  "history": {
+    "filterPlaceholder": "Filtrer par symbole…",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "noResults": "Aucune transaction ne correspond.",
+    "columns": {
+      "dateTime": "Date/Heure",
+      "type": "Type",
+      "symbol": "Symbole",
+      "quantity": "Quantité",
+      "price": "Prix",
+      "totalPrice": "Prix total",
+      "fee": "Frais",
+      "cash": "Cash",
+      "currency": "Devise",
+      "usdCash": "Cash USD",
+      "eurCash": "Cash EUR",
+      "balanceHint": "Solde cumulé sur toutes les transactions en base — les filtres ne le modifient pas. Il est calé sur le cash de fin du fichier le plus récent qui porte un Cash Report ; la page Consistance dit s'il retombe sur le cash de début."
+    },
+    "presets": {
+      "label": "Période",
+      "all": "Tout",
+      "last30Days": "30 derniers jours",
+      "last12Months": "12 derniers mois"
+    },
+    "timeline": "Frise chronologique",
+    "kindFilter": "Type",
+    "allKinds": "Tous les types",
+    "kinds": {
+      "trade": "Trade",
+      "dividend": "Dividende",
+      "interest": "Intérêt",
+      "fee": "Frais",
+      "tax": "Retenue fiscale",
+      "corporate_action": "Opération sur titre",
+      "transfer": "Dépôt/Retrait"
+    }
+  },
+  "sources": {
+    "account": { "title": "Compte", "label": "Libellé", "ibAccountId": "Identifiant IB" },
+    "flexQuery": {
+      "title": "Flex Query",
+      "hint": "Le jeton et l'identifiant de requête de la Flex Query de ce compte, chez Interactive Brokers. Choisissez ci-dessous qui peut relayer l'appel."
+    },
+    "flexRelay": {
+      "legend": "Qui relaie l'appel à Interactive Brokers",
+      "agent": "Agent local seulement",
+      "agentHint": "Le jeton et le relevé vont de ce navigateur à l'agent de cette machine, puis à Interactive Brokers. Rien ne passe par le serveur. Sans agent détecté, pas de synchronisation.",
+      "agentAndServer": "Agent local et serveur",
+      "agentAndServerHint": "L'agent relaie quand il est détecté. Sinon, et si vous êtes connecté, le serveur relaie l'appel : le jeton et le relevé le traversent sans être journalisés ni conservés. Permet de synchroniser depuis un autre appareil."
+    },
+    "flexToken": "Jeton Flex",
+    "flexQueryId": "Identifiant de requête",
+    "saveCredentials": "Enregistrer",
+    "credentialsSaved": "Identifiants enregistrés.",
+    "credentialsHint": "Un champ laissé vide conserve la valeur déjà enregistrée.",
+    "tokenStored": "Un jeton est enregistré pour ce compte.",
+    "tokenMissing": "Aucun jeton enregistré.",
+    "queryIdStored": "Identifiant de requête enregistré : {{queryId}}",
+    "queryIdMissing": "Aucun identifiant de requête enregistré.",
+    "clearCredentials": "Effacer les identifiants",
+    "credentialsCleared": "Identifiants effacés.",
+    "import": {
+      "title": "Importer des fichiers",
+      "hint": "Une réponse de Flex Query (XML) avec les sections Trades, Cash Transactions, Corporate Actions, Open Positions et Cash Report, ou un relevé d'activité exporté en HTML depuis le Client Portal, qui apporte aussi positions et cash à sa date de fin. Flex est propriétaire de sa plage de dates ; un relevé ne remplit que l'historique d'avant. Plusieurs fichiers choisis ensemble sont importés dans l'ordre de leurs périodes.",
+      "button": "Importer des fichiers",
+      "importing": "Import en cours…",
+      "summary": "{{total}} fichiers — importés : {{imported}}, annulés : {{failed}}."
+    },
+    "report": {
+      "ok": "Import terminé.",
+      "error": "Import annulé, rien n'a été écrit.",
+      "file": "Fichier",
+      "source": "Source",
+      "period": "Période",
+      "imported": "Lignes importées",
+      "skipped": "Lignes ignorées (hors plage)",
+      "dropped": "Lignes retirées des autres sources",
+      "droppedHint": "Flex a remplacé cette plage. Les types listés ne sont pas exportés par votre Flex Query : cochez leurs sections dans le Client Portal, sinon ils ne vivent que dans les relevés.",
+      "issues": "Avertissements",
+      "sources": { "flex": "Flex Query", "statement_html": "Relevé d'activité" },
+      "positions": "Positions",
+      "cashAvailable": "Cash disponible",
+      "staleSnapshot": "Positions ignorées : le fichier est plus ancien que les positions en cache."
+    },
+    "issues": {
+      "account-mismatch": "Fichier d'un autre compte",
+      "section-missing": "Section absente",
+      "section-unread": "Section présente mais non lue",
+      "column-missing": "Colonne absente de la requête",
+      "currency-missing": "Ligne sans devise connue",
+      "unknown-cash-type": "Type de mouvement de cash inconnu",
+      "unknown-asset-category": "Catégorie d'actif inconnue",
+      "row-skipped": "Ligne ignorée",
+      "normalization": "Valeur illisible",
+      "multiplier-missing": "Multiplicateur absent"
+    },
+    "purge": {
+      "button": "Supprimer les transactions",
+      "purging": "Suppression en cours…",
+      "confirm": "Supprimer l'historique ({{transactions}} lignes), les contrats, les positions, les points de cash et le journal d'import de ce compte ? Vos {{statements}} relevés conservés, la configuration Flex/TWS et la table sectorielle restent en place. « Relire les relevés » reconstruit l'historique, les contrats, les positions et le cash venus des relevés ; une synchronisation Flex reconstruit les siens.",
+      "done_one": "{{count}} ligne d'historique et {{contracts}} contrats supprimés, avec les positions, les points de cash et le journal d'import.",
+      "done_other": "{{count}} lignes d'historique et {{contracts}} contrats supprimés, avec les positions, les points de cash et le journal d'import.",
+      "failed": "Suppression annulée, rien n'a été supprimé."
+    },
+    "statements": {
+      "title": "Relevés conservés",
+      "hint": "Les relevés HTML importés restent dans ce navigateur pour que l'historique puisse être reconstruit quand le lecteur de fichiers s'améliore. Ni les réponses Flex ni l'agent local ne sont conservés, et rien n'est jamais envoyé au serveur.",
+      "empty": "Aucun relevé conservé.",
+      "columns": { "period": "Période", "file": "Fichier", "size": "Taille", "imported": "Importé le" },
+      "delete": "Supprimer",
+      "deleteConfirm": "Supprimer le relevé {{period}} ? Ses lignes disparaîtront de l'historique.",
+      "replay": "Relire les relevés",
+      "replaying": "Relecture en cours…",
+      "done_one": "{{count}} relevé relu, {{imported}} lignes écrites.",
+      "done_other": "{{count}} relevés relus, {{imported}} lignes écrites.",
+      "replayConfirm_one": "{{count}} ligne de l'historique vient d'un relevé qui n'est plus conservé : elle disparaîtra définitivement. Reconstruire quand même ?",
+      "replayConfirm_other": "{{count}} lignes de l'historique viennent de relevés qui ne sont plus conservés : elles disparaîtront définitivement. Reconstruire quand même ?",
+      "failed": "Relecture annulée, rien n'a été écrit.",
+      "error": "Relecture annulée, rien n'a été écrit : {{fileName}} n'est plus lisible."
+    },
+    "history": {
+      "title": "Imports passés",
+      "empty": "Rien n'a encore été importé.",
+      "columns": { "date": "Date", "source": "Source", "file": "Fichier", "period": "Période", "rows": "Lignes", "warnings": "Avertissements" },
+      "positions": "{{count}} positions"
+    },
+    "delete": {
+      "title": "Supprimer ce compte",
+      "hint": "Supprime le compte et toutes les transactions importées pour lui sur cet appareil.",
+      "button": "Supprimer le compte",
+      "confirm": "Supprimer le compte {{label}} et toutes ses données sur cet appareil ?"
+    },
+    "contracts": {
+      "title": "Identité des contrats",
+      "known_one": "{{contracts}} contrat connu, {{aliases}} noms",
+      "known_other": "{{contracts}} contrats connus, {{aliases}} noms",
+      "empty": "Aucun contrat identifié pour l'instant.",
+      "flexHint": "Cochez Conid et Security ID sur la section Trades de votre Flex Query : cela n'agit que sur les tirages à venir.",
+      "statementHint": "Ré-importez vos relevés HTML : ils sont la seule source de la table Contract Information."
+    }
+  },
+  "sectors": {
+    "intro": "Le secteur et le score de chaque ticker, dans une table commune à tous les comptes. Un import Interactive Brokers y ajoute d'office les tickers qu'elle ne connaît pas encore.",
+    "import": {
+      "title": "Import CSV",
+      "hint": "CSV séparé par des points-virgules, colonnes lues par leur nom : Ticker, Name, Category, Score et Status. Le fichier ajoute les nouveaux tickers et met à jour ceux qu'il nomme ; une colonne absente du fichier garde sa valeur, une cellule vide l'efface. Aucune ligne n'est supprimée.",
+      "button": "Importer un CSV",
+      "importing": "Import en cours…",
+      "ok": "Tickers ajoutés : {{added}}, mis à jour : {{updated}}.",
+      "error": "Import annulé : {{detail}}"
+    },
+    "table": {
+      "title": "Table sectorielle",
+      "empty": "Pas encore de table sectorielle.",
+      "summary": "{{count}} tickers, dernière modification {{date}}",
+      "filter": "Filtrer",
+      "noMatch": "Aucun ticker ne correspond au filtre.",
+      "columns": {
+        "ticker": "Ticker",
+        "name": "Nom",
+        "category": "Secteur",
+        "score": "Score",
+        "status": "Statut",
+        "ongoing": "En cours"
+      },
+      "add": {
+        "ticker": "Nouveau ticker",
+        "name": "Nom du nouveau ticker",
+        "category": "Secteur du nouveau ticker",
+        "score": "Score du nouveau ticker",
+        "status": "Statut du nouveau ticker",
+        "button": "Ajouter",
+        "exists": "{{ticker}} est déjà dans la table.",
+        "invalidScore": "Score illisible : un nombre, ou vide."
+      },
+      "delete": "Supprimer {{ticker}}",
+      "deleteConfirm": "Supprimer {{ticker}} de la table sectorielle ?"
+    }
+  },
+  "sync": {
+    "title": "Synchronisation",
+    "agentUnknown": "Recherche de l'agent local…",
+    "needsAgent": "Agent non détecté : en mode agent local seulement, la synchronisation passe par lui.",
+    "needsAgentOrAccount": "Démarrez l'agent local ou connectez-vous pour synchroniser ce compte.",
+    "serverUnreachable": "Serveur injoignable : la synchronisation est indisponible pour l'instant.",
+    "needsCredentials": "Renseignez le jeton et l'identifiant de requête Flex Query ci-dessus pour activer la synchronisation.",
+    "lastSync": "Dernière synchronisation réussie : {{date}}",
+    "lastSyncVia": "Dernière synchronisation réussie : {{date}}, via {{relay}}.",
+    "lastFailed": "Dernière tentative en échec ({{code}}).",
+    "lastFailedVia": "Dernière tentative en échec ({{code}}), via {{relay}}.",
+    "via": { "agent": "l'agent local", "server": "le serveur" },
+    "run": "Synchroniser",
+    "running": "Synchronisation en cours…"
+  },
+  "snapshot": {
+    "live": "En direct, {{time}}",
+    "refresh": "Actualiser"
+  },
+  "agent": {
+    "title": "Agent local",
+    "hint": "L'agent lit TWS sur cette machine et ne parle qu'à ce site et à Interactive Brokers : il relaie les appels Flex Query sans rien conserver, et positions, cash et exécutions du jour restent chez vous. Renseignez le port de l'API TWS de ce compte pour les données en direct.",
+    "port": "Port TWS",
+    "savePort": "Enregistrer",
+    "portSaved": "Port enregistré.",
+    "portInvalid": "Le port doit être un entier entre 1 et 65535.",
+    "portMissing": "Renseignez le port pour activer les données en direct.",
+    "unknown": "Recherche de l'agent…",
+    "detected": "Agent détecté, version {{version}}.",
+    "absent": "Agent non détecté sur cette machine.",
+    "helpLink": "Installer l'agent",
+    "never": "Aucun passage pour l'instant.",
+    "lastSync": "Dernier passage réussi : {{date}}",
+    "lastFailed": "Dernier passage en échec : {{reason}}",
+    "refresh": "Actualiser",
+    "refreshing": "Actualisation…",
+    "errors": {
+      "agent-unreachable": "Agent absent",
+      "tws-unreachable": "TWS injoignable",
+      "agent-error": "Erreur de l'agent",
+      "account-mismatch": "Compte différent",
+      "parse-error": "Réponse illisible"
+    }
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "submit": "Valider",
+    "badCredentials": "Identifiants refusés.",
+    "serverUnreachable": "Serveur injoignable pour le moment.",
+    "secondFactor": "Second facteur",
+    "secondFactorHint": "Entrez le code fourni par votre application d'authentification, ou un code de secours.",
+    "code": "Code"
+  },
+  "invitation": {
+    "title": "Accepter l'invitation",
+    "choosePassword": "Choisissez un mot de passe",
+    "invalid": "Cette invitation n'est plus valable.",
+    "weakPassword": "Au moins 8 caractères, en évitant les mots de passe trop courants."
+  },
+  "settings": {
+    "title": "Paramètres",
+    "account": "Compte",
+    "signedInAs": "Connecté en tant que {{email}}",
+    "signedOut": "Non connecté.",
+    "unreachableHint": "Serveur injoignable : les réglages de compte sont indisponibles pour l'instant.",
+    "profileError": "Le profil local n'a pas pu être ouvert ; les données affichées peuvent être vides.",
+    "changePassword": "Changer le mot de passe",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "passwordChanged": "Mot de passe changé.",
+    "twoFactor": "Authentification à deux facteurs",
+    "enableTotp": "Activer l'authentification TOTP",
+    "disableTotp": "Désactiver la TOTP",
+    "totpConfigured": "TOTP activée sur ce compte.",
+    "totpSecretHint": "Scannez ce code avec votre application d'authentification, ou saisissez la clé manuellement : {{secret}}",
+    "recoveryCodes": "Codes de secours",
+    "recoveryCodesHint": "Ces codes à usage unique permettent de se connecter si l'application d'authentification n'est pas disponible. Ils ne s'affichent qu'une seule fois : notez-les immédiatement.",
+    "recoveryCodesGenerate": "Générer des codes de secours",
+    "recoveryCodesNotGenerated": "Aucun code de secours généré pour l'instant.",
+    "recoveryCodesRemaining": "{{count}} codes restants sur {{total}}.",
+    "actionFailed": "L'opération a échoué."
+  },
+  "help": {
+    "title": "Aide",
+    "what": {
+      "title": "L'agent local",
+      "text": "L'agent lit TWS sur votre machine et ne parle qu'à ce site et à Interactive Brokers. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de ce site vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer."
+    },
+    "uv": {
+      "title": "1. Installer uv",
+      "text": "uv installe l'agent et l'interpréteur Python qu'il lui faut.",
+      "macLinux": "macOS et Linux",
+      "windows": "Windows"
+    },
+    "install": {
+      "title": "2. Installer l'agent",
+      "text": "La commande installe la version que ce site sert. Relancez-la après une mise à jour du site.",
+      "unavailable": "Ce serveur ne sert pas le paquet de l'agent : en développement, lancez pnpm build:agent."
+    },
+    "configure": {
+      "title": "3. Le configurer et le lancer",
+      "text": "La première commande enregistre l'adresse de ce site, la seule à laquelle l'agent répondra. La seconde le lance ; laissez-la tourner pendant que vous utilisez le site."
+    },
+    "tws": {
+      "title": "4. Régler l'API de TWS",
+      "text": "Dans TWS : Configuration › API › Settings.",
+      "items": [
+        "Cocher « Enable ActiveX and Socket Clients ».",
+        "Noter le « Socket port » : un port par compte, chaque TWS a le sien.",
+        "Ajouter 127.0.0.1 dans « Trusted IPs ».",
+        "« Read-Only API » peut rester coché : l'agent ne passe aucun ordre."
+      ]
+    },
+    "chrome": {
+      "title": "5. La permission du navigateur",
+      "text": "La première fois, Chrome demande si ce site peut accéder à votre réseau local : c'est l'agent sur votre machine. Accepter."
+    },
+    "port": {
+      "title": "6. Renseigner le port",
+      "text": "Dans Sources de données, carte Agent local, saisissez le port TWS du compte. Il ne sert qu'aux données en direct, pas pour relayer Flex Query.",
+      "link": "Ouvrir Sources de données"
+    }
+  },
+  "accountSwitcher": {
+    "label": "Compte"
+  },
+  "languageSwitcher": {
+    "label": "Langue"
+  },
+  "theme": {
+    "toggle": "Changer de thème"
+  }
+}

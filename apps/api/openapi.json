@@ -1,0 +1,299 @@
+{
+  "components": {
+    "schemas": {
+      "AcceptInvitationIn": {
+        "properties": {
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ],
+        "title": "AcceptInvitationIn",
+        "type": "object"
+      },
+      "ErrorOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "detail"
+        ],
+        "title": "ErrorOut",
+        "type": "object"
+      },
+      "GetStatementIn": {
+        "properties": {
+          "referenceCode": {
+            "title": "Referencecode",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "referenceCode"
+        ],
+        "title": "GetStatementIn",
+        "type": "object"
+      },
+      "SendRequestIn": {
+        "properties": {
+          "queryId": {
+            "title": "Queryid",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "queryId"
+        ],
+        "title": "SendRequestIn",
+        "type": "object"
+      },
+      "SessionUserOut": {
+        "description": "The browser keys its local profile on `id`: it must be stable and opaque.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ],
+        "title": "SessionUserOut",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "SessionAuth": {
+        "in": "cookie",
+        "name": "sessionid",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "",
+    "title": "IB Analyzer",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/core/invitations/accept": {
+      "post": {
+        "operationId": "core_api_accept_invitation",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInvitationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionUserOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Accept Invitation",
+        "tags": [
+          "core"
+        ]
+      }
+    },
+    "/api/csrf": {
+      "get": {
+        "description": "Called once at boot so the SPA can send X-CSRFToken afterwards.\n\n`@ensure_csrf_cookie` doesn't work here: it wraps `view_func` expecting it\nto already return an HttpResponse to call `.set_cookie()` on, but a ninja\nview returns a plain dict that only becomes a JsonResponse further up in\n`Operation.run()`. Calling `get_token()` instead sets the same\n`CSRF_COOKIE_USED` flag on the request; `CsrfViewMiddleware`, which wraps\nthe whole request/response cycle (not just this handler), attaches the\ncookie once the real response comes back through it.",
+        "operationId": "config_api_csrf",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Csrf"
+      }
+    },
+    "/api/health": {
+      "get": {
+        "description": "Liveness probe for Compose and Traefik. Touches nothing.",
+        "operationId": "config_api_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/api/ib/flex/get-statement": {
+      "post": {
+        "description": "200 carries IB's raw XML, `Fail` responses included: the browser parses it.",
+        "operationId": "ib_api_get_statement",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetStatementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Get Statement",
+        "tags": [
+          "ib"
+        ]
+      }
+    },
+    "/api/ib/flex/send-request": {
+      "post": {
+        "description": "200 carries IB's raw XML, `Fail` responses included: the browser parses it.",
+        "operationId": "ib_api_send_request",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Gateway Timeout"
+          }
+        },
+        "security": [
+          {
+            "SessionAuth": []
+          }
+        ],
+        "summary": "Send Request",
+        "tags": [
+          "ib"
+        ]
+      }
+    }
+  },
+  "servers": []
+}

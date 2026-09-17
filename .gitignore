@@ -1,0 +1,36 @@
+# Données réelles (relevés, réponses Flex) : jamais versionnées
+private/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/
+
+# apps/api
+.env
+apps/api/staticfiles/
+apps/api/.pytest_cache/
+
+# Node
+node_modules/
+dist/
+coverage/
+# Not a coverage report: the packages/coverage package itself.
+!/packages/coverage/
+*.tsbuildinfo
+.pnpm-store/
+# Roue de l'agent construite par `pnpm build:agent` pour la page Aide en développement
+apps/web/public/agent/
+
+# Outils
+.DS_Store
+.run/
+.claude/worktrees/
+*.swp
+
+# Playwright (apps/web/e2e)
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/

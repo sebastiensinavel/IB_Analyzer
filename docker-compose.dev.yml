@@ -1,0 +1,24 @@
+# One PostgreSQL instance per machine, shared by every checkout of this repository: the
+# project name is pinned so that `docker compose -f docker-compose.dev.yml up -d db` run
+# from a git worktree addresses this same container instead of trying to start a second
+# one on 5432 (Compose would otherwise name the project after the worktree's directory).
+# Each checkout uses its own database on it — see tools/dev-env/ports.mjs.
+name: ib_analyzer2
+
+services:
+  db:
+    image: postgres:17-alpine
+    # Back up on its own after a Docker daemon restart (a package upgrade, say): without it
+    # the container stays stopped and `pnpm dev:api` finds nothing on 5432.
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ib
+      POSTGRES_PASSWORD: ib
+      POSTGRES_DB: ib_analyzer
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - devdb:/var/lib/postgresql/data
+
+volumes:
+  devdb:

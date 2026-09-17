@@ -1,0 +1,559 @@
+{
+  "nav": {
+    "sections": {
+      "overview": "Overview",
+      "strategyWheel": "Wheel strategy",
+      "strategyLeaps": "LEAPS strategy",
+      "strategyCondors": "Condor strategy",
+      "strategyOthers": "Other strategy",
+      "configuration": "Configuration"
+    },
+    "dashboard": "Dashboard",
+    "positions": "Positions",
+    "history": "History",
+    "journal": "Journal",
+    "stats": "Statistics",
+    "wheel": "Wheel Journal",
+    "leaps": "LEAPS Journal",
+    "condors": "Condor Journal",
+    "others": "Others Journal",
+    "sources": "Data sources",
+    "sectors": "Sectors & scores",
+    "consistency": "Consistency",
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "common": {
+    "loading": "Loading…",
+    "cancel": "Cancel"
+  },
+  "accounts": {
+    "title": "Accounts",
+    "empty": "No account yet. Create the first one below.",
+    "label": "Label",
+    "ibAccountId": "IB account id",
+    "ibAccountIdHint": "As shown in the Client Portal, e.g. U1234567",
+    "create": "Create the account",
+    "open": "Open",
+    "add": "Add an account…",
+    "errors": {
+      "label-empty": "The label must contain at least one letter or digit.",
+      "ib-account-id-invalid": "This does not look like an IB account id.",
+      "slug-taken": "An account with this label already exists."
+    }
+  },
+  "unknownAccount": {
+    "title": "Unknown account",
+    "hint": "No account matches {{id}} on this device.",
+    "link": "Manage accounts"
+  },
+  "dashboard": {
+    "cashCard": {
+      "title": "Cash coverage",
+      "portfolio": "Cash in portfolio",
+      "required": "Cash required",
+      "available": "Cash available",
+      "ok": "Covered",
+      "short": "Short on cash",
+      "unknown": "Cash unknown"
+    },
+    "suggestions": {
+      "title": "Position suggestions",
+      "rule": "Up to {{max}} tickers from the sector table, with a score ≥ {{score}} and status “on”, excluding stocks already at {{share}} or more of the portfolio's risk. Sorted by increasing sector exposure, then decreasing score, then increasing ticker exposure; exposures measured in risk value.",
+      "empty": "No suggestion: no row of the sector table meets the criteria.",
+      "emptyLink": "Go to Sectors & scores",
+      "columns": {
+        "rank": "#",
+        "ticker": "Ticker",
+        "sector": "Sector",
+        "score": "Score",
+        "sectorShare": "% sector exposed",
+        "tickerShare": "% ticker exposed"
+      }
+    }
+  },
+  "positions": {
+    "filterPlaceholder": "Filter on the Position column…",
+    "asOf": "Data as of {{date}}",
+    "empty": "No positions yet — import an HTML statement or a Flex query response with Open Positions.",
+    "emptyLink": "Go to data sources",
+    "noResults": "No positions match.",
+    "groups": {
+      "long": "Long positions",
+      "optionBuys": "Option buys",
+      "optionSells": "Option sells",
+      "other": "Other positions"
+    },
+    "columns": {
+      "position": "Position",
+      "type": "Type",
+      "sector": "Sector",
+      "marketValue": "Market value",
+      "quantity": "Quantity",
+      "avgPrice": "Avg. init. price",
+      "lastPrice": "Last price",
+      "unrealizedPnl": "Unrealized P&L",
+      "decision": "Decision",
+      "coverage": "Coverage"
+    },
+    "cash": {
+      "title": "Cash",
+      "anchored": "anchored on the Cash Report of {{date}}",
+      "unanchored": "no Cash Report, the balance starts from 0"
+    }
+  },
+  "strategyPositions": {
+    "title": { "wheel": "Wheel positions", "leaps": "LEAPS positions" },
+    "groups": {
+      "assignedShares": "Assigned shares",
+      "optionSales": "Option sells",
+      "optionBuys": "Option buys",
+      "shares": "Shares"
+    },
+    "columns": {
+      "position": "Position",
+      "sector": "Sector",
+      "quantity": "Quantity",
+      "averageAssignmentPrice": "Avg. price",
+      "averageCallStrike": "Avg. call price",
+      "assignedTotal": "Total assigned",
+      "lastPrice": "Last price",
+      "unrealizedPnl": "Unrealized P&L",
+      "coverage": "Coverage"
+    },
+    "callBelowAssignment": "Average call strike below the assignment price",
+    "empty": "No open position in this strategy."
+  },
+  "journal": {
+    "filterPlaceholder": "Filter on the ticker…",
+    "empty": "No position for this strategy.",
+    "noResults": "No position matches.",
+    "expand": "Show legs",
+    "collapse": "Hide legs",
+    "columns": {
+      "startWhen": "Start date",
+      "label": "Label",
+      "ticker": "Ticker",
+      "quantity": "Quantity",
+      "openPrice": "Initial price",
+      "openTotal": "Initial total",
+      "openCommission": "Initial fee",
+      "assigned": "Assigned",
+      "openNet": "Initial net total",
+      "endWhen": "End date",
+      "closePrice": "Final price",
+      "closeTotal": "Final total",
+      "closeCommission": "Final fee",
+      "closeNet": "Final net total",
+      "pnl": "P&L",
+      "ongoing": "Ongoing",
+      "note": "Comment"
+    },
+    "notes": {
+      "takenOverAtStrike": "Shares already held, taken over at the strike of {{contract}}",
+      "handedToWheel": "Taken over by the Wheel at the strike of {{contract}}",
+      "nakedCall": "Naked call: no shares and no LEAPS to cover it",
+      "truncatedHistory": "Truncated history: no lot to close"
+    }
+  },
+  "stats": {
+    "title": { "wheel": "Wheel statistics", "leaps": "LEAPS statistics", "condors": "Condor statistics" },
+    "total": "Total profit/loss",
+    "monthly": "Monthly profits/losses",
+    "currency": "Currency",
+    "incomplete_one": "{{count}} missing amount ignored",
+    "incomplete_other": "{{count}} missing amounts ignored",
+    "empty": "No data for this strategy.",
+    "exposure": {
+      "title": "Exposure by sector",
+      "empty": {
+        "wheel": "No open Wheel position.",
+        "leaps": "No open LEAPS position.",
+        "portfolio": "No open position."
+      },
+      "sector": "Sector",
+      "assigned": "Assigned",
+      "putCash": "Put coverage",
+      "total": "Total",
+      "share": "Share",
+      "unclassified": "Unclassified",
+      "other": "Other"
+    },
+    "capital": {
+      "title": "Strategy capital",
+      "titlePortfolio": "Capital of all strategies",
+      "cumulativePnl": "Cumulative P/L",
+      "assigned": "Assigned",
+      "allocated": "Allocated",
+      "invested": "Cash invested"
+    },
+    "return": {
+      "title": "Monthly return"
+    }
+  },
+  "consistency": {
+    "uncovered": {
+      "title": "Uncovered positions",
+      "empty": "No uncovered position."
+    },
+    "reconciliation": {
+      "title": "Portfolio reconstitution"
+    },
+    "cash": {
+      "title": "Cash consistency"
+    },
+    "indicators": {
+      "coverage": {
+        "label": "Coverage",
+        "ok": "Coverage: no uncovered position",
+        "alert_one": "Coverage: {{count}} uncovered position",
+        "alert_other": "Coverage: {{count}} uncovered positions",
+        "unknown": "Coverage: no positions snapshot",
+        "loading": "Coverage: loading…"
+      },
+      "reconstitution": {
+        "label": "Reconstitution",
+        "ok": "Reconstitution: matches the snapshot of {{date}}",
+        "alert_one": "Reconstitution: {{count}} difference with the snapshot of {{date}}",
+        "alert_other": "Reconstitution: {{count}} differences with the snapshot of {{date}}",
+        "unknown": "Reconstitution: no positions snapshot",
+        "loading": "Reconstitution: loading…"
+      }
+    }
+  },
+  "reconciliation": {
+    "ok": "Reconstituted portfolio matches the snapshot of {{date}}",
+    "differences_one": "{{count}} difference between the reconstituted portfolio and the snapshot of {{date}}",
+    "differences_other": "{{count}} differences between the reconstituted portfolio and the snapshot of {{date}}",
+    "hint": "A history that does not go back to the account's opening is enough to explain it.",
+    "difference": "{{label}}: ledger {{ledger}}, snapshot {{snapshot}}",
+    "orphans_one": "{{count}} line of unknown origin",
+    "orphans_other": "{{count}} lines of unknown origin",
+    "none": "No positions snapshot: import an HTML statement or a Flex response, or run the agent.",
+    "noneLink": "Go to data sources"
+  },
+  "cashCheck": {
+    "ok": "{{currency}}: balance anchored on the ending cash of {{end}} ({{endAmount}}), back to the Starting Cash of {{start}} ({{startAmount}}) within {{gap}}",
+    "gap": "{{currency}}: balance anchored on the ending cash of {{end}} ({{endAmount}}), but {{balance}} on {{start}} against a Starting Cash of {{startAmount}}",
+    "anchored": "{{currency}}: balance anchored on the ending cash of {{end}} ({{endAmount}}), start not checked",
+    "none": "{{currency}}: no Cash Report, the balance starts from 0",
+    "hint": "An incomplete history, or a statement ending after the last Flex sync, is enough to explain it.",
+    "noneHint": "Add the Cash Report section to the Flex Query, or import an HTML statement.",
+    "noneLink": "Go to data sources"
+  },
+  "history": {
+    "filterPlaceholder": "Filter by symbol…",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "noResults": "No transactions match.",
+    "columns": {
+      "dateTime": "Date/Time",
+      "type": "Type",
+      "symbol": "Symbol",
+      "quantity": "Quantity",
+      "price": "Price",
+      "totalPrice": "Total Price",
+      "fee": "Fee",
+      "cash": "Cash",
+      "currency": "Currency",
+      "usdCash": "USD Cash",
+      "eurCash": "EUR Cash",
+      "balanceHint": "Running balance over every transaction on record — filters do not change it. It is anchored on the ending cash of the latest file carrying a Cash Report; the Consistency page says whether it comes back to the starting cash."
+    },
+    "presets": {
+      "label": "Period",
+      "all": "All",
+      "last30Days": "Last 30 days",
+      "last12Months": "Last 12 months"
+    },
+    "timeline": "Timeline",
+    "kindFilter": "Type",
+    "allKinds": "All types",
+    "kinds": {
+      "trade": "Trade",
+      "dividend": "Dividend",
+      "interest": "Interest",
+      "fee": "Fee",
+      "tax": "Withholding tax",
+      "corporate_action": "Corporate action",
+      "transfer": "Deposit/Withdrawal"
+    }
+  },
+  "sources": {
+    "account": { "title": "Account", "label": "Label", "ibAccountId": "IB account id" },
+    "flexQuery": {
+      "title": "Flex Query",
+      "hint": "The token and query id of this account's Flex Query at Interactive Brokers. Choose below who may relay the call."
+    },
+    "flexRelay": {
+      "legend": "Who relays the call to Interactive Brokers",
+      "agent": "Local agent only",
+      "agentHint": "The token and the statement go from this browser to the agent on this machine, then to Interactive Brokers. Nothing goes through the server. Without a detected agent, no synchronization.",
+      "agentAndServer": "Local agent and server",
+      "agentAndServerHint": "The agent relays when it is detected. Otherwise, and if you are signed in, the server relays the call: the token and the statement pass through it without being logged or kept. Lets you synchronize from another device."
+    },
+    "flexToken": "Flex token",
+    "flexQueryId": "Query id",
+    "saveCredentials": "Save",
+    "credentialsSaved": "Credentials saved.",
+    "credentialsHint": "A field left empty keeps the value already stored.",
+    "tokenStored": "A token is stored for this account.",
+    "tokenMissing": "No token stored.",
+    "queryIdStored": "Query id stored: {{queryId}}",
+    "queryIdMissing": "No query id stored.",
+    "clearCredentials": "Erase credentials",
+    "credentialsCleared": "Credentials erased.",
+    "import": {
+      "title": "Import files",
+      "hint": "A Flex query response (XML) with the sections Trades, Cash Transactions, Corporate Actions, Open Positions and Cash Report, or an activity statement exported as HTML from the Client Portal, which also brings positions and cash as of its end date. Flex owns its own date range; a statement only fills the history before it. Several files picked together are imported in the order of their periods.",
+      "button": "Import files",
+      "importing": "Importing…",
+      "summary": "{{total}} files — imported: {{imported}}, cancelled: {{failed}}."
+    },
+    "report": {
+      "ok": "Import done.",
+      "error": "Import cancelled, nothing was written.",
+      "file": "File",
+      "source": "Source",
+      "period": "Period",
+      "imported": "Imported rows",
+      "skipped": "Rows skipped (out of range)",
+      "dropped": "Rows removed from other sources",
+      "droppedHint": "Flex replaced this range. Kinds listed here are not exported by your Flex query: tick their sections in the Client Portal or they only live in statements.",
+      "issues": "Warnings",
+      "sources": { "flex": "Flex query", "statement_html": "Activity statement" },
+      "positions": "Positions",
+      "cashAvailable": "Cash available",
+      "staleSnapshot": "Positions ignored: the file is older than the cached positions."
+    },
+    "issues": {
+      "account-mismatch": "File of another account",
+      "section-missing": "Section missing",
+      "section-unread": "Section present but not read",
+      "column-missing": "Column missing from the query",
+      "currency-missing": "Row with no known currency",
+      "unknown-cash-type": "Unknown cash transaction type",
+      "unknown-asset-category": "Unknown asset category",
+      "row-skipped": "Row skipped",
+      "normalization": "Unreadable value",
+      "multiplier-missing": "Missing multiplier"
+    },
+    "purge": {
+      "button": "Delete transactions",
+      "purging": "Deleting…",
+      "confirm": "Delete this account's history ({{transactions}} rows), contracts, positions, cash points and import journal? Your {{statements}} kept statements, the Flex/TWS settings and the sector table stay in place. “Replay statements” rebuilds the history, contracts, positions and cash the statements brought; a Flex sync rebuilds its own.",
+      "done_one": "{{count}} history row and {{contracts}} contracts deleted, along with the positions, the cash points and the import journal.",
+      "done_other": "{{count}} history rows and {{contracts}} contracts deleted, along with the positions, the cash points and the import journal.",
+      "failed": "Deletion cancelled, nothing was removed."
+    },
+    "statements": {
+      "title": "Statements kept",
+      "hint": "Imported HTML statements stay in this browser so the history can be rebuilt when the file reader improves. Neither Flex responses nor the local agent are kept, and nothing is ever sent to the server.",
+      "empty": "No statement kept.",
+      "columns": { "period": "Period", "file": "File", "size": "Size", "imported": "Imported" },
+      "delete": "Delete",
+      "deleteConfirm": "Delete the statement {{period}}? Its rows will disappear from the history.",
+      "replay": "Replay the statements",
+      "replaying": "Replaying…",
+      "done_one": "{{count}} statement replayed, {{imported}} rows written.",
+      "done_other": "{{count}} statements replayed, {{imported}} rows written.",
+      "replayConfirm_one": "{{count}} row of the history comes from a statement no longer kept: it will be gone for good. Rebuild anyway?",
+      "replayConfirm_other": "{{count}} rows of the history come from statements no longer kept: they will be gone for good. Rebuild anyway?",
+      "failed": "Replay cancelled, nothing was written.",
+      "error": "Replay cancelled, nothing was written: {{fileName}} can no longer be read."
+    },
+    "history": {
+      "title": "Past imports",
+      "empty": "Nothing imported yet.",
+      "columns": { "date": "Date", "source": "Source", "file": "File", "period": "Period", "rows": "Rows", "warnings": "Warnings" },
+      "positions": "{{count}} positions"
+    },
+    "delete": {
+      "title": "Delete this account",
+      "hint": "Removes the account and every transaction imported for it on this device.",
+      "button": "Delete the account",
+      "confirm": "Delete account {{label}} and all its data on this device?"
+    },
+    "contracts": {
+      "title": "Contract identity",
+      "known_one": "{{contracts}} contract known, {{aliases}} names",
+      "known_other": "{{contracts}} contracts known, {{aliases}} names",
+      "empty": "No contract identified yet.",
+      "flexHint": "Tick Conid and Security ID in the Trades section of your Flex Query: this only affects future pulls.",
+      "statementHint": "Re-import your HTML statements: they are the only source of the Contract Information table."
+    }
+  },
+  "sectors": {
+    "intro": "The sector and the score of each ticker, in one table shared by every account. An Interactive Brokers import adds the tickers it does not know yet.",
+    "import": {
+      "title": "CSV import",
+      "hint": "CSV separated by semicolons, columns read by name: Ticker, Name, Category, Score and Status. The file adds new tickers and updates the ones it names; a column the file lacks keeps its value, an empty cell clears it. No row is ever deleted.",
+      "button": "Import a CSV",
+      "importing": "Importing…",
+      "ok": "Tickers added: {{added}}, updated: {{updated}}.",
+      "error": "Import cancelled: {{detail}}"
+    },
+    "table": {
+      "title": "Sector table",
+      "empty": "No sector table yet.",
+      "summary": "{{count}} tickers, last modified {{date}}",
+      "filter": "Filter",
+      "noMatch": "No ticker matches the filter.",
+      "columns": {
+        "ticker": "Ticker",
+        "name": "Name",
+        "category": "Sector",
+        "score": "Score",
+        "status": "Status",
+        "ongoing": "Open"
+      },
+      "add": {
+        "ticker": "New ticker",
+        "name": "Name of the new ticker",
+        "category": "Sector of the new ticker",
+        "score": "Score of the new ticker",
+        "status": "Status of the new ticker",
+        "button": "Add",
+        "exists": "{{ticker}} is already in the table.",
+        "invalidScore": "Unreadable score: a number, or empty."
+      },
+      "delete": "Delete {{ticker}}",
+      "deleteConfirm": "Delete {{ticker}} from the sector table?"
+    }
+  },
+  "sync": {
+    "title": "Synchronization",
+    "agentUnknown": "Looking for the local agent…",
+    "needsAgent": "Agent not detected: in local agent only mode, synchronization goes through it.",
+    "needsAgentOrAccount": "Start the local agent or sign in to synchronize this account.",
+    "serverUnreachable": "Server unreachable: synchronization is unavailable for now.",
+    "needsCredentials": "Fill in the Flex Query token and query id above to enable synchronization.",
+    "lastSync": "Last successful sync: {{date}}",
+    "lastSyncVia": "Last successful sync: {{date}}, via {{relay}}.",
+    "lastFailed": "Last attempt failed ({{code}}).",
+    "lastFailedVia": "Last attempt failed ({{code}}), via {{relay}}.",
+    "via": { "agent": "the local agent", "server": "the server" },
+    "run": "Synchronize",
+    "running": "Synchronizing…"
+  },
+  "snapshot": {
+    "live": "Live, {{time}}",
+    "refresh": "Refresh"
+  },
+  "agent": {
+    "title": "Local agent",
+    "hint": "The agent reads TWS on this machine and talks to this site and to Interactive Brokers only: it relays Flex Query calls keeping nothing, and positions, cash and today's fills stay with you. Fill in the port of this account's TWS API for live data.",
+    "port": "TWS port",
+    "savePort": "Save",
+    "portSaved": "Port saved.",
+    "portInvalid": "The port must be an integer between 1 and 65535.",
+    "portMissing": "Fill in the port to enable live data.",
+    "unknown": "Looking for the agent…",
+    "detected": "Agent detected, version {{version}}.",
+    "absent": "No agent detected on this machine.",
+    "helpLink": "Install the agent",
+    "never": "No pass yet.",
+    "lastSync": "Last successful pass: {{date}}",
+    "lastFailed": "Last pass failed: {{reason}}",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "errors": {
+      "agent-unreachable": "Agent not running",
+      "tws-unreachable": "TWS unreachable",
+      "agent-error": "Agent error",
+      "account-mismatch": "Different account",
+      "parse-error": "Unreadable answer"
+    }
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Submit",
+    "badCredentials": "Credentials refused.",
+    "serverUnreachable": "Server unreachable right now.",
+    "secondFactor": "Second factor",
+    "secondFactorHint": "Enter the code from your authenticator app, or a recovery code.",
+    "code": "Code"
+  },
+  "invitation": {
+    "title": "Accept the invitation",
+    "choosePassword": "Choose a password",
+    "invalid": "This invitation is no longer valid.",
+    "weakPassword": "At least 8 characters, avoiding overly common passwords."
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "signedInAs": "Signed in as {{email}}",
+    "signedOut": "Not signed in.",
+    "unreachableHint": "Server unreachable: account settings are unavailable for now.",
+    "profileError": "The local profile could not be opened; the data shown may be empty.",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordChanged": "Password changed.",
+    "twoFactor": "Two-factor authentication",
+    "enableTotp": "Enable TOTP authentication",
+    "disableTotp": "Disable TOTP",
+    "totpConfigured": "TOTP is enabled on this account.",
+    "totpSecretHint": "Scan this with your authenticator app, or enter the key manually: {{secret}}",
+    "recoveryCodes": "Recovery codes",
+    "recoveryCodesHint": "One-time codes that let you sign in when your authenticator app is unavailable. They are shown only once: write them down right away.",
+    "recoveryCodesGenerate": "Generate recovery codes",
+    "recoveryCodesNotGenerated": "No recovery codes generated yet.",
+    "recoveryCodesRemaining": "{{count}} codes remaining out of {{total}}.",
+    "actionFailed": "The action failed."
+  },
+  "help": {
+    "title": "Help",
+    "what": {
+      "title": "The local agent",
+      "text": "The agent reads TWS on your machine and talks to this site and to Interactive Brokers only. It stores nothing: positions, cash and today's fills never leave your computer. It also relays this site's Flex Query calls to Interactive Brokers, keeping nothing: in \"local agent only\" mode, the Flex token never goes through the server. Without it, the app works with statements, and with Flex Query if you let the server relay."
+    },
+    "uv": {
+      "title": "1. Install uv",
+      "text": "uv installs the agent and the Python it needs.",
+      "macLinux": "macOS and Linux",
+      "windows": "Windows"
+    },
+    "install": {
+      "title": "2. Install the agent",
+      "text": "The command installs the version this site serves. Run it again after the site is updated.",
+      "unavailable": "This server does not serve the agent package: in development, run pnpm build:agent."
+    },
+    "configure": {
+      "title": "3. Configure and start it",
+      "text": "The first command records this site's address, the only one the agent will answer. The second starts it; leave it running while you use the site."
+    },
+    "tws": {
+      "title": "4. Set up the TWS API",
+      "text": "In TWS: Configuration › API › Settings.",
+      "items": [
+        "Tick \"Enable ActiveX and Socket Clients\".",
+        "Note the \"Socket port\": one port per account, each TWS has its own.",
+        "Add 127.0.0.1 to \"Trusted IPs\".",
+        "\"Read-Only API\" can stay ticked: the agent never places an order."
+      ]
+    },
+    "chrome": {
+      "title": "5. The browser's permission",
+      "text": "The first time, Chrome asks whether this site may reach your local network: that is the agent on your machine. Accept."
+    },
+    "port": {
+      "title": "6. Fill in the port",
+      "text": "In Data sources, Local agent card, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
+      "link": "Open Data sources"
+    }
+  },
+  "accountSwitcher": {
+    "label": "Account"
+  },
+  "languageSwitcher": {
+    "label": "Language"
+  },
+  "theme": {
+    "toggle": "Toggle theme"
+  }
+}

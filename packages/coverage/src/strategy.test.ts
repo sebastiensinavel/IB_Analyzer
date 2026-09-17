@@ -1,0 +1,186 @@
+import { describe, expect, it } from "vitest";
+import type { ContractKey, JournalRow, Position } from "@ib/ledger";
+import { option, stock } from "./fixtures.ts";
+import { buildRiskReport } from "./report.ts";
+import { leapsPositions, wheelPositions, type PricedSnapshot } from "./strategy.ts";
+
+/** An open Wheel put on `contract`, one contract sold at 2. */
+function row(overrides: Partial<JournalRow> & Pick<JournalRow, "contract">): JournalRow {
+  const { contract } = overrides;
+  return {
+    id: "x#1", strategy: "wheel", kind: "short_put", ticker: contract.ticker, label: "", currency: contract.currency,
+    startWhen: "2026-08-03T14:30:00.000Z", quantity: -1, strike: contract.strike, openPrice: 2, openTotal: 200, openCommission: -1, openNet: 199,
+    assigned: false, endWhen: null, closePrice: null, closeTotal: null, closeCommission: null, closeNet: null, pnl: null,
+    ongoing: true, event: null, orphan: false, note: null, openIds: [], closeIds: [], ...overrides,
+  };
+}
+
+const opt = (ticker: string, right: "C" | "P", strike: number, expiry: string): ContractKey => ({ ticker, secType: "OPT", right, strike, expiry, currency: "USD" });
+const shares = (ticker: string): ContractKey => ({ ticker, secType: "STK", right: "", strike: null, expiry: null, currency: "USD" });
+
+const MARA_CALL = opt("MQZA", "C", 20, "2026-11-20");
+const XOM_PUT = opt("XOM", "P", 100, "2026-10-16");
+
+function priced(positions: Position[]): PricedSnapshot {
+  return { positions, report: buildRiskReport(positions, null) };
+}
+
+describe("buildRiskReport", () => {
+  it("keeps the report's positions in the snapshot's order, which the pricing relies on", () => {
+    const positions = [
+      option({ symbol: "XYZ", right: "C", strike: 110, quantity: 1 }),
+      stock({ symbol: "AAPL", quantity: 100 }),
+      option({ symbol: "XYZ", right: "C", strike: 105, quantity: -1 }),
+      option({ symbol: "AAPL", right: "C", strike: 150, quantity: -1 }),
+      option({ symbol: "XOM", right: "P", strike: 100, quantity: -2 }),
+    ];
+    const report = buildRiskReport(positions, null);
+    expect(report.positions.map((p) => [p.symbol, p.strike, p.quantity])).toEqual(positions.map((p) => [p.symbol, p.strike ?? 0, p.quantity]));
+  });
+});
+
+describe("wheelPositions — option sales", () => {
+  it("keeps only the Wheel's part of a call shared with Others, and only the Wheel's cover of it", () => {
+    const rows = [
+      row({ contract: MARA_CALL, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+      row({ id: "y#1", contract: MARA_CALL, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.5 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -2, avgPrice: 0.5, marketPrice: 0.25, marketValue: -50 }),
+    ]);
+    const { optionSales } = wheelPositions(rows, snapshot);
+    expect(optionSales).toHaveLength(1);
+    expect(optionSales[0]).toMatchObject({
+      contract: MARA_CALL, kind: "short_call", label: "sell of call", quantity: -1, avgPrice: 0.5,
+      lastPrice: 0.25, marketValue: -25, unrealizedPnl: 25, decision: "buy back",
+    });
+    expect(optionSales[0].position).toMatchObject({ quantity: -2, uncoveredQuantity: 1 });
+    // The naked contract belongs to the Others journal: its UNCOVERED is not the Wheel's.
+    expect(optionSales[0].coverage).toEqual([expect.objectContaining({ source: "stock", quantity: 1 })]);
+  });
+
+  it("gives a sold put its cash cover", () => {
+    const rows = [row({ contract: XOM_PUT, quantity: -2, openPrice: 2 })];
+    const snapshot = priced([option({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-10-16", quantity: -2, marketPrice: 1.5, marketValue: -300 })]);
+    expect(wheelPositions(rows, snapshot).optionSales[0].coverage).toEqual([expect.objectContaining({ source: "cash", quantity: 2 })]);
+  });
+
+  it("prices nothing the snapshot does not hold, with or without a snapshot", () => {
+    const rows = [row({ contract: XOM_PUT, quantity: -1, openPrice: 1.25 })];
+    const blank = { quantity: -1, avgPrice: 1.25, lastPrice: null, marketValue: null, unrealizedPnl: null, decision: null, position: null, coverage: [] };
+    expect(wheelPositions(rows, null).optionSales).toEqual([expect.objectContaining(blank)]);
+    expect(wheelPositions(rows, priced([stock({ symbol: "AAPL" })])).optionSales).toEqual([expect.objectContaining(blank)]);
+  });
+
+  it("keeps a put sold at 2 that is worth 1.5 as a keep, and signs it like IB", () => {
+    const rows = [row({ contract: XOM_PUT, quantity: -1, openPrice: 2 })];
+    const snapshot = priced([option({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-10-16", quantity: -1, marketPrice: 1.5, marketValue: -150 })]);
+    expect(wheelPositions(rows, snapshot).optionSales[0]).toMatchObject({ marketValue: -150, unrealizedPnl: 50, decision: "keep" });
+  });
+
+  it("merges the open lines of one contract, the price weighted by quantity, and skips closed lines and bare settlements", () => {
+    const rows = [
+      row({ contract: XOM_PUT, quantity: -1, openPrice: 1 }),
+      row({ id: "x#2", contract: XOM_PUT, quantity: -3, openPrice: 2 }),
+      row({ id: "x#3", contract: XOM_PUT, quantity: -5, openPrice: 9, endWhen: "2026-09-01T14:30:00.000Z" }),
+      row({ id: "x#4", contract: XOM_PUT, quantity: null, openPrice: null }),
+    ];
+    expect(wheelPositions(rows, null).optionSales).toEqual([expect.objectContaining({ quantity: -4, avgPrice: 1.75 })]);
+  });
+
+  it("sorts by ticker, expiry, right and strike", () => {
+    const rows = [
+      row({ contract: XOM_PUT }),
+      row({ id: "a#1", contract: MARA_CALL, kind: "short_call" }),
+      row({ id: "b#1", contract: opt("MQZA", "P", 17, "2026-10-16") }),
+      row({ id: "c#1", contract: opt("MQZA", "C", 18, "2026-10-16"), kind: "short_call" }),
+    ];
+    expect(wheelPositions(rows, null).optionSales.map((line) => line.contract)).toEqual([
+      opt("MQZA", "C", 18, "2026-10-16"),
+      opt("MQZA", "P", 17, "2026-10-16"),
+      MARA_CALL,
+      XOM_PUT,
+    ]);
+  });
+});
+
+describe("wheelPositions — assigned shares", () => {
+  const held = (callStrike: number | null) => [
+    row({ contract: shares("MQZA"), kind: "shares", quantity: 200, openPrice: 17 }),
+    ...(callStrike === null ? [] : [row({ id: "c#1", contract: opt("MQZA", "C", callStrike, "2026-11-20"), kind: "short_call", quantity: -1, openPrice: 0.5 })]),
+  ];
+  const snapshot = priced([stock({ symbol: "MQZA", quantity: 200, avgPrice: 16, marketPrice: 18, marketValue: 3600 })]);
+
+  it("prices the holding from the IB shares at the assignment price, and flags a call struck below it", () => {
+    expect(wheelPositions(held(15), snapshot).shares).toEqual([
+      {
+        ticker: "MQZA", currency: "USD", quantity: 200, averageAssignmentPrice: 17, assignedTotal: 3400, openCallContracts: 1,
+        averageCallStrike: 15, coveredShares: 100, lastPrice: 18, unrealizedPnl: 200, callStrikeBelowAssignment: true,
+      },
+    ]);
+  });
+
+  it("never flags a call struck above the assignment price, nor a holding without a call", () => {
+    expect(wheelPositions(held(20), snapshot).shares[0].callStrikeBelowAssignment).toBe(false);
+    expect(wheelPositions(held(null), snapshot).shares[0].callStrikeBelowAssignment).toBe(false);
+  });
+
+  it("leaves the price and the P&L blank without the IB shares", () => {
+    expect(wheelPositions(held(15), null).shares[0]).toMatchObject({ lastPrice: null, unrealizedPnl: null });
+  });
+});
+
+describe("leapsPositions", () => {
+  const LEAPS = opt("ZZZ", "C", 15, "2027-06-18");
+  const SOLD = opt("ZZZ", "C", 20, "2026-09-18");
+  const rows = [
+    row({ contract: LEAPS, strategy: "leaps", kind: "long_call", quantity: 1, openPrice: 3 }),
+    row({ id: "s#1", contract: SOLD, strategy: "leaps", kind: "short_call", quantity: -1, openPrice: 0.5 }),
+    row({ id: "d#1", contract: shares("ZZZ"), strategy: "leaps", kind: "shares", quantity: 100, openPrice: 20 }),
+    row({ id: "w#1", contract: XOM_PUT }),
+  ];
+  const snapshot = priced([
+    option({ symbol: "ZZZ", right: "C", strike: 15, expiry: "2027-06-18", quantity: 1, avgPrice: 3, marketPrice: 4, marketValue: 400 }),
+    option({ symbol: "ZZZ", right: "C", strike: 20, expiry: "2026-09-18", quantity: -1, avgPrice: 0.5, marketPrice: 0.25, marketValue: -25 }),
+    stock({ symbol: "ZZZ", quantity: 100, multiplier: null, avgPrice: 20, marketPrice: 21, marketValue: 2100 }),
+  ]);
+
+  it("splits the LEAPS bought, the calls sold against them and the shares they delivered, leaving the Wheel out", () => {
+    const { optionBuys, optionSales, shares: delivered } = leapsPositions(rows, snapshot);
+    expect(optionBuys).toEqual([expect.objectContaining({ kind: "long_call", label: "buy of call", marketValue: 400, unrealizedPnl: 100, decision: null })]);
+    expect(optionSales).toEqual([expect.objectContaining({ kind: "short_call", marketValue: -25, unrealizedPnl: 25, decision: "buy back" })]);
+    // The whole IB position, whatever covers it there: the 100 ZZZ shares of this snapshot come first.
+    expect(optionSales[0].position).toMatchObject({ symbol: "ZZZ", strike: 20, quantity: -1 });
+    // Shares count one unit each, whatever multiplier the IB row carries or lacks.
+    expect(delivered).toEqual([expect.objectContaining({ kind: "long_stock", label: "long position", quantity: 100, marketValue: 2100, unrealizedPnl: 100, decision: null })]);
+  });
+});
+
+describe("coverage of a call shared between the Wheel and the LEAPS", () => {
+  const CALL = opt("MQZA", "C", 20, "2026-11-20");
+  const LEAPS = opt("MQZA", "C", 15, "2028-01-21");
+  const rows = [
+    row({ contract: CALL, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+    row({ id: "l#1", contract: CALL, strategy: "leaps", kind: "short_call", quantity: -1, openPrice: 0.5 }),
+    row({ id: "b#1", contract: LEAPS, strategy: "leaps", kind: "long_call", quantity: 1, openPrice: 6 }),
+    row({ id: "d#1", contract: shares("MQZA"), strategy: "leaps", kind: "shares", quantity: 100, openPrice: 15 }),
+  ];
+  // IB covers the two contracts sold with the 100 shares and the LEAPS, one each.
+  const snapshot = priced([
+    stock({ symbol: "MQZA", quantity: 100, marketPrice: 18, marketValue: 1800 }),
+    option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2028-01-21", quantity: 1, marketPrice: 7, marketValue: 700 }),
+    option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -2, marketPrice: 0.25, marketValue: -50 }),
+  ]);
+
+  it("shows the Wheel the shares' cover only", () => {
+    expect(wheelPositions(rows, snapshot).optionSales[0].coverage).toEqual([expect.objectContaining({ source: "stock", quantity: 1 })]);
+  });
+
+  it("shows the LEAPS the LEAPS' cover only, and no cover on what is bought", () => {
+    const { optionBuys, optionSales, shares: held } = leapsPositions(rows, snapshot);
+    expect(optionSales[0].coverage).toEqual([expect.objectContaining({ source: "leaps", quantity: 1 })]);
+    expect(optionBuys[0].coverage).toEqual([]);
+    expect(held[0].coverage).toEqual([]);
+  });
+});

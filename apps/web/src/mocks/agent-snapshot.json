@@ -1,0 +1,28 @@
+{
+  "accounts": ["U0000001"],
+  "fetchedAt": "2026-09-06T13:02:11.482Z",
+  "cashAvailable": 25000,
+  "positions": [
+    {
+      "conId": 265598, "symbol": "AAPL", "localSymbol": "AAPL", "secType": "STK", "right": "", "strike": 0.0,
+      "lastTradeDateOrContractMonth": "", "multiplier": "", "currency": "USD",
+      "position": 200.0, "averageCost": 140.0, "marketPrice": 151.2, "marketValue": 30240.0, "unrealizedPNL": 2240.0
+    },
+    {
+      "conId": 700000002, "symbol": "AAPL", "localSymbol": "AAPL  260116C00150000", "secType": "OPT", "right": "C",
+      "strike": 150.0, "lastTradeDateOrContractMonth": "20260116", "multiplier": "100", "currency": "USD",
+      "position": -1.0, "averageCost": 200.0, "marketPrice": 1.2, "marketValue": -120.0, "unrealizedPNL": 80.0
+    }
+  ],
+  "executions": [
+    {
+      "execId": "0000e1a7.68bc1234.01.09", "time": "2026-09-06T14:31:02+00:00", "acctNumber": "U0000001",
+      "side": "SLD", "shares": 1.0, "price": 2.5, "cumQty": 1.0, "avgPrice": 2.5, "orderRef": "",
+      "contract": {
+        "conId": 700000002, "symbol": "AAPL", "localSymbol": "AAPL  260116C00150000", "secType": "OPT", "right": "C",
+        "strike": 150.0, "lastTradeDateOrContractMonth": "20260116", "multiplier": "100", "currency": "USD"
+      },
+      "commission": 1.05, "commissionCurrency": "USD"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "ib-analyzer2",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.18.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "dev:api": "node tools/dev-env/api.mjs",
+    "dev:env": "node tools/dev-env/run.mjs",
+    "dev:start": "node tools/dev-env/instance.mjs start",
+    "dev:stop": "node tools/dev-env/instance.mjs stop",
+    "dev:status": "node tools/dev-env/instance.mjs status",
+    "test": "pnpm -r --workspace-concurrency=1 test",
+    "lint": "oxlint",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm --filter \"./apps/*\" build",
+    "check": "pnpm lint && pnpm typecheck && pnpm check:api-types && pnpm build && pnpm test",
+    "gen:api": "pnpm --filter web exec openapi-typescript ../../apps/api/openapi.json -o src/api/schema.d.ts",
+    "check:api-types": "node scripts/check-api-types.mjs",
+    "anonymize:statement": "node packages/ib-parsers/scripts/anonymize-statement.mjs",
+    "test:api": "node tools/dev-env/run.mjs uv run --project apps/api pytest apps/api",
+    "test:agent": "uv run --project apps/tws-agent pytest apps/tws-agent",
+    "build:agent": "rm -rf apps/web/public/agent && uv build --wheel --out-dir apps/web/public/agent --package ib-tws-agent && uv run --project apps/tws-agent python apps/tws-agent/scripts/write_index.py apps/web/public/agent && rm -f apps/web/public/agent/.gitignore"
+  },
+  "devDependencies": {
+    "oxlint": "^1.80.0",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.11"
+  }
+}

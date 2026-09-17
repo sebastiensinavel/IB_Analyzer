@@ -1,0 +1,9 @@
+node_modules
+**/node_modules
+**/dist
+private
+.git
+.claude
+apps/api/.venv
+apps/api/staticfiles
+.env

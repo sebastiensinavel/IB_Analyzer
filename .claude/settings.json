@@ -1,0 +1,35 @@
+{
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
+  },
+  "permissions": {
+    "deny": [
+      "Read(//home/seb/IA/IB_Analyzer/CLAUDE.md)",
+      "Read(~/IA/IB_Analyzer/CLAUDE.md)",
+      "Read(//home/seb/IA/IB_Analyzer/ARCHITECTURE.md)",
+      "Read(~/IA/IB_Analyzer/ARCHITECTURE.md)",
+      "Read(//home/seb/IA/IB_Analyzer/NEXT.md)",
+      "Read(~/IA/IB_Analyzer/NEXT.md)",
+      "Read(//home/seb/IA/IB_Analyzer/README.md)",
+      "Read(~/IA/IB_Analyzer/README.md)",
+      "Read(//home/seb/IA/IB_Analyzer/backend/**)",
+      "Read(~/IA/IB_Analyzer/backend/**)",
+      "Read(//home/seb/IA/IB_Analyzer/docs/superpowers/**)",
+      "Read(~/IA/IB_Analyzer/docs/superpowers/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r \".tool_input.command\" | grep -qE \"IB_Analyzer/(CLAUDE\\.md|ARCHITECTURE\\.md|NEXT\\.md|README\\.md|backend/|docs/superpowers/)\" && { echo \"Quarantaine : ce fichier de l'ancien depot decrit l'architecture abandonnee (CLAUDE.md, section Quarantaine).\" >&2; exit 2; } || exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
