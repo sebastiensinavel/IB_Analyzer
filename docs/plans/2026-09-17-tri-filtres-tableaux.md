@@ -856,7 +856,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function clearTableViews(accountId: string): void;
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `apps/web/src/lib/tableViewStorage.test.ts` :
 
@@ -983,12 +983,12 @@ Dans `apps/web/src/db/accounts.test.ts`, ajouter dans `describe("deleteAccount")
   });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/lib/tableViewStorage.test.ts src/db/accounts.test.ts`
 Expected: FAIL — import introuvable, puis la clé de `a` encore présente.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 `apps/web/src/lib/tableViewStorage.ts` :
 
@@ -1102,12 +1102,12 @@ Dans `apps/web/src/db/accounts.ts`, importer `clearTableViews` depuis `@/lib/tab
   clearTableViews(id);
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/lib/tableViewStorage.test.ts src/db/accounts.test.ts && pnpm --filter web typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/tableViewStorage.ts apps/web/src/lib/tableViewStorage.test.ts apps/web/src/db/accounts.ts apps/web/src/db/accounts.test.ts docs/plans/2026-09-17-tri-filtres-tableaux.md

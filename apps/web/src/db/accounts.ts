@@ -1,5 +1,6 @@
 import type { FlexRelayMode } from "@/flex/relay";
 import { clearLastAccountId, getLastAccountId } from "@/lib/accountStorage";
+import { clearTableViews } from "@/lib/tableViewStorage";
 import type { AccountRecord, AppDatabase } from "./schema";
 
 /** "U1234567", paper "DU1234567". */
@@ -111,4 +112,5 @@ export async function deleteAccount(db: AppDatabase, id: string): Promise<void> 
     },
   );
   if (getLastAccountId() === id) clearLastAccountId();
+  clearTableViews(id);
 }
