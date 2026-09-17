@@ -159,10 +159,22 @@ identifiant de compte, un jeton ou un montant réel.
   défile dans sa carte, en-tête figé, bordé d'une barre temporelle (`TimelineScrubber`). Ses lignes
   ont une hauteur constante, `HISTORY_ROW_HEIGHT` (`lib/historyColumns.ts`), et aucune cellule ne
   passe à la ligne : la barre place un mois à `index × hauteur` sans rien mesurer, une ligne plus
-  haute la fausserait. La barre suit les lignes filtrées, les puces d'année le ledger entier. Un
-  changement de filtre ou de compte remonte le tableau (`key`), une ligne arrivée en direct ne le
-  fait pas. La position s'écrit dans `scrollTop`, jamais par `scrollToOffset` (jsdom n'a pas
-  `scrollTo`).
+  haute la fausserait. La barre suit les lignes filtrées. Un changement de compte remonte le
+  tableau (`key`) ; un changement de recherche, de critère ou de tri le ramène en haut par
+  `resetKey` sans le remonter, pour ne pas fermer le popover de filtre de l'en-tête ; une ligne
+  arrivée en direct ne fait ni l'un ni l'autre. La barre temporelle n'est rendue que sans tri. La
+  position s'écrit dans `scrollTop`, jamais par `scrollToOffset` (jsdom n'a pas `scrollTo`).
+- **Tri et filtres des tableaux sont un état d'affichage en `localStorage`, jamais en IndexedDB ni
+  sur le serveur** : une clé par compte et par tableau (`ib2:tableView:<compte>:history`,
+  `…:positions:<groupe>`) et par page pour la recherche par ticker (`ib2:pageSearch:`), effacées
+  par `deleteAccount`. Le moteur est pur (`lib/tableCriteria.ts`, `lib/tableView.ts`) ; chaque
+  colonne déclare son type et sa valeur à côté de ses largeurs (`historyColumnSpecs`,
+  `positionColumnSpecs`). Un `null` trie en dernier dans les deux sens et n'est retenu que par
+  `—`. Les soldes de l'Historique se calculent sur tout le ledger avant tout filtre ou tri. Une
+  carte de Positions a sa propre vue : Type, Décision et Couverture n'y ont pas le même sens
+  d'un groupe à l'autre ; seule la recherche par ticker est commune. La Couverture se filtre sur
+  `coverageValues`, jamais sur le texte des badges. Hors Historique et Positions, aucun tableau
+  n'est triable.
 - **Toute heure IB est l'heure murale de New York stampée UTC** (`IB_REPORT_TIME_ZONE`,
   `toReportTime` dans `packages/ib-parsers/src/common.ts`) : Flex et relevés telle quelle,
   l'agent converti depuis son vrai UTC. Seuls les instants de l'application
@@ -343,6 +355,7 @@ Ordre des sous-projets et statut (spec §12) :
 | 17 | La Wheel ne prend que ce qu'il faut | fait (2026-09-16) |
 | 18 | Propriété de plage en jours de marché | fait (2026-09-16) |
 | 19 | L'agent local relaie Flex | fait (2026-09-16) |
+| 20 | Tri et filtres de colonne de l'Historique et de Positions | fait (2026-09-17) |
 
 ## Outillage
 

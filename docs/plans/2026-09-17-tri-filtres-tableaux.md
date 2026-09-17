@@ -2988,7 +2988,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Modify: `CLAUDE.md`
 - Modify: `docs/specs/2026-09-17-tri-filtres-tableaux-design.md` (statut)
 
-- [ ] **Step 1: Update `CLAUDE.md`**
+- [x] **Step 1: Update `CLAUDE.md`**
 
 1. Tableau des sous-projets, ajouter la ligne :
    ```markdown
@@ -3012,16 +3012,16 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
      n'est triable.
    ```
 
-- [ ] **Step 2: Spec status**
+- [x] **Step 2: Spec status**
 
 Dans le spec, remplacer `Statut : conçu (2026-09-17).` par `Statut : implémenté (AAAA-MM-JJ).`, date du jour.
 
-- [ ] **Step 3: Full check**
+- [x] **Step 3: Full check**
 
 Run: `pnpm check`
 Expected: PASS (lint, typage, tests de tous les paquets, fraîcheur du schéma API). Corriger toute erreur en revenant à la tâche fautive, jamais en désactivant une règle.
 
-- [ ] **Step 4: Visual check**
+- [x] **Step 4: Visual check**
 
 Avec le skill `run-frontend` (depuis la racine du worktree), graine `--seed`, en français :
 - l'Historique au repos ; puis trié par Prix total, avec un filtre `>0` sur Prix total et la liste Type à deux valeurs : pastilles visibles, barre temporelle absente ; puis le popover de filtre ouvert sur Date/Heure avec une saisie invalide (`2025-13`) ;
@@ -3030,7 +3030,7 @@ Avec le skill `run-frontend` (depuis la racine du worktree), graine `--seed`, en
 
 Regarder chaque capture : en-têtes lisibles sans chevauchement de l'icône et du libellé, popover non coupé, pastilles alignées, colonnes de Positions toujours alignées entre les cartes. Corriger et recapturer au besoin.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add CLAUDE.md docs/specs/2026-09-17-tri-filtres-tableaux-design.md docs/plans/2026-09-17-tri-filtres-tableaux.md

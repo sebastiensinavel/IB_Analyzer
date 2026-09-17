@@ -1,6 +1,6 @@
 # Sous-projet 20 — Tri et filtres de colonne des tableaux
 
-Statut : conçu (2026-09-17).
+Statut : implémenté (2026-09-17).
 
 Aucun tableau de l'application ne se trie. L'Historique se filtre par une barre fixe : un champ
 symbole, un type unique, deux dates et des raccourcis de période. Positions se filtre par un seul
@@ -104,9 +104,10 @@ si **au moins une** est cochée ; une ligne sans valeur ne passe que si « — �
 
 `parseCriterion` rend `{ ok: false, error }`, avec `error` un code i18n
 (`tableFilter.errors.number`, `.date`, `.textOperator`, `.syntax`). Le champ passe en rouge avec
-son message, le critère de la colonne est **ignoré** — le tableau se filtre comme si la colonne
-n'avait pas de filtre — et rien n'est enregistré tant que la saisie reste invalide : la dernière
-saisie valide reste en `localStorage`.
+son message, et rien n'est enregistré tant que la saisie reste invalide : seul un critère valide
+atteint le hook (§4.3), si bien que le **dernier critère valide reste appliqué** au tableau et en
+`localStorage`. Une saisie frappée caractère par caractère applique donc chacun de ses préfixes
+valides au passage (`>1` puis `>10` puis `>100`).
 
 ---
 
@@ -134,8 +135,10 @@ interface ColumnSpec<Row> {
 
 Les accesseurs vivent près des colonnes :
 
-- `apps/web/src/lib/historyColumns.ts` : `HISTORY_COLUMN_SPECS`, sur `LedgerRow` ;
-- `apps/web/src/lib/positionColumns.ts` : `POSITION_COLUMN_SPECS`, sur `AnalyzedPosition`.
+- `apps/web/src/lib/historyColumns.ts` : `historyColumnSpecs(t)`, sur `LedgerRow` — une fonction,
+  les libellés enum se traduisent par `t` ;
+- `apps/web/src/lib/positionColumns.ts` : `positionColumnSpecs(sectorOf)`, sur `AnalyzedPosition`
+  — une fonction, la colonne Secteur lit la table sectorielle par `sectorOf`.
 
 **Historique** (`LedgerRow`) :
 
@@ -311,6 +314,10 @@ tronque (`truncate`) comme aujourd'hui dans l'Historique et passe à la ligne da
 colonne au critère valide — `Type : trade, dividend ×`, `P/L latent : <0 ×` — dont la croix
 efface la colonne, puis « Tout effacer », qui vide critères et tri du tableau (pas la recherche
 de page). Aucun rendu quand aucun critère n'est actif.
+
+Le texte d'une pastille vient de `criterionSummary` (`apps/web/src/lib/criterionSummary.ts`) : la
+saisie telle quelle pour une colonne `text`, `number` ou `date`, les libellés cochés pour une
+colonne `enum`.
 
 ### 5.4 Historique
 
