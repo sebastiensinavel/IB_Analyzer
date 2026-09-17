@@ -1398,7 +1398,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function usePageSearch(storageKey: string): PageSearchState;
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 import { act, renderHook } from "@testing-library/react";
@@ -1475,12 +1475,12 @@ describe("usePageSearch", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter web test src/hooks/useTableView.test.tsx`
 Expected: FAIL, import introuvable.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```ts
 import { useCallback, useEffect, useState } from "react";
@@ -1589,12 +1589,12 @@ export function usePageSearch(storageKey: string): PageSearchState {
 
 Si le dépôt n'a pas de règle eslint `react-hooks`, retirer la ligne `eslint-disable-next-line` (vérifier par `grep -rn "react-hooks" apps/web/eslint.config.* package.json` ; `pnpm check` échoue sur une directive inutile si `reportUnusedDisableDirectives` est actif).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --filter web test src/hooks/useTableView.test.tsx && pnpm --filter web typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/hooks/useTableView.ts apps/web/src/hooks/useTableView.test.tsx docs/plans/2026-09-17-tri-filtres-tableaux.md
