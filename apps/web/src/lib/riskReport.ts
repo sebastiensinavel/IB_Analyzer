@@ -70,6 +70,22 @@ export function coverageBadges(position: AnalyzedPosition | null): CoverageBadge
 }
 
 /**
+ * The coverage sources a Positions filter checks, from the position itself, never from badge text:
+ * the same branches as coverageBadges, one value per distinct source.
+ */
+export function coverageValues(position: AnalyzedPosition): string[] {
+  if (position.kind === "short_call" || position.kind === "short_put") {
+    const sources = new Set<string>(position.allocations.map((allocation) => allocation.source));
+    if (position.uncoveredQuantity > 0 || position.allocations.length === 0) sources.add(COVER_NONE);
+    return [...sources];
+  }
+  if (position.kind === "long_stock" || position.kind === "long_call" || position.kind === "long_put") {
+    return [position.usedQuantity > 0 ? "used" : "unused"];
+  }
+  return [];
+}
+
+/**
  * The coverage a strategy's positions page shows (spec of sub-project 16, §3.4): on a sold option
  * the strategy's own cover, never UNCOVERED; on a LEAPS bought how much of it covers calls; nothing
  * on shares, whose cover of calls is the Wheel's.

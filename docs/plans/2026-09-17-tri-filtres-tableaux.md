@@ -1142,7 +1142,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function coverageValues(position: AnalyzedPosition): string[];
   ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `apps/web/src/lib/historyColumns.test.ts` :
 
@@ -1252,12 +1252,12 @@ describe("coverageValues", () => {
 
 La boucle du premier test vérifie la cohérence avec `coverageBadges` : si l'ordre des badges diffère (allocations puis `UNCOVERED`), c'est `coverageValues` qui suit cet ordre.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/lib/historyColumns.test.ts src/lib/positionColumns.test.ts src/lib/riskReport.test.ts`
 Expected: FAIL, `historyColumnSpecs`, `positionColumnSpecs` et `coverageValues` ne sont pas exportés.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 À la fin de `apps/web/src/lib/historyColumns.ts` :
 
@@ -1357,12 +1357,12 @@ export function coverageValues(position: AnalyzedPosition): string[] {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/lib/historyColumns.test.ts src/lib/positionColumns.test.ts src/lib/riskReport.test.ts && pnpm --filter web typecheck`
 Expected: PASS. Si `formatContract` d'une position ne rend pas `XOM Mar20'26 100 Put`, relire `PositionsPage.test.tsx` (qui affiche exactement ce libellé) plutôt que d'ajuster l'attente.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/historyColumns.ts apps/web/src/lib/historyColumns.test.ts apps/web/src/lib/positionColumns.ts apps/web/src/lib/positionColumns.test.ts apps/web/src/lib/riskReport.ts apps/web/src/lib/riskReport.test.ts docs/plans/2026-09-17-tri-filtres-tableaux.md
