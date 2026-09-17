@@ -555,5 +555,25 @@
   },
   "theme": {
     "toggle": "Toggle theme"
+  },
+  "tableFilter": {
+    "open": "Filter {{column}}",
+    "input": "Criterion for {{column}}",
+    "clear": "Clear",
+    "clearAll": "Clear all",
+    "clearColumn": "Remove the {{column}} filter",
+    "empty": "— (empty)",
+    "sortOrder": "Sort #{{order}}",
+    "help": {
+      "text": "aap · =AAPL · =AA* · A|B · —",
+      "number": ">100 · 10..20 · <0|>1000 · —",
+      "date": "2025 · >=2025-03 · 2024..2025-06 · —"
+    },
+    "errors": {
+      "number": "Unreadable number",
+      "date": "Unreadable date: YYYY, YYYY-MM or YYYY-MM-DD",
+      "textOperator": "No comparison nor range on text",
+      "syntax": "Incomplete criterion"
+    }
   }
 }

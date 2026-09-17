@@ -555,5 +555,25 @@
   },
   "theme": {
     "toggle": "Changer de thème"
+  },
+  "tableFilter": {
+    "open": "Filtrer {{column}}",
+    "input": "Critère pour {{column}}",
+    "clear": "Effacer",
+    "clearAll": "Tout effacer",
+    "clearColumn": "Retirer le filtre {{column}}",
+    "empty": "— (vide)",
+    "sortOrder": "Tri n°{{order}}",
+    "help": {
+      "text": "aap · =AAPL · =AA* · A|B · —",
+      "number": ">100 · 10..20 · <0|>1000 · —",
+      "date": "2025 · >=2025-03 · 2024..2025-06 · —"
+    },
+    "errors": {
+      "number": "Nombre illisible",
+      "date": "Date illisible : AAAA, AAAA-MM ou AAAA-MM-JJ",
+      "textOperator": "Pas de comparaison ni de plage sur du texte",
+      "syntax": "Critère incomplet"
+    }
   }
 }

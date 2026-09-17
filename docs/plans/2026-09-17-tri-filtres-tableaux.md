@@ -1642,7 +1642,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function criterionSummary<Row>(spec: ColumnSpec<Row>, criterion: Criterion, emptyLabel: string): string;
   ```
 
-- [ ] **Step 1: Add the shadcn components**
+- [x] **Step 1: Add the shadcn components**
 
 ```bash
 cd packages/ui
@@ -1654,7 +1654,7 @@ git status --short packages/ui
 
 Expected : seuls `popover.tsx` et `checkbox.tsx` sont nouveaux, ils importent `@base-ui/react/popover` et `@base-ui/react/checkbox` (pas `@radix-ui`), et `packages/ui/package.json` n'a gagné aucune dépendance. Si `shadcn add` a modifié un autre fichier (`components.json`, un composant existant, `package.json`), annuler cette modification par `git checkout -- <fichier>`. Lire les deux fichiers générés pour connaître les noms exportés (`Popover`, `PopoverTrigger`, `PopoverContent` ; `Checkbox`) et adapter les imports ci-dessous s'ils diffèrent.
 
-- [ ] **Step 2: Add the translations**
+- [x] **Step 2: Add the translations**
 
 Dans `apps/web/src/i18n/fr.json`, ajouter une section de premier niveau :
 
@@ -1706,7 +1706,7 @@ Dans `apps/web/src/i18n/en.json`, la même section :
   },
 ```
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 `apps/web/src/components/table/ColumnHeader.test.tsx` :
 
@@ -1869,12 +1869,12 @@ describe("ActiveFilters", () => {
 });
 ```
 
-- [ ] **Step 4: Run tests to verify they fail**
+- [x] **Step 4: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/components/table/`
 Expected: FAIL, imports introuvables.
 
-- [ ] **Step 5: Write the implementation**
+- [x] **Step 5: Write the implementation**
 
 `apps/web/src/components/table/ColumnHeader.tsx` :
 
@@ -2109,12 +2109,12 @@ export function ActiveFilters<Row>({ specs, view, columnLabel, onClearColumn, on
 
 Le séparateur ` : ` suit la typographie française ; en anglais la pastille garde la même forme (pas de clé i18n pour un signe de ponctuation).
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/components/table/ && pnpm --filter web typecheck && pnpm --filter @ib/ui typecheck`
 Expected: PASS. Si le nom accessible d'une case à cocher base-ui ne se résout pas (`findByRole("checkbox", { name: /Trade/ })` introuvable), vérifier que `aria-label` est bien transmis à l'élément `role="checkbox"` par le composant généré ; ne pas remplacer la requête par un sélecteur CSS. Si `userEvent` ne transmet pas `shiftKey` au clic, remplacer les deux lignes `keyboard` par `fireEvent.click(bouton, { shiftKey: true })`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/ui/src/components/ui/popover.tsx packages/ui/src/components/ui/checkbox.tsx apps/web/src/components/table apps/web/src/i18n/fr.json apps/web/src/i18n/en.json docs/plans/2026-09-17-tri-filtres-tableaux.md
