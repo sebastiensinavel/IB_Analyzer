@@ -8,7 +8,7 @@ import { ColumnHeader } from "@/components/table/ColumnHeader";
 import { formatAmount, formatContract, formatDateTime, formatPrice } from "@/lib/format";
 import { HISTORY_COLUMNS, HISTORY_HEADER_HEIGHT, HISTORY_ROW_HEIGHT, SCRUB_LABEL_LINGER_MS } from "@/lib/historyColumns";
 import { buildTimeline } from "@/lib/historyTimeline";
-import type { ColumnSpec, Criterion, Facet, TableView } from "@/lib/tableView";
+import type { ColumnSpec, Criterion, Facet, SortDirection, TableView } from "@/lib/tableView";
 
 const OVERSCAN = 10;
 // One height for every body cell (HISTORY_ROW_HEIGHT): h-9, no vertical padding, clipped rather
@@ -29,7 +29,7 @@ export interface HistoryTableProps {
   facets: Readonly<Record<string, readonly Facet[]>>;
   /** Any change scrolls back to the top; a live row does not change it. */
   resetKey: string;
-  onSort: (column: string, additive: boolean) => void;
+  onSort: (column: string, dir: SortDirection | null, additive: boolean) => void;
   onCriterion: (column: string, criterion: Criterion | null) => void;
 }
 
@@ -114,7 +114,7 @@ export function HistoryTable({ rows, labelledBy, specs, view, facets, resetKey, 
                   // Anchored on the cash points when a file carries a Cash Report; the Consistency
                   // page checks it, the title says so on the column itself.
                   title={column.balance ? t("history.columns.balanceHint") : undefined}
-                  onSort={(additive) => onSort(column.key, additive)}
+                  onSort={(dir, additive) => onSort(column.key, dir, additive)}
                   onCriterion={(criterion) => onCriterion(column.key, criterion)}
                 />
               ))}

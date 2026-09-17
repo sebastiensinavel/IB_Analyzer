@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Table, TableHeader, TableRow } from "@ib/ui/table";
 import { ColumnHeader, type ColumnHeaderProps } from "@/components/table/ColumnHeader";
-import { EMPTY_VIEW, type Criterion, type TableView } from "@/lib/tableView";
+import { EMPTY_VIEW } from "@/lib/tableView";
 
 function renderHeader(props: Partial<ColumnHeaderProps> = {}) {
   const onSort = vi.fn();
@@ -21,80 +20,76 @@ function renderHeader(props: Partial<ColumnHeaderProps> = {}) {
   return { onSort, onCriterion };
 }
 
-/** A header wired to real state, as a page would. */
-function Stateful({ initial }: { initial: TableView }) {
-  const [view, setView] = useState(initial);
-  const onCriterion = (criterion: Criterion | null) =>
-    setView((previous): TableView => ({ ...previous, criteria: criterion === null ? {} : { amount: criterion } }));
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <ColumnHeader meta={{ key: "amount", type: "number", sortable: true }} label="Montant" view={view} onSort={() => {}} onCriterion={onCriterion} />
-        </TableRow>
-      </TableHeader>
-    </Table>
-  );
-}
-
 describe("ColumnHeader", () => {
-  it("sorts on a click, additively with shift, and says the direction", async () => {
+  it("sorts in the direction chosen from its panel, additively with shift", async () => {
     const { onSort } = renderHeader({ view: { sort: [{ column: "amount", dir: "desc" }], criteria: {} } });
     const header = screen.getByRole("columnheader");
     expect(header).toHaveAttribute("aria-sort", "descending");
     const user = userEvent.setup();
     await user.click(within(header).getByRole("button", { name: "Montant" }));
-    expect(onSort).toHaveBeenLastCalledWith(false);
-    await user.keyboard("{Shift>}");
+    await user.click(await screen.findByRole("button", { name: "Croissant" }));
+    expect(onSort).toHaveBeenLastCalledWith("asc", false);
     await user.click(within(header).getByRole("button", { name: "Montant" }));
+    await user.keyboard("{Shift>}");
+    await user.click(await screen.findByRole("button", { name: "Décroissant" }));
     await user.keyboard("{/Shift}");
-    expect(onSort).toHaveBeenLastCalledWith(true);
+    expect(onSort).toHaveBeenLastCalledWith("desc", true);
+  });
+
+  it("marks the direction in force and resets the sort", async () => {
+    const { onSort } = renderHeader({ view: { sort: [{ column: "amount", dir: "desc" }], criteria: {} } });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Montant" }));
+    expect(await screen.findByRole("button", { name: "Décroissant" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Croissant" })).toHaveAttribute("aria-pressed", "false");
+    await user.click(screen.getByRole("button", { name: "Réinitialiser le tri" }));
+    expect(onSort).toHaveBeenLastCalledWith(null, false);
+  });
+
+  it("offers no reset while its column is not a sort key", async () => {
+    renderHeader();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Montant" }));
+    expect(await screen.findByRole("button", { name: "Croissant" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("button", { name: "Réinitialiser le tri" })).not.toBeInTheDocument();
   });
 
   it("numbers the keys of a multiple sort, aria-sort staying on the first key's header", () => {
     renderHeader({ view: { sort: [{ column: "name", dir: "asc" }, { column: "amount", dir: "asc" }], criteria: {} } });
     expect(screen.getByRole("columnheader")).not.toHaveAttribute("aria-sort");
-    const sort = screen.getByRole("button", { name: /^Montant/ });
-    expect(sort).toHaveAccessibleName("Montant Tri n°2");
-    expect(sort).not.toHaveAccessibleName("Montant2");
+    const trigger = screen.getByRole("button", { name: /^Montant/ });
+    expect(trigger).toHaveAccessibleName("Montant Tri n°2");
+    expect(trigger).not.toHaveAccessibleName("Montant2");
   });
 
-  it("keeps the filter trigger in the accessibility tree while its column is not filtered", () => {
+  it("names the panel after its column", async () => {
     renderHeader();
-    const trigger = screen.getByRole("button", { name: "Filtrer Montant" });
-    expect(trigger).toHaveAttribute("data-active", "false");
-    expect(trigger).toBeVisible();
-    // Faded out until hover or focus, never removed: `invisible` or `hidden` would take it out of the tab order.
-    expect(trigger.className).not.toMatch(/(^|\s)(invisible|hidden)(\s|$)/);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Montant" }));
+    expect(await screen.findByRole("dialog", { name: "Options de la colonne Montant" })).toBeInTheDocument();
   });
 
-  it("names the filter popover after its column", async () => {
-    renderHeader();
-    await userEvent.setup().click(screen.getByRole("button", { name: "Filtrer Montant" }));
-    expect(await screen.findByRole("dialog", { name: "Filtrer Montant" })).toBeInTheDocument();
+  it("gives a non-sortable column no sort row, only its filter", async () => {
+    renderHeader({ meta: { key: "coverage", type: "enum", sortable: false }, label: "Couverture", facets: [{ value: "cash", label: "cash", count: 2 }] });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Couverture" }));
+    expect(await screen.findByRole("checkbox", { name: /cash/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Croissant" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Décroissant" })).not.toBeInTheDocument();
   });
 
-  it("has no sort button on a non-sortable column, only its filter", () => {
-    renderHeader({ meta: { key: "coverage", type: "enum", sortable: false }, label: "Couverture" });
-    expect(screen.queryByRole("button", { name: "Couverture" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Filtrer Couverture" })).toBeInTheDocument();
-  });
-
-  it("passes a valid criterion on, shows an invalid one in red without passing it, and clears", async () => {
-    render(<Stateful initial={EMPTY_VIEW} />);
+  it("passes a valid criterion on, keeps an invalid one to itself, and clears", async () => {
+    const { onCriterion } = renderHeader();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Filtrer Montant" }));
+    await user.click(screen.getByRole("button", { name: "Montant" }));
     const input = await screen.findByRole("textbox", { name: "Critère pour Montant" });
-    await user.type(input, ">abc");
-    expect(input).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("alert")).toHaveTextContent("Nombre illisible");
-    expect(screen.getByRole("button", { name: "Filtrer Montant" })).toHaveAttribute("data-active", "false");
-    await user.clear(input);
     await user.type(input, ">100");
     expect(input).toHaveAttribute("aria-invalid", "false");
-    expect(screen.getByRole("button", { name: "Filtrer Montant" })).toHaveAttribute("data-active", "true");
+    expect(onCriterion).toHaveBeenLastCalledWith(">100");
+    await user.type(input, "x");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent("Nombre illisible");
+    // The last valid criterion stays applied: nothing new reached the table.
+    expect(onCriterion).toHaveBeenLastCalledWith(">100");
     await user.click(screen.getByRole("button", { name: "Effacer" }));
-    expect(screen.getByRole("button", { name: "Filtrer Montant" })).toHaveAttribute("data-active", "false");
+    expect(onCriterion).toHaveBeenLastCalledWith(null);
   });
 
   it("offers the present values of an enum column as checkboxes with their counts", async () => {
@@ -109,7 +104,7 @@ describe("ColumnHeader", () => {
       ],
     });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Filtrer Type" }));
+    await user.click(screen.getByRole("button", { name: "Type" }));
     const trade = await screen.findByRole("checkbox", { name: /Trade/ });
     expect(trade).toBeChecked();
     expect(screen.getByRole("checkbox", { name: /— \(vide\)/ })).not.toBeChecked();

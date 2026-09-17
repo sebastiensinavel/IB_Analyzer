@@ -551,7 +551,12 @@
     "toggle": "Toggle theme"
   },
   "tableFilter": {
-    "open": "Filter {{column}}",
+    "panel": "Column {{column}} options",
+    "sortAsc": "Ascending",
+    "sortDesc": "Descending",
+    "sortReset": "Reset the sort",
+    "sortAddHint": "Shift+click: add to the sort",
+    "filterSection": "Filter",
     "input": "Criterion for {{column}}",
     "clear": "Clear",
     "clearAll": "Clear all",

@@ -22,7 +22,7 @@ describe("useTableView", () => {
     const { result } = renderHook(() => useTableView("ib2:tableView:alpha:history", COLUMNS));
     expect(result.current.view.criteria).toEqual({ amount: ">0" });
     act(() => result.current.setCriterion("kind", ["trade"]));
-    act(() => result.current.toggleSort("amount", false));
+    act(() => result.current.setSort("amount", "asc", false));
     expect(result.current.view).toEqual({ sort: [{ column: "amount", dir: "asc" }], criteria: { amount: ">0", kind: ["trade"] } });
     expect(JSON.parse(window.localStorage.getItem("ib2:tableView:alpha:history")!)).toEqual({ v: 1, ...result.current.view });
   });
@@ -35,7 +35,7 @@ describe("useTableView", () => {
     act(() => result.current.clearColumn("kind"));
     expect(result.current.view.criteria).toEqual({});
     act(() => result.current.setCriterion("amount", ">0"));
-    act(() => result.current.toggleSort("amount", true));
+    act(() => result.current.setSort("amount", "desc", true));
     act(() => result.current.clearAll());
     expect(result.current.view).toEqual({ sort: [], criteria: {} });
     expect(window.localStorage.getItem("ib2:tableView:alpha:history")).toBeNull();

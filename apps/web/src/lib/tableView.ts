@@ -136,13 +136,14 @@ export function facetValues<Row>(rows: readonly Row[], spec: ColumnSpec<Row>, ch
   return empty === undefined ? named : [...named, { value: null, label: null, count: empty }];
 }
 
-export function nextSort(sort: readonly SortKey[], column: string, additive: boolean): SortKey[] {
+/**
+ * The sort a column's panel asks for: `dir` is the direction chosen, `null` a reset. Plain, the
+ * column becomes the only key; additive, it joins the keys already there, or leaves them.
+ */
+export function applySort(sort: readonly SortKey[], column: string, dir: SortDirection | null, additive: boolean): SortKey[] {
+  if (!additive) return dir === null ? [] : [{ column, dir }];
   const index = sort.findIndex((key) => key.column === column);
-  if (!additive) {
-    if (sort.length === 1 && index === 0) return sort[0].dir === "asc" ? [{ column, dir: "desc" }] : [];
-    return [{ column, dir: "asc" }];
-  }
-  if (index < 0) return [...sort, { column, dir: "asc" }];
-  if (sort[index].dir === "asc") return sort.map((key, i) => (i === index ? { column, dir: "desc" } : key));
-  return sort.filter((_, i) => i !== index);
+  if (index < 0) return dir === null ? [...sort] : [...sort, { column, dir }];
+  if (dir === null) return sort.filter((_, i) => i !== index);
+  return sort.map((key, i) => (i === index ? { column, dir } : key));
 }

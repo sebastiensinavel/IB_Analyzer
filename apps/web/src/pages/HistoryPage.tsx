@@ -112,7 +112,7 @@ export function HistoryPage() {
             view={table.view}
             facets={facets}
             resetKey={resetKey}
-            onSort={table.toggleSort}
+            onSort={table.setSort}
             onCriterion={table.setCriterion}
           />
         </CardContent>

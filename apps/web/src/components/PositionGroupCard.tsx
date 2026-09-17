@@ -60,7 +60,7 @@ export function PositionGroupCard({ accountId, groupId, title, positions, search
           onClearAll={table.clearAll}
         />
         <PositionTable>
-          <PositionTableHeader interactive={{ specs, view: table.view, facets, onSort: table.toggleSort, onCriterion: table.setCriterion }} />
+          <PositionTableHeader interactive={{ specs, view: table.view, facets, onSort: table.setSort, onCriterion: table.setCriterion }} />
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>

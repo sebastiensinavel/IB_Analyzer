@@ -40,12 +40,16 @@ function rowSymbols(): string[] {
   return screen.getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[2].textContent ?? "");
 }
 
-async function openFilter(user: ReturnType<typeof userEvent.setup>, column: string) {
-  await user.click(screen.getByRole("button", { name: `Filtrer ${column}` }));
+/** Opens a column's panel, which holds its sort actions and its filter. */
+async function openPanel(user: ReturnType<typeof userEvent.setup>, column: string) {
+  const header = screen.getByRole("columnheader", { name: new RegExp(`^${column}`) });
+  await user.click(within(header).getByRole("button", { name: new RegExp(`^${column}`) }));
 }
 
-function sortButton(column: string) {
-  return within(screen.getByRole("columnheader", { name: new RegExp(`^${column}`) })).getByRole("button", { name: column });
+/** Sorts from that panel; choosing a direction, or resetting, closes it. */
+async function sortBy(user: ReturnType<typeof userEvent.setup>, column: string, action: "Croissant" | "Décroissant" | "Réinitialiser le tri") {
+  await openPanel(user, column);
+  await user.click(await screen.findByRole("button", { name: action }));
 }
 
 function scroller(): HTMLElement {
@@ -305,18 +309,18 @@ describe("HistoryPage", () => {
     expect(await screen.findByText("NEW")).toBeInTheDocument();
   });
 
-  it("sorts on a header click, then back to the default order on the third", async () => {
+  it("sorts in the direction chosen in the panel, and back to the default order on a reset", async () => {
     await seed();
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await user.click(sortButton("Prix total"));
+    await sortBy(user, "Prix total", "Croissant");
     // Amounts: AAPL -18050, TSLA -1100, MSFT 610, deposit 10000.
     await waitFor(() => expect(rowSymbols()).toEqual(["AAPL", "TSLA", "MSFT", "ELECTRONIC FUND TRANSFER"]));
     expect(screen.getByRole("columnheader", { name: /^Prix total/ })).toHaveAttribute("aria-sort", "ascending");
-    await user.click(sortButton("Prix total"));
+    await sortBy(user, "Prix total", "Décroissant");
     await waitFor(() => expect(rowSymbols()).toEqual(["ELECTRONIC FUND TRANSFER", "MSFT", "TSLA", "AAPL"]));
-    await user.click(sortButton("Prix total"));
+    await sortBy(user, "Prix total", "Réinitialiser le tri");
     await waitFor(() => expect(rowSymbols()).toEqual(["AAPL", "MSFT", "TSLA", "ELECTRONIC FUND TRANSFER"]));
   });
 
@@ -325,11 +329,9 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await user.click(sortButton("Frais"));
-    await user.click(sortButton("Frais"));
+    await sortBy(user, "Frais", "Croissant");
     await waitFor(() => expect(rowSymbols().at(-1)).toBe("ELECTRONIC FUND TRANSFER"));
-    await user.click(sortButton("Frais"));
-    await user.click(sortButton("Frais"));
+    await sortBy(user, "Frais", "Décroissant");
     await waitFor(() => expect(rowSymbols().at(-1)).toBe("ELECTRONIC FUND TRANSFER"));
   });
 
@@ -338,7 +340,7 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await openFilter(user, "Prix total");
+    await openPanel(user, "Prix total");
     await user.type(await screen.findByRole("textbox", { name: "Critère pour Prix total" }), ">0");
     await waitFor(() => expect(rowSymbols()).toEqual(["MSFT", "ELECTRONIC FUND TRANSFER"]));
     expect(within(await rowFor("MSFT")).getAllByRole("cell")[USD_CASH_CELL]).toHaveTextContent("-491.65");
@@ -350,7 +352,7 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await openFilter(user, "Date/Heure");
+    await openPanel(user, "Date/Heure");
     const input = await screen.findByRole("textbox", { name: "Critère pour Date/Heure" });
     // Pasted in one change: typed char by char, the valid prefix "2025" would be applied and kept.
     await user.click(input);
@@ -373,7 +375,7 @@ describe("HistoryPage", () => {
     await user.click(await screen.findByRole("option", { name: /Dépôt\/Retrait/ }));
     await user.keyboard("{Escape}");
     await waitFor(() => expect(rowSymbols()).toEqual(["ELECTRONIC FUND TRANSFER"]));
-    await openFilter(user, "Type");
+    await openPanel(user, "Type");
     expect(await screen.findByRole("checkbox", { name: /Dépôt\/Retrait/ })).toBeChecked();
     await user.click(screen.getByRole("checkbox", { name: /Trade/ }));
     await waitFor(() => expect(rowSymbols()).toHaveLength(4));
@@ -386,7 +388,7 @@ describe("HistoryPage", () => {
     const user = userEvent.setup();
     await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=MSFT");
     await waitFor(() => expect(rowSymbols()).toEqual(["MSFT"]));
-    await openFilter(user, "Type");
+    await openPanel(user, "Type");
     const trade = (await screen.findByRole("checkbox", { name: /Trade/ })).closest("label")!;
     expect(trade).toHaveTextContent("3");
   });
@@ -409,10 +411,9 @@ describe("HistoryPage", () => {
     await screen.findByText("SYM49");
     expect(screen.getByRole("slider", { name: "Frise chronologique" })).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.click(sortButton("Date/Heure"));
+    await sortBy(user, "Date/Heure", "Croissant");
     await waitFor(() => expect(screen.queryByRole("slider", { name: "Frise chronologique" })).not.toBeInTheDocument());
-    await user.click(sortButton("Date/Heure"));
-    await user.click(sortButton("Date/Heure"));
+    await sortBy(user, "Date/Heure", "Réinitialiser le tri");
     expect(await screen.findByRole("slider", { name: "Frise chronologique" })).toBeInTheDocument();
   });
 
@@ -421,7 +422,7 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await openFilter(user, "Quantité");
+    await openPanel(user, "Quantité");
     await user.type(await screen.findByRole("textbox", { name: "Critère pour Quantité" }), ">1000000");
     expect(await screen.findByText("Aucune transaction ne correspond.")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: /^Quantité/ })).toBeInTheDocument();
@@ -436,7 +437,7 @@ describe("HistoryPage", () => {
     const first = renderHistory("alpha");
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await user.click(sortButton("Prix total"));
+    await sortBy(user, "Prix total", "Croissant");
     await waitFor(() => expect(rowSymbols()[0]).toBe("AAPL"));
     first.unmount();
     renderHistory("beta");

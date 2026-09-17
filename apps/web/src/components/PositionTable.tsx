@@ -4,7 +4,7 @@ import type { AnalyzedPosition } from "@ib/coverage";
 import { Table, TableHead, TableHeader, TableRow } from "@ib/ui/table";
 import { ColumnHeader } from "@/components/table/ColumnHeader";
 import { POSITION_COLUMNS } from "@/lib/positionColumns";
-import type { ColumnSpec, Criterion, Facet, TableView } from "@/lib/tableView";
+import type { ColumnSpec, Criterion, Facet, SortDirection, TableView } from "@/lib/tableView";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,7 +29,7 @@ export interface InteractiveHeader {
   specs: readonly ColumnSpec<AnalyzedPosition>[];
   view: TableView;
   facets: Readonly<Record<string, readonly Facet[]>>;
-  onSort: (column: string, additive: boolean) => void;
+  onSort: (column: string, dir: SortDirection | null, additive: boolean) => void;
   onCriterion: (column: string, criterion: Criterion | null) => void;
 }
 
@@ -53,7 +53,7 @@ export function PositionTableHeader({ interactive }: { interactive?: Interactive
               numeric={column.numeric}
               wrap
               className={cn(column.numeric && "text-right")}
-              onSort={(additive) => interactive.onSort(column.key, additive)}
+              onSort={(dir, additive) => interactive.onSort(column.key, dir, additive)}
               onCriterion={(criterion) => interactive.onCriterion(column.key, criterion)}
             />
           ) : (

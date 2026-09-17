@@ -46,6 +46,12 @@ async function rowFor(description: string): Promise<HTMLTableRowElement> {
   return (await screen.findByText(description)).closest("tr") as HTMLTableRowElement;
 }
 
+/** Opens a column's panel in one card: it holds that column's sort actions and its filter. */
+async function openPanel(user: ReturnType<typeof userEvent.setup>, card: HTMLElement, column: string) {
+  const header = within(card).getByRole("columnheader", { name: new RegExp(`^${column}`) });
+  await user.click(within(header).getByRole("button", { name: new RegExp(`^${column}`) }));
+}
+
 // The shared i18n singleton defaults to French: page strings are asserted in
 // French. Badge internals (keep, buy back, cash ×2) are not translated.
 describe("PositionsPage", () => {
@@ -119,7 +125,7 @@ describe("PositionsPage", () => {
     renderPositions();
     const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
     const user = userEvent.setup();
-    await user.click(within(sells).getByRole("button", { name: "Filtrer P&L latent" }));
+    await openPanel(user, sells, "P&L latent");
     await user.type(await screen.findByRole("textbox", { name: "Critère pour P&L latent" }), "<0");
     await waitFor(() => expect(within(sells).queryByText("XOM Mar20'26 100 Put")).not.toBeInTheDocument());
     expect(within(sells).getByText("AAPL Feb20'26 155 Call")).toBeInTheDocument();
@@ -132,7 +138,7 @@ describe("PositionsPage", () => {
     renderPositions();
     const longs = (await screen.findByText("Positions longues")).closest("[data-slot=card]") as HTMLElement;
     const user = userEvent.setup();
-    await user.click(within(longs).getByRole("button", { name: "Filtrer Quantité" }));
+    await openPanel(user, longs, "Quantité");
     await user.type(await screen.findByRole("textbox", { name: "Critère pour Quantité" }), ">1000");
     expect(await within(longs).findByText("Aucune position ne correspond.")).toBeInTheDocument();
     expect(within(longs).getByRole("columnheader", { name: /^Quantité/ })).toBeInTheDocument();
@@ -146,14 +152,15 @@ describe("PositionsPage", () => {
     renderPositions();
     const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
     const user = userEvent.setup();
-    const header = within(sells).getByRole("columnheader", { name: /^P&L latent/ });
-    await user.click(within(header).getByRole("button", { name: "P&L latent" }));
+    await openPanel(user, sells, "P&L latent");
+    await user.click(await screen.findByRole("button", { name: "Croissant" }));
     const order = () => within(sells).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[0].textContent);
     // Sells' P&L: AAPL 155 C -20, MSFT 400 C -10, XYZ 105 C 50, XYZ 95 P 100, AAPL 150 C 120, XOM unknown.
     await waitFor(() =>
       expect(order()).toEqual(["AAPL Feb20'26 155 Call", "MSFT Mar20'26 400 Call", "XYZ Mar20'26 105 Call", "XYZ Mar20'26 95 Put", "AAPL Jan16'26 150 Call", "XOM Mar20'26 100 Put"]),
     );
-    await user.click(within(header).getByRole("button", { name: "P&L latent" }));
+    await openPanel(user, sells, "P&L latent");
+    await user.click(await screen.findByRole("button", { name: "Décroissant" }));
     await waitFor(() =>
       expect(order()).toEqual(["AAPL Jan16'26 150 Call", "XYZ Mar20'26 95 Put", "XYZ Mar20'26 105 Call", "MSFT Mar20'26 400 Call", "AAPL Feb20'26 155 Call", "XOM Mar20'26 100 Put"]),
     );
@@ -164,7 +171,7 @@ describe("PositionsPage", () => {
     renderPositions();
     const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
     const user = userEvent.setup();
-    await user.click(within(sells).getByRole("button", { name: "Filtrer Couverture" }));
+    await openPanel(user, sells, "Couverture");
     await user.click(await screen.findByRole("checkbox", { name: /UNCOVERED/ }));
     await waitFor(() => expect(within(sells).getAllByRole("row")).toHaveLength(2));
     expect(within(sells).getByText("AAPL Feb20'26 155 Call")).toBeInTheDocument();
@@ -175,7 +182,7 @@ describe("PositionsPage", () => {
     await seedCash();
     renderPositions();
     const cash = (await screen.findByText("Cash", { selector: "[data-slot=card-title]" })).closest("[data-slot=card]") as HTMLElement;
-    expect(within(cash).queryByRole("button", { name: /^Filtrer/ })).not.toBeInTheDocument();
+    expect(within(within(cash).getAllByRole("row")[0]).queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("shows a dash, never a zero, for an unknown market value", async () => {

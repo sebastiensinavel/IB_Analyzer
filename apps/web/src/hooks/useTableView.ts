@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { nextSort, type ColumnMeta, type Criterion, type TableView } from "@/lib/tableView";
+import { applySort, type ColumnMeta, type Criterion, type SortDirection, type TableView } from "@/lib/tableView";
 import { readPageSearch, readTableView, writePageSearch, writeTableView } from "@/lib/tableViewStorage";
 
 export const PAGE_SEARCH_DEBOUNCE_MS = 300;
@@ -8,7 +8,8 @@ export interface TableViewState {
   view: TableView;
   /** `null`, a blank text or an empty list removes the column's criterion. */
   setCriterion: (column: string, criterion: Criterion | null) => void;
-  toggleSort: (column: string, additive: boolean) => void;
+  /** `null` resets: the whole sort when plain, only this column when additive. */
+  setSort: (column: string, dir: SortDirection | null, additive: boolean) => void;
   clearColumn: (column: string) => void;
   /** Criteria and sort of this table; never the page search. */
   clearAll: () => void;
@@ -53,14 +54,14 @@ export function useTableView(storageKey: string, columns: readonly ColumnMeta[])
       }),
     [update],
   );
-  const toggleSort = useCallback(
-    (column: string, additive: boolean) => update((previous) => ({ ...previous, sort: nextSort(previous.sort, column, additive) })),
+  const setSort = useCallback(
+    (column: string, dir: SortDirection | null, additive: boolean) => update((previous) => ({ ...previous, sort: applySort(previous.sort, column, dir, additive) })),
     [update],
   );
   const clearColumn = useCallback((column: string) => setCriterion(column, null), [setCriterion]);
   const clearAll = useCallback(() => update(() => ({ sort: [], criteria: {} })), [update]);
 
-  return { view, setCriterion, toggleSort, clearColumn, clearAll };
+  return { view, setCriterion, setSort, clearColumn, clearAll };
 }
 
 export interface PageSearchState {

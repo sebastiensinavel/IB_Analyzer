@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeCriteria, applyView, EMPTY_VIEW, facetValues, isActiveCriterion, nextSort, type ColumnSpec, type TableView } from "@/lib/tableView";
+import { activeCriteria, applySort, applyView, EMPTY_VIEW, facetValues, isActiveCriterion, type ColumnSpec, type SortKey, type TableView } from "@/lib/tableView";
 
 interface Row {
   id: string;
@@ -107,25 +107,26 @@ describe("facetValues", () => {
   });
 });
 
-describe("nextSort", () => {
-  it("cycles a lone column asc → desc → none", () => {
-    const asc = nextSort([], "amount", false);
-    expect(asc).toEqual([{ column: "amount", dir: "asc" }]);
-    const desc = nextSort(asc, "amount", false);
-    expect(desc).toEqual([{ column: "amount", dir: "desc" }]);
-    expect(nextSort(desc, "amount", false)).toEqual([]);
+describe("applySort", () => {
+  it("makes the column the only key, in the direction asked", () => {
+    expect(applySort([], "amount", "asc", false)).toEqual([{ column: "amount", dir: "asc" }]);
+    expect(applySort([{ column: "amount", dir: "asc" }, { column: "name", dir: "asc" }], "name", "desc", false)).toEqual([{ column: "name", dir: "desc" }]);
   });
 
-  it("replaces the whole sort on a plain click on another column", () => {
-    expect(nextSort([{ column: "amount", dir: "desc" }, { column: "name", dir: "asc" }], "name", false)).toEqual([{ column: "name", dir: "asc" }]);
+  it("empties the sort on a plain reset", () => {
+    expect(applySort([{ column: "amount", dir: "asc" }, { column: "name", dir: "asc" }], "amount", null, false)).toEqual([]);
   });
 
-  it("adds, flips and removes one key with shift, leaving the others", () => {
-    const two = nextSort([{ column: "amount", dir: "desc" }], "name", true);
+  it("adds a key at the end, or replaces its direction, in additive mode", () => {
+    const two = applySort([{ column: "amount", dir: "desc" }], "name", "asc", true);
     expect(two).toEqual([{ column: "amount", dir: "desc" }, { column: "name", dir: "asc" }]);
-    const flipped = nextSort(two, "name", true);
-    expect(flipped).toEqual([{ column: "amount", dir: "desc" }, { column: "name", dir: "desc" }]);
-    expect(nextSort(flipped, "name", true)).toEqual([{ column: "amount", dir: "desc" }]);
+    expect(applySort(two, "amount", "asc", true)).toEqual([{ column: "amount", dir: "asc" }, { column: "name", dir: "asc" }]);
+  });
+
+  it("removes only that key in additive mode, and leaves an unknown column alone", () => {
+    const two: SortKey[] = [{ column: "amount", dir: "desc" }, { column: "name", dir: "asc" }];
+    expect(applySort(two, "amount", null, true)).toEqual([{ column: "name", dir: "asc" }]);
+    expect(applySort(two, "ghost", null, true)).toEqual(two);
   });
 });
 
