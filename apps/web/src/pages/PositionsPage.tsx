@@ -1,26 +1,28 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 import { groupedPositions } from "@ib/coverage";
 import { anchoredBalances } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
+import { Card, CardContent } from "@ib/ui/card";
 import { Input } from "@ib/ui/input";
-import { TableBody } from "@ib/ui/table";
 import { CashBalancesCard } from "@/components/CashBalancesCard";
-import { PositionRow } from "@/components/PositionRow";
-import { PositionTable, PositionTableHeader } from "@/components/PositionTable";
+import { PositionGroupCard } from "@/components/PositionGroupCard";
 import { useAccountRiskReport } from "@/db/AccountDataProvider";
 import { useCashPoints, useLedger } from "@/db/hooks";
+import { usePageSearch } from "@/hooks/useTableView";
 import { BALANCE_CURRENCIES } from "@/lib/currencies";
-import { formatContract } from "@/lib/format";
-import { coverageBadges, groupTitleKey } from "@/lib/riskReport";
+import { positionColumnSpecs } from "@/lib/positionColumns";
+import { groupTitleKey } from "@/lib/riskReport";
+import { applyView, EMPTY_VIEW } from "@/lib/tableView";
+import { pageSearchKey } from "@/lib/tableViewStorage";
 
 export function PositionsPage() {
   const { accountId = "" } = useParams<{ accountId: string }>();
   const { t } = useTranslation();
   const { snapshot, report, sectorOf } = useAccountRiskReport();
-  const [filter, setFilter] = useState("");
+  const specs = useMemo(() => positionColumnSpecs(sectorOf), [sectorOf]);
+  const search = usePageSearch(pageSearchKey(accountId, "positions"));
   const ledger = useLedger(accountId);
   const points = useCashPoints(accountId);
   // The cash comes from the ledger, not the snapshot: shown with or without positions.
@@ -51,22 +53,24 @@ export function PositionsPage() {
     );
   }
 
-  // Filtered on what the row shows, not on the engine's own `description`: the
-  // user types what they read.
-  const filtered = report.positions.filter((position) =>
-    formatContract(position).toLowerCase().includes(filter.toLowerCase()),
-  );
-  const groups = groupedPositions(filtered).filter((group) => group.positions.length > 0);
+  // Groups empty in the snapshot never show. The page search runs on the ticker, which means the
+  // same thing in every group; a group it empties goes away. A group emptied by its own column
+  // filters stays, so its filters can be cleared.
+  const groups = groupedPositions(report.positions)
+    .filter((group) => group.positions.length > 0)
+    .map((group) => ({ group, searched: applyView(group.positions, specs, EMPTY_VIEW, { text: search.applied, ticker: (position) => position.symbol }) }))
+    .filter(({ searched }) => searched.length > 0);
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.positions")}</h1>
 
       <Input
-        value={filter}
-        onChange={(event) => setFilter(event.target.value)}
-        placeholder={t("positions.filterPlaceholder")}
-        aria-label={t("positions.filterPlaceholder")}
+        value={search.input}
+        onChange={(event) => search.setInput(event.target.value)}
+        placeholder={t("positions.searchPlaceholder")}
+        aria-label={t("positions.searchLabel")}
+        className="font-mono"
       />
 
       {groups.length === 0 && (
@@ -77,36 +81,17 @@ export function PositionsPage() {
         </Card>
       )}
 
-      {groups.map((group) => (
-        <Card key={group.id}>
-          <CardHeader>
-            <CardTitle>{t(groupTitleKey(group.id))}</CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <PositionTable>
-              <PositionTableHeader />
-              <TableBody>
-                {group.positions.map((position) => (
-                  <PositionRow
-                    key={position.description}
-                    values={{
-                      contract: formatContract(position),
-                      label: position.label,
-                      sector: sectorOf(position.symbol),
-                      marketValue: position.marketValue,
-                      quantity: position.quantity,
-                      avgPrice: position.avgPrice,
-                      lastPrice: position.lastPrice,
-                      unrealizedPnl: position.unrealizedPnl,
-                      decision: position.decision,
-                      coverage: coverageBadges(position),
-                    }}
-                  />
-                ))}
-              </TableBody>
-            </PositionTable>
-          </CardContent>
-        </Card>
+      {groups.map(({ group, searched }) => (
+        <PositionGroupCard
+          key={group.id}
+          accountId={accountId}
+          groupId={group.id}
+          title={t(groupTitleKey(group.id))}
+          positions={group.positions}
+          searched={searched}
+          specs={specs}
+          sectorOf={sectorOf}
+        />
       ))}
 
       {cashCard}

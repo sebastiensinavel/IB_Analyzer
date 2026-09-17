@@ -73,7 +73,8 @@
     }
   },
   "positions": {
-    "filterPlaceholder": "Filter on the Position column…",
+    "searchLabel": "Search a ticker",
+    "searchPlaceholder": "Search a ticker: AAPL, AAPL|MSFT…",
     "asOf": "Data as of {{date}}",
     "empty": "No positions yet — import an HTML statement or a Flex query response with Open Positions.",
     "emptyLink": "Go to data sources",

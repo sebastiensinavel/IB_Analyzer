@@ -2635,7 +2635,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   }): JSX.Element;
   ```
 
-- [ ] **Step 1: Rewrite the page tests**
+- [x] **Step 1: Rewrite the page tests**
 
 Dans `apps/web/src/pages/PositionsPage.test.tsx` :
 
@@ -2736,12 +2736,12 @@ Avant d'écrire ces tests, vérifier sur `SAMPLE_SNAPSHOT` rendu (test existant 
 
 3. `"lines up the columns of every table on the page, the cash included"` : si l'attente porte sur le nom ou le texte des en-têtes, garder `textContent` ; un nom accessible passe en regex `^…`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/pages/PositionsPage.test.tsx`
 Expected: FAIL sur les nouveaux tests.
 
-- [ ] **Step 3: `PositionTableHeader` accepts interactive headers**
+- [x] **Step 3: `PositionTableHeader` accepts interactive headers**
 
 Remplacer `PositionTableHeader` dans `apps/web/src/components/PositionTable.tsx` :
 
@@ -2790,7 +2790,7 @@ export function PositionTableHeader({ interactive }: { interactive?: Interactive
 
 avec les imports `AnalyzedPosition` (`@ib/coverage`), `ColumnHeader`, `ColumnSpec`, `Criterion`, `Facet`, `TableView`.
 
-- [ ] **Step 4: `PositionGroupCard`**
+- [x] **Step 4: `PositionGroupCard`**
 
 `apps/web/src/components/PositionGroupCard.tsx` :
 
@@ -2892,7 +2892,7 @@ export function PositionGroupCard({ accountId, groupId, title, positions, search
 }
 ```
 
-- [ ] **Step 5: Rewrite the Positions list in `PositionsPage`**
+- [x] **Step 5: Rewrite the Positions list in `PositionsPage`**
 
 Dans `apps/web/src/pages/PositionsPage.tsx` :
 - supprimer `useState`, `filter`, `setFilter`, les imports désormais inutiles (`TableBody`, `PositionRow`, `PositionTable`, `PositionTableHeader`, `CardHeader`, `CardTitle`, `coverageBadges`, `formatContract` s'ils ne servent plus) ;
@@ -2948,7 +2948,7 @@ Dans `apps/web/src/pages/PositionsPage.tsx` :
 
 Les `useMemo`/`usePageSearch` doivent être appelés à chaque rendu, avant `if (report === undefined …)` : les déplacer en tête du composant. `sectorOf` est défini même en chargement (`useAccountRiskReport`).
 
-- [ ] **Step 6: Translations**
+- [x] **Step 6: Translations**
 
 `fr.json`, section `positions` : supprimer `filterPlaceholder`, ajouter :
 
@@ -2966,12 +2966,12 @@ Les `useMemo`/`usePageSearch` doivent être appelés à chaque rendu, avant `if 
 
 Vérifier par `grep -rn "positions.filterPlaceholder" apps/web/src` qu'aucun autre code ne s'en sert (`StrategyPositionsPage` compris) ; s'il sert encore, garder la clé.
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx src/components/CashBalancesCard.test.tsx && pnpm --filter web typecheck`
 Expected: PASS ; `StrategyPositionsPage` et la carte Cash inchangés.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/web/src/components/PositionTable.tsx apps/web/src/components/PositionGroupCard.tsx apps/web/src/pages/PositionsPage.tsx apps/web/src/pages/PositionsPage.test.tsx apps/web/src/i18n/fr.json apps/web/src/i18n/en.json docs/plans/2026-09-17-tri-filtres-tableaux.md

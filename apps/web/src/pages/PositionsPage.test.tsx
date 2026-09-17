@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
@@ -32,6 +32,7 @@ function renderPositions(accountId = "alpha") {
 }
 
 beforeEach(async () => {
+  window.localStorage.clear();
   await Promise.all([db.snapshots.clear(), db.sectors.clear(), db.transactions.clear(), db.cashPoints.clear()]);
 });
 
@@ -90,28 +91,91 @@ describe("PositionsPage", () => {
     expect(screen.queryByText("Achats d'options")).not.toBeInTheDocument();
   });
 
-  it("filters rows by the Position column as the user types, and says when nothing matches", async () => {
+  it("searches every card on the ticker, with OR, and says when nothing matches", async () => {
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
     await screen.findByText("XOM Mar20'26 100 Put");
     const user = userEvent.setup();
-    const input = screen.getByPlaceholderText("Filtrer sur la colonne Position…");
-    await user.type(input, "MSFT");
-    expect(screen.queryByText("XOM Mar20'26 100 Put")).not.toBeInTheDocument();
+    const input = screen.getByRole("textbox", { name: "Rechercher un ticker" });
+    await user.type(input, "=MSFT|=XOM");
+    await waitFor(() => expect(screen.queryByText("AAPL Jan16'26 150 Call")).not.toBeInTheDocument());
     expect(screen.getByText("MSFT Mar20'26 400 Call")).toBeInTheDocument();
+    expect(screen.getByText("XOM Mar20'26 100 Put")).toBeInTheDocument();
+    // AAPL shares were the only long position: the card goes with them.
+    expect(screen.queryByText("Positions longues")).not.toBeInTheDocument();
     await user.clear(input);
-    await user.type(input, "nonexistent-ticker");
+    await user.type(input, "=NOPE");
     expect(await screen.findByText("Aucune position ne correspond.")).toBeInTheDocument();
   });
 
-  it("spells a contract like the journals do, and filters on that spelling", async () => {
+  it("spells a contract like the journals do", async () => {
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
     expect(await screen.findByText("AAPL Jan16'26 150 Call")).toBeInTheDocument();
+  });
+
+  it("filters one card on its own column, leaving the other cards alone", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
     const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText("Filtrer sur la colonne Position…"), "mar20'26 100 put");
-    expect(await screen.findByText("XOM Mar20'26 100 Put")).toBeInTheDocument();
-    expect(screen.queryByText("AAPL Jan16'26 150 Call")).not.toBeInTheDocument();
+    await user.click(within(sells).getByRole("button", { name: "Filtrer P&L latent" }));
+    await user.type(await screen.findByRole("textbox", { name: "Critère pour P&L latent" }), "<0");
+    await waitFor(() => expect(within(sells).queryByText("XOM Mar20'26 100 Put")).not.toBeInTheDocument());
+    expect(within(sells).getByText("AAPL Feb20'26 155 Call")).toBeInTheDocument();
+    expect(screen.getByText("MSFT Jan21'28 300 Call")).toBeInTheDocument();
+    expect(within(sells).getByText("P&L latent : <0")).toBeInTheDocument();
+  });
+
+  it("keeps a card emptied by its own filter, with its headers and a way back", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    const longs = (await screen.findByText("Positions longues")).closest("[data-slot=card]") as HTMLElement;
+    const user = userEvent.setup();
+    await user.click(within(longs).getByRole("button", { name: "Filtrer Quantité" }));
+    await user.type(await screen.findByRole("textbox", { name: "Critère pour Quantité" }), ">1000");
+    expect(await within(longs).findByText("Aucune position ne correspond.")).toBeInTheDocument();
+    expect(within(longs).getByRole("columnheader", { name: /^Quantité/ })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await user.click(within(longs).getByRole("button", { name: "Tout effacer" }));
+    expect(await within(longs).findByText("AAPL")).toBeInTheDocument();
+  });
+
+  it("sorts a card on unrealized P/L, unknown values last", async () => {
+    await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [...SAMPLE_POSITIONS.slice(0, 5), { ...SAMPLE_POSITIONS[5], unrealizedPnl: null }, ...SAMPLE_POSITIONS.slice(6)] });
+    renderPositions();
+    const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
+    const user = userEvent.setup();
+    const header = within(sells).getByRole("columnheader", { name: /^P&L latent/ });
+    await user.click(within(header).getByRole("button", { name: "P&L latent" }));
+    const order = () => within(sells).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[0].textContent);
+    // Sells' P&L: AAPL 155 C -20, MSFT 400 C -10, XYZ 105 C 50, XYZ 95 P 100, AAPL 150 C 120, XOM unknown.
+    await waitFor(() =>
+      expect(order()).toEqual(["AAPL Feb20'26 155 Call", "MSFT Mar20'26 400 Call", "XYZ Mar20'26 105 Call", "XYZ Mar20'26 95 Put", "AAPL Jan16'26 150 Call", "XOM Mar20'26 100 Put"]),
+    );
+    await user.click(within(header).getByRole("button", { name: "P&L latent" }));
+    await waitFor(() =>
+      expect(order()).toEqual(["AAPL Jan16'26 150 Call", "XYZ Mar20'26 95 Put", "XYZ Mar20'26 105 Call", "MSFT Mar20'26 400 Call", "AAPL Feb20'26 155 Call", "XOM Mar20'26 100 Put"]),
+    );
+  });
+
+  it("filters the coverage on UNCOVERED", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
+    const user = userEvent.setup();
+    await user.click(within(sells).getByRole("button", { name: "Filtrer Couverture" }));
+    await user.click(await screen.findByRole("checkbox", { name: /UNCOVERED/ }));
+    await waitFor(() => expect(within(sells).getAllByRole("row")).toHaveLength(2));
+    expect(within(sells).getByText("AAPL Feb20'26 155 Call")).toBeInTheDocument();
+  });
+
+  it("gives the cash card no interactive header", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    await seedCash();
+    renderPositions();
+    const cash = (await screen.findByText("Cash", { selector: "[data-slot=card-title]" })).closest("[data-slot=card]") as HTMLElement;
+    expect(within(cash).queryByRole("button", { name: /^Filtrer/ })).not.toBeInTheDocument();
   });
 
   it("shows a dash, never a zero, for an unknown market value", async () => {
