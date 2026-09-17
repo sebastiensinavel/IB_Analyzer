@@ -518,7 +518,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function isActiveCriterion(meta: ColumnMeta, criterion: Criterion | undefined): boolean;
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -662,12 +662,12 @@ describe("activeCriteria", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter web test src/lib/tableView.test.ts`
 Expected: FAIL, `Failed to resolve import "@/lib/tableView"`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```ts
 import { parseCriterion, type CellValue, type ColumnType, type Predicate } from "@/lib/tableCriteria";
@@ -819,12 +819,12 @@ export function nextSort(sort: readonly SortKey[], column: string, additive: boo
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --filter web test src/lib/tableView.test.ts && pnpm --filter web typecheck`
 Expected: PASS, aucun erreur de typage.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/tableView.ts apps/web/src/lib/tableView.test.ts docs/plans/2026-09-17-tri-filtres-tableaux.md
