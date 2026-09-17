@@ -97,7 +97,7 @@ docs/specs/2026-09-17-tri-filtres-tableaux-design.md   §5.4 corrigé, statut
   ```
   Une colonne `date` est comparée sur la chaîne `YYYY-MM-DD HH:MM:SS` de `formatDateTime`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -262,12 +262,12 @@ describe("parseCriterion — text", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter web test src/lib/tableCriteria.test.ts`
 Expected: FAIL, `Failed to resolve import "@/lib/tableCriteria"`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```ts
 /**
@@ -468,12 +468,12 @@ export function parseCriterion(text: string, type: Exclude<ColumnType, "enum">):
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --filter web test src/lib/tableCriteria.test.ts`
 Expected: PASS. Si un cas échoue, corriger l'implémentation, jamais le test : les attentes recopient le §2 du spec.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/tableCriteria.ts apps/web/src/lib/tableCriteria.test.ts docs/plans/2026-09-17-tri-filtres-tableaux.md
