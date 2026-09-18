@@ -327,6 +327,17 @@ Django en arrière-plan, sur les ports du worktree) et donner les deux URL à Se
 branche avant de décider du merge. Au merge, `pnpm dev:stop` dans le worktree **avant** `git
 merge` et `git worktree remove` : après, plus rien ne dit quels processus lui appartenaient.
 
+**Un réglage visuel se mesure d'abord, il ne s'itère pas sur des captures.** Ajuster des
+largeurs de colonnes ou faire tenir des libellés a coûté trois quarts d'heure par agent au
+sous-projet 20, passés à démarrer un navigateur, capturer, régler, recommencer. À la place :
+un script qui mesure la largeur réelle de chaque libellé et de la donnée la plus longue et
+qui sort les pourcentages en une passe, l'instance de dev laissée en marche, `pnpm check`
+**une seule fois à la fin** — il lance lint, typage, build et tous les tests — et des tests
+ciblés pendant l'itération. Et surtout : **les arbitrages d'affichage se tranchent avant de
+lancer l'agent**, jamais après avoir vu ses captures, sinon chaque question rejoue une vague
+entière. Une justification visuelle s'accompagne des deux captures qui la montrent, vérifiées :
+au sous-projet 20, un agent a justifié un choix par une paire identique au pixel près.
+
 **Les cases du plan se cochent dans le worktree au fur et à mesure**, dans le même commit que
 la tâche. Le plan de la branche est l'état d'avancement : une reprise de session part de la
 première case non cochée, jamais d'une reconstitution à partir des commits ni d'une
