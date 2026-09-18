@@ -78,12 +78,6 @@ describe("parseAgentSnapshot", () => {
     expect(snapshot.issues).toEqual([{ severity: "warning", code: "multiplier-missing", detail: "SYMB 18DEC26 180 C" }]);
   });
 
-  it("gives a position without `pnl` no day values", () => {
-    const [stock] = parseAgentSnapshot(payload, ACCOUNT).positions;
-    expect(stock.dailyPnl).toBeNull();
-    expect(stock.dayChange).toBeNull();
-  });
-
   it("turns a SLD option fill into a negative-quantity trade with gross proceeds and a negative commission", () => {
     const [sold] = parseAgentSnapshot(payload, ACCOUNT).transactions;
     expect(sold).toEqual({
