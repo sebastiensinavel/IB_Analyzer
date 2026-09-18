@@ -250,6 +250,9 @@ describe("strategyPositions — condors", () => {
     const { groups } = strategyPositions([condor()], "condors", snapshot);
     const put = groups.optionSells.find((line) => line.contract.strike === 625)!;
     expect(put.coverage.map((allocation) => allocation.source)).toEqual(["spread"]);
+    // The wing that covered it (pairLegs, coverage.ts) is marked used on its own IB position.
+    const wing = groups.optionBuys.find((line) => line.contract.strike === 620)!;
+    expect(wing.position!.usedQuantity).toBe(1);
   });
 });
 
@@ -270,9 +273,20 @@ describe("strategyPositions — others", () => {
   });
 
   it("leaves a sold option of Others without an allocation: its cover is nothing at all", () => {
+    // This unit test builds its lines by hand: it exercises the strategy filter alone, not which
+    // journal the journals engine would file this call under (a Wheel call shares MQZA shares in
+    // other tests above; here the point is only that Others reads none of a real allocation).
     const rows = [row({ id: "b#1", strategy: "others", kind: "short_call", contract: MARA_CALL, quantity: -1, openPrice: 0.5 })];
-    const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -1, marketPrice: 0.25, marketValue: -25 })]);
-    expect(strategyPositions(rows, "others", snapshot).groups.optionSells[0].coverage).toEqual([]);
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -1, marketPrice: 0.25, marketValue: -25 }),
+    ]);
+    const sold = strategyPositions(rows, "others", snapshot).groups.optionSells[0];
+    // The engine really allocates the stock as cover on the IB position...
+    expect(sold.position!.allocations).toEqual([expect.objectContaining({ source: "stock" })]);
+    // ...but STRATEGY_COVER_SOURCES.others is empty, so Others reads none of it: the filter, not
+    // an absent allocation, is what leaves this line's own coverage empty.
+    expect(sold.coverage).toEqual([]);
   });
 });
 
