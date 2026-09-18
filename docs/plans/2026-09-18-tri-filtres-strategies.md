@@ -389,7 +389,10 @@ function table(view: TableView = EMPTY_VIEW): TableViewState {
   return { view, setCriterion: vi.fn(), setSort: vi.fn(), clearColumn: vi.fn(), clearAll: vi.fn() };
 }
 
-function renderBox(rows: Line[], state = table(), title: string | undefined = "Ventes d'options") {
+// Variadic, not a default parameter: a default also fires on an explicit `undefined`, so the
+// "no title" case below would have received the title anyway and tested nothing.
+function renderBox(rows: Line[], state = table(), ...titleArg: [title: string | undefined] | []) {
+  const title = titleArg.length > 0 ? titleArg[0] : "Ventes d'options";
   return render(
     <I18nextProvider i18n={i18n}>
       <FilteredTableBox
@@ -436,8 +439,9 @@ describe("FilteredTableBox", () => {
     const header = screen.getByRole("columnheader", { name: /^Type/ });
     await userEvent.click(within(header).getByRole("button"));
     // Both values of facetRows are offered, each counted once, although one row is displayed.
-    expect(await screen.findByRole("checkbox", { name: "long_stock" })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "short_put" })).toBeInTheDocument();
+    // By regex: a facet's checkbox is named with its count too ("long_stock 1").
+    expect(await screen.findByRole("checkbox", { name: /^long_stock/ })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /^short_put/ })).toBeInTheDocument();
   });
 
   it("shows a pill per filtered column, above the table", () => {
@@ -2434,7 +2438,8 @@ Dans `apps/web/src/pages/JournalPage.test.tsx` :
     const user = userEvent.setup();
     const header = screen.getByRole("columnheader", { name: /^En cours/ });
     await user.click(within(header).getByRole("button", { name: /^En cours/ }));
-    await user.click(await screen.findByRole("checkbox", { name: "0" }));
+    // By regex: a facet's checkbox is named with its count too ("0 3").
+    await user.click(await screen.findByRole("checkbox", { name: /^0/ }));
     await waitFor(() => expect(screen.queryByText("MQZA Oct02'26 17 Put")).not.toBeInTheDocument());
     await user.keyboard("{Escape}");
     expect(screen.getByText("En cours : 0")).toBeInTheDocument();
