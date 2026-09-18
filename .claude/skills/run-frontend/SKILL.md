@@ -116,8 +116,10 @@ dans un worktree, c'est le serveur laissé par un `--keep` précédent du même 
 
 Sans Django sur le port API du checkout, le proxy Vite répond 502 sur `/api` et
 `/_allauth` : le driver le note en une ligne (« api: no Django on :8022 … tolerated »)
-et ne le compte pas comme une erreur, l'app n'exigeant jamais de connexion. Toute
-autre erreur console reste fatale.
+et ne le compte pas comme une erreur, l'app n'exigeant jamais de connexion. Avec
+Django en marche et personne de connecté, allauth répond 401 sur `/_allauth` : même
+traitement, une ligne (« … answered 401 on /_allauth … nobody signed in ») et pas
+d'erreur, c'est l'état anonyme normal. Toute autre erreur console reste fatale.
 
 ## Un seul fichier
 

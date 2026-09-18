@@ -2,8 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   activateTotp,
   authenticateSecondFactor,
+  changePassword,
   deactivateTotp,
+  fetchRecoveryCodes,
   fetchSession,
+  fetchTotpStatus,
   generateRecoveryCodes,
   login,
   logout,
@@ -185,5 +188,60 @@ describe("allauth client", () => {
       expect.stringContaining("/account/authenticators/recovery-codes"),
       expect.objectContaining({ method: "POST" }),
     );
+  });
+});
+
+/**
+ * A `fetch` response whose body is never read leaves the request hanging in the browser: the page
+ * never reaches network idle, which is what every automated screenshot of the app waits for. The
+ * anonymous 401 of /auth/session — answered on every page load — is the one that bites, but every
+ * branch that returns without looking at the body leaks the same way.
+ */
+describe("allauth client reads every body it receives", () => {
+  beforeEach(() => {
+    document.cookie = "csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    vi.restoreAllMocks();
+  });
+
+  const cases: [string, number, () => Promise<unknown>][] = [
+    ["fetchSession on the anonymous 401", 401, fetchSession],
+    ["fetchSession on a signed-in 200", 200, fetchSession],
+    ["logout", 200, logout],
+    ["changePassword on success", 200, () => changePassword("new-one", "old-one")],
+    ["activateTotp on success", 200, () => activateTotp("654321")],
+    ["deactivateTotp on success", 200, deactivateTotp],
+    ["deactivateTotp on a refusal", 400, deactivateTotp],
+    ["fetchTotpStatus on a 200", 200, fetchTotpStatus],
+    ["fetchRecoveryCodes with none generated", 404, fetchRecoveryCodes],
+    ["fetchRecoveryCodes on a refusal", 400, fetchRecoveryCodes],
+    ["generateRecoveryCodes on a refusal", 400, generateRecoveryCodes],
+  ];
+
+  it.each(cases)("reads the body: %s", async (_name, status, run) => {
+    const response = new Response(JSON.stringify({ meta: { is_authenticated: false } }), {
+      status,
+      headers: { "content-type": "application/json" },
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+    await run();
+    expect(response.bodyUsed).toBe(true);
+  });
+
+  it("reads the body of the login response it hands over to fetchSession", async () => {
+    const loginResponse = new Response(JSON.stringify({ data: { user: { id: 1, email: "a@example.com" } } }), { status: 200 });
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(loginResponse)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { user: { id: 1, email: "a@example.com" } } }), { status: 200 }));
+    await login("a@example.com", "correct-horse-battery");
+    expect(loginResponse.bodyUsed).toBe(true);
+  });
+
+  it("reads the body of the 2FA response it hands over to fetchSession", async () => {
+    const authResponse = new Response("{}", { status: 200 });
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(authResponse)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { user: { id: 1, email: "a@example.com" } } }), { status: 200 }));
+    await authenticateSecondFactor("123456");
+    expect(authResponse.bodyUsed).toBe(true);
   });
 });

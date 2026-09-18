@@ -101,6 +101,7 @@ try {
     const page = await ctx.newPage();
     const errors = [];
     let apiDown = false;
+    let anonymous = false;
     page.on("console", (m) => {
       if (m.type() !== "error") return;
       // No Django on this checkout's API port: Vite's proxy answers 502 on /api and
@@ -109,6 +110,13 @@ try {
       const path = new URL(m.location().url || BASE, BASE).pathname;
       if (/^\/(api|_allauth)\//.test(path) && /\b502\b/.test(m.text())) {
         apiDown = true;
+        return;
+      }
+      // Django *is* up, and nobody is signed in: allauth answers its session probe with a 401,
+      // which is the app's normal anonymous state — no route of the SPA ever requires a login.
+      // Not a page error either; just note it once.
+      if (/^\/_allauth\//.test(path) && /\b401\b/.test(m.text())) {
+        anonymous = true;
         return;
       }
       errors.push(m.text());
@@ -191,6 +199,7 @@ try {
     console.log(
       `${route} -> ${OUT}/${name}.png  (landed on ${new URL(page.url()).pathname}${wait > 0 ? `, waited ${wait} ms` : ""})` +
         (apiDown ? `\n    api: no Django on :${ports.api}, /api and /_allauth answered 502 (tolerated, session unreachable)` : "") +
+        (anonymous ? `\n    api: Django on :${ports.api} answered 401 on /_allauth (tolerated, nobody signed in)` : "") +
         (errors.length ? `\n    ERRORS: ${errors.join(" | ")}` : ""),
     );
     await ctx.close();

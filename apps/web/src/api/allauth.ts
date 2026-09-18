@@ -34,10 +34,22 @@ export type AllauthResult<T> =
   // drives the second step from this variant.
   | { ok: false; kind: "mfa_required"; methods: string[] };
 
-async function call(path: string, init: RequestInit = {}): Promise<Response | null> {
+/** One answer from allauth, body included: `null` when the body was absent or not JSON at all. */
+interface Answer {
+  ok: boolean;
+  status: number;
+  body: unknown;
+}
+
+/**
+ * Calls allauth and reads the body of whatever comes back, even when no caller looks at it: a
+ * `fetch` response left unread keeps its request hanging in the browser, so the page never reaches
+ * network idle — and /auth/session answers its anonymous 401 on every single page load.
+ */
+async function call(path: string, init: RequestInit = {}): Promise<Answer | null> {
   const token = csrfToken();
   try {
-    return await fetch(`${BASE}${path}`, {
+    const response = await fetch(`${BASE}${path}`, {
       credentials: "same-origin",
       headers: {
         "content-type": "application/json",
@@ -46,6 +58,7 @@ async function call(path: string, init: RequestInit = {}): Promise<Response | nu
       },
       ...init,
     });
+    return { ok: response.ok, status: response.status, body: await response.json().catch(() => null) };
   } catch {
     // A network failure is never an error shown across the app (spec §2): the server is
     // optional, and "unreachable" is a normal, expected state, not an exception to surface.
@@ -53,20 +66,22 @@ async function call(path: string, init: RequestInit = {}): Promise<Response | nu
   }
 }
 
+/** The first error message of a refusal, allauth's `errors` array; `undefined` when it carries none. */
+function errorDetail(body: unknown): string | undefined {
+  const errors = (body as { errors?: { message?: unknown }[] } | null)?.errors;
+  const message = Array.isArray(errors) ? errors[0]?.message : undefined;
+  return typeof message === "string" ? message : undefined;
+}
+
 export async function fetchSession(): Promise<AllauthResult<SessionUser>> {
-  const response = await call("/auth/session");
-  if (response === null) return { ok: false, kind: "unreachable" };
-  if (!response.ok) return { ok: false, kind: "anonymous" };
-  let body: unknown;
-  try {
-    body = await response.json();
-  } catch {
-    // A 200 whose body isn't valid JSON at all (a misrouted request landing on the SPA's
-    // own index.html, an intermediary's error page, ...) is not a real allauth response:
-    // treat it the same as an unreachable server, never a thrown error (spec §2).
-    return { ok: false, kind: "unreachable" };
-  }
-  const user = (body as { data?: { user?: { id: unknown; email: unknown } } } | null)?.data?.user;
+  const answer = await call("/auth/session");
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (!answer.ok) return { ok: false, kind: "anonymous" };
+  // A 200 with no JSON body at all (a misrouted request landing on the SPA's own index.html,
+  // an intermediary's error page, ...) is not a real allauth response: treat it the same as an
+  // unreachable server, never a thrown error (spec §2).
+  if (answer.body === null) return { ok: false, kind: "unreachable" };
+  const user = (answer.body as { data?: { user?: { id: unknown; email: unknown } } }).data?.user;
   if (!user) return { ok: false, kind: "anonymous" };
   return { ok: true, value: { id: String(user.id), email: String(user.email) } };
 }
@@ -93,13 +108,12 @@ function pendingMfaFlow(body: unknown): { types: string[] } | null {
 }
 
 export async function login(email: string, password: string): Promise<AllauthResult<SessionUser>> {
-  const response = await call("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
-  if (response === null) return { ok: false, kind: "unreachable" };
-  if (response.ok) return fetchSession();
-  const body = await response.json().catch(() => null);
-  const pending = pendingMfaFlow(body);
+  const answer = await call("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (answer.ok) return fetchSession();
+  const pending = pendingMfaFlow(answer.body);
   if (pending) return { ok: false, kind: "mfa_required", methods: pending.types };
-  return { ok: false, kind: "rejected", detail: body?.errors?.[0]?.message };
+  return { ok: false, kind: "rejected", detail: errorDetail(answer.body) };
 }
 
 export async function logout(): Promise<void> {
@@ -115,11 +129,10 @@ export async function logout(): Promise<void> {
  * "mfa_required" branch to handle here, this endpoint only ever accepts or rejects the code.
  */
 export async function authenticateSecondFactor(code: string): Promise<AllauthResult<SessionUser>> {
-  const response = await call("/auth/2fa/authenticate", { method: "POST", body: JSON.stringify({ code }) });
-  if (response === null) return { ok: false, kind: "unreachable" };
-  if (response.ok) return fetchSession();
-  const body = await response.json().catch(() => null);
-  return { ok: false, kind: "rejected", detail: body?.errors?.[0]?.message };
+  const answer = await call("/auth/2fa/authenticate", { method: "POST", body: JSON.stringify({ code }) });
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (answer.ok) return fetchSession();
+  return { ok: false, kind: "rejected", detail: errorDetail(answer.body) };
 }
 
 /**
@@ -130,14 +143,13 @@ export async function authenticateSecondFactor(code: string): Promise<AllauthRes
  * installed allauth sources instead (headless/account/urls.py, `ChangePasswordView`).
  */
 export async function changePassword(newPassword: string, currentPassword: string): Promise<AllauthResult<void>> {
-  const response = await call("/account/password/change", {
+  const answer = await call("/account/password/change", {
     method: "POST",
     body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
   });
-  if (response === null) return { ok: false, kind: "unreachable" };
-  if (response.ok) return { ok: true, value: undefined };
-  const body = await response.json().catch(() => null);
-  return { ok: false, kind: "rejected", detail: body?.errors?.[0]?.message };
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (answer.ok) return { ok: true, value: undefined };
+  return { ok: false, kind: "rejected", detail: errorDetail(answer.body) };
 }
 
 export type TotpStatus = { configured: true } | { configured: false; secret: string; totpUrl: string };
@@ -150,33 +162,31 @@ export type TotpStatus = { configured: true } | { configured: false; secret: str
  * that body is treated as unreachable/misrouted.
  */
 export async function fetchTotpStatus(): Promise<AllauthResult<TotpStatus>> {
-  const response = await call("/account/authenticators/totp");
-  if (response === null) return { ok: false, kind: "unreachable" };
-  const body = await response.json().catch(() => null);
-  if (response.status === 404) {
-    const meta = (body as { meta?: { secret?: unknown; totp_url?: unknown } } | null)?.meta;
+  const answer = await call("/account/authenticators/totp");
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (answer.status === 404) {
+    const meta = (answer.body as { meta?: { secret?: unknown; totp_url?: unknown } } | null)?.meta;
     if (typeof meta?.secret === "string" && typeof meta.totp_url === "string") {
       return { ok: true, value: { configured: false, secret: meta.secret, totpUrl: meta.totp_url } };
     }
     return { ok: false, kind: "unreachable" };
   }
-  if (!response.ok) return { ok: false, kind: "rejected" };
+  if (!answer.ok) return { ok: false, kind: "rejected" };
   return { ok: true, value: { configured: true } };
 }
 
 /** Activates TOTP with the code generated from the secret handed out by `fetchTotpStatus`. */
 export async function activateTotp(code: string): Promise<AllauthResult<void>> {
-  const response = await call("/account/authenticators/totp", { method: "POST", body: JSON.stringify({ code }) });
-  if (response === null) return { ok: false, kind: "unreachable" };
-  if (response.ok) return { ok: true, value: undefined };
-  const body = await response.json().catch(() => null);
-  return { ok: false, kind: "rejected", detail: body?.errors?.[0]?.message };
+  const answer = await call("/account/authenticators/totp", { method: "POST", body: JSON.stringify({ code }) });
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (answer.ok) return { ok: true, value: undefined };
+  return { ok: false, kind: "rejected", detail: errorDetail(answer.body) };
 }
 
 export async function deactivateTotp(): Promise<AllauthResult<void>> {
-  const response = await call("/account/authenticators/totp", { method: "DELETE" });
-  if (response === null) return { ok: false, kind: "unreachable" };
-  if (response.ok) return { ok: true, value: undefined };
+  const answer = await call("/account/authenticators/totp", { method: "DELETE" });
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (answer.ok) return { ok: true, value: undefined };
   return { ok: false, kind: "rejected" };
 }
 
@@ -209,19 +219,19 @@ function parseRecoveryCodes(body: unknown): RecoveryCodesStatus {
 
 /** A 404 here means no recovery codes have ever been generated — not an error. */
 export async function fetchRecoveryCodes(): Promise<AllauthResult<RecoveryCodesStatus>> {
-  const response = await call("/account/authenticators/recovery-codes");
-  if (response === null) return { ok: false, kind: "unreachable" };
-  if (response.status === 404) {
+  const answer = await call("/account/authenticators/recovery-codes");
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (answer.status === 404) {
     return { ok: true, value: { generated: false, totalCodeCount: null, unusedCodeCount: null, codes: null } };
   }
-  if (!response.ok) return { ok: false, kind: "rejected" };
-  return { ok: true, value: parseRecoveryCodes(await response.json().catch(() => null)) };
+  if (!answer.ok) return { ok: false, kind: "rejected" };
+  return { ok: true, value: parseRecoveryCodes(answer.body) };
 }
 
 /** Replaces every recovery code with a fresh set, returned once in the response body. */
 export async function generateRecoveryCodes(): Promise<AllauthResult<RecoveryCodesStatus>> {
-  const response = await call("/account/authenticators/recovery-codes", { method: "POST" });
-  if (response === null) return { ok: false, kind: "unreachable" };
-  if (!response.ok) return { ok: false, kind: "rejected" };
-  return { ok: true, value: parseRecoveryCodes(await response.json().catch(() => null)) };
+  const answer = await call("/account/authenticators/recovery-codes", { method: "POST" });
+  if (answer === null) return { ok: false, kind: "unreachable" };
+  if (!answer.ok) return { ok: false, kind: "rejected" };
+  return { ok: true, value: parseRecoveryCodes(answer.body) };
 }
