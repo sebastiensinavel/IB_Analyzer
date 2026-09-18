@@ -942,7 +942,7 @@ git add CLAUDE.md docs/points-reportes.md docs/plans/2026-09-18-part-nue-positio
 git commit -m "Documenter le sous-projet 22 et fermer les points reportés 16 et 21"
 ```
 
-- [ ] **Step 5: Démarrer l'instance de relecture**
+- [x] **Step 5: Démarrer l'instance de relecture**
 
 Run: `pnpm dev:start` **dans le worktree**
 Expected: Vite et Django détachés sur les ports du worktree. Donner les deux URL à Seb : il
