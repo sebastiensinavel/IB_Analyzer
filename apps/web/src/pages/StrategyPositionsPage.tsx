@@ -138,7 +138,7 @@ function LinesBox({
       title={box.title}
       columns={POSITION_COLUMNS}
       labelKey="positions.columns"
-      minWidth="83rem"
+      minWidth="62rem"
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
@@ -183,7 +183,7 @@ function SharesBox({
       title={box.title}
       columns={WHEEL_SHARE_COLUMNS}
       labelKey="strategyPositions.columns"
-      minWidth="83rem"
+      minWidth="62rem"
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}

@@ -26,7 +26,7 @@ export function PositionGroupCard({ title, positions, rows, table, specs, sector
       title={title}
       columns={POSITION_COLUMNS}
       labelKey="positions.columns"
-      minWidth="83rem"
+      minWidth="62rem"
       specs={specs}
       facetRows={positions}
       rows={rows}

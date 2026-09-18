@@ -6,32 +6,42 @@ import type { ColumnSpec } from "@/lib/tableView";
 /**
  * The twelve columns every table of the Positions page shares, in order, the cash table
  * included. Their widths are fixed, as a share of the table, so the tables line up whatever
- * their content. Re-measured for sub-project 23 at 1280 px wide, an agent snapshot synced so
- * `dayChange`/`dailyPnl` carry real numbers rather than dashes, where the table sits above its
- * 83rem minimum: a long contract wraps to a second line rather than pushing Coverage out of
- * sight, and each French header — the longest — takes at most two lines with its sort chevron,
- * no word of it overflowing onto its neighbour. They add up to 100.
+ * their content. Re-measured for sub-project 23, with an agent snapshot synced so `dayChange`/
+ * `dailyPnl` carry real numbers rather than dashes, on each column's *unwrappable* requirement:
+ * every `ColumnHeader` here renders `wrap` (`break-words whitespace-normal`), so a multi-word
+ * header is meant to fold onto a second line — what cannot fold is a single word (words never
+ * break mid-letter) plus its sort chevron, and, for a numeric column, the cell: an amount or a
+ * percentage never wraps either. `avgPrice` is abbreviated to `Prix init.` rather than fed:
+ * spelled out it would be two words wide instead of one, taking a data column's room.
  *
- * Each column takes what its header needs, then what its cells need when a wrap would hurt: an
- * amount never wraps, so `marketValue`, `dailyPnl` and `unrealizedPnl` hold their widest figure
- * whole, and neither does a percentage, so `dayChange` does too. The extra `quantity` and
- * `decision` ask for — `Qté` and `Décision` are single words, which cannot wrap — comes from
- * `type` and `coverage`, whose cells wrap by design. `avgPrice` is abbreviated to `Prix init.`
- * rather than fed: spelled out it would take a data column's room.
+ * `position` is the one column whose "unwrappable" figure is not its header: it holds the
+ * variable-length contract label, which this design lets wrap — but only to two lines (this
+ * file's own history, and CLAUDE.md, say so). Its real requirement is therefore the width a
+ * representative long label ("AAPL Jan16'26 150 Call") needs to fold to exactly two lines,
+ * found by binary search on the live column width against `Range.getClientRects().length`
+ * (a cell's own box stretches to its row's height, so measuring the cell's height instead — a
+ * mistake caught while re-measuring this file — silently measures the tallest sibling cell, not
+ * the label's own line count) — 115 px, well past its 50 px header word. Every other column
+ * gets exactly its own measured minimum, rounded up to the nearest 0.25 %; `position` gets
+ * whatever is left, which is where its margin above 115 px comes from.
+ *
+ * The table sits at its 62rem minimum: the smallest whole-rem width at which every column's
+ * rounded share still meets its own measured requirement (60 and 61rem left `position` short of
+ * its two-line need once the other eleven took their own rounded-up minimum). They add up to 100.
  */
 export const POSITION_COLUMNS = [
-  { key: "position", width: "14.75%", numeric: false },
-  { key: "type", width: "8.25%", numeric: false },
-  { key: "sector", width: "6.75%", numeric: false },
-  { key: "marketValue", width: "12.25%", numeric: true },
-  { key: "quantity", width: "4.5%", numeric: true },
-  { key: "avgPrice", width: "6.75%", numeric: true },
-  { key: "lastPrice", width: "8.75%", numeric: true },
+  { key: "position", width: "12.75%", numeric: false },
+  { key: "type", width: "5.25%", numeric: false },
+  { key: "sector", width: "7.5%", numeric: false },
+  { key: "marketValue", width: "11.75%", numeric: true },
+  { key: "quantity", width: "4.75%", numeric: true },
+  { key: "avgPrice", width: "7.75%", numeric: true },
+  { key: "lastPrice", width: "7.75%", numeric: true },
   { key: "dayChange", width: "6.75%", numeric: true },
-  { key: "dailyPnl", width: "7%", numeric: true },
-  { key: "unrealizedPnl", width: "8.25%", numeric: true },
-  { key: "decision", width: "7.25%", numeric: false },
-  { key: "coverage", width: "8.75%", numeric: false },
+  { key: "dailyPnl", width: "8.75%", numeric: true },
+  { key: "unrealizedPnl", width: "10.75%", numeric: true },
+  { key: "decision", width: "8%", numeric: false },
+  { key: "coverage", width: "8.25%", numeric: false },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean }[];
 
 /**

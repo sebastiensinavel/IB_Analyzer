@@ -121,6 +121,24 @@ describe("StrategyPositionsPage — Wheel", () => {
     expect(screen.queryByLabelText("Actions assignées")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Ventes d'options")).not.toBeInTheDocument();
   });
+
+  it("shows the day's move and P&L in their own cells, not just somewhere in the row", async () => {
+    // The whole MQZA call belongs to the Wheel (quantity -1 on both sides), so its share is the
+    // position's own dailyPnl/dayChange unprorated — a real, non-null, distinguishable pair.
+    // SNAPSHOT.positions[4] is the MQZA call itself (index 2 is ZZZ's unrelated LEAPS call).
+    await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, XOM_PUT]);
+    await db.snapshots.put({
+      ...SNAPSHOT,
+      positions: SNAPSHOT.positions.map((position) =>
+        position === SNAPSHOT.positions[4] ? { ...position, dailyPnl: -20, dayChange: 0.05 } : position,
+      ),
+    });
+    renderPage("wheel");
+    const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
+    // dayChange is POSITION_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
+    expect(cells(call)[7]).toHaveTextContent("+5.0%");
+    expect(cells(call)[8]).toHaveTextContent("-$20.00");
+  });
 });
 
 describe("StrategyPositionsPage — LEAPS", () => {

@@ -276,6 +276,12 @@ describe("PositionsPage", () => {
     expect(within(withMove).getByText("+8.2%")).toBeInTheDocument();
     // formatMoney, like the unrealized P&L column next to it (spec §7): a signed dollar amount.
     expect(within(withMove).getByText("$550.45")).toBeInTheDocument();
+    // Cell index, not just presence in the row: dayChange is POSITION_COLUMNS[7], dailyPnl is
+    // [8], between lastPrice and unrealizedPnl — a swap between the two values (both distinct
+    // and non-null here) would fail this, where presence-only assertions would not.
+    const moveCells = within(withMove).getAllByRole("cell");
+    expect(moveCells[7]).toHaveTextContent("+8.2%");
+    expect(moveCells[8]).toHaveTextContent("$550.45");
     const withoutMove = await rowFor("ONDS");
     expect(within(withoutMove).getAllByText("—").length).toBeGreaterThanOrEqual(2);
   });
