@@ -867,7 +867,7 @@ git commit -m "Test de bout en bout : la part nue passe de la Wheel à Autres"
 - Consomme : le comportement livré par les tâches 1 à 5.
 - Produit : rien de code.
 
-- [ ] **Step 1: Mettre à jour `CLAUDE.md`**
+- [x] **Step 1: Mettre à jour `CLAUDE.md`**
 
 Dans la puce « **Les positions d'une stratégie sont une vue calculée, jamais stockée** », après
 la phrase sur `STRATEGY_COVER_SOURCES`, ajouter :
@@ -890,7 +890,7 @@ Ajouter la ligne au tableau des sous-projets :
 | 22 | La part nue quitte les pages de stratégie | fait (2026-09-18) |
 ```
 
-- [ ] **Step 2: Mettre à jour `docs/points-reportes.md`**
+- [x] **Step 2: Mettre à jour `docs/points-reportes.md`**
 
 Dans la section du sous-projet 21, remplacer la dernière puce (« La page Autres ne montre pas
 toute la part nue du portefeuille ») par :
@@ -930,12 +930,12 @@ Ajouter une section pour le sous-projet 22, avant « Sans échéance » :
 ---
 ```
 
-- [ ] **Step 3: Vérifier tout, une seule fois**
+- [x] **Step 3: Vérifier tout, une seule fois**
 
 Run: `pnpm check`
 Expected: PASS — lint, typage, build et tous les tests.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add CLAUDE.md docs/points-reportes.md docs/plans/2026-09-18-part-nue-positions.md

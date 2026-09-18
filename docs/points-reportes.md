@@ -702,13 +702,10 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   assouplirait le seuil de 5 %. Non observé sur des données réelles. Question produit posée à
   l'utilisateur ; correctif possible : écarter les positions hors STK/OPT et le noter comme
   écart au Python au §4.5.
-- **Le badge « used » des actions Wheel est vert quand les calls Wheel ouverts dépassent les
-  actions** (`apps/web/src/pages/StrategyPositionsPage.tsx`, `WheelShareRow`, badge `usedBadge`
-  partagé avec la page Positions ; `coveredShares = min(quantité, contrats × 100)` dans
-  `packages/ledger/src/journals/holdings.ts`) : avec deux calls ouverts et 100 actions restantes,
-  la carte des actions affiche « used 100/100 » en vert alors qu'un call n'a rien derrière lui. La carte « Ventes d'options » montre bien
-  `UNCOVERED ×1` sur le call, rien n'est perdu. Question produit posée à l'utilisateur : une
-  teinte d'alerte quand `openCallContracts × 100 > quantity`.
+- ~~**Le badge « used » des actions Wheel est vert quand les calls Wheel ouverts dépassent les
+  actions**~~ — **fermé par le sous-projet 22** (2026-09-18) : la carte ne compte plus que les
+  calls couverts, donc « used 100/100 » dit vrai et le call sans rien derrière lui est sur la
+  page Autres.
 - **Aucun test web ne montre la carte « Actions » de la page LEAPS remplie, ni les cartes
   LEAPS vides** (`apps/web/src/pages/StrategyPositionsPage.test.tsx`) ; le §6 du spec nomme
   « les trois cartes LEAPS ». Le calcul des actions LEAPS est testé en unitaire
@@ -868,10 +865,24 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **`setExpiry` est mémoïsé sur `[defs, views]`**
   (`apps/web/src/pages/StrategyPositionsPage.tsx:69-72`), et `views` (`useStrategyBoxViews`)
   est un objet neuf à chaque rendu : la mémoïsation ne sert à rien.
-- **La page Autres ne montre pas toute la part nue du portefeuille** : un call vendu
-  partiellement couvert par des actions Wheel reste entier dans la Wheel, par classification à
-  la vente ; c'est la dette déjà consignée au sous-projet 16 (badge « used » trompeur sur les
-  actions Wheel), que cette page ne referme pas.
+- ~~**La page Autres ne montre pas toute la part nue du portefeuille**~~ — **fermé par le
+  sous-projet 22** (2026-09-18) : une page de stratégie ne montre que sa part couverte, et la
+  page Autres reprend le reste.
+
+---
+
+## Reporté par le sous-projet 22 (la part nue quitte les pages de stratégie)
+
+- **Un call Wheel réellement couvert par un LEAPS long garde une cellule de couverture vide** sur
+  la page Wheel : sa couverture vient de `leaps`, qui n'est pas une source de la Wheel
+  (`STRATEGY_COVER_SOURCES`). Le plafond de `migratedContracts` l'empêche de migrer à tort vers
+  Autres — rien n'est faux, seulement muet. C'était déjà le comportement avant ce sous-projet.
+  L'élargir demande de décider ce qu'une page de stratégie dit d'une couverture qui ne lui
+  appartient pas.
+- **Un put vendu ne migre jamais**, `secureShortPuts` (`packages/coverage/src/coverage.ts`) lui
+  allouant toujours `cash` sans regarder le cash disponible ; un manque de cash reste un problème
+  global du rapport. La règle est écrite sur les ventes d'options en général et suivra le moteur
+  s'il change.
 
 ---
 
