@@ -73,7 +73,8 @@
     }
   },
   "positions": {
-    "filterPlaceholder": "Filtrer sur la colonne Position…",
+    "searchLabel": "Rechercher un ticker",
+    "searchPlaceholder": "Rechercher un ticker : AAPL, AAPL|MSFT…",
     "asOf": "Données du {{date}}",
     "empty": "Aucune position — importez un relevé HTML ou une réponse de Flex Query avec Open Positions.",
     "emptyLink": "Aller aux sources de données",
@@ -89,8 +90,8 @@
       "type": "Type",
       "sector": "Secteur",
       "marketValue": "Valeur de marché",
-      "quantity": "Quantité",
-      "avgPrice": "Prix initial moy.",
+      "quantity": "Qté",
+      "avgPrice": "Prix init.",
       "lastPrice": "Dernier prix",
       "unrealizedPnl": "P&L latent",
       "decision": "Décision",
@@ -242,29 +243,22 @@
     "noneLink": "Aller aux sources de données"
   },
   "history": {
-    "filterPlaceholder": "Filtrer par symbole…",
-    "startDate": "Date de début",
-    "endDate": "Date de fin",
+    "searchLabel": "Rechercher un ticker",
+    "searchPlaceholder": "Rechercher un ticker : AAPL, AAPL|MSFT…",
     "noResults": "Aucune transaction ne correspond.",
     "columns": {
       "dateTime": "Date/Heure",
       "type": "Type",
       "symbol": "Symbole",
-      "quantity": "Quantité",
+      "quantity": "Qté",
       "price": "Prix",
       "totalPrice": "Prix total",
       "fee": "Frais",
       "cash": "Cash",
-      "currency": "Devise",
+      "currency": "Dev.",
       "usdCash": "Cash USD",
       "eurCash": "Cash EUR",
       "balanceHint": "Solde cumulé sur toutes les transactions en base — les filtres ne le modifient pas. Il est calé sur le cash de fin du fichier le plus récent qui porte un Cash Report ; la page Consistance dit s'il retombe sur le cash de début."
-    },
-    "presets": {
-      "label": "Période",
-      "all": "Tout",
-      "last30Days": "30 derniers jours",
-      "last12Months": "12 derniers mois"
     },
     "timeline": "Frise chronologique",
     "kindFilter": "Type",
@@ -555,5 +549,31 @@
   },
   "theme": {
     "toggle": "Changer de thème"
+  },
+  "tableFilter": {
+    "panel": "Options de la colonne {{column}}",
+    "sortAsc": "Croissant",
+    "sortDesc": "Décroissant",
+    "sortReset": "Réinitialiser le tri",
+    "sortAddHint": "Maj+clic : ajoute au tri, ou n’en retire que cette colonne",
+    "filterSection": "Filtre",
+    "input": "Critère pour {{column}}",
+    "clear": "Effacer",
+    "clearAll": "Tout effacer",
+    "clearColumn": "Retirer le filtre {{column}}",
+    "empty": "— (vide)",
+    "pill": "{{column}} : {{summary}}",
+    "sortOrder": "Tri n°{{order}}",
+    "help": {
+      "text": "aap · =AAPL · =AA* · A|B · —",
+      "number": ">100 · 10..20 · <0|>1000 · —",
+      "date": "2025 · >=2025-03 · 2024..2025-06 · —"
+    },
+    "errors": {
+      "number": "Nombre illisible",
+      "date": "Date illisible : AAAA, AAAA-MM ou AAAA-MM-JJ",
+      "textOperator": "Pas de comparaison ni de plage sur du texte",
+      "syntax": "Critère incomplet"
+    }
   }
 }

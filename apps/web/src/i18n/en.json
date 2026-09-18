@@ -73,7 +73,8 @@
     }
   },
   "positions": {
-    "filterPlaceholder": "Filter on the Position column…",
+    "searchLabel": "Search a ticker",
+    "searchPlaceholder": "Search a ticker: AAPL, AAPL|MSFT…",
     "asOf": "Data as of {{date}}",
     "empty": "No positions yet — import an HTML statement or a Flex query response with Open Positions.",
     "emptyLink": "Go to data sources",
@@ -89,8 +90,8 @@
       "type": "Type",
       "sector": "Sector",
       "marketValue": "Market value",
-      "quantity": "Quantity",
-      "avgPrice": "Avg. init. price",
+      "quantity": "Qty",
+      "avgPrice": "Init. price",
       "lastPrice": "Last price",
       "unrealizedPnl": "Unrealized P&L",
       "decision": "Decision",
@@ -242,29 +243,22 @@
     "noneLink": "Go to data sources"
   },
   "history": {
-    "filterPlaceholder": "Filter by symbol…",
-    "startDate": "Start date",
-    "endDate": "End date",
+    "searchLabel": "Search a ticker",
+    "searchPlaceholder": "Search a ticker: AAPL, AAPL|MSFT…",
     "noResults": "No transactions match.",
     "columns": {
       "dateTime": "Date/Time",
       "type": "Type",
       "symbol": "Symbol",
-      "quantity": "Quantity",
+      "quantity": "Qty",
       "price": "Price",
       "totalPrice": "Total Price",
       "fee": "Fee",
       "cash": "Cash",
-      "currency": "Currency",
+      "currency": "Curr.",
       "usdCash": "USD Cash",
       "eurCash": "EUR Cash",
       "balanceHint": "Running balance over every transaction on record — filters do not change it. It is anchored on the ending cash of the latest file carrying a Cash Report; the Consistency page says whether it comes back to the starting cash."
-    },
-    "presets": {
-      "label": "Period",
-      "all": "All",
-      "last30Days": "Last 30 days",
-      "last12Months": "Last 12 months"
     },
     "timeline": "Timeline",
     "kindFilter": "Type",
@@ -555,5 +549,31 @@
   },
   "theme": {
     "toggle": "Toggle theme"
+  },
+  "tableFilter": {
+    "panel": "Column {{column}} options",
+    "sortAsc": "Ascending",
+    "sortDesc": "Descending",
+    "sortReset": "Reset the sort",
+    "sortAddHint": "Shift+click: adds to the sort, or drops only this column",
+    "filterSection": "Filter",
+    "input": "Criterion for {{column}}",
+    "clear": "Clear",
+    "clearAll": "Clear all",
+    "clearColumn": "Remove the {{column}} filter",
+    "empty": "— (empty)",
+    "pill": "{{column}}: {{summary}}",
+    "sortOrder": "Sort #{{order}}",
+    "help": {
+      "text": "aap · =AAPL · =AA* · A|B · —",
+      "number": ">100 · 10..20 · <0|>1000 · —",
+      "date": "2025 · >=2025-03 · 2024..2025-06 · —"
+    },
+    "errors": {
+      "number": "Unreadable number",
+      "date": "Unreadable date: YYYY, YYYY-MM or YYYY-MM-DD",
+      "textOperator": "No comparison nor range on text",
+      "syntax": "Incomplete criterion"
+    }
   }
 }

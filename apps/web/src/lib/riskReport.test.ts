@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { AnalyzedPosition, StrategyLine } from "@ib/coverage";
-import { allocationBadges, coverageBadges, decisionBadge, groupTitleKey, strategyCoverageBadges, usedBadge } from "@/lib/riskReport";
+import { buildRiskReport, type AnalyzedPosition, type StrategyLine } from "@ib/coverage";
+import { formatContract } from "@/lib/format";
+import { SAMPLE_POSITIONS } from "@/mocks/positions";
+import { allocationBadges, coverageBadges, coverageValues, decisionBadge, groupTitleKey, strategyCoverageBadges, usedBadge } from "@/lib/riskReport";
 
 function position(overrides: Partial<AnalyzedPosition>): AnalyzedPosition {
   return {
@@ -150,5 +152,29 @@ describe("strategyCoverageBadges", () => {
     ]);
     const held = position({ kind: "long_stock", quantity: 100, usedQuantity: 100 });
     expect(strategyCoverageBadges(line({ kind: "long_stock", label: "long position", quantity: 100, position: held }))).toEqual([]);
+  });
+});
+
+describe("coverageValues", () => {
+  it("names the sources the badges show, UNCOVERED and used/unused included, never parsing a label", () => {
+    const report = buildRiskReport(SAMPLE_POSITIONS, 42000);
+    const bySpelling = new Map(report.positions.map((position) => [formatContract(position), position]));
+    expect(coverageValues(bySpelling.get("XOM Mar20'26 100 Put")!)).toEqual(["cash"]);
+    expect(coverageValues(bySpelling.get("AAPL Feb20'26 155 Call")!)).toEqual(["stock", "UNCOVERED"]);
+    expect(coverageValues(bySpelling.get("MSFT Mar20'26 400 Call")!)).toEqual(["leaps"]);
+    expect(coverageValues(bySpelling.get("AAPL")!)).toEqual(["used"]);
+    for (const position of report.positions) {
+      const badgeSources = coverageBadges(position).map((badge) => badge.label.split(" ")[0]);
+      expect(coverageValues(position)).toEqual([...new Set(badgeSources)]);
+    }
+  });
+
+  it("gives UNCOVERED to a sale without any allocation, unused to an idle long cover, nothing to other kinds", () => {
+    const report = buildRiskReport(SAMPLE_POSITIONS, 42000);
+    const sale = report.positions.find((position) => position.kind === "short_put")!;
+    expect(coverageValues({ ...sale, allocations: [], uncoveredQuantity: 0 })).toEqual(["UNCOVERED"]);
+    const long = report.positions.find((position) => position.kind === "long_stock")!;
+    expect(coverageValues({ ...long, usedQuantity: 0 })).toEqual(["unused"]);
+    expect(coverageValues({ ...long, kind: "other" })).toEqual([]);
   });
 });

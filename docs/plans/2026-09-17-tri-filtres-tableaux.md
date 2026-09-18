@@ -97,7 +97,7 @@ docs/specs/2026-09-17-tri-filtres-tableaux-design.md   §5.4 corrigé, statut
   ```
   Une colonne `date` est comparée sur la chaîne `YYYY-MM-DD HH:MM:SS` de `formatDateTime`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -262,12 +262,12 @@ describe("parseCriterion — text", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter web test src/lib/tableCriteria.test.ts`
 Expected: FAIL, `Failed to resolve import "@/lib/tableCriteria"`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```ts
 /**
@@ -468,12 +468,12 @@ export function parseCriterion(text: string, type: Exclude<ColumnType, "enum">):
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --filter web test src/lib/tableCriteria.test.ts`
 Expected: PASS. Si un cas échoue, corriger l'implémentation, jamais le test : les attentes recopient le §2 du spec.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/tableCriteria.ts apps/web/src/lib/tableCriteria.test.ts docs/plans/2026-09-17-tri-filtres-tableaux.md
@@ -518,7 +518,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function isActiveCriterion(meta: ColumnMeta, criterion: Criterion | undefined): boolean;
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -662,12 +662,12 @@ describe("activeCriteria", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter web test src/lib/tableView.test.ts`
 Expected: FAIL, `Failed to resolve import "@/lib/tableView"`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```ts
 import { parseCriterion, type CellValue, type ColumnType, type Predicate } from "@/lib/tableCriteria";
@@ -819,12 +819,12 @@ export function nextSort(sort: readonly SortKey[], column: string, additive: boo
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --filter web test src/lib/tableView.test.ts && pnpm --filter web typecheck`
 Expected: PASS, aucun erreur de typage.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/tableView.ts apps/web/src/lib/tableView.test.ts docs/plans/2026-09-17-tri-filtres-tableaux.md
@@ -856,7 +856,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function clearTableViews(accountId: string): void;
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `apps/web/src/lib/tableViewStorage.test.ts` :
 
@@ -983,12 +983,12 @@ Dans `apps/web/src/db/accounts.test.ts`, ajouter dans `describe("deleteAccount")
   });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/lib/tableViewStorage.test.ts src/db/accounts.test.ts`
 Expected: FAIL — import introuvable, puis la clé de `a` encore présente.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 `apps/web/src/lib/tableViewStorage.ts` :
 
@@ -1102,12 +1102,12 @@ Dans `apps/web/src/db/accounts.ts`, importer `clearTableViews` depuis `@/lib/tab
   clearTableViews(id);
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/lib/tableViewStorage.test.ts src/db/accounts.test.ts && pnpm --filter web typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/tableViewStorage.ts apps/web/src/lib/tableViewStorage.test.ts apps/web/src/db/accounts.ts apps/web/src/db/accounts.test.ts docs/plans/2026-09-17-tri-filtres-tableaux.md
@@ -1142,7 +1142,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function coverageValues(position: AnalyzedPosition): string[];
   ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `apps/web/src/lib/historyColumns.test.ts` :
 
@@ -1252,12 +1252,12 @@ describe("coverageValues", () => {
 
 La boucle du premier test vérifie la cohérence avec `coverageBadges` : si l'ordre des badges diffère (allocations puis `UNCOVERED`), c'est `coverageValues` qui suit cet ordre.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/lib/historyColumns.test.ts src/lib/positionColumns.test.ts src/lib/riskReport.test.ts`
 Expected: FAIL, `historyColumnSpecs`, `positionColumnSpecs` et `coverageValues` ne sont pas exportés.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 À la fin de `apps/web/src/lib/historyColumns.ts` :
 
@@ -1357,12 +1357,12 @@ export function coverageValues(position: AnalyzedPosition): string[] {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/lib/historyColumns.test.ts src/lib/positionColumns.test.ts src/lib/riskReport.test.ts && pnpm --filter web typecheck`
 Expected: PASS. Si `formatContract` d'une position ne rend pas `XOM Mar20'26 100 Put`, relire `PositionsPage.test.tsx` (qui affiche exactement ce libellé) plutôt que d'ajuster l'attente.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/historyColumns.ts apps/web/src/lib/historyColumns.test.ts apps/web/src/lib/positionColumns.ts apps/web/src/lib/positionColumns.test.ts apps/web/src/lib/riskReport.ts apps/web/src/lib/riskReport.test.ts docs/plans/2026-09-17-tri-filtres-tableaux.md
@@ -1398,7 +1398,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function usePageSearch(storageKey: string): PageSearchState;
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 import { act, renderHook } from "@testing-library/react";
@@ -1475,12 +1475,12 @@ describe("usePageSearch", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter web test src/hooks/useTableView.test.tsx`
 Expected: FAIL, import introuvable.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```ts
 import { useCallback, useEffect, useState } from "react";
@@ -1589,12 +1589,12 @@ export function usePageSearch(storageKey: string): PageSearchState {
 
 Si le dépôt n'a pas de règle eslint `react-hooks`, retirer la ligne `eslint-disable-next-line` (vérifier par `grep -rn "react-hooks" apps/web/eslint.config.* package.json` ; `pnpm check` échoue sur une directive inutile si `reportUnusedDisableDirectives` est actif).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --filter web test src/hooks/useTableView.test.tsx && pnpm --filter web typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/hooks/useTableView.ts apps/web/src/hooks/useTableView.test.tsx docs/plans/2026-09-17-tri-filtres-tableaux.md
@@ -1642,7 +1642,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   export function criterionSummary<Row>(spec: ColumnSpec<Row>, criterion: Criterion, emptyLabel: string): string;
   ```
 
-- [ ] **Step 1: Add the shadcn components**
+- [x] **Step 1: Add the shadcn components**
 
 ```bash
 cd packages/ui
@@ -1654,7 +1654,7 @@ git status --short packages/ui
 
 Expected : seuls `popover.tsx` et `checkbox.tsx` sont nouveaux, ils importent `@base-ui/react/popover` et `@base-ui/react/checkbox` (pas `@radix-ui`), et `packages/ui/package.json` n'a gagné aucune dépendance. Si `shadcn add` a modifié un autre fichier (`components.json`, un composant existant, `package.json`), annuler cette modification par `git checkout -- <fichier>`. Lire les deux fichiers générés pour connaître les noms exportés (`Popover`, `PopoverTrigger`, `PopoverContent` ; `Checkbox`) et adapter les imports ci-dessous s'ils diffèrent.
 
-- [ ] **Step 2: Add the translations**
+- [x] **Step 2: Add the translations**
 
 Dans `apps/web/src/i18n/fr.json`, ajouter une section de premier niveau :
 
@@ -1706,7 +1706,7 @@ Dans `apps/web/src/i18n/en.json`, la même section :
   },
 ```
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 `apps/web/src/components/table/ColumnHeader.test.tsx` :
 
@@ -1869,12 +1869,12 @@ describe("ActiveFilters", () => {
 });
 ```
 
-- [ ] **Step 4: Run tests to verify they fail**
+- [x] **Step 4: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/components/table/`
 Expected: FAIL, imports introuvables.
 
-- [ ] **Step 5: Write the implementation**
+- [x] **Step 5: Write the implementation**
 
 `apps/web/src/components/table/ColumnHeader.tsx` :
 
@@ -2109,12 +2109,12 @@ export function ActiveFilters<Row>({ specs, view, columnLabel, onClearColumn, on
 
 Le séparateur ` : ` suit la typographie française ; en anglais la pastille garde la même forme (pas de clé i18n pour un signe de ponctuation).
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/components/table/ && pnpm --filter web typecheck && pnpm --filter @ib/ui typecheck`
 Expected: PASS. Si le nom accessible d'une case à cocher base-ui ne se résout pas (`findByRole("checkbox", { name: /Trade/ })` introuvable), vérifier que `aria-label` est bien transmis à l'élément `role="checkbox"` par le composant généré ; ne pas remplacer la requête par un sélecteur CSS. Si `userEvent` ne transmet pas `shiftKey` au clic, remplacer les deux lignes `keyboard` par `fireEvent.click(bouton, { shiftKey: true })`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/ui/src/components/ui/popover.tsx packages/ui/src/components/ui/checkbox.tsx apps/web/src/components/table apps/web/src/i18n/fr.json apps/web/src/i18n/en.json docs/plans/2026-09-17-tri-filtres-tableaux.md
@@ -2153,7 +2153,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   }
   ```
 
-- [ ] **Step 1: Rewrite the page tests**
+- [x] **Step 1: Rewrite the page tests**
 
 Dans `apps/web/src/pages/HistoryPage.test.tsx` :
 
@@ -2330,12 +2330,12 @@ et les tests :
 
 Ajouter `cleanup` à l'import de `@testing-library/react`. Le solde USD de MSFT (`-491.65`) se vérifie à la main sur `SAMPLE_TRANSACTIONS` : dépôt EUR (USD 0), TSLA `-1101` → `-1101`, MSFT `+609.35` → `-491.65`. Si le calcul réel diffère, lire la valeur dans le test existant `"computes the running balances…"` et la cellule avant filtre, jamais ajuster pour faire passer.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/pages/HistoryPage.test.tsx`
 Expected: FAIL sur les nouveaux tests (pas de bouton de tri, pas de champ « Rechercher un ticker »).
 
-- [ ] **Step 3: Rewrite `HistoryTable`**
+- [x] **Step 3: Rewrite `HistoryTable`**
 
 Dans `apps/web/src/components/history/HistoryTable.tsx` :
 
@@ -2398,7 +2398,7 @@ Dans `apps/web/src/components/history/HistoryTable.tsx` :
 
 - `getItemKey` doit supporter zéro ligne (le virtualiseur ne l'appelle pas avec `count: 0`, rien à changer).
 
-- [ ] **Step 4: Rewrite `HistoryPage`**
+- [x] **Step 4: Rewrite `HistoryPage`**
 
 Remplacer le contenu de `apps/web/src/pages/HistoryPage.tsx` par :
 
@@ -2531,7 +2531,7 @@ Points à vérifier en écrivant :
 - dans le test `"keeps the Type list…"`, l'option du `Select` porte le nombre (`Dépôt/Retrait (1)`), d'où la regex ;
 - si la règle `react-hooks/exhaustive-deps` n'existe pas dans le dépôt, retirer la directive `eslint-disable-next-line` et garder la dépendance `JSON.stringify(checkedTypes)` calculée dans une variable avant le `useMemo`.
 
-- [ ] **Step 5: Translations and removals**
+- [x] **Step 5: Translations and removals**
 
 Dans `fr.json`, section `history` : supprimer `filterPlaceholder`, `startDate`, `endDate`, `presets` ; ajouter :
 
@@ -2567,7 +2567,7 @@ export function dayOf(when: string): string {
 
 et `filter.test.ts` à son seul bloc `describe("dayOf")`, import `import { dayOf } from "./filter.ts";`. Relancer le `grep` : aucune occurrence.
 
-- [ ] **Step 6: Correct the spec**
+- [x] **Step 6: Correct the spec**
 
 Dans `docs/specs/2026-09-17-tri-filtres-tableaux-design.md` §5.4, remplacer le point **Remontage** par :
 
@@ -2580,12 +2580,12 @@ Dans `docs/specs/2026-09-17-tri-filtres-tableaux-design.md` §5.4, remplacer le 
   `resetKey`.
 ```
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/pages/HistoryPage.test.tsx src/components/history && pnpm --filter @ib/ledger test && pnpm --filter web typecheck`
 Expected: PASS, y compris les tests existants de défilement (`"brings the table back to its top when a filter changes"`, `"…when the account changes"`, `"keeps the reader's scroll position when a row arrives live"`, `"jumps from the timeline…"`). Le nom du paquet ledger est à lire dans `packages/ledger/package.json` si `@ib/ledger` ne répond pas.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A apps/web/src/components/history apps/web/src/pages/HistoryPage.tsx apps/web/src/pages/HistoryPage.test.tsx apps/web/src/lib/periodPresets.ts apps/web/src/lib/periodPresets.test.ts packages/ledger/src/filter.ts packages/ledger/src/filter.test.ts apps/web/src/i18n/fr.json apps/web/src/i18n/en.json docs/specs/2026-09-17-tri-filtres-tableaux-design.md docs/plans/2026-09-17-tri-filtres-tableaux.md
@@ -2635,7 +2635,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   }): JSX.Element;
   ```
 
-- [ ] **Step 1: Rewrite the page tests**
+- [x] **Step 1: Rewrite the page tests**
 
 Dans `apps/web/src/pages/PositionsPage.test.tsx` :
 
@@ -2736,12 +2736,12 @@ Avant d'écrire ces tests, vérifier sur `SAMPLE_SNAPSHOT` rendu (test existant 
 
 3. `"lines up the columns of every table on the page, the cash included"` : si l'attente porte sur le nom ou le texte des en-têtes, garder `textContent` ; un nom accessible passe en regex `^…`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm --filter web test src/pages/PositionsPage.test.tsx`
 Expected: FAIL sur les nouveaux tests.
 
-- [ ] **Step 3: `PositionTableHeader` accepts interactive headers**
+- [x] **Step 3: `PositionTableHeader` accepts interactive headers**
 
 Remplacer `PositionTableHeader` dans `apps/web/src/components/PositionTable.tsx` :
 
@@ -2790,7 +2790,7 @@ export function PositionTableHeader({ interactive }: { interactive?: Interactive
 
 avec les imports `AnalyzedPosition` (`@ib/coverage`), `ColumnHeader`, `ColumnSpec`, `Criterion`, `Facet`, `TableView`.
 
-- [ ] **Step 4: `PositionGroupCard`**
+- [x] **Step 4: `PositionGroupCard`**
 
 `apps/web/src/components/PositionGroupCard.tsx` :
 
@@ -2892,7 +2892,7 @@ export function PositionGroupCard({ accountId, groupId, title, positions, search
 }
 ```
 
-- [ ] **Step 5: Rewrite the Positions list in `PositionsPage`**
+- [x] **Step 5: Rewrite the Positions list in `PositionsPage`**
 
 Dans `apps/web/src/pages/PositionsPage.tsx` :
 - supprimer `useState`, `filter`, `setFilter`, les imports désormais inutiles (`TableBody`, `PositionRow`, `PositionTable`, `PositionTableHeader`, `CardHeader`, `CardTitle`, `coverageBadges`, `formatContract` s'ils ne servent plus) ;
@@ -2948,7 +2948,7 @@ Dans `apps/web/src/pages/PositionsPage.tsx` :
 
 Les `useMemo`/`usePageSearch` doivent être appelés à chaque rendu, avant `if (report === undefined …)` : les déplacer en tête du composant. `sectorOf` est défini même en chargement (`useAccountRiskReport`).
 
-- [ ] **Step 6: Translations**
+- [x] **Step 6: Translations**
 
 `fr.json`, section `positions` : supprimer `filterPlaceholder`, ajouter :
 
@@ -2966,12 +2966,12 @@ Les `useMemo`/`usePageSearch` doivent être appelés à chaque rendu, avant `if 
 
 Vérifier par `grep -rn "positions.filterPlaceholder" apps/web/src` qu'aucun autre code ne s'en sert (`StrategyPositionsPage` compris) ; s'il sert encore, garder la clé.
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `pnpm --filter web test src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx src/components/CashBalancesCard.test.tsx && pnpm --filter web typecheck`
 Expected: PASS ; `StrategyPositionsPage` et la carte Cash inchangés.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/web/src/components/PositionTable.tsx apps/web/src/components/PositionGroupCard.tsx apps/web/src/pages/PositionsPage.tsx apps/web/src/pages/PositionsPage.test.tsx apps/web/src/i18n/fr.json apps/web/src/i18n/en.json docs/plans/2026-09-17-tri-filtres-tableaux.md
@@ -2988,7 +2988,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Modify: `CLAUDE.md`
 - Modify: `docs/specs/2026-09-17-tri-filtres-tableaux-design.md` (statut)
 
-- [ ] **Step 1: Update `CLAUDE.md`**
+- [x] **Step 1: Update `CLAUDE.md`**
 
 1. Tableau des sous-projets, ajouter la ligne :
    ```markdown
@@ -3012,16 +3012,16 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
      n'est triable.
    ```
 
-- [ ] **Step 2: Spec status**
+- [x] **Step 2: Spec status**
 
 Dans le spec, remplacer `Statut : conçu (2026-09-17).` par `Statut : implémenté (AAAA-MM-JJ).`, date du jour.
 
-- [ ] **Step 3: Full check**
+- [x] **Step 3: Full check**
 
 Run: `pnpm check`
 Expected: PASS (lint, typage, tests de tous les paquets, fraîcheur du schéma API). Corriger toute erreur en revenant à la tâche fautive, jamais en désactivant une règle.
 
-- [ ] **Step 4: Visual check**
+- [x] **Step 4: Visual check**
 
 Avec le skill `run-frontend` (depuis la racine du worktree), graine `--seed`, en français :
 - l'Historique au repos ; puis trié par Prix total, avec un filtre `>0` sur Prix total et la liste Type à deux valeurs : pastilles visibles, barre temporelle absente ; puis le popover de filtre ouvert sur Date/Heure avec une saisie invalide (`2025-13`) ;
@@ -3030,7 +3030,7 @@ Avec le skill `run-frontend` (depuis la racine du worktree), graine `--seed`, en
 
 Regarder chaque capture : en-têtes lisibles sans chevauchement de l'icône et du libellé, popover non coupé, pastilles alignées, colonnes de Positions toujours alignées entre les cartes. Corriger et recapturer au besoin.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add CLAUDE.md docs/specs/2026-09-17-tri-filtres-tableaux-design.md docs/plans/2026-09-17-tri-filtres-tableaux.md

@@ -84,6 +84,18 @@ describe("deleteAccount", () => {
     expect((await db.cashPoints.toArray()).map((p) => p.accountId)).toEqual(["b"]);
     expect(getLastAccountId()).toBeNull();
   });
+
+  it("forgets the table views and page searches of the deleted account only", async () => {
+    await createAccount(db, { label: "a", ibAccountId: "U1111111" });
+    await createAccount(db, { label: "b", ibAccountId: "U2222222" });
+    window.localStorage.setItem("ib2:tableView:a:history", JSON.stringify({ v: 1, sort: [], criteria: { amount: ">0" } }));
+    window.localStorage.setItem("ib2:pageSearch:a:positions", JSON.stringify({ v: 1, text: "AAPL" }));
+    window.localStorage.setItem("ib2:tableView:b:history", JSON.stringify({ v: 1, sort: [], criteria: { amount: ">0" } }));
+    await deleteAccount(db, "a");
+    expect(window.localStorage.getItem("ib2:tableView:a:history")).toBeNull();
+    expect(window.localStorage.getItem("ib2:pageSearch:a:positions")).toBeNull();
+    expect(window.localStorage.getItem("ib2:tableView:b:history")).not.toBeNull();
+  });
 });
 
 describe("setFlexRelay", () => {

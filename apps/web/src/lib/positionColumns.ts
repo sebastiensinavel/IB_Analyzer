@@ -1,21 +1,59 @@
+import { KIND_LABELS, type AnalyzedPosition, type PositionKind } from "@ib/coverage";
+import { formatContract } from "@/lib/format";
+import { coverageValues } from "@/lib/riskReport";
+import type { ColumnSpec } from "@/lib/tableView";
+
 /**
  * The ten columns every table of the Positions page shares, in order, the cash table included.
  * Their widths are fixed, as a share of the table, so the tables line up whatever their content.
- * Sized on a real Flex account at 1280 px wide with the menu open: a long contract or header then
- * wraps to a second line rather than pushing the Coverage column out of sight.
+ * Measured at 1280 px wide with the menu open, where the table sits at its 60rem minimum: a long
+ * contract wraps to a second line rather than pushing the Coverage column out of sight, and each
+ * French header — the longest — takes at most two lines with its sort chevron, no word of it
+ * overflowing onto its neighbour. They add up to 100.
+ *
+ * Each column takes what its header needs, then what its cells need when a wrap would hurt: an
+ * amount never wraps, so `marketValue` and `unrealizedPnl` hold their widest figure whole. The
+ * extra `quantity` and `decision` ask for — `Qté` and `Décision` are single words, which cannot
+ * wrap — comes from `type` and `coverage`, whose cells wrap by design. `avgPrice` is abbreviated
+ * to `Prix init.` rather than fed: spelled out it would take a data column's room.
  */
 export const POSITION_COLUMNS = [
   { key: "position", width: "20%", numeric: false },
-  { key: "type", width: "11%", numeric: false },
+  { key: "type", width: "8.75%", numeric: false },
   { key: "sector", width: "9%", numeric: false },
   { key: "marketValue", width: "10%", numeric: true },
-  { key: "quantity", width: "5%", numeric: true },
+  { key: "quantity", width: "6%", numeric: true },
   { key: "avgPrice", width: "8%", numeric: true },
   { key: "lastPrice", width: "8%", numeric: true },
-  { key: "unrealizedPnl", width: "9%", numeric: true },
-  { key: "decision", width: "8%", numeric: false },
-  { key: "coverage", width: "12%", numeric: false },
+  { key: "unrealizedPnl", width: "9.25%", numeric: true },
+  { key: "decision", width: "9.5%", numeric: false },
+  { key: "coverage", width: "11.5%", numeric: false },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean }[];
+
+/**
+ * What each shared column of the Positions page compares, filters and sorts on. Same keys and order
+ * as POSITION_COLUMNS. The coverage is a set of sources, filterable but without a natural order.
+ */
+export function positionColumnSpecs(sectorOf: (symbol: string) => string | null): ColumnSpec<AnalyzedPosition>[] {
+  return [
+    { key: "position", type: "text", sortable: true, value: (position) => formatContract(position) },
+    {
+      key: "type",
+      type: "enum",
+      sortable: true,
+      value: (position) => position.kind,
+      label: (kind) => KIND_LABELS[kind as PositionKind] ?? kind,
+    },
+    { key: "sector", type: "enum", sortable: true, value: (position) => sectorOf(position.symbol) },
+    { key: "marketValue", type: "number", sortable: true, value: (position) => position.marketValue },
+    { key: "quantity", type: "number", sortable: true, value: (position) => position.quantity },
+    { key: "avgPrice", type: "number", sortable: true, value: (position) => position.avgPrice },
+    { key: "lastPrice", type: "number", sortable: true, value: (position) => position.lastPrice },
+    { key: "unrealizedPnl", type: "number", sortable: true, value: (position) => position.unrealizedPnl },
+    { key: "decision", type: "enum", sortable: true, value: (position) => position.decision },
+    { key: "coverage", type: "enum", sortable: false, value: (position) => coverageValues(position) },
+  ];
+}
 
 export type PositionColumnKey = (typeof POSITION_COLUMNS)[number]["key"];
 

@@ -835,6 +835,22 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Reporté par le sous-projet 20 (Tri et filtres de colonne)
+
+- **Une recherche de page tapée moins de 300 ms avant un démontage ou un changement de compte
+  n'est pas mémorisée.** `usePageSearch` (`apps/web/src/hooks/useTableView.ts`) n'écrit le
+  texte qu'à l'échéance de son anti-rebond (`PAGE_SEARCH_DEBOUNCE_MS`), et le nettoyage de
+  l'effet annule le minuteur : quitter la page ou passer à un autre compte juste après la
+  dernière frappe perd ces derniers caractères au retour. Le filtre affiché, lui, n'a jamais
+  divergé du texte mémorisé.
+- **La recette `sed` de `packages/ui/README.md` ne correspond plus au CLI shadcn**, qui écrit
+  désormais dans un dossier `@/` littéral et importe `cn` depuis un paquet npm `cn` (déjà
+  observé au sous-projet 19 pour `radio-group`) : réécrire les imports `@/` ne suffit plus, il
+  faut aussi déplacer le fichier et retirer la dépendance ajoutée. La recette est à réécrire
+  le jour où l'on ajoute un composant.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un

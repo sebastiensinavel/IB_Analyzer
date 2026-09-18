@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { Link, MemoryRouter, Route, Routes } from "react-router";
@@ -40,6 +40,18 @@ function rowSymbols(): string[] {
   return screen.getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[2].textContent ?? "");
 }
 
+/** Opens a column's panel, which holds its sort actions and its filter. */
+async function openPanel(user: ReturnType<typeof userEvent.setup>, column: string) {
+  const header = screen.getByRole("columnheader", { name: new RegExp(`^${column}`) });
+  await user.click(within(header).getByRole("button", { name: new RegExp(`^${column}`) }));
+}
+
+/** Sorts from that panel; choosing a direction, or resetting, closes it. */
+async function sortBy(user: ReturnType<typeof userEvent.setup>, column: string, action: "Croissant" | "Décroissant" | "Réinitialiser le tri") {
+  await openPanel(user, column);
+  await user.click(await screen.findByRole("button", { name: action }));
+}
+
 function scroller(): HTMLElement {
   return screen.getByRole("region", { name: "Historique" });
 }
@@ -60,6 +72,7 @@ function manyRows(count: number, accountId = "alpha", prefix = "SYM"): Transacti
 
 beforeEach(async () => {
   await Promise.all([db.transactions.clear(), db.accounts.clear(), db.cashPoints.clear()]);
+  window.localStorage.clear();
   // jsdom lays nothing out: every element measures 0, and a virtualizer over a 0 px viewport
   // renders no row. @tanstack/virtual-core reads offsetWidth/offsetHeight (its getRect) and does
   // without ResizeObserver, which jsdom lacks: an 800 px viewport is all it needs.
@@ -120,6 +133,21 @@ describe("HistoryPage", () => {
     expect(cells[CURRENCY_CELL]).toHaveTextContent("USD");
   });
 
+  it("carries a numeric cell's full formatted text as its title, so a clipped value stays readable on hover", async () => {
+    await seed();
+    renderHistory();
+    const cells = within(await rowFor("AAPL")).getAllByRole("cell");
+    expect(cells[CASH_CELL]).toHaveAttribute("title", "-18,051.50");
+  });
+
+  it("gives a dash cell no title: there is nothing hidden to reveal", async () => {
+    await seed([{ ...SAMPLE_DEPOSIT, amount: 10000 }, { ...SAMPLE_TRANSACTIONS[0], symbol: "SNZA", price: null, amount: null, commission: null }]);
+    renderHistory();
+    const cells = within(await rowFor("SNZA")).getAllByRole("cell");
+    expect(cells[CASH_CELL]).toHaveTextContent("—");
+    expect(cells[CASH_CELL]).not.toHaveAttribute("title");
+  });
+
   it("computes the running balances over the whole ledger and carries both currencies on every row", async () => {
     await seed();
     renderHistory();
@@ -136,7 +164,7 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText("Filtrer par symbole…"), "AAPL");
+    await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "AAPL");
     await waitFor(() => expect(rowSymbols()).toEqual(["AAPL"]));
     const aapl = within(await rowFor("AAPL")).getAllByRole("cell");
     expect(aapl[USD_CASH_CELL]).toHaveTextContent("-18,543.15");
@@ -145,9 +173,9 @@ describe("HistoryPage", () => {
   it("says on the balance headers what the balances are anchored on", async () => {
     await seed();
     renderHistory();
-    const usdHeader = await screen.findByRole("columnheader", { name: "Cash USD" });
+    const usdHeader = await screen.findByRole("columnheader", { name: /^Cash USD/ });
     expect(usdHeader).toHaveAttribute("title", expect.stringContaining("calé sur le cash de fin"));
-    expect(screen.getByRole("columnheader", { name: "Cash EUR" })).toHaveAttribute("title", expect.stringContaining("calé sur le cash de fin"));
+    expect(screen.getByRole("columnheader", { name: /^Cash EUR/ })).toHaveAttribute("title", expect.stringContaining("calé sur le cash de fin"));
     expect(usdHeader).toHaveAttribute("title", expect.stringContaining("la page Consistance dit s'il retombe sur le cash de début"));
   });
 
@@ -180,52 +208,6 @@ describe("HistoryPage", () => {
     expect(cells[CASH_CELL]).toHaveTextContent("10,000.00");
   });
 
-  it("filters by kind and drops the filter again on All types", async () => {
-    await seed();
-    renderHistory();
-    await screen.findByText("AAPL");
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("combobox", { name: "Type" }));
-    await user.click(await screen.findByRole("option", { name: "Dépôt/Retrait" }));
-    await waitFor(() => expect(rowSymbols()).toEqual(["ELECTRONIC FUND TRANSFER"]));
-    await user.click(screen.getByRole("combobox", { name: "Type" }));
-    await user.click(await screen.findByRole("option", { name: "Tous les types" }));
-    await waitFor(() => expect(rowSymbols()).toHaveLength(4));
-  });
-
-  it("filters by date range, inclusive", async () => {
-    await seed();
-    renderHistory();
-    await screen.findByText("AAPL");
-    fireEvent.change(screen.getByLabelText("Date de début"), { target: { value: "2026-08-20" } });
-    fireEvent.change(screen.getByLabelText("Date de fin"), { target: { value: "2026-08-27" } });
-    await waitFor(() => expect(rowSymbols()).toEqual(["MSFT", "TSLA"]));
-  });
-
-  it("fills both dates from a year preset, keeps that year's rows, and lets All drop them", async () => {
-    await seed([...SAMPLE_TRANSACTIONS, { ...SAMPLE_TRANSACTIONS[0], externalId: "flex:trade:2025", symbol: "OLD", when: "2025-06-02T10:00:00.000Z" }]);
-    renderHistory();
-    await screen.findByText("AAPL");
-    const presets = screen.getByRole("group", { name: "Période" });
-    // Years come from the ledger, newest first.
-    expect(within(presets).getAllByRole("button").map((button) => button.textContent)).toEqual([
-      "Tout", "30 derniers jours", "12 derniers mois", "2026", "2025",
-    ]);
-    expect(within(presets).getByRole("button", { name: "Tout" })).toHaveAttribute("aria-pressed", "true");
-    const user = userEvent.setup();
-    await user.click(within(presets).getByRole("button", { name: "2025" }));
-    expect(screen.getByLabelText("Date de début")).toHaveValue("2025-01-01");
-    expect(screen.getByLabelText("Date de fin")).toHaveValue("2025-12-31");
-    await waitFor(() => expect(rowSymbols()).toEqual(["OLD"]));
-    expect(within(presets).getByRole("button", { name: "2025" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(presets).getByRole("button", { name: "Tout" })).toHaveAttribute("aria-pressed", "false");
-    // The 2026 preset stays offered although the filter emptied its year.
-    expect(within(presets).getByRole("button", { name: "2026" })).toBeInTheDocument();
-    await user.click(within(presets).getByRole("button", { name: "Tout" }));
-    expect(screen.getByLabelText("Date de début")).toHaveValue("");
-    await waitFor(() => expect(rowSymbols()).toHaveLength(5));
-  });
-
   it("keeps its columns on fixed widths, so scrolling never resizes them", async () => {
     await seed();
     renderHistory();
@@ -233,7 +215,7 @@ describe("HistoryPage", () => {
     const table = screen.getByRole("table");
     expect([...table.querySelectorAll("col")].map((col) => col.style.width)).toEqual(HISTORY_COLUMNS.map((column) => column.width));
     expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
-      "Date/Heure", "Type", "Symbole", "Quantité", "Prix", "Prix total", "Frais", "Cash", "Devise", "Cash USD", "Cash EUR",
+      "Date/Heure", "Type", "Symbole", "Qté", "Prix", "Prix total", "Frais", "Cash", "Dev.", "Cash USD", "Cash EUR",
     ]);
   });
 
@@ -265,7 +247,7 @@ describe("HistoryPage", () => {
     fireEvent.scroll(scroller());
     await screen.findByText("SYM49");
     const user = userEvent.setup();
-    await user.type(screen.getByPlaceholderText("Filtrer par symbole…"), "SYM1");
+    await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "SYM1");
     // SYM1, SYM10-19 and SYM100-199 match: the newest of them, SYM199, is back on top.
     await waitFor(() => expect(scroller().scrollTop).toBe(0));
     expect(await screen.findByText("SYM199")).toBeInTheDocument();
@@ -340,5 +322,154 @@ describe("HistoryPage", () => {
     await screen.findByText("AAPL");
     await db.transactions.add({ ...SAMPLE_TRANSACTIONS[0], externalId: "flex:trade:new", symbol: "NEW", when: "2026-09-01T00:00:00.000Z" });
     expect(await screen.findByText("NEW")).toBeInTheDocument();
+  });
+
+  it("sorts in the direction chosen in the panel, and back to the default order on a reset", async () => {
+    await seed();
+    renderHistory();
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await sortBy(user, "Prix total", "Croissant");
+    // Amounts: AAPL -18050, TSLA -1100, MSFT 610, deposit 10000.
+    await waitFor(() => expect(rowSymbols()).toEqual(["AAPL", "TSLA", "MSFT", "ELECTRONIC FUND TRANSFER"]));
+    expect(screen.getByRole("columnheader", { name: /^Prix total/ })).toHaveAttribute("aria-sort", "ascending");
+    await sortBy(user, "Prix total", "Décroissant");
+    await waitFor(() => expect(rowSymbols()).toEqual(["ELECTRONIC FUND TRANSFER", "MSFT", "TSLA", "AAPL"]));
+    await sortBy(user, "Prix total", "Réinitialiser le tri");
+    await waitFor(() => expect(rowSymbols()).toEqual(["AAPL", "MSFT", "TSLA", "ELECTRONIC FUND TRANSFER"]));
+  });
+
+  it("puts the rows without a value last, whatever the direction", async () => {
+    await seed();
+    renderHistory();
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await sortBy(user, "Frais", "Croissant");
+    await waitFor(() => expect(rowSymbols().at(-1)).toBe("ELECTRONIC FUND TRANSFER"));
+    await sortBy(user, "Frais", "Décroissant");
+    await waitFor(() => expect(rowSymbols().at(-1)).toBe("ELECTRONIC FUND TRANSFER"));
+  });
+
+  it("filters a column with a criterion and keeps each row's whole-ledger balance", async () => {
+    await seed();
+    renderHistory();
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await openPanel(user, "Prix total");
+    await user.type(await screen.findByRole("textbox", { name: "Critère pour Prix total" }), ">0");
+    await waitFor(() => expect(rowSymbols()).toEqual(["MSFT", "ELECTRONIC FUND TRANSFER"]));
+    expect(within(await rowFor("MSFT")).getAllByRole("cell")[USD_CASH_CELL]).toHaveTextContent("-491.65");
+    expect(screen.getByText("Prix total : >0")).toBeInTheDocument();
+  });
+
+  it("shows an invalid criterion in red and does not filter on it", async () => {
+    await seed();
+    renderHistory();
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await openPanel(user, "Date/Heure");
+    const input = await screen.findByRole("textbox", { name: "Critère pour Date/Heure" });
+    // Pasted in one change: typed char by char, the valid prefix "2025" would be applied and kept.
+    await user.click(input);
+    await user.paste("2025-13");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(rowSymbols()).toHaveLength(4);
+    await user.clear(input);
+    await user.type(input, "2026-08-2");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    await user.type(input, "7");
+    await waitFor(() => expect(rowSymbols()).toEqual(["MSFT"]));
+  });
+
+  it("keeps the Type list above the table and the Type column filter on one state", async () => {
+    await seed();
+    renderHistory();
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox", { name: "Type" }));
+    await user.click(await screen.findByRole("option", { name: /Dépôt\/Retrait/ }));
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(rowSymbols()).toEqual(["ELECTRONIC FUND TRANSFER"]));
+    await openPanel(user, "Type");
+    expect(await screen.findByRole("checkbox", { name: /Dépôt\/Retrait/ })).toBeChecked();
+    await user.click(screen.getByRole("checkbox", { name: /Trade/ }));
+    await waitFor(() => expect(rowSymbols()).toHaveLength(4));
+  });
+
+  it("counts the Type values over the whole ledger, not over the filtered rows", async () => {
+    await seed();
+    renderHistory();
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=MSFT");
+    await waitFor(() => expect(rowSymbols()).toEqual(["MSFT"]));
+    await openPanel(user, "Type");
+    const trade = (await screen.findByRole("checkbox", { name: /Trade/ })).closest("label")!;
+    expect(trade).toHaveTextContent("3");
+  });
+
+  it("searches the ticker with OR, an option by its underlying", async () => {
+    await seed([
+      ...SAMPLE_TRANSACTIONS,
+      { ...SAMPLE_TRANSACTIONS[0], externalId: "flex:trade:9", symbol: "MSFT  261016C00400000", secType: "OPT", right: "C", strike: 400, expiry: "2026-10-16" },
+    ]);
+    renderHistory();
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=MSFT|=TSLA");
+    await waitFor(() => expect(rowSymbols()).toEqual(["MSFT Oct16'26 400 Call", "MSFT", "TSLA"]));
+  });
+
+  it("hides the timeline under a sort and brings it back on the default order", async () => {
+    await seed(manyRows(50));
+    renderHistory();
+    await screen.findByText("SYM49");
+    expect(screen.getByRole("slider", { name: "Frise chronologique" })).toBeInTheDocument();
+    const user = userEvent.setup();
+    await sortBy(user, "Date/Heure", "Croissant");
+    await waitFor(() => expect(screen.queryByRole("slider", { name: "Frise chronologique" })).not.toBeInTheDocument());
+    await sortBy(user, "Date/Heure", "Réinitialiser le tri");
+    expect(await screen.findByRole("slider", { name: "Frise chronologique" })).toBeInTheDocument();
+  });
+
+  it("keeps headers, pills and Clear all when a filter empties the table", async () => {
+    await seed();
+    renderHistory();
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await openPanel(user, "Qté");
+    await user.type(await screen.findByRole("textbox", { name: "Critère pour Qté" }), ">1000000");
+    expect(await screen.findByText("Aucune transaction ne correspond.")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /^Qté/ })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Tout effacer" }));
+    await waitFor(() => expect(rowSymbols()).toHaveLength(4));
+  });
+
+  it("remembers the view per account, across a remount", async () => {
+    await seed();
+    await seed([{ ...SAMPLE_TRANSACTIONS[0], accountId: "beta", externalId: "flex:trade:b1", symbol: "BETA" }]);
+    const first = renderHistory("alpha");
+    await screen.findByText("AAPL");
+    const user = userEvent.setup();
+    await sortBy(user, "Prix total", "Croissant");
+    await waitFor(() => expect(rowSymbols()[0]).toBe("AAPL"));
+    first.unmount();
+    renderHistory("beta");
+    await screen.findByText("BETA");
+    expect(screen.getByRole("columnheader", { name: /^Prix total/ })).not.toHaveAttribute("aria-sort");
+    cleanup();
+    renderHistory("alpha");
+    await screen.findByText("AAPL");
+    expect(screen.getByRole("columnheader", { name: /^Prix total/ })).toHaveAttribute("aria-sort", "ascending");
+    expect(rowSymbols()).toEqual(["AAPL", "TSLA", "MSFT", "ELECTRONIC FUND TRANSFER"]);
+  });
+
+  it("no longer offers the date fields nor the period presets", async () => {
+    await seed();
+    renderHistory();
+    await screen.findByText("AAPL");
+    expect(screen.queryByLabelText("Date de début")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Période" })).not.toBeInTheDocument();
   });
 });

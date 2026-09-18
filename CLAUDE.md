@@ -159,10 +159,22 @@ identifiant de compte, un jeton ou un montant réel.
   défile dans sa carte, en-tête figé, bordé d'une barre temporelle (`TimelineScrubber`). Ses lignes
   ont une hauteur constante, `HISTORY_ROW_HEIGHT` (`lib/historyColumns.ts`), et aucune cellule ne
   passe à la ligne : la barre place un mois à `index × hauteur` sans rien mesurer, une ligne plus
-  haute la fausserait. La barre suit les lignes filtrées, les puces d'année le ledger entier. Un
-  changement de filtre ou de compte remonte le tableau (`key`), une ligne arrivée en direct ne le
-  fait pas. La position s'écrit dans `scrollTop`, jamais par `scrollToOffset` (jsdom n'a pas
-  `scrollTo`).
+  haute la fausserait. La barre suit les lignes filtrées. Un changement de compte remonte le
+  tableau (`key`) ; un changement de recherche, de critère ou de tri le ramène en haut par
+  `resetKey` sans le remonter, pour ne pas fermer le panneau de colonne de l'en-tête, qui porte
+  le tri et le filtre ; une ligne arrivée en direct ne fait ni l'un ni l'autre. La barre temporelle n'est rendue que sans tri. La
+  position s'écrit dans `scrollTop`, jamais par `scrollToOffset` (jsdom n'a pas `scrollTo`).
+- **Tri et filtres des tableaux sont un état d'affichage en `localStorage`, jamais en IndexedDB ni
+  sur le serveur** : une clé par compte et par tableau (`ib2:tableView:<compte>:history`,
+  `…:positions:<groupe>`) et par page pour la recherche par ticker (`ib2:pageSearch:`), effacées
+  par `deleteAccount`. Le moteur est pur (`lib/tableCriteria.ts`, `lib/tableView.ts`) ; chaque
+  colonne déclare son type et sa valeur à côté de ses largeurs (`historyColumnSpecs`,
+  `positionColumnSpecs`). Un `null` trie en dernier dans les deux sens et n'est retenu que par
+  `—`. Les soldes de l'Historique se calculent sur tout le ledger avant tout filtre ou tri. Une
+  carte de Positions a sa propre vue : Type, Décision et Couverture n'y ont pas le même sens
+  d'un groupe à l'autre ; seule la recherche par ticker est commune. La Couverture se filtre sur
+  `coverageValues`, jamais sur le texte des badges. Hors Historique et Positions, aucun tableau
+  n'est triable.
 - **Toute heure IB est l'heure murale de New York stampée UTC** (`IB_REPORT_TIME_ZONE`,
   `toReportTime` dans `packages/ib-parsers/src/common.ts`) : Flex et relevés telle quelle,
   l'agent converti depuis son vrai UTC. Seuls les instants de l'application
@@ -315,6 +327,17 @@ Django en arrière-plan, sur les ports du worktree) et donner les deux URL à Se
 branche avant de décider du merge. Au merge, `pnpm dev:stop` dans le worktree **avant** `git
 merge` et `git worktree remove` : après, plus rien ne dit quels processus lui appartenaient.
 
+**Un réglage visuel se mesure d'abord, il ne s'itère pas sur des captures.** Ajuster des
+largeurs de colonnes ou faire tenir des libellés a coûté trois quarts d'heure par agent au
+sous-projet 20, passés à démarrer un navigateur, capturer, régler, recommencer. À la place :
+un script qui mesure la largeur réelle de chaque libellé et de la donnée la plus longue et
+qui sort les pourcentages en une passe, l'instance de dev laissée en marche, `pnpm check`
+**une seule fois à la fin** — il lance lint, typage, build et tous les tests — et des tests
+ciblés pendant l'itération. Et surtout : **les arbitrages d'affichage se tranchent avant de
+lancer l'agent**, jamais après avoir vu ses captures, sinon chaque question rejoue une vague
+entière. Une justification visuelle s'accompagne des deux captures qui la montrent, vérifiées :
+au sous-projet 20, un agent a justifié un choix par une paire identique au pixel près.
+
 **Les cases du plan se cochent dans le worktree au fur et à mesure**, dans le même commit que
 la tâche. Le plan de la branche est l'état d'avancement : une reprise de session part de la
 première case non cochée, jamais d'une reconstitution à partir des commits ni d'une
@@ -343,6 +366,7 @@ Ordre des sous-projets et statut (spec §12) :
 | 17 | La Wheel ne prend que ce qu'il faut | fait (2026-09-16) |
 | 18 | Propriété de plage en jours de marché | fait (2026-09-16) |
 | 19 | L'agent local relaie Flex | fait (2026-09-16) |
+| 20 | Tri et filtres de colonne de l'Historique et de Positions | fait (2026-09-17) |
 
 ## Outillage
 
