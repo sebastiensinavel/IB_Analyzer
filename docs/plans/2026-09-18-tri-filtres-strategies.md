@@ -938,7 +938,7 @@ en important `type DetailGroupId` depuis `@ib/coverage`.
 - [x] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé d'un pixel**
 
 Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
-Attendu : SUCCÈS, fichier de test non modifié — les 20 tests, expirations comprises.
+Attendu : SUCCÈS, fichier de test non modifié — ses 25 tests, expirations comprises.
 
 - [x] **Étape 7 : commit**
 
