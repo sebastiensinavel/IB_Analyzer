@@ -2686,7 +2686,7 @@ MSG
 )"
 ```
 
-- [ ] **Étape 5 : démarrer l'instance de relecture**
+- [x] **Étape 5 : démarrer l'instance de relecture**
 
 Commande : `pnpm dev:start`
 Attendu : Vite et Django détachés sur les ports du worktree. Relever les deux URL et les donner à
