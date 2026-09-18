@@ -24,6 +24,23 @@ export function formatRate(ratio: number): string {
   return RATE_FORMATTER.format(ratio);
 }
 
+const DAY_CHANGE_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+  signDisplay: "exceptZero",
+});
+
+/**
+ * The day's move of a position: one decimal and always its sign, so a column of them reads at a
+ * glance. `formatRate` is the return of a month and never signs a gain. Measured rather than
+ * guessed: `signDisplay: "exceptZero"` never signs zero — `-0.0004` also formats "0.0%" rather
+ * than the misleading "-0.0%" — so zero reads unsigned here too.
+ */
+export function formatDayChange(ratio: number | null): string {
+  return ratio === null ? "—" : DAY_CHANGE_FORMATTER.format(ratio);
+}
+
 // The history table carries its own currency column, so its money cells are
 // formatted as bare numbers: a "$" glued to a EUR row would be a lie.
 const AMOUNT_FORMATTER = new Intl.NumberFormat("en-US", {

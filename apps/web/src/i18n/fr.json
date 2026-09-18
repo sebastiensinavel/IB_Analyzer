@@ -95,6 +95,8 @@
       "quantity": "Qté",
       "avgPrice": "Prix init.",
       "lastPrice": "Dernier prix",
+      "dayChange": "Var. jour",
+      "dailyPnl": "P&L jour",
       "unrealizedPnl": "P&L latent",
       "decision": "Décision",
       "coverage": "Couverture"

@@ -95,6 +95,8 @@
       "quantity": "Qty",
       "avgPrice": "Init. price",
       "lastPrice": "Last price",
+      "dayChange": "Day chg",
+      "dailyPnl": "Daily P&L",
       "unrealizedPnl": "Unrealized P&L",
       "decision": "Decision",
       "coverage": "Coverage"

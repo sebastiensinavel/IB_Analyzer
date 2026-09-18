@@ -8,7 +8,7 @@ const CONTRACT = { ticker: "XOM", secType: "OPT", right: "P" as const, strike: 1
 function analyzedPosition(overrides: Partial<AnalyzedPosition> = {}): AnalyzedPosition {
   return {
     description: "TEST", kind: "long_put", label: "buy of put", marketValue: 0, quantity: 1,
-    avgPrice: 1, lastPrice: 1, unrealizedPnl: 0, action: "to evaluate", decision: null,
+    avgPrice: 1, lastPrice: 1, dailyPnl: null, dayChange: null, unrealizedPnl: 0, action: "to evaluate", decision: null,
     symbol: "XOM", secType: "OPT", right: "P", strike: 100, expiry: "2026-03-20", multiplier: 100,
     allocations: [], uncoveredQuantity: 0, usedQuantity: 0, requiredCash: 0, riskNotes: [], ...overrides,
   };
@@ -17,23 +17,25 @@ function analyzedPosition(overrides: Partial<AnalyzedPosition> = {}): AnalyzedPo
 function line(overrides: Partial<StrategyLine> = {}): StrategyLine {
   return {
     contract: CONTRACT, kind: "short_put", label: "sell of put", quantity: -2, avgPrice: 2, lastPrice: 1.5,
-    marketValue: -300, unrealizedPnl: 100, decision: "keep", position: null, coverage: [], ...overrides,
+    marketValue: -300, dailyPnl: null, dayChange: null, unrealizedPnl: 100, decision: "keep", position: null, coverage: [], ...overrides,
   };
 }
 
 function holding(overrides: Partial<WheelShareLine> = {}): WheelShareLine {
   return {
     ticker: "MQZA", currency: "USD", quantity: 200, averageAssignmentPrice: 17, assignedTotal: 3400,
-    openCallContracts: 1, averageCallStrike: 15, coveredShares: 100, lastPrice: 18, unrealizedPnl: 200,
+    openCallContracts: 1, averageCallStrike: 15, coveredShares: 100, lastPrice: 18, dailyPnl: null, dayChange: null, unrealizedPnl: 200,
     callStrikeBelowAssignment: true, ...overrides,
   };
 }
 
 describe("strategyColumnSpecs", () => {
-  it("types the shared ten columns, in their order, coverage filterable but not sortable", () => {
+  it("types the shared twelve columns, in their order, coverage filterable but not sortable", () => {
     const specs = strategyColumnSpecs(() => null, "wheel");
     expect(specs.map((spec) => spec.key)).toEqual(POSITION_COLUMNS.map((column) => column.key));
-    expect(specs.map((spec) => spec.type)).toEqual(["text", "enum", "enum", "number", "number", "number", "number", "number", "enum", "enum"]);
+    expect(specs.map((spec) => spec.type)).toEqual([
+      "text", "enum", "enum", "number", "number", "number", "number", "number", "number", "number", "enum", "enum",
+    ]);
     expect(specs.filter((spec) => !spec.sortable).map((spec) => spec.key)).toEqual(["coverage"]);
   });
 

@@ -7,8 +7,8 @@ type SectorOf = (symbol: string) => string | null;
 
 /**
  * What each shared column compares, filters and sorts on for a strategy's line. Same keys and
- * order as POSITION_COLUMNS — the ten columns are declared once, in positionColumns.ts, and this
- * file only says what they read on a StrategyLine.
+ * order as POSITION_COLUMNS — the twelve columns are declared once, in positionColumns.ts, and
+ * this file only says what they read on a StrategyLine.
  */
 export function strategyColumnSpecs(sectorOf: SectorOf, strategy: PositionsStrategy): ColumnSpec<StrategyLine>[] {
   return [
@@ -19,6 +19,9 @@ export function strategyColumnSpecs(sectorOf: SectorOf, strategy: PositionsStrat
     { key: "quantity", type: "number", sortable: true, value: (line) => line.quantity },
     { key: "avgPrice", type: "number", sortable: true, value: (line) => line.avgPrice },
     { key: "lastPrice", type: "number", sortable: true, value: (line) => line.lastPrice },
+    // A fraction on the row, a percentage here: a filter typed "> 5" has to mean +5 %.
+    { key: "dayChange", type: "number", sortable: true, value: (line) => (line.dayChange === null ? null : line.dayChange * 100) },
+    { key: "dailyPnl", type: "number", sortable: true, value: (line) => line.dailyPnl },
     { key: "unrealizedPnl", type: "number", sortable: true, value: (line) => line.unrealizedPnl },
     { key: "decision", type: "enum", sortable: true, value: (line) => line.decision },
     { key: "coverage", type: "enum", sortable: false, value: (line) => strategyCoverageValues(line, strategy) },

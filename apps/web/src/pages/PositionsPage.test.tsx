@@ -9,6 +9,7 @@ import { db, type AccountRecord } from "@/db/schema";
 import { importFile } from "@/db/importFile";
 import { PositionsPage } from "@/pages/PositionsPage";
 import { WithAccountData } from "@/test/WithAccountData";
+import { POSITION_COLUMNS } from "@/lib/positionColumns";
 import { SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
 import { SAMPLE_POSITIONS, SAMPLE_SECTORS, SAMPLE_SNAPSHOT } from "@/mocks/positions";
 
@@ -40,6 +41,11 @@ beforeEach(async () => {
 async function seedCash() {
   await db.transactions.bulkAdd(SAMPLE_TRANSACTIONS);
   await db.cashPoints.put({ accountId: "alpha", currency: "USD", kind: "end", asOf: "2026-12-31", amount: 1456.85, source: "flex", importedAt: "" });
+}
+
+/** SAMPLE_POSITIONS[0]: AAPL, 200 shares, a long stock position under "Positions longues". */
+function stockPosition(overrides: Partial<(typeof SAMPLE_POSITIONS)[number]> = {}) {
+  return { ...SAMPLE_POSITIONS[0], ...overrides };
 }
 
 async function rowFor(description: string): Promise<HTMLTableRowElement> {
@@ -223,7 +229,7 @@ describe("PositionsPage", () => {
     expect(tables).toHaveLength(4);
     const widths = (table: HTMLElement) => [...table.querySelectorAll("col")].map((col) => col.style.width);
     for (const table of tables) {
-      expect(widths(table)).toHaveLength(10);
+      expect(widths(table)).toHaveLength(POSITION_COLUMNS.length);
       expect(widths(table)).toEqual(widths(tables[0]));
       expect((within(table).getByText("Valeur de marché").closest("th") as HTMLTableCellElement).cellIndex).toBe(3);
     }
@@ -255,6 +261,32 @@ describe("PositionsPage", () => {
     renderPositions();
     expect(await rowFor("TWINX")).toBeInTheDocument();
     expect(await rowFor("TESTX Jan16'26 15 Put")).toBeInTheDocument();
+  });
+
+  it("shows the day's move and P&L of an agent snapshot, and an em dash without them", async () => {
+    await db.snapshots.put({
+      ...SAMPLE_SNAPSHOT,
+      positions: [
+        stockPosition({ dailyPnl: 550.45, dayChange: 0.0816 }),
+        stockPosition({ symbol: "ONDS", description: "ONDAS HOLDINGS", dailyPnl: null, dayChange: null }),
+      ],
+    });
+    renderPositions();
+    const withMove = await rowFor("AAPL");
+    expect(within(withMove).getByText("+8.2%")).toBeInTheDocument();
+    // formatMoney, like the unrealized P&L column next to it (spec §7): a signed dollar amount.
+    expect(within(withMove).getByText("$550.45")).toBeInTheDocument();
+    const withoutMove = await rowFor("ONDS");
+    expect(within(withoutMove).getAllByText("—").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("leaves the day columns of the cash table empty", async () => {
+    // The cash card lays the twelve shared columns and fills only Position and Market value; the
+    // other ten are `aria-hidden`, so they need `hidden: true` to be counted at all.
+    await seedCash();
+    renderPositions();
+    const cashRow = (await screen.findByText("USD")).closest("tr") as HTMLTableRowElement;
+    expect(within(cashRow).getAllByRole("cell", { hidden: true })).toHaveLength(POSITION_COLUMNS.length);
   });
 });
 

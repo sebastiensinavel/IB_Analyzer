@@ -16,7 +16,7 @@ import { Card, CardContent } from "@ib/ui/card";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
-import { PositionRow } from "@/components/PositionRow";
+import { NUMERIC, PositionRow } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
 import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
@@ -38,7 +38,6 @@ export type { PositionsStrategy };
 type SectorOf = (symbol: string) => string | null;
 
 const NO_ROWS: readonly JournalRow[] = [];
-const NUMERIC = "text-right font-mono tabular-nums";
 
 function pricedSnapshot(snapshot: SnapshotRecord | null | undefined, report: RiskReport | null | undefined): PricedSnapshot | null {
   return snapshot && report ? { positions: snapshot.positions, report } : null;
@@ -139,7 +138,7 @@ function LinesBox({
       title={box.title}
       columns={POSITION_COLUMNS}
       labelKey="positions.columns"
-      minWidth="60rem"
+      minWidth="83rem"
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
@@ -156,6 +155,8 @@ function LinesBox({
             quantity: line.quantity,
             avgPrice: line.avgPrice,
             lastPrice: line.lastPrice,
+            dayChange: line.dayChange,
+            dailyPnl: line.dailyPnl,
             unrealizedPnl: line.unrealizedPnl,
             decision: line.decision,
             coverage: strategyCoverageBadges(line, strategy),
@@ -182,7 +183,7 @@ function SharesBox({
       title={box.title}
       columns={WHEEL_SHARE_COLUMNS}
       labelKey="strategyPositions.columns"
-      minWidth="60rem"
+      minWidth="83rem"
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}

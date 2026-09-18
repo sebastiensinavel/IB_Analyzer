@@ -894,7 +894,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   `position, type, sector, marketValue, quantity, avgPrice, lastPrice, dayChange, dailyPnl,
   unrealizedPnl, decision, coverage` ; `formatDayChange(ratio: number | null): string`.
 
-- [ ] **Étape 1 : préparer la mesure (l'instance et le script)**
+- [x] **Étape 1 : préparer la mesure (l'instance et le script)**
 
 Démarrer l'instance de dev du worktree, **une fois pour toute la tâche** — et la laisser tourner
 jusqu'à la fin de la tâche 8 :
@@ -956,7 +956,7 @@ console.log(`total natural width: ${total.toFixed(0)}px at a 60rem minimum (960p
 await browser.close();
 ```
 
-- [ ] **Étape 2 : écrire les tests qui échouent**
+- [x] **Étape 2 : écrire les tests qui échouent**
 
 Dans `apps/web/src/lib/format.test.ts` :
 
@@ -1027,12 +1027,12 @@ it("leaves the day columns of the cash table empty", async () => {
 });
 ```
 
-- [ ] **Étape 3 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 3 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `cd apps/web && npx vitest run src/lib/format.test.ts src/lib/positionColumns.test.ts`
 Attendu : ÉCHEC — `formatDayChange is not a function`, puis dix colonnes au lieu de douze.
 
-- [ ] **Étape 4 : implémenter, largeurs provisoires**
+- [x] **Étape 4 : implémenter, largeurs provisoires**
 
 `apps/web/src/lib/format.ts`, après `formatRate` :
 
@@ -1104,7 +1104,7 @@ i18n, dans `positions.columns` de `fr.json`, entre `lastPrice` et `unrealizedPnl
 
 et dans `en.json` : `"dayChange": "Day chg"`, `"dailyPnl": "Daily P&L"`.
 
-- [ ] **Étape 5 : mesurer et fixer les largeurs**
+- [x] **Étape 5 : mesurer et fixer les largeurs**
 
 L'instance tourne depuis l'étape 1. Capturer la page avec la fixture d'agent — la tâche 8 ajoute
 `pnl` à `agent-snapshot.json`, donc **le faire maintenant** si ce n'est pas fait : sans lui, les
@@ -1122,12 +1122,12 @@ déborde sur sa voisine ; si la somme naturelle dépasse 960 px, monter `minWidt
 valeur mesurée arrondie au rem supérieur, **dans les trois endroits** qui la portent
 (`PositionGroupCard`, `StrategyPositionsPage` ×2, `CashBalancesCard`).
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
 Run : `cd apps/web && npx vitest run src/lib/ src/components/ src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx`
 Attendu : tout passe.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add -A

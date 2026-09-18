@@ -30,7 +30,7 @@ export function CashBalancesCard({ rows, checks }: CashBalancesCardProps) {
         <CardTitle>{t("positions.cash.title")}</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <DataTable columns={POSITION_COLUMNS} minWidth="60rem">
+        <DataTable columns={POSITION_COLUMNS} minWidth="83rem">
           <TableHeader>
             <TableRow>
               {POSITION_COLUMNS.map(({ key }) =>

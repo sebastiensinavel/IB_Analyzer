@@ -19,14 +19,14 @@ export interface PositionGroupCardProps {
   sectorOf: (symbol: string) => string | null;
 }
 
-/** One group of the Positions page: the shared ten columns over a whole IB position. */
+/** One group of the Positions page: the shared twelve columns over a whole IB position. */
 export function PositionGroupCard({ title, positions, rows, table, specs, sectorOf }: PositionGroupCardProps) {
   return (
     <FilteredTableBox
       title={title}
       columns={POSITION_COLUMNS}
       labelKey="positions.columns"
-      minWidth="60rem"
+      minWidth="83rem"
       specs={specs}
       facetRows={positions}
       rows={rows}
@@ -43,6 +43,8 @@ export function PositionGroupCard({ title, positions, rows, table, specs, sector
             quantity: position.quantity,
             avgPrice: position.avgPrice,
             lastPrice: position.lastPrice,
+            dayChange: position.dayChange,
+            dailyPnl: position.dailyPnl,
             unrealizedPnl: position.unrealizedPnl,
             decision: position.decision,
             coverage: coverageBadges(position),

@@ -1,13 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { buildRiskReport } from "@ib/coverage";
+import { buildRiskReport, type AnalyzedPosition } from "@ib/coverage";
 import { POSITION_COLUMNS, positionColumnSpecs } from "@/lib/positionColumns";
 import { SAMPLE_POSITIONS } from "@/mocks/positions";
+
+function positionWith(overrides: Partial<AnalyzedPosition>): AnalyzedPosition {
+  return {
+    description: "TEST", kind: "long_stock", label: "long stock", marketValue: 0, quantity: 1,
+    avgPrice: 1, lastPrice: 1, dailyPnl: null, dayChange: null, unrealizedPnl: 0, action: "to evaluate", decision: null,
+    symbol: "TEST", secType: "STK", right: "", strike: 0, expiry: "", multiplier: 1,
+    allocations: [], uncoveredQuantity: 0, usedQuantity: 0, requiredCash: 0, riskNotes: [], ...overrides,
+  };
+}
 
 describe("positionColumnSpecs", () => {
   it("types every shared column, in its order, coverage filterable but not sortable", () => {
     const specs = positionColumnSpecs(() => null);
     expect(specs.map((spec) => spec.key)).toEqual(POSITION_COLUMNS.map((column) => column.key));
-    expect(specs.map((spec) => spec.type)).toEqual(["text", "enum", "enum", "number", "number", "number", "number", "number", "enum", "enum"]);
+    expect(specs.map((spec) => spec.type)).toEqual([
+      "text", "enum", "enum", "number", "number", "number", "number", "number", "number", "number", "enum", "enum",
+    ]);
     expect(specs.filter((spec) => !spec.sortable).map((spec) => spec.key)).toEqual(["coverage"]);
   });
 
@@ -23,11 +34,26 @@ describe("positionColumnSpecs", () => {
     expect(specs.decision.value(put)).toBe(put.decision);
     expect(specs.coverage.value(put)).toEqual(["cash"]);
   });
+
+  it("sorts and filters the day columns as numbers, the move in percent", () => {
+    const specs = positionColumnSpecs(() => null);
+    const byKey = Object.fromEntries(specs.map((s) => [s.key, s]));
+
+    expect(byKey.dailyPnl.type).toBe("number");
+    expect(byKey.dayChange.type).toBe("number");
+    // Stored as a fraction, compared as a percentage: "> 5" has to mean +5 %.
+    expect(byKey.dayChange.value(positionWith({ dayChange: 0.0215 }))).toBeCloseTo(2.15, 12);
+    expect(byKey.dayChange.value(positionWith({ dayChange: null }))).toBeNull();
+  });
 });
 
 describe("POSITION_COLUMNS widths", () => {
-  it("add up to 100%, so a rebalancing never silently drops a column's share", () => {
-    const total = POSITION_COLUMNS.reduce((sum, column) => sum + Number.parseFloat(column.width), 0);
-    expect(total).toBeCloseTo(100, 5);
+  it("declares the twelve shared columns in order, summing to 100", () => {
+    expect(POSITION_COLUMNS.map((c) => c.key)).toEqual([
+      "position", "type", "sector", "marketValue", "quantity", "avgPrice",
+      "lastPrice", "dayChange", "dailyPnl", "unrealizedPnl", "decision", "coverage",
+    ]);
+    const total = POSITION_COLUMNS.reduce((n, c) => n + Number.parseFloat(c.width), 0);
+    expect(total).toBeCloseTo(100, 6);
   });
 });

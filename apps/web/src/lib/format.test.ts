@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { byteLength, formatAmount, formatBytes, formatClockTime, formatDateTime, formatMoney, formatMonth, formatPercent, formatPrice, formatRate, formatSnapshotDate } from "@/lib/format";
+import { byteLength, formatAmount, formatBytes, formatClockTime, formatDateTime, formatDayChange, formatMoney, formatMonth, formatPercent, formatPrice, formatRate, formatSnapshotDate } from "@/lib/format";
 
 describe("formatMoney", () => {
   it("formats a positive USD amount with no decimals lost", () => {
@@ -38,6 +38,21 @@ describe("formatRate", () => {
     expect(formatRate(0.01206)).toBe("1.2%");
     expect(formatRate(-0.004)).toBe("-0.4%");
     expect(formatRate(0)).toBe("0.0%");
+  });
+});
+
+describe("formatDayChange", () => {
+  it.each([
+    [0.0215, "+2.2%"],
+    [-0.1, "-10.0%"],
+    // Measured, not guessed: `signDisplay: "exceptZero"` never signs zero (see format.ts).
+    [0, "0.0%"],
+  ])("formats %s as %s", (ratio, expected) => {
+    expect(formatDayChange(ratio)).toBe(expected);
+  });
+
+  it("shows an em dash for null", () => {
+    expect(formatDayChange(null)).toBe("—");
   });
 });
 
