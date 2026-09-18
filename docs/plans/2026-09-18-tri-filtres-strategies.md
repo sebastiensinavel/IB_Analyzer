@@ -672,7 +672,7 @@ MSG
   `filterBoxes(boxes, specs, views, expiryActive): PreparedBox<Row>[]`,
   `activeExpiry(choices, ids, views): string | null`.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Créer `apps/web/src/lib/tableBoxes.test.ts` :
 
@@ -775,12 +775,12 @@ describe("activeExpiry", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
 Commande : `pnpm --filter web exec vitest run src/lib/tableBoxes.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/tableBoxes" ».
 
-- [ ] **Étape 3 : écrire `tableBoxes.ts`**
+- [x] **Étape 3 : écrire `tableBoxes.ts`**
 
 Créer `apps/web/src/lib/tableBoxes.ts` :
 
@@ -868,12 +868,12 @@ export function activeExpiry(
 }
 ```
 
-- [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
 Commande : `pnpm --filter web exec vitest run src/lib/tableBoxes.test.ts`
 Attendu : SUCCÈS, 10 tests.
 
-- [ ] **Étape 5 : porter `PositionsPage` dessus**
+- [x] **Étape 5 : porter `PositionsPage` dessus**
 
 Dans `apps/web/src/pages/PositionsPage.tsx`, remplacer le bloc qui va de
 `// Groups empty in the snapshot never show.` jusqu'à la ligne `.filter(({ rows }) => activeExpiry === null || rows.length > 0);`
@@ -935,12 +935,12 @@ Enfin, le rendu remplace `activeExpiry` par `expiry` et `groups` par `boxes` :
 
 en important `type DetailGroupId` depuis `@ib/coverage`.
 
-- [ ] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé d'un pixel**
+- [x] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé d'un pixel**
 
 Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
 Attendu : SUCCÈS, fichier de test non modifié — les 20 tests, expirations comprises.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add apps/web/src/lib/tableBoxes.ts apps/web/src/lib/tableBoxes.test.ts apps/web/src/pages/PositionsPage.tsx
