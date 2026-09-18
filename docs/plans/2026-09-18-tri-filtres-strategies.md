@@ -2290,7 +2290,7 @@ MSG
   `usePageSearch`, `applyView`.
 - Produit : `JOURNAL_COLUMNS: readonly ColumnDef[]`, `journalColumnSpecs(t): ColumnSpec<JournalRow>[]`.
 
-- [ ] **Étape 1 : écrire le test des colonnes**
+- [x] **Étape 1 : écrire le test des colonnes**
 
 Créer `apps/web/src/lib/journalColumns.test.ts` :
 
@@ -2338,12 +2338,12 @@ describe("journalColumnSpecs", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
 Commande : `pnpm --filter web exec vitest run src/lib/journalColumns.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/journalColumns" ».
 
-- [ ] **Étape 3 : écrire `journalColumns.ts`**
+- [x] **Étape 3 : écrire `journalColumns.ts`**
 
 Créer `apps/web/src/lib/journalColumns.ts` :
 
@@ -2411,12 +2411,12 @@ export function journalColumnSpecs(t: Translate): ColumnSpec<JournalRow>[] {
 }
 ```
 
-- [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
 Commande : `pnpm --filter web exec vitest run src/lib/journalColumns.test.ts`
 Attendu : SUCCÈS, 3 tests.
 
-- [ ] **Étape 5 : écrire les tests de page qui échouent**
+- [x] **Étape 5 : écrire les tests de page qui échouent**
 
 Dans `apps/web/src/pages/JournalPage.test.tsx` :
 
@@ -2475,13 +2475,13 @@ Dans `apps/web/src/pages/JournalPage.test.tsx` :
 3. ajouter `waitFor` à l'import de `@testing-library/react` et `window.localStorage.clear();` au
    `beforeEach` du fichier.
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils échouent**
 
 Commande : `pnpm --filter web exec vitest run src/pages/JournalPage.test.tsx`
 Attendu : ÉCHEC — le champ s'appelle encore « Filtrer sur le ticker… », les en-têtes n'ont pas de
 bouton.
 
-- [ ] **Étape 7 : réécrire la page**
+- [x] **Étape 7 : réécrire la page**
 
 Dans `apps/web/src/pages/JournalPage.tsx`, remplacer l'entête du fichier et le corps de
 `JournalPage` (les composants `JournalRows` et `JournalTableRow` en bas ne changent pas, sauf la
@@ -2585,11 +2585,11 @@ export function JournalPage({ strategy }: JournalPageProps) {
 Le reste du fichier (`JournalRows`, `JournalTableRow`) est inchangé ; retirer seulement l'import
 `Table, TableBody, TableHead, TableHeader` devenu inutile — `TableCell` et `TableRow` restent.
 
-- [ ] **Étape 8 : retirer la clé i18n du champ**
+- [x] **Étape 8 : retirer la clé i18n du champ**
 
 Dans `apps/web/src/i18n/fr.json` et `en.json`, retirer `journal.filterPlaceholder`.
 
-- [ ] **Étape 9 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 9 : lancer les tests, vérifier qu'ils passent**
 
 Commande : `pnpm --filter web exec vitest run src/pages/JournalPage.test.tsx src/lib/journalColumns.test.ts`
 Attendu : SUCCÈS — les treize tests d'origine (dont un adapté) et les trois neufs. Le test
@@ -2598,7 +2598,7 @@ Attendu : SUCCÈS — les treize tests d'origine (dont un adapté) et les trois 
 Commande : `grep -rn "journal.filterPlaceholder" apps/web/src`
 Attendu : aucune ligne.
 
-- [ ] **Étape 10 : commit**
+- [x] **Étape 10 : commit**
 
 ```bash
 git add apps/web/src/lib/journalColumns.ts apps/web/src/lib/journalColumns.test.ts apps/web/src/pages/JournalPage.tsx apps/web/src/pages/JournalPage.test.tsx apps/web/src/i18n

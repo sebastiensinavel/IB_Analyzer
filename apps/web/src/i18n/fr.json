@@ -125,7 +125,6 @@
     "callBelowAssignment": "Strike moyen des calls sous le prix d'assignation"
   },
   "journal": {
-    "filterPlaceholder": "Filtrer sur le ticker…",
     "empty": "Aucune position pour cette stratégie.",
     "noResults": "Aucune position ne correspond.",
     "expand": "Voir les jambes",

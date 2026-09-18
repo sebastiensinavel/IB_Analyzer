@@ -125,7 +125,6 @@
     "callBelowAssignment": "Average call strike below the assignment price"
   },
   "journal": {
-    "filterPlaceholder": "Filter on the ticker…",
     "empty": "No position for this strategy.",
     "noResults": "No position matches.",
     "expand": "Show legs",

@@ -1,22 +1,23 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router";
 import type { JournalRow, Strategy } from "@ib/ledger";
 import { Button } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
-import { Input } from "@ib/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
+import { TableCell, TableRow } from "@ib/ui/table";
+import { FilteredTableBox } from "@/components/table/FilteredTableBox";
+import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountJournals } from "@/db/AccountDataProvider";
+import { usePageSearch, useTableView } from "@/hooks/useTableView";
 import { formatAmount, formatDateTime, formatPrice } from "@/lib/format";
+import { JOURNAL_COLUMNS, journalColumnSpecs } from "@/lib/journalColumns";
 import { LABEL_TONE_CLASS, labelTone } from "@/lib/journalTone";
+import { applyView, EMPTY_VIEW } from "@/lib/tableView";
+import { pageSearchKey, tableViewKey } from "@/lib/tableViewStorage";
 import { cn } from "@/lib/utils";
 
 const TITLE_KEY: Record<Strategy, string> = { wheel: "nav.wheel", leaps: "nav.leaps", condors: "nav.condors", others: "nav.others" };
-
-const COLUMNS = [
-  "startWhen", "label", "ticker", "quantity", "openPrice", "openTotal", "openCommission", "assigned",
-  "openNet", "endWhen", "closePrice", "closeTotal", "closeCommission", "closeNet", "pnl", "ongoing", "note",
-] as const;
 
 function money(value: number | null): string {
   return value === null ? "—" : formatAmount(value);
@@ -30,18 +31,28 @@ interface JournalPageProps {
   strategy: Strategy;
 }
 
+/**
+ * One strategy's journal: a calculated view of the ledger, never stored. One ticker search and one
+ * sort-and-filter view, remembered per account and per strategy. The view runs on the head rows
+ * only: a condor's legs stay attached to their composite and show when it is unfolded — filtering
+ * them apart would detach a leg from its structure or hide a condor one of its legs matches.
+ */
 export function JournalPage({ strategy }: JournalPageProps) {
+  const { accountId = "" } = useParams<{ accountId: string }>();
   const { t } = useTranslation();
-  const view = useAccountJournals();
-  const [filter, setFilter] = useState("");
+  const journals = useAccountJournals();
+  const specs = useMemo(() => journalColumnSpecs(t), [t]);
+  const search = usePageSearch(pageSearchKey(accountId, `journal:${strategy}`));
+  const table = useTableView(tableViewKey(accountId, `journal:${strategy}`), specs);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 
-  if (view.status === "loading") {
+  if (journals.status === "loading") {
     return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
   }
 
-  const rows = view.report.rows.filter((row) => row.strategy === strategy);
-  const filtered = rows.filter((row) => row.ticker.toLowerCase().includes(filter.trim().toLowerCase()));
+  const all = journals.report.rows.filter((row) => row.strategy === strategy);
+  const searched = applyView(all, specs, EMPTY_VIEW, { text: search.applied, ticker: (row: JournalRow) => row.ticker });
+  const rows = applyView(searched, specs, table.view);
 
   const toggle = (id: string) =>
     setExpanded((current) => {
@@ -51,42 +62,30 @@ export function JournalPage({ strategy }: JournalPageProps) {
       return next;
     });
 
+  const message = all.length === 0 ? "journal.empty" : searched.length === 0 ? "journal.noResults" : null;
+
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t(TITLE_KEY[strategy])}</h1>
-      <Input
-        value={filter}
-        onChange={(event) => setFilter(event.target.value)}
-        placeholder={t("journal.filterPlaceholder")}
-        aria-label={t("journal.filterPlaceholder")}
-      />
-      {filtered.length === 0 ? (
+      <PageSearchInput search={search} />
+      {message !== null ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-            <p className="text-sm text-muted-foreground">{t(rows.length === 0 ? "journal.empty" : "journal.noResults")}</p>
+            <p className="text-sm text-muted-foreground">{t(message)}</p>
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {COLUMNS.map((column) => (
-                    <TableHead key={column} className={column === "label" || column === "ticker" || column === "note" || column.endsWith("When") ? undefined : "text-right"}>
-                      {t(`journal.columns.${column}`)}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((row) => (
-                  <JournalRows key={row.id} row={row} expanded={expanded.has(row.id)} onToggle={() => toggle(row.id)} />
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <FilteredTableBox
+          columns={JOURNAL_COLUMNS}
+          labelKey="journal.columns"
+          specs={specs}
+          facetRows={all}
+          rows={rows}
+          table={table}
+          emptyKey="journal.noResults"
+          rowKey={(row) => row.id}
+          renderRow={(row) => <JournalRows row={row} expanded={expanded.has(row.id)} onToggle={() => toggle(row.id)} />}
+        />
       )}
     </div>
   );
