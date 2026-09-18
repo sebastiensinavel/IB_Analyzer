@@ -202,7 +202,7 @@ aussitôt un objet `PnLSingle` mutable (champs `dailyPnL`, `unrealizedPnL`, `rea
 émettant `ib.pnlSingleEvent`. `ib.cancelPnLSingle(account, modelCode, conId)` annule. Le
 `modelCode` est `""`. Mesuré sur un vrai TWS : première valeur entre 0,65 s et 2,32 s.
 
-- [ ] **Étape 1 : outiller le double**
+- [x] **Étape 1 : outiller le double**
 
 Dans `apps/tws-agent/tests/conftest.py`, après `FakePortfolioItem` :
 
@@ -257,7 +257,7 @@ Le `FakeIB` final n'a que ces membres neufs : `_pnl`, `_pnl_error`, `pnl_subscri
 objets rendus, il ne s'abonne pas à l'événement — un objet muté en place se relit sans lui, et
 un événement de moins est un point de défaillance de moins.
 
-- [ ] **Étape 2 : écrire les tests qui échouent**
+- [x] **Étape 2 : écrire les tests qui échouent**
 
 Dans `apps/tws-agent/tests/test_snapshot.py` :
 
@@ -323,12 +323,12 @@ def test_the_pnl_step_never_fails_the_snapshot(make_client):
 Compléter aussi `test_positions_are_serialized_raw_stock_and_option_alike` : les deux
 dictionnaires attendus portent désormais `"pnl": None` (aucun `pnl` n'est fourni au double).
 
-- [ ] **Étape 3 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 3 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `pnpm test:agent`
 Attendu : ÉCHEC — `KeyError: 'pnl'` ou `AttributeError: 'FakeIB' object has no attribute 'reqPnLSingle'`.
 
-- [ ] **Étape 4 : implémenter dans l'agent**
+- [x] **Étape 4 : implémenter dans l'agent**
 
 Dans `apps/tws-agent/ib_tws_agent/main.py`, près de `CONNECT_TIMEOUT_S` :
 
@@ -428,7 +428,7 @@ Dans `/snapshot`, le bloc `try` final devient :
 `ib.portfolio()` n'est appelé qu'une fois : deux appels donneraient deux listes et l'index ne
 correspondrait plus.
 
-- [ ] **Étape 5 : borner l'attente dans les tests**
+- [x] **Étape 5 : borner l'attente dans les tests**
 
 Le test « TWS never answers » attendrait cinq vraies secondes. Le boucler n'est pas acceptable :
 dans `test_snapshot.py`, poser `monkeypatch.setattr("ib_tws_agent.main.PNL_TIMEOUT_S", 0.05)`
@@ -436,18 +436,18 @@ sur ce seul test (et sur tout autre qui laisse une position muette), via la fixt
 `monkeypatch` de pytest. Vérifier que la valeur est bien lue à l'exécution — `collect_pnl` lit
 le module, donc le patch prend.
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
 Run : `pnpm test:agent`
 Attendu : tout passe, en moins de deux secondes en tout.
 
-- [ ] **Étape 7 : monter la version de l'agent**
+- [x] **Étape 7 : monter la version de l'agent**
 
 Dans `apps/tws-agent/pyproject.toml`, monter le `version` d'un cran mineur (`0.2.0` →
 `0.3.0` : lire la valeur courante, ne pas la deviner). `/health` la rend déjà, rien d'autre à
 faire.
 
-- [ ] **Étape 8 : commit**
+- [x] **Étape 8 : commit**
 
 ```bash
 git add -A
