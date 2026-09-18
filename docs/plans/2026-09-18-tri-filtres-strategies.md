@@ -2156,7 +2156,8 @@ const TSLA_CALL: Transaction = {
  * leg `spread` when it sees the whole defined-risk structure in the snapshot.
  */
 const QQQ_LEG = { ...aapl, symbol: "QQQ", secType: "OPT" as const, multiplier: 100, expiry: "2026-10-16" };
-const QQQ_POSITIONS = [
+// Annotated: without a target type, `right: "P"` widens to `string` and the typecheck fails.
+const QQQ_POSITIONS: Position[] = [
   { ...QQQ_LEG, right: "P", strike: 480, quantity: 1, marketPrice: 0.1, marketValue: 10, description: "QQQ 16OCT26 480 P" },
   { ...QQQ_LEG, right: "P", strike: 485, quantity: -1, marketPrice: 0.3, marketValue: -30, description: "QQQ 16OCT26 485 P" },
   { ...QQQ_LEG, right: "C", strike: 520, quantity: -1, marketPrice: 0.2, marketValue: -20, description: "QQQ 16OCT26 520 C" },
