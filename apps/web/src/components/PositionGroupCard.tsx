@@ -6,21 +6,20 @@ import { TableBody, TableCell, TableRow } from "@ib/ui/table";
 import { PositionRow } from "@/components/PositionRow";
 import { PositionTable, PositionTableHeader } from "@/components/PositionTable";
 import { ActiveFilters } from "@/components/table/ActiveFilters";
-import { useTableView } from "@/hooks/useTableView";
+import type { TableViewState } from "@/hooks/useTableView";
 import { formatContract } from "@/lib/format";
 import { POSITION_COLUMNS } from "@/lib/positionColumns";
 import { coverageBadges } from "@/lib/riskReport";
-import { applyView, facetValues, type ColumnSpec } from "@/lib/tableView";
-import { tableViewKey } from "@/lib/tableViewStorage";
+import { facetValues, type ColumnSpec } from "@/lib/tableView";
 
 export interface PositionGroupCardProps {
-  accountId: string;
-  groupId: string;
   title: string;
   /** The group's positions in the snapshot, before search and filters: what the facets count. */
   positions: readonly AnalyzedPosition[];
-  /** The same after the page search. */
-  searched: readonly AnalyzedPosition[];
+  /** The same after the page search, this card's filters and its sort: what the table shows. */
+  rows: readonly AnalyzedPosition[];
+  /** This group's own view, held by the page so the expiry buttons can write in all four at once. */
+  table: TableViewState;
   specs: readonly ColumnSpec<AnalyzedPosition>[];
   sectorOf: (symbol: string) => string | null;
 }
@@ -29,10 +28,8 @@ export interface PositionGroupCardProps {
  * One group of the Positions page with its own sort and filters: a column means something else in
  * another group (a Type, a Decision, a Coverage), so each card remembers its view apart.
  */
-export function PositionGroupCard({ accountId, groupId, title, positions, searched, specs, sectorOf }: PositionGroupCardProps) {
+export function PositionGroupCard({ title, positions, rows, table, specs, sectorOf }: PositionGroupCardProps) {
   const { t } = useTranslation();
-  const table = useTableView(tableViewKey(accountId, `positions:${groupId}`), specs);
-  const rows = useMemo(() => applyView(searched, specs, table.view), [searched, specs, table.view]);
   const facets = useMemo(
     () =>
       Object.fromEntries(

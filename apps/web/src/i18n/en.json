@@ -79,6 +79,10 @@
     "empty": "No positions yet — import an HTML statement or a Flex query response with Open Positions.",
     "emptyLink": "Go to data sources",
     "noResults": "No positions match.",
+    "expiries": {
+      "label": "Filter by expiry",
+      "clearAll": "Clear all"
+    },
     "groups": {
       "long": "Long positions",
       "optionBuys": "Option buys",

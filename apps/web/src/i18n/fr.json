@@ -79,6 +79,10 @@
     "empty": "Aucune position — importez un relevé HTML ou une réponse de Flex Query avec Open Positions.",
     "emptyLink": "Aller aux sources de données",
     "noResults": "Aucune position ne correspond.",
+    "expiries": {
+      "label": "Filtrer par expiration",
+      "clearAll": "Tout effacer"
+    },
     "groups": {
       "long": "Positions longues",
       "optionBuys": "Achats d'options",

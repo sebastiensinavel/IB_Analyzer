@@ -1,17 +1,20 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
-import { groupedPositions } from "@ib/coverage";
+import { DETAIL_GROUPS, groupedPositions } from "@ib/coverage";
 import { anchoredBalances } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
 import { Input } from "@ib/ui/input";
 import { CashBalancesCard } from "@/components/CashBalancesCard";
+import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
 import { PositionGroupCard } from "@/components/PositionGroupCard";
 import { useAccountRiskReport } from "@/db/AccountDataProvider";
 import { useCashPoints, useLedger } from "@/db/hooks";
+import { usePositionGroupViews } from "@/hooks/usePositionGroupViews";
 import { usePageSearch } from "@/hooks/useTableView";
 import { BALANCE_CURRENCIES } from "@/lib/currencies";
+import { expiryChoices, reportToday } from "@/lib/expiryFilter";
 import { positionColumnSpecs } from "@/lib/positionColumns";
 import { groupTitleKey } from "@/lib/riskReport";
 import { applyView, EMPTY_VIEW } from "@/lib/tableView";
@@ -23,6 +26,11 @@ export function PositionsPage() {
   const { snapshot, report, sectorOf } = useAccountRiskReport();
   const specs = useMemo(() => positionColumnSpecs(sectorOf), [sectorOf]);
   const search = usePageSearch(pageSearchKey(accountId, "positions"));
+  const views = usePositionGroupViews(accountId, specs);
+  const setExpiry = useCallback(
+    (label: string | null) => DETAIL_GROUPS.forEach((group) => views[group.id].setCriterion("position", label)),
+    [views],
+  );
   const ledger = useLedger(accountId);
   const points = useCashPoints(accountId);
   // The cash comes from the ledger, not the snapshot: shown with or without positions.
@@ -55,11 +63,21 @@ export function PositionsPage() {
 
   // Groups empty in the snapshot never show. The page search runs on the ticker, which means the
   // same thing in every group; a group it empties goes away. A group emptied by its own column
-  // filters stays, so its filters can be cleared.
-  const groups = groupedPositions(report.positions)
+  // filters stays, so its filters can be cleared — unless an expiry is chosen, which empties the
+  // shares' table by construction: it goes away rather than show a table nothing can fill.
+  const searchedGroups = groupedPositions(report.positions)
     .filter((group) => group.positions.length > 0)
     .map((group) => ({ group, searched: applyView(group.positions, specs, EMPTY_VIEW, { text: search.applied, ticker: (position) => position.symbol }) }))
     .filter(({ searched }) => searched.length > 0);
+
+  // The buttons follow the ticker search but never the column filters: the expiry chosen would
+  // otherwise be the only one left to choose.
+  const choices = expiryChoices(searchedGroups.flatMap(({ searched }) => searched), reportToday());
+  const activeExpiry = choices.find((choice) => DETAIL_GROUPS.every((group) => views[group.id].view.criteria.position === choice.label))?.label ?? null;
+
+  const groups = searchedGroups
+    .map(({ group, searched }) => ({ group, rows: applyView(searched, specs, views[group.id].view) }))
+    .filter(({ rows }) => activeExpiry === null || rows.length > 0);
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
@@ -73,6 +91,8 @@ export function PositionsPage() {
         className="font-mono"
       />
 
+      <ExpiryFilterBar choices={choices} active={activeExpiry} onPick={setExpiry} />
+
       {groups.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
@@ -81,14 +101,13 @@ export function PositionsPage() {
         </Card>
       )}
 
-      {groups.map(({ group, searched }) => (
+      {groups.map(({ group, rows }) => (
         <PositionGroupCard
           key={group.id}
-          accountId={accountId}
-          groupId={group.id}
           title={t(groupTitleKey(group.id))}
           positions={group.positions}
-          searched={searched}
+          rows={rows}
+          table={views[group.id]}
           specs={specs}
           sectorOf={sectorOf}
         />

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
@@ -255,5 +255,112 @@ describe("PositionsPage", () => {
     renderPositions();
     expect(await rowFor("TWINX")).toBeInTheDocument();
     expect(await rowFor("TESTX Jan16'26 15 Put")).toBeInTheDocument();
+  });
+});
+
+/** The sample expiries — Jan16'26 to Jan21'28 — are all ahead of this day. */
+function freezeBefore() {
+  vi.useFakeTimers({ toFake: ["Date"], now: new Date("2025-12-01T12:00:00.000Z") });
+}
+
+/** And all behind this one. */
+function freezeAfter() {
+  vi.useFakeTimers({ toFake: ["Date"], now: new Date("2029-01-01T12:00:00.000Z") });
+}
+
+function expiryBar(): HTMLElement {
+  return screen.getByRole("group", { name: "Filtrer par expiration" });
+}
+
+describe("PositionsPage expiry filters", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("offers the coming expiries under the search, nearest first", async () => {
+    freezeBefore();
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    await screen.findByText("XOM Mar20'26 100 Put");
+    const bar = expiryBar();
+    expect(within(bar).getAllByRole("button").map((button) => button.textContent)).toEqual(["Jan16'26", "Feb20'26", "Mar20'26", "Jan21'28"]);
+    const input = screen.getByRole("textbox", { name: "Rechercher un ticker" });
+    expect(input.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("has no expiry bar when every option has expired", async () => {
+    freezeAfter();
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    await screen.findByText("XOM Mar20'26 100 Put");
+    expect(screen.queryByRole("group", { name: "Filtrer par expiration" })).not.toBeInTheDocument();
+  });
+
+  it("filters every table on its Position column and hides the ones it empties", async () => {
+    freezeBefore();
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    await screen.findByText("XOM Mar20'26 100 Put");
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await user.click(within(expiryBar()).getByRole("button", { name: "Mar20'26" }));
+    // Shares have no expiry: their card goes away rather than showing an empty table.
+    await waitFor(() => expect(screen.queryByText("Positions longues")).not.toBeInTheDocument());
+    expect(screen.queryByText("AAPL Jan16'26 150 Call")).not.toBeInTheDocument();
+    expect(screen.getByText("XOM Mar20'26 100 Put")).toBeInTheDocument();
+    expect(screen.getByText("XYZ Mar20'26 110 Call")).toBeInTheDocument();
+    // The very filter a hand typing it in the column panel would have set.
+    const sells = (screen.getByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
+    expect(within(sells).getByText("Position : Mar20'26")).toBeInTheDocument();
+  });
+
+  it("marks the chosen expiry and lets a second click undo it", async () => {
+    freezeBefore();
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    await screen.findByText("XOM Mar20'26 100 Put");
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const button = () => within(expiryBar()).getByRole("button", { name: "Jan21'28" });
+    await user.click(button());
+    await waitFor(() => expect(button()).toHaveAttribute("aria-pressed", "true"));
+    expect(screen.queryByText("XOM Mar20'26 100 Put")).not.toBeInTheDocument();
+    await user.click(button());
+    expect(await screen.findByText("XOM Mar20'26 100 Put")).toBeInTheDocument();
+    expect(button()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("clears the expiry filter of every table at once", async () => {
+    freezeBefore();
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    await screen.findByText("XOM Mar20'26 100 Put");
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await user.click(within(expiryBar()).getByRole("button", { name: "Feb20'26" }));
+    await waitFor(() => expect(screen.queryByText("XOM Mar20'26 100 Put")).not.toBeInTheDocument());
+    await user.click(within(expiryBar()).getByRole("button", { name: "Tout effacer" }));
+    expect(await screen.findByText("XOM Mar20'26 100 Put")).toBeInTheDocument();
+    expect(await screen.findByText("Positions longues")).toBeInTheDocument();
+    expect(within(expiryBar()).queryByRole("button", { name: "Tout effacer" })).not.toBeInTheDocument();
+  });
+
+  it("takes the chosen expiry back from the stored views", async () => {
+    freezeBefore();
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    for (const group of ["long", "optionBuys", "optionSells", "other"]) {
+      window.localStorage.setItem(`ib2:tableView:alpha:positions:${group}`, JSON.stringify({ v: 1, sort: [], criteria: { position: "Mar20'26" } }));
+    }
+    renderPositions();
+    await screen.findByText("XOM Mar20'26 100 Put");
+    expect(within(expiryBar()).getByRole("button", { name: "Mar20'26" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByText("Positions longues")).not.toBeInTheDocument();
+  });
+
+  it("offers only the expiries of the searched ticker", async () => {
+    freezeBefore();
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    await screen.findByText("XOM Mar20'26 100 Put");
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=MSFT");
+    await waitFor(() => expect(within(expiryBar()).getAllByRole("button").map((button) => button.textContent)).toEqual(["Mar20'26", "Jan21'28"]));
   });
 });
