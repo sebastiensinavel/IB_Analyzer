@@ -109,8 +109,6 @@
     "title": { "wheel": "Positions Wheel", "leaps": "Positions LEAPS" },
     "groups": {
       "assignedShares": "Actions assignées",
-      "optionSales": "Ventes d'options",
-      "optionBuys": "Achats d'options",
       "shares": "Actions"
     },
     "columns": {
@@ -124,8 +122,7 @@
       "unrealizedPnl": "P&L latent",
       "coverage": "Couverture"
     },
-    "callBelowAssignment": "Strike moyen des calls sous le prix d'assignation",
-    "empty": "Aucune position ouverte dans cette stratégie."
+    "callBelowAssignment": "Strike moyen des calls sous le prix d'assignation"
   },
   "journal": {
     "filterPlaceholder": "Filtrer sur le ticker…",

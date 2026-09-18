@@ -109,8 +109,6 @@
     "title": { "wheel": "Wheel positions", "leaps": "LEAPS positions" },
     "groups": {
       "assignedShares": "Assigned shares",
-      "optionSales": "Option sells",
-      "optionBuys": "Option buys",
       "shares": "Shares"
     },
     "columns": {
@@ -124,8 +122,7 @@
       "unrealizedPnl": "Unrealized P&L",
       "coverage": "Coverage"
     },
-    "callBelowAssignment": "Average call strike below the assignment price",
-    "empty": "No open position in this strategy."
+    "callBelowAssignment": "Average call strike below the assignment price"
   },
   "journal": {
     "filterPlaceholder": "Filter on the ticker…",

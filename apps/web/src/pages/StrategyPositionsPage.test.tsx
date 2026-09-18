@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { Transaction } from "@ib/ledger";
@@ -70,6 +71,7 @@ const SNAPSHOT: SnapshotRecord = {
 };
 
 beforeEach(async () => {
+  window.localStorage.clear();
   await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.sectors.clear(), db.contracts.clear()]);
 });
 
@@ -113,9 +115,11 @@ describe("StrategyPositionsPage — Wheel", () => {
     expect(within(screen.getByLabelText("Ventes d'options")).queryByText("ZZZ Sep18'26 20 Call")).not.toBeInTheDocument();
   });
 
-  it("says so in each card when the Wheel holds nothing open", async () => {
+  it("shows no box at all, and says so once, when the Wheel holds nothing open", async () => {
     renderPage("wheel");
-    expect(await screen.findAllByText("Aucune position ouverte dans cette stratégie.")).toHaveLength(2);
+    expect(await screen.findByText("Aucune position ne correspond.")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Actions assignées")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Ventes d'options")).not.toBeInTheDocument();
   });
 });
 
@@ -129,5 +133,86 @@ describe("StrategyPositionsPage — LEAPS", () => {
     const call = await rowIn("Ventes d'options", "ZZZ Sep18'26 20 Call");
     expect(texts(call)).toEqual(["ZZZ Sep18'26 20 Call", "sell of call", "", "-$25.00", "-1", "0.50", "0.25", "$25.00", "buy back", "leaps ×1"]);
     expect(screen.queryByLabelText("Actions")).not.toBeInTheDocument();
+  });
+});
+
+describe("StrategyPositionsPage — search, expiries and column filters", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("searches every box of the page on the ticker and drops the ones it empties", async () => {
+    await seed();
+    renderPage("wheel");
+    await screen.findByLabelText("Actions assignées");
+    const user = userEvent.setup();
+    await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=XOM");
+    await waitFor(() => expect(screen.queryByLabelText("Actions assignées")).not.toBeInTheDocument());
+    expect(within(screen.getByLabelText("Ventes d'options")).getByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
+  });
+
+  it("offers only the expiries of the strategy's own options", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-09-02T12:00:00.000Z") });
+    try {
+      await seed();
+      renderPage("leaps");
+      await screen.findByLabelText("Achats d'options");
+      const bar = screen.getByRole("group", { name: "Filtrer par expiration" });
+      // The Wheel's MQZA and XOM expiries are not the LEAPS': only ZZZ's two are offered.
+      expect(within(bar).getAllByRole("button").map((button) => button.textContent)).toEqual(["Sep18'26", "Jun18'27"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("filters every box on the chosen expiry and drops the shares, which have none", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-09-02T12:00:00.000Z") });
+    try {
+      await seed();
+      renderPage("wheel");
+      await screen.findByLabelText("Actions assignées");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.click(within(screen.getByRole("group", { name: "Filtrer par expiration" })).getByRole("button", { name: "Oct16'26" }));
+      await waitFor(() => expect(screen.queryByLabelText("Actions assignées")).not.toBeInTheDocument());
+      expect(within(screen.getByLabelText("Ventes d'options")).getByText("Position : Oct16'26")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps a box its own column filter empties, with a way back", async () => {
+    await seed();
+    renderPage("wheel");
+    const box = await screen.findByLabelText("Ventes d'options");
+    const user = userEvent.setup();
+    const header = within(box).getByRole("columnheader", { name: /^Qté/ });
+    await user.click(within(header).getByRole("button", { name: /^Qté/ }));
+    await user.type(await screen.findByRole("textbox", { name: "Critère pour Qté" }), ">1000");
+    expect(await within(box).findByText("Aucune position ne correspond.")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await user.click(within(box).getByRole("button", { name: "Tout effacer" }));
+    expect(await within(box).findByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
+  });
+
+  it("sorts the assigned shares on their own columns", async () => {
+    await seed();
+    renderPage("wheel");
+    const box = await screen.findByLabelText("Actions assignées");
+    const user = userEvent.setup();
+    const header = within(box).getByRole("columnheader", { name: /^Quantité/ });
+    await user.click(within(header).getByRole("button", { name: /^Quantité/ }));
+    expect(await screen.findByRole("button", { name: "Croissant" })).toBeInTheDocument();
+  });
+
+  it("remembers each box's view under its own key, per account and per strategy", async () => {
+    await seed();
+    window.localStorage.setItem(
+      "ib2:tableView:beta:positions:wheel:optionSells",
+      JSON.stringify({ v: 1, sort: [], criteria: { position: "XOM" } }),
+    );
+    renderPage("wheel");
+    const box = await screen.findByLabelText("Ventes d'options");
+    expect(within(box).getByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
+    expect(within(box).queryByText("MQZA Oct16'26 15 Call")).not.toBeInTheDocument();
   });
 });

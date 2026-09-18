@@ -1618,7 +1618,7 @@ MSG
   `StrategyBoxId = DetailGroupId | "shares"`,
   `useStrategyBoxViews(accountId, strategy, lineColumns, shareColumns): Record<StrategyBoxId, TableViewState>`.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `apps/web/src/pages/StrategyPositionsPage.test.tsx` :
 
@@ -1728,13 +1728,13 @@ import userEvent from "@testing-library/user-event";
 
 et ajouter `window.localStorage.clear();` au `beforeEach` global du fichier.
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Commande : `pnpm --filter web exec vitest run src/pages/StrategyPositionsPage.test.tsx`
 Attendu : ÉCHEC — pas de champ « Rechercher un ticker », pas de barre d'expiration, en-têtes
 inertes.
 
-- [ ] **Étape 3 : écrire `strategyBoxes.ts`**
+- [x] **Étape 3 : écrire `strategyBoxes.ts`**
 
 Créer `apps/web/src/lib/strategyBoxes.ts` :
 
@@ -1780,7 +1780,7 @@ export const STRATEGY_BOXES: Record<PositionsStrategy, readonly StrategyBoxDef[]
 };
 ```
 
-- [ ] **Étape 4 : écrire `useStrategyBoxViews.ts`**
+- [x] **Étape 4 : écrire `useStrategyBoxViews.ts`**
 
 Créer `apps/web/src/hooks/useStrategyBoxViews.ts` :
 
@@ -1814,7 +1814,7 @@ export function useStrategyBoxViews(
 }
 ```
 
-- [ ] **Étape 5 : réécrire la page**
+- [x] **Étape 5 : réécrire la page**
 
 Remplacer entièrement `apps/web/src/pages/StrategyPositionsPage.tsx` par :
 
@@ -2048,14 +2048,14 @@ function WheelShareRow({ line, sector }: { line: WheelShareLine; sector: string 
 }
 ```
 
-- [ ] **Étape 6 : retirer la clé i18n devenue inutile**
+- [x] **Étape 6 : retirer la clé i18n devenue inutile**
 
 Dans `apps/web/src/i18n/fr.json` et `en.json`, retirer `strategyPositions.empty` et
 `strategyPositions.groups.optionSales` et `strategyPositions.groups.optionBuys` : les titres
 partagés de `positions.groups` portent le même texte, et un encadré vide ne se rend plus.
 Garder `strategyPositions.groups.assignedShares` et `strategyPositions.groups.shares`.
 
-- [ ] **Étape 7 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 7 : lancer les tests, vérifier qu'ils passent**
 
 Commande : `pnpm --filter web exec vitest run src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS — les trois tests d'origine (adaptés) et les six neufs.
@@ -2063,7 +2063,7 @@ Attendu : SUCCÈS — les trois tests d'origine (adaptés) et les six neufs.
 Commande : `grep -rn "strategyPositions.empty\|groups.optionSales" apps/web/src`
 Attendu : aucune ligne.
 
-- [ ] **Étape 8 : commit**
+- [x] **Étape 8 : commit**
 
 ```bash
 git add apps/web/src/lib/strategyBoxes.ts apps/web/src/hooks/useStrategyBoxViews.ts apps/web/src/pages/StrategyPositionsPage.tsx apps/web/src/pages/StrategyPositionsPage.test.tsx apps/web/src/i18n
