@@ -196,8 +196,15 @@ export class AppDatabase extends Dexie {
         tx
           .table("snapshots")
           .toCollection()
-          .modify((row: { positions?: Record<string, unknown>[] }) => {
-            for (const position of row.positions ?? []) {
+          .modify((row: { positions?: unknown }) => {
+            // `Array.isArray` covers a missing or non-array `positions`, not just an absent one:
+            // a bad shape here must not throw inside `modify` and abort the upgrade for every
+            // account (the version-8 comment above). No per-element guard: unlike `when`/`asOf`
+            // strings, which real historical bugs have left unparseable, every element of
+            // `positions` is a full `Position` object written by this app's own snapshot code —
+            // there is no code path that has ever put a primitive or a hole in that array.
+            const positions = Array.isArray(row.positions) ? row.positions : [];
+            for (const position of positions as Record<string, unknown>[]) {
               position.dailyPnl ??= null;
               position.dayChange ??= null;
             }

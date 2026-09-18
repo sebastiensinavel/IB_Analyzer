@@ -354,17 +354,23 @@ describe("AppDatabase version 9", () => {
     }
   });
 
-  it("leaves a position's day fields alone when it already carries them, and tolerates a snapshot with no positions array", async () => {
+  it("leaves a position's day fields alone when it already carries them, fills a sibling position that has none, and tolerates a snapshot with no positions array", async () => {
     const name = `ib-analyzer-v9-migration-edge-test-${Date.now()}`;
     const legacy = new LegacyDatabaseV8(name);
     await legacy.open();
     await legacy.table("snapshots").bulkPut([
       {
-        // A position already carrying a value — an agent sync landed before this tab reopened —
-        // must not be clobbered back to null by `??=`.
         accountId: "beta", source: "agent", asOf: "2026-09-17T15:04:26.000Z",
         importedAt: "2026-09-17T15:04:27.000Z",
-        positions: [position({ dailyPnl: 0, dayChange: -0.1 })], cashAvailable: null,
+        positions: [
+          // A position already carrying a value — an agent sync landed before this tab
+          // reopened — must not be clobbered back to null by `??=`.
+          position({ dailyPnl: 0, dayChange: -0.1 }),
+          // Its sibling has neither field, proving the migration actually ran on this snapshot:
+          // deleting the `.upgrade()` body would leave this one `undefined`, not `null`.
+          position({ symbol: "MSFT" }),
+        ],
+        cashAvailable: null,
       },
       {
         // No positions array at all must not throw inside `modify` and abort the whole upgrade.
@@ -380,6 +386,7 @@ describe("AppDatabase version 9", () => {
       expect(upgraded.verno).toBe(9);
       const beta = await upgraded.snapshots.get("beta");
       expect(beta?.positions[0]).toMatchObject({ dailyPnl: 0, dayChange: -0.1 });
+      expect(beta?.positions[1]).toMatchObject({ dailyPnl: null, dayChange: null });
       const gamma = await upgraded.snapshots.get("gamma");
       expect(gamma?.positions).toBeUndefined();
     } finally {
