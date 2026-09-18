@@ -72,6 +72,42 @@ export const STRATEGY_COVER_SOURCES: Record<PositionsStrategy, readonly CoverSou
   others: [],
 };
 
+/** The strategies that own a cover, in the order the pages are served when the cap bites. */
+export const COVERED_STRATEGIES: readonly PositionsStrategy[] = ["wheel", "leaps", "condors"];
+
+/**
+ * How many contracts each covered strategy loses on one contract, the naked part the page Autres
+ * takes over (spec of sub-project 22, §3.1). `shorts` counts the open sold contracts of each
+ * strategy on that contract, unsigned, Others included.
+ *
+ * A strategy keeps what its own sources cover (`STRATEGY_COVER_SOURCES`), capped by its own
+ * quantity: the allocations describe the whole IB position, which may exceed the strategy's part.
+ * The total that migrates never exceeds what the engine itself calls naked, minus what Others
+ * already holds — naked by construction, `splitShortCall` having put it there at the sale. That
+ * cap is what keeps the page Autres from contradicting the title bar.
+ */
+export function migratedContracts(
+  shorts: ReadonlyMap<PositionsStrategy, number>,
+  allocations: readonly CoverageAllocation[],
+  uncoveredQuantity: number,
+): Map<PositionsStrategy, number> {
+  const taken = new Map<PositionsStrategy, number>();
+  let migrable = Math.max(0, uncoveredQuantity - (shorts.get("others") ?? 0));
+  for (const strategy of COVERED_STRATEGIES) {
+    if (migrable <= 0) break;
+    const held = shorts.get(strategy) ?? 0;
+    if (held <= 0) continue;
+    const sources = STRATEGY_COVER_SOURCES[strategy];
+    const own = allocations.reduce((sum, a) => (sources.includes(a.source) ? sum + a.quantity : sum), 0);
+    const take = Math.min(held - Math.min(held, own), migrable);
+    if (take > 0) {
+      taken.set(strategy, take);
+      migrable -= take;
+    }
+  }
+  return taken;
+}
+
 interface Priced {
   position: Position;
   analyzed: AnalyzedPosition;

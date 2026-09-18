@@ -77,7 +77,7 @@ Aucun fichier créé.
   **non signé**, `others` compris. Le retour ne contient que les stratégies qui perdent quelque
   chose, avec un nombre de contrats non signé. Les tâches 2 et 3 s'en servent.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Dans `packages/coverage/src/strategy.test.ts`, ajouter les imports et le bloc ci-dessous. Les
 imports existants du fichier (`describe`, `expect`, `it`, `strategyPositions`, …) restent ;
@@ -128,12 +128,12 @@ describe("migratedContracts", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: FAIL — `migratedContracts is not a function` / l'import n'existe pas.
 
-- [ ] **Step 3: Écrire l'implémentation**
+- [x] **Step 3: Écrire l'implémentation**
 
 Dans `packages/coverage/src/strategy.ts`, juste après la déclaration de
 `STRATEGY_COVER_SOURCES` :
@@ -180,12 +180,12 @@ Ajouter `import type { CoverageAllocation } from "./types.ts";` s'il n'est pas d
 fichier importe déjà `AnalyzedPosition`, `CoverageAllocation` et `RiskReport` depuis
 `./types.ts`, donc vérifier avant d'ajouter.
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: PASS, tous les tests du fichier, anciens compris.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage/src/strategy.ts packages/coverage/src/strategy.test.ts docs/plans/2026-09-18-part-nue-positions.md

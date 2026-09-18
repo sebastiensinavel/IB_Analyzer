@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { ContractKey, JournalRow, Position } from "@ib/ledger";
 import { option, stock } from "./fixtures.ts";
 import { buildRiskReport } from "./report.ts";
-import { strategyPositions, type PricedSnapshot } from "./strategy.ts";
+import { strategyPositions, type PricedSnapshot, migratedContracts, type PositionsStrategy } from "./strategy.ts";
+import type { CoverSource } from "./constants.ts";
+import type { CoverageAllocation } from "./types.ts";
 
 /** The two shapes the old API returned, so the tests below read as they did. */
 const wheelPositions = (rows: readonly JournalRow[], snapshot: PricedSnapshot | null) => {
@@ -310,5 +312,40 @@ describe("strategyPositions — wheel", () => {
     expect(holdings.map((holding) => holding.ticker)).toEqual(["MQZA"]);
     expect(groups.long).toEqual([]);
     expect(groups.optionSells).toHaveLength(1);
+  });
+});
+
+const alloc = (source: CoverSource, quantity: number): CoverageAllocation => ({ source, quantity, detail: "" });
+const shortsOf = (entries: [PositionsStrategy, number][]) => new Map<PositionsStrategy, number>(entries);
+
+describe("migratedContracts", () => {
+  it("migrates nothing when the engine says nothing is naked", () => {
+    expect(migratedContracts(shortsOf([["wheel", 2]]), [alloc("stock", 2)], 0)).toEqual(new Map());
+  });
+
+  it("migrates the part of a Wheel call its own shares no longer cover", () => {
+    expect(migratedContracts(shortsOf([["wheel", 2]]), [alloc("stock", 1)], 1)).toEqual(new Map([["wheel", 1]]));
+  });
+
+  it("counts what Others already holds against the naked total", () => {
+    // IB holds 3 short: shares cover 2, one is naked — and that one is already Others' own line.
+    expect(migratedContracts(shortsOf([["wheel", 2], ["others", 1]]), [alloc("stock", 2)], 1)).toEqual(new Map());
+  });
+
+  it("never migrates more than the engine calls naked, serving wheel before leaps", () => {
+    // The journal is longer than the IB position: 4 contracts of journal, 2 of position, 1 naked.
+    expect(migratedContracts(shortsOf([["wheel", 2], ["leaps", 2]]), [alloc("stock", 1)], 1)).toEqual(new Map([["wheel", 1]]));
+  });
+
+  it("leaves alone a line covered by a source that is not the strategy's own", () => {
+    expect(migratedContracts(shortsOf([["wheel", 1]]), [alloc("leaps", 1)], 0)).toEqual(new Map());
+  });
+
+  it("migrates a whole line when nothing covers it", () => {
+    expect(migratedContracts(shortsOf([["wheel", 1]]), [], 1)).toEqual(new Map([["wheel", 1]]));
+  });
+
+  it("migrates from the condors too", () => {
+    expect(migratedContracts(shortsOf([["condors", 2]]), [alloc("spread", 1)], 1)).toEqual(new Map([["condors", 1]]));
   });
 });
