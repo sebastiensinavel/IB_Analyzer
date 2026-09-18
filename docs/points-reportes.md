@@ -823,7 +823,10 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **`apps/web/src/routes/AppLayout.test.tsx`, les tests des indicateurs de consistance,
   échouent une fois de temps en temps en suite complète et passent seuls** — même symptôme
   déjà noté pour ce fichier au sous-projet 15 (« Reporté par le sous-projet 15 »), observé à
-  nouveau sur cette branche. Préexistant, indépendant du sous-projet 19.
+  nouveau sur cette branche. Préexistant, indépendant du sous-projet 19. **Revu au sous-projet
+  22** (2026-09-18), troisième occurrence : environ une exécution complète sur trois échoue,
+  le fichier seul passe ses seize tests. La fréquence est donc assez haute pour qu'un
+  `pnpm check` rouge sur ce seul fichier ne prouve rien — le relancer avant de chercher plus loin.
 
 ---
 
