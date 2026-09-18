@@ -73,8 +73,6 @@
     }
   },
   "positions": {
-    "searchLabel": "Search a ticker",
-    "searchPlaceholder": "Search a ticker: AAPL, AAPL|MSFT…",
     "asOf": "Data as of {{date}}",
     "empty": "No positions yet — import an HTML statement or a Flex query response with Open Positions.",
     "emptyLink": "Go to data sources",
@@ -276,6 +274,10 @@
       "corporate_action": "Corporate action",
       "transfer": "Deposit/Withdrawal"
     }
+  },
+  "search": {
+    "label": "Search a ticker",
+    "placeholder": "Search a ticker: AAPL, AAPL|MSFT…"
   },
   "sources": {
     "account": { "title": "Account", "label": "Label", "ibAccountId": "IB account id" },

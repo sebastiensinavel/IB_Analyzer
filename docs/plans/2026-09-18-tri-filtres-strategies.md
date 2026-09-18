@@ -972,7 +972,7 @@ MSG
 - Produit : `PageSearchInput({ search }: { search: PageSearchState })`, et les clés i18n
   `search.placeholder` / `search.label`.
 
-- [ ] **Étape 1 : déplacer les clés i18n**
+- [x] **Étape 1 : déplacer les clés i18n**
 
 Dans `apps/web/src/i18n/fr.json`, ajouter à la racine, en gardant l'ordre alphabétique des blocs
 de premier niveau existants :
@@ -998,7 +998,7 @@ Dans `apps/web/src/i18n/en.json`, de même :
 et retirer `positions.searchLabel` et `positions.searchPlaceholder`. **Ne pas toucher à
 `journal.filterPlaceholder`** : la page Journal l'utilise encore jusqu'à la tâche 9.
 
-- [ ] **Étape 2 : écrire `PageSearchInput.tsx`**
+- [x] **Étape 2 : écrire `PageSearchInput.tsx`**
 
 Créer `apps/web/src/components/table/PageSearchInput.tsx` :
 
@@ -1026,14 +1026,14 @@ export function PageSearchInput({ search }: { search: PageSearchState }) {
 }
 ```
 
-- [ ] **Étape 3 : brancher la vue d'ensemble**
+- [x] **Étape 3 : brancher la vue d'ensemble**
 
 Dans `apps/web/src/pages/PositionsPage.tsx`, remplacer le bloc `<Input …/>` par
 `<PageSearchInput search={search} />`, importer
 `import { PageSearchInput } from "@/components/table/PageSearchInput";` et retirer l'import
 désormais inutile de `@ib/ui/input`.
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
 Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
 Attendu : SUCCÈS sans modifier le test — les libellés rendus (« Rechercher un ticker »,
@@ -1042,7 +1042,7 @@ Attendu : SUCCÈS sans modifier le test — les libellés rendus (« Rechercher 
 Commande : `grep -rn "positions.searchPlaceholder\|positions.searchLabel" apps/web/src`
 Attendu : aucune ligne.
 
-- [ ] **Étape 5 : commit**
+- [x] **Étape 5 : commit**
 
 ```bash
 git add apps/web/src/components/table/PageSearchInput.tsx apps/web/src/pages/PositionsPage.tsx apps/web/src/i18n

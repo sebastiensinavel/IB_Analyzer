@@ -73,8 +73,6 @@
     }
   },
   "positions": {
-    "searchLabel": "Rechercher un ticker",
-    "searchPlaceholder": "Rechercher un ticker : AAPL, AAPL|MSFT…",
     "asOf": "Données du {{date}}",
     "empty": "Aucune position — importez un relevé HTML ou une réponse de Flex Query avec Open Positions.",
     "emptyLink": "Aller aux sources de données",
@@ -276,6 +274,10 @@
       "corporate_action": "Opération sur titre",
       "transfer": "Dépôt/Retrait"
     }
+  },
+  "search": {
+    "label": "Rechercher un ticker",
+    "placeholder": "Rechercher un ticker : AAPL, AAPL|MSFT…"
   },
   "sources": {
     "account": { "title": "Compte", "label": "Libellé", "ibAccountId": "Identifiant IB" },

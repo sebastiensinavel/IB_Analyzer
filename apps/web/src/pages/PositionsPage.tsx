@@ -5,10 +5,10 @@ import { DETAIL_GROUPS, groupedPositions, type AnalyzedPosition, type DetailGrou
 import { anchoredBalances } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
-import { Input } from "@ib/ui/input";
 import { CashBalancesCard } from "@/components/CashBalancesCard";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
 import { PositionGroupCard } from "@/components/PositionGroupCard";
+import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountRiskReport } from "@/db/AccountDataProvider";
 import { useCashPoints, useLedger } from "@/db/hooks";
 import { usePositionGroupViews } from "@/hooks/usePositionGroupViews";
@@ -80,13 +80,7 @@ export function PositionsPage() {
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.positions")}</h1>
 
-      <Input
-        value={search.input}
-        onChange={(event) => search.setInput(event.target.value)}
-        placeholder={t("positions.searchPlaceholder")}
-        aria-label={t("positions.searchLabel")}
-        className="font-mono"
-      />
+      <PageSearchInput search={search} />
 
       <ExpiryFilterBar choices={choices} active={expiry} onPick={setExpiry} />
 
