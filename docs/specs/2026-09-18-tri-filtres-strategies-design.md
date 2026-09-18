@@ -123,28 +123,48 @@ disparaît au profit de ce composant.
 
 ### 3.3 `lib/tableBoxes.ts`
 
-Pur, testé une fois, il porte la règle qui décide des encadrés visibles :
+Pur, testé une fois, il porte la règle qui décide des encadrés visibles. Elle se dit en deux
+temps, parce que la barre d'expiration se construit entre les deux :
 
 ```ts
 export interface TableBoxInput<Row> { id: string; title?: string; all: readonly Row[] }
-export interface PreparedBox<Row> { id: string; title?: string; facetRows: readonly Row[]; rows: Row[] }
+export interface SearchedBox<Row> extends TableBoxInput<Row> { searched: Row[] }
+export interface PreparedBox<Row> extends SearchedBox<Row> { facetRows: readonly Row[]; rows: Row[] }
 
-export function prepareBoxes<Row>(
+export function searchBoxes<Row>(
   boxes: readonly TableBoxInput<Row>[],
   specs: readonly ColumnSpec<Row>[],
-  views: Readonly<Record<string, TableView>>,
   search: PageSearch<Row>,
+): SearchedBox<Row>[];
+
+export function filterBoxes<Row>(
+  boxes: readonly SearchedBox<Row>[],
+  specs: readonly ColumnSpec<Row>[],
+  views: Readonly<Record<string, TableView>>,
   expiryActive: boolean,
 ): PreparedBox<Row>[];
+
+export function activeExpiry(
+  choices: readonly ExpiryChoice[],
+  ids: readonly string[],
+  views: Readonly<Record<string, TableView>>,
+): string | null;
 ```
 
-Pour chaque encadré, dans l'ordre donné :
+`searchBoxes` porte les deux premières règles :
 
 1. `all` vide — la stratégie n'a rien de ce type — : **l'encadré est écarté**, sans jamais avoir
    été rendu.
 2. `searched = applyView(all, specs, EMPTY_VIEW, search)`. Vide : **écarté**. La recherche porte
    sur le ticker, qui veut dire la même chose dans tous les encadrés, et s'efface depuis le haut
    de la page : la faire disparaître ne coince personne.
+
+La page construit alors la barre d'expiration sur les `searched` de **tous** les encadrés
+survivants, puis lit l'expiration active avec `activeExpiry` — un libellé n'est actif que s'il
+est le critère de la colonne `Position` de **tous** les encadrés déclarés de la page.
+
+`filterBoxes` porte les trois dernières :
+
 3. `rows = applyView(searched, specs, views[id])`. Vide **et** `expiryActive` : **écarté** — une
    expiration choisie vide par construction le tableau des actions, qui n'a pas d'expiration, et
    montrer une grille que rien ne peut remplir n'apprend rien.
@@ -153,16 +173,20 @@ Pour chaque encadré, dans l'ordre donné :
 5. `facetRows` vaut toujours `all` : les facettes comptent l'encadré entier, avant recherche et
    avant filtres, comme aujourd'hui.
 
+Le découpage en deux temps est ce qui garde l'expiration choisie dans la barre : les lignes d'un
+encadré que l'expiration vide ont déjà nourri les choix, et le bouton reste donc cliquable pour
+être défait.
+
 Quand la liste rendue est vide, la page affiche l'encart « Aucune position ne correspond. ».
 
 Une page dont les encadrés n'ont pas tous le même type de ligne — la Wheel, dont les actions
-assignées sont des `WheelShareLine` et les ventes d'options des `StrategyLine` — appelle
-`prepareBoxes` une fois par type et rend les résultats dans l'ordre déclaré : chaque appel reste
+assignées sont des `WheelShareLine` et les ventes d'options des `StrategyLine` — appelle ces
+fonctions une fois par type et rend les résultats dans l'ordre déclaré : chaque appel reste
 typé, aucun transtypage n'est nécessaire.
 
-La page Positions de la vue d'ensemble se refait sur `prepareBoxes` : la règle n'existe qu'une
-fois. Son comportement ne change pas, et `PositionsPage.test.tsx` doit passer sans retouche —
-c'est le filet de sécurité du portage.
+La page Positions de la vue d'ensemble se refait dessus : la règle n'existe qu'une fois. Son
+comportement ne change pas, et `PositionsPage.test.tsx` doit passer sans retouche — c'est le
+filet de sécurité du portage.
 
 ### 3.4 `components/table/PageSearchInput.tsx`
 
