@@ -35,8 +35,8 @@ Vitest + Testing Library + fake-indexeddb, pnpm workspaces.
 - **shadcn ici est base-ui** : `render={<X/>}`, jamais `asChild`.
 - **`apps/web/src/pages/PositionsPage.test.tsx` ne doit pas être modifié** : c'est le filet de
   sécurité de tout le portage. S'il casse, c'est le code qui a tort.
-- Commandes : `pnpm --filter web test -- <chemin>` pour un test web,
-  `pnpm --filter @ib/coverage test -- <chemin>` pour `coverage`. `pnpm check` **une seule fois à
+- Commandes : `pnpm --filter web exec vitest run <chemin>` pour un test web,
+  `pnpm --filter @ib/coverage exec vitest run <chemin>` pour `coverage`. `pnpm check` **une seule fois à
   la fin** (tâche 10) : il lance lint, typage, build et tous les tests.
 - Chaque tâche finit par un commit dont le message est en français, à l'impératif, et se termine
   par la ligne `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`.
@@ -164,7 +164,7 @@ describe("DataTable", () => {
 
 - [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/components/table/DataTable.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/components/table/DataTable.test.tsx`
 Attendu : ÉCHEC, « Failed to resolve import "@/components/table/DataTable" ».
 
 - [x] **Étape 3 : écrire `DataTable.tsx`**
@@ -264,7 +264,7 @@ export function DataTableHeader<Row>({
 
 - [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
-Commande : `pnpm --filter web test -- src/components/table/DataTable.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/components/table/DataTable.test.tsx`
 Attendu : SUCCÈS, 4 tests.
 
 - [x] **Étape 5 : brancher les trois appelants et supprimer `PositionTable`**
@@ -310,7 +310,7 @@ rm apps/web/src/components/PositionTable.tsx
 
 - [x] **Étape 6 : vérifier que rien n'a bougé**
 
-Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx src/components/CashBalancesCard.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx src/components/CashBalancesCard.test.tsx`
 Attendu : SUCCÈS, aucun test modifié. Le test « lines up the columns of every table on the page »
 de `PositionsPage.test.tsx` prouve que les dix `<col>` sont toujours posés sur les quatre tables.
 
@@ -449,7 +449,7 @@ describe("FilteredTableBox", () => {
 
 - [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/components/table/FilteredTableBox.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/components/table/FilteredTableBox.test.tsx`
 Attendu : ÉCHEC, « Failed to resolve import "@/components/table/FilteredTableBox" ».
 
 - [ ] **Étape 3 : écrire `FilteredTableBox.tsx`**
@@ -560,7 +560,7 @@ export function FilteredTableBox<Row>({
 
 - [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
 
-Commande : `pnpm --filter web test -- src/components/table/FilteredTableBox.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/components/table/FilteredTableBox.test.tsx`
 Attendu : SUCCÈS, 5 tests.
 
 - [ ] **Étape 5 : faire de `PositionGroupCard` l'adaptateur `AnalyzedPosition`**
@@ -629,7 +629,7 @@ Le composant ne traduit plus rien lui-même — l'encadré s'en charge —, donc
 
 - [ ] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé**
 
-Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
 Attendu : SUCCÈS, fichier de test non modifié.
 
 - [ ] **Étape 7 : commit**
@@ -773,7 +773,7 @@ describe("activeExpiry", () => {
 
 - [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/lib/tableBoxes.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/tableBoxes.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/tableBoxes" ».
 
 - [ ] **Étape 3 : écrire `tableBoxes.ts`**
@@ -866,7 +866,7 @@ export function activeExpiry(
 
 - [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
 
-Commande : `pnpm --filter web test -- src/lib/tableBoxes.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/tableBoxes.test.ts`
 Attendu : SUCCÈS, 10 tests.
 
 - [ ] **Étape 5 : porter `PositionsPage` dessus**
@@ -933,7 +933,7 @@ en important `type DetailGroupId` depuis `@ib/coverage`.
 
 - [ ] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé d'un pixel**
 
-Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
 Attendu : SUCCÈS, fichier de test non modifié — les 20 tests, expirations comprises.
 
 - [ ] **Étape 7 : commit**
@@ -1031,7 +1031,7 @@ désormais inutile de `@ib/ui/input`.
 
 - [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
-Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
 Attendu : SUCCÈS sans modifier le test — les libellés rendus (« Rechercher un ticker »,
 « Rechercher un ticker : AAPL, AAPL|MSFT… ») sont exactement les mêmes, sous une autre clé.
 
@@ -1191,7 +1191,7 @@ Ajouter `type ContractKey` à l'import de `@ib/ledger` en tête de fichier s'il 
 
 - [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
-Commande : `pnpm --filter @ib/coverage test -- src/strategy.test.ts`
+Commande : `pnpm --filter @ib/coverage exec vitest run src/strategy.test.ts`
 Attendu : ÉCHEC — `strategyPositions` n'existe pas.
 
 - [ ] **Étape 3 : écrire le moteur**
@@ -1342,7 +1342,7 @@ devient `leaps.groups.optionBuys`, `leaps.optionSells` devient `leaps.groups.opt
 
 - [ ] **Étape 6 : vérifier**
 
-Commande : `pnpm --filter web test -- src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS, fichier de test non modifié.
 
 Commande : `pnpm --filter web typecheck`
@@ -1461,7 +1461,7 @@ describe("wheelShareColumnSpecs", () => {
 
 - [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/lib/strategyColumns.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/strategyColumns.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/strategyColumns" ».
 
 - [ ] **Étape 3 : étendre `riskReport.ts`**
@@ -1562,7 +1562,7 @@ export function wheelShareColumnSpecs(sectorOf: SectorOf): ColumnSpec<WheelShare
 Dans `apps/web/src/pages/StrategyPositionsPage.tsx`, `strategyCoverageBadges(line)` prend son
 second argument : `strategyCoverageBadges(line, strategy)` — passer `strategy` à `LinesCard`.
 
-Commande : `pnpm --filter web test -- src/lib/strategyColumns.test.ts src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/lib/strategyColumns.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS.
 
 - [ ] **Étape 6 : commit**
@@ -1712,7 +1712,7 @@ et ajouter `window.localStorage.clear();` au `beforeEach` global du fichier.
 
 - [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
-Commande : `pnpm --filter web test -- src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/StrategyPositionsPage.test.tsx`
 Attendu : ÉCHEC — pas de champ « Rechercher un ticker », pas de barre d'expiration, en-têtes
 inertes.
 
@@ -2039,7 +2039,7 @@ Garder `strategyPositions.groups.assignedShares` et `strategyPositions.groups.sh
 
 - [ ] **Étape 7 : lancer les tests, vérifier qu'ils passent**
 
-Commande : `pnpm --filter web test -- src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS — les trois tests d'origine (adaptés) et les six neufs.
 
 Commande : `grep -rn "strategyPositions.empty\|groups.optionSales" apps/web/src`
@@ -2188,7 +2188,7 @@ describe("StrategyPositionsPage — Others", () => {
 
 - [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
-Commande : `pnpm --filter web test -- src/routes/router.test.tsx src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/routes/router.test.tsx src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : ÉCHEC — routes absentes, entrées de menu absentes, titres absents.
 
 - [ ] **Étape 3 : ajouter les routes**
@@ -2238,7 +2238,7 @@ Dans `apps/web/src/i18n/en.json` :
 
 - [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
-Commande : `pnpm --filter web test -- src/routes src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/routes src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS.
 
 - [ ] **Étape 7 : commit**
@@ -2321,7 +2321,7 @@ describe("journalColumnSpecs", () => {
 
 - [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/lib/journalColumns.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/journalColumns.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/journalColumns" ».
 
 - [ ] **Étape 3 : écrire `journalColumns.ts`**
@@ -2394,7 +2394,7 @@ export function journalColumnSpecs(t: Translate): ColumnSpec<JournalRow>[] {
 
 - [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
 
-Commande : `pnpm --filter web test -- src/lib/journalColumns.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/journalColumns.test.ts`
 Attendu : SUCCÈS, 3 tests.
 
 - [ ] **Étape 5 : écrire les tests de page qui échouent**
@@ -2457,7 +2457,7 @@ Dans `apps/web/src/pages/JournalPage.test.tsx` :
 
 - [ ] **Étape 6 : lancer les tests, vérifier qu'ils échouent**
 
-Commande : `pnpm --filter web test -- src/pages/JournalPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/JournalPage.test.tsx`
 Attendu : ÉCHEC — le champ s'appelle encore « Filtrer sur le ticker… », les en-têtes n'ont pas de
 bouton.
 
@@ -2571,7 +2571,7 @@ Dans `apps/web/src/i18n/fr.json` et `en.json`, retirer `journal.filterPlaceholde
 
 - [ ] **Étape 9 : lancer les tests, vérifier qu'ils passent**
 
-Commande : `pnpm --filter web test -- src/pages/JournalPage.test.tsx src/lib/journalColumns.test.ts`
+Commande : `pnpm --filter web exec vitest run src/pages/JournalPage.test.tsx src/lib/journalColumns.test.ts`
 Attendu : SUCCÈS — les treize tests d'origine (dont un adapté) et les trois neufs. Le test
 « shows the seventeen columns in order » prouve que l'ordre et les libellés n'ont pas bougé.
 
