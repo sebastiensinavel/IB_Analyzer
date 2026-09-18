@@ -178,18 +178,33 @@ const TransactionRow = memo(function TransactionRow({ row }: { row: LedgerRow })
       <TableCell className={`${CELL} font-medium`} title={label}>
         {label}
       </TableCell>
-      <TableCell className={NUMERIC_CELL}>{transaction.quantity ?? "—"}</TableCell>
-      <TableCell className={NUMERIC_CELL}>{transaction.price === null ? "—" : formatPrice(transaction.price)}</TableCell>
-      <TableCell className={NUMERIC_CELL}>{transaction.amount === null ? "—" : formatAmount(transaction.amount)}</TableCell>
-      <TableCell className={NUMERIC_CELL}>
+      <TableCell className={NUMERIC_CELL} title={transaction.quantity === null ? undefined : String(transaction.quantity)}>
+        {transaction.quantity ?? "—"}
+      </TableCell>
+      <TableCell className={NUMERIC_CELL} title={transaction.price === null ? undefined : formatPrice(transaction.price)}>
+        {transaction.price === null ? "—" : formatPrice(transaction.price)}
+      </TableCell>
+      <TableCell className={NUMERIC_CELL} title={transaction.amount === null ? undefined : formatAmount(transaction.amount)}>
+        {transaction.amount === null ? "—" : formatAmount(transaction.amount)}
+      </TableCell>
+      <TableCell
+        className={NUMERIC_CELL}
+        title={transaction.commission === null ? undefined : formatAmount(transaction.commission)}
+      >
         {transaction.commission === null ? "—" : formatAmount(transaction.commission)}
       </TableCell>
-      <TableCell className={NUMERIC_CELL}>{cash === null ? "—" : formatAmount(cash)}</TableCell>
+      <TableCell className={NUMERIC_CELL} title={cash === null ? undefined : formatAmount(cash)}>
+        {cash === null ? "—" : formatAmount(cash)}
+      </TableCell>
       <TableCell className={`${CELL} text-muted-foreground`}>{transaction.currency}</TableCell>
       {/* Running balances, not this row's impact: they are shown on every
           row, including one that moves the other currency. */}
-      <TableCell className={NUMERIC_CELL}>{formatAmount(balances.USD)}</TableCell>
-      <TableCell className={NUMERIC_CELL}>{formatAmount(balances.EUR)}</TableCell>
+      <TableCell className={NUMERIC_CELL} title={formatAmount(balances.USD)}>
+        {formatAmount(balances.USD)}
+      </TableCell>
+      <TableCell className={NUMERIC_CELL} title={formatAmount(balances.EUR)}>
+        {formatAmount(balances.EUR)}
+      </TableCell>
     </TableRow>
   );
 });

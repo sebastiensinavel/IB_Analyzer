@@ -133,6 +133,21 @@ describe("HistoryPage", () => {
     expect(cells[CURRENCY_CELL]).toHaveTextContent("USD");
   });
 
+  it("carries a numeric cell's full formatted text as its title, so a clipped value stays readable on hover", async () => {
+    await seed();
+    renderHistory();
+    const cells = within(await rowFor("AAPL")).getAllByRole("cell");
+    expect(cells[CASH_CELL]).toHaveAttribute("title", "-18,051.50");
+  });
+
+  it("gives a dash cell no title: there is nothing hidden to reveal", async () => {
+    await seed([{ ...SAMPLE_DEPOSIT, amount: 10000 }, { ...SAMPLE_TRANSACTIONS[0], symbol: "SNZA", price: null, amount: null, commission: null }]);
+    renderHistory();
+    const cells = within(await rowFor("SNZA")).getAllByRole("cell");
+    expect(cells[CASH_CELL]).toHaveTextContent("—");
+    expect(cells[CASH_CELL]).not.toHaveAttribute("title");
+  });
+
   it("computes the running balances over the whole ledger and carries both currencies on every row", async () => {
     await seed();
     renderHistory();

@@ -44,3 +44,10 @@ describe("historyColumnSpecs", () => {
     expect(historyTicker(row(SAMPLE_DEPOSIT))).toBeNull();
   });
 });
+
+describe("HISTORY_COLUMNS widths", () => {
+  it("add up to 100%, so a rebalancing never silently drops a column's share", () => {
+    const total = HISTORY_COLUMNS.reduce((sum, column) => sum + Number.parseFloat(column.width), 0);
+    expect(total).toBeCloseTo(100, 5);
+  });
+});
