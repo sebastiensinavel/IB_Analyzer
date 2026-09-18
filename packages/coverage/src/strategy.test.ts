@@ -157,6 +157,47 @@ describe("wheelPositions — assigned shares", () => {
   });
 });
 
+describe("strategyPositions — the Wheel's shares card counts only the covered calls", () => {
+  it("turns 'used 100/100' honest when a call has lost its shares", () => {
+    const { rows, snapshot } = nakedCallLedger();
+    const { shares: held } = wheelPositions(rows, snapshot);
+    expect(held).toHaveLength(1);
+    expect(held[0]).toMatchObject({
+      ticker: "MQZA", quantity: 100, averageAssignmentPrice: 17, assignedTotal: 1700,
+      openCallContracts: 1, averageCallStrike: 15, coveredShares: 100,
+      lastPrice: 18, unrealizedPnl: 100, callStrikeBelowAssignment: true,
+    });
+  });
+
+  it("averages the strikes of the covered calls only", () => {
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -1, openPrice: 0.7 }),
+      row({ id: "c#2", contract: opt("MQZA", "C", 25, "2026-10-16"), kind: "short_call", quantity: -1, openPrice: 0.2 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -1, marketPrice: 1, marketValue: -100 }),
+      option({ symbol: "MQZA", right: "C", strike: 25, expiry: "2026-10-16", quantity: -1, marketPrice: 0.1, marketValue: -10 }),
+    ]);
+    // The engine covers the nearest expiry, lowest strike first: the 15 call keeps the shares.
+    const { shares: held } = wheelPositions(rows, snapshot);
+    expect(held[0]).toMatchObject({ openCallContracts: 1, averageCallStrike: 15, coveredShares: 100 });
+  });
+
+  it("leaves the card alone when every call is still covered", () => {
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 200, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -1, openPrice: 0.7 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 200, avgPrice: 17, marketPrice: 18, marketValue: 3600 }),
+      option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -1, marketPrice: 1, marketValue: -100 }),
+    ]);
+    expect(wheelPositions(rows, snapshot).shares[0]).toMatchObject({ openCallContracts: 1, coveredShares: 100 });
+  });
+});
+
 describe("leapsPositions", () => {
   const LEAPS = opt("ZZZ", "C", 15, "2027-06-18");
   const SOLD = opt("ZZZ", "C", 20, "2026-09-18");

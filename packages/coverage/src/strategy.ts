@@ -347,11 +347,17 @@ export function strategyPositions(rows: readonly JournalRow[], strategy: Positio
   const taken = migratedByContract(open, priced);
   const groups = linesByGroup(open, strategy, priced, taken);
   if (strategy !== "wheel") return { shares: [], groups };
+  const covered = coveredCallsByTicker(groups.optionSells);
   const shares = wheelHoldings(rows).map((holding): WheelShareLine => {
+    const calls = covered.get(`${holding.ticker}|${holding.currency}`) ?? { contracts: 0, strikeTotal: 0, unstruck: false };
+    const averageCallStrike = calls.contracts === 0 || calls.unstruck ? null : calls.strikeTotal / calls.contracts;
     const lastPrice = priced.get(contractId(sharesContract(holding.ticker, holding.currency)))?.position.marketPrice ?? null;
-    const { averageAssignmentPrice, averageCallStrike } = holding;
+    const { averageAssignmentPrice } = holding;
     return {
       ...holding,
+      openCallContracts: calls.contracts,
+      averageCallStrike,
+      coveredShares: Math.min(holding.quantity, calls.contracts * DEFAULT_MULTIPLIER),
       lastPrice,
       unrealizedPnl: lastPrice === null || averageAssignmentPrice === null ? null : (lastPrice - averageAssignmentPrice) * holding.quantity,
       callStrikeBelowAssignment: averageCallStrike !== null && averageAssignmentPrice !== null && averageCallStrike < averageAssignmentPrice,
@@ -359,4 +365,25 @@ export function strategyPositions(rows: readonly JournalRow[], strategy: Positio
   });
   // The Wheel's shares are its long positions, shown by their own table: never twice.
   return { shares, groups: { ...groups, long: [] } };
+}
+
+/**
+ * The Wheel's calls that still have shares behind them, by ticker and currency: the shares card
+ * counts these, not the journal's, so that "used 100/100" says what the page shows
+ * (spec of sub-project 22, §3.4).
+ */
+function coveredCallsByTicker(sales: readonly StrategyLine[]): Map<string, { contracts: number; strikeTotal: number; unstruck: boolean }> {
+  const covered = new Map<string, { contracts: number; strikeTotal: number; unstruck: boolean }>();
+  for (const sale of sales) {
+    if (sale.kind !== "short_call") continue;
+    const key = `${sale.contract.ticker}|${sale.contract.currency}`;
+    const entry = covered.get(key) ?? { contracts: 0, strikeTotal: 0, unstruck: false };
+    const contracts = Math.abs(sale.quantity);
+    covered.set(key, {
+      contracts: entry.contracts + contracts,
+      strikeTotal: entry.strikeTotal + (sale.contract.strike ?? 0) * contracts,
+      unstruck: entry.unstruck || sale.contract.strike === null,
+    });
+  }
+  return covered;
 }

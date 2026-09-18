@@ -636,7 +636,7 @@ git commit -m "La page Autres absorbe la part nue des autres stratégies"
 - Produit : `WheelShareLine` inchangé dans sa forme ; `openCallContracts`, `averageCallStrike`,
   `coveredShares` et `callStrikeBelowAssignment` sont désormais calculés sur les calls couverts.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 ```ts
 describe("strategyPositions — the Wheel's shares card counts only the covered calls", () => {
@@ -681,12 +681,12 @@ describe("strategyPositions — the Wheel's shares card counts only the covered 
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: FAIL — `openCallContracts` vaut 2 et `coveredShares` 100/… lu sur deux contrats.
 
-- [ ] **Step 3: Écrire l'implémentation**
+- [x] **Step 3: Écrire l'implémentation**
 
 Remplacer la fin de `strategyPositions` :
 
@@ -737,12 +737,12 @@ function coveredCallsByTicker(sales: readonly StrategyLine[]): Map<string, { con
 `wheelHoldings` reste inchangé dans `@ib/ledger` : ses champs `openCallContracts`,
 `averageCallStrike` et `coveredShares` gardent leur sens de journal et sont ici recouverts.
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: PASS, tout le fichier.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage/src/strategy.ts packages/coverage/src/strategy.test.ts docs/plans/2026-09-18-part-nue-positions.md
