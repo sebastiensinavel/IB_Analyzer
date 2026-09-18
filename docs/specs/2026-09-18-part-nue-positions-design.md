@@ -55,7 +55,7 @@ assignées puis 2 calls vendus donnent déjà un lot Wheel et un lot Autres. Ce 
 
 Le trou est postérieur à la vente : un call **couvert à la vente** devient nu quand sa
 couverture s'en va — actions vendues, actions reprises par un autre call, LEAPS long revendu,
-cash tombé sous ce qu'un put exige. Le lot reste alors dans sa stratégie d'origine, et :
+aile de condor rachetée. Le lot reste alors dans sa stratégie d'origine, et :
 
 - la page de la stratégie l'affiche entier, avec les badges de couverture de ses seules sources
   (`STRATEGY_COVER_SOURCES`), donc sans jamais dire `UNCOVERED` ;
@@ -97,6 +97,13 @@ qui n'est pas la sienne — voir §7.
 
 Un contrat que le snapshot ne détient pas, ou l'absence de snapshot, ne produit aucun partage :
 `pris_s = 0` partout, et les pages restent ce qu'elles sont aujourd'hui.
+
+**En pratique, seuls des calls migrent.** `secureShortPuts` (`packages/coverage/src/coverage.ts`)
+alloue `cash` à tout put vendu, sans jamais regarder le cash disponible : un manque de cash est
+un problème global du rapport (`report.ts`, `cashRequired > cashAvailable`), pas un
+`uncoveredQuantity` de contrat. La règle reste écrite sur les ventes d'options en général — elle
+ne coûte rien de plus et suivra le moteur s'il change un jour —, mais un put ne peut pas migrer
+tant que le moteur sécurise ainsi, et un test le cloue (§5).
 
 ### 3.2 Les lignes des stratégies couvertes
 
@@ -184,7 +191,9 @@ registre des lots ; la page Positions dit ce que la stratégie couvre aujourd'hu
 
 - 200 actions Wheel, 2 calls Wheel, puis 100 actions vendues : la page Wheel montre 1 call avec
   `stock ×1`, la page Autres 1 call avec `UNCOVERED ×1`, la carte des actions « used 100/100 » ;
-- la même chose avec un put Wheel que le cash ne couvre plus ;
+- **un put Wheel ne migre jamais** : le moteur lui alloue toujours `cash`, donc son
+  `uncoveredQuantity` est nul et la page Autres n'en voit rien — le test échoue si le moteur
+  cesse de sécuriser ainsi ;
 - **le plafond** : `uncoveredQuantity` à 0 alors que la stratégie ne reconnaît aucune de ses
   sources — rien ne migre ;
 - **le plafond partiel** : journal plus long que la position IB, seule la part que le moteur dit
@@ -235,5 +244,5 @@ d'une couverture qui ne lui appartient pas, ce qui dépasse ce sous-projet.
 | Attribuer la part nue à une stratégie | Une position nue n'appartient à aucune stratégie : c'est une erreur, et peu importe d'où elle vient. C'est ce qui supprime toute règle d'attribution arbitraire |
 | Un encadré « Part nue d'autres stratégies » sur la page Autres | Même raison : nommer l'origine, c'est attribuer le nu |
 | Un badge d'origine sur la ligne fondue | Même raison |
-| Calculer le nu depuis le seul journal | Le journal ignore le cash : un put Wheel que le cash ne couvre plus resterait invisible. Le moteur de couverture est la seule source qui sait ce qui est nu |
+| Calculer le nu depuis le seul journal | Le journal ne connaît que la couverture qu'il a lui-même classée : il ignore ce que le moteur apparie réellement sur le snapshot, et ne saurait pas qu'un call Wheel sans actions est en fait couvert par un LEAPS long. Le moteur de couverture est la seule source qui sait ce qui est nu, et la seule que la barre de titre lise |
 | Montrer `UNCOVERED` sur les pages de stratégie | La page de la stratégie ne montre que ce qu'elle couvre ; ce qui est nu se lit sur Autres et sur la vue d'ensemble |
