@@ -4,8 +4,8 @@ import type { AnalyzedPosition } from "@ib/coverage";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { TableBody, TableCell, TableRow } from "@ib/ui/table";
 import { PositionRow } from "@/components/PositionRow";
-import { PositionTable, PositionTableHeader } from "@/components/PositionTable";
 import { ActiveFilters } from "@/components/table/ActiveFilters";
+import { DataTable, DataTableHeader } from "@/components/table/DataTable";
 import type { TableViewState } from "@/hooks/useTableView";
 import { formatContract } from "@/lib/format";
 import { POSITION_COLUMNS } from "@/lib/positionColumns";
@@ -56,8 +56,12 @@ export function PositionGroupCard({ title, positions, rows, table, specs, sector
           onClearColumn={table.clearColumn}
           onClearAll={table.clearAll}
         />
-        <PositionTable>
-          <PositionTableHeader interactive={{ specs, view: table.view, facets, onSort: table.setSort, onCriterion: table.setCriterion }} />
+        <DataTable columns={POSITION_COLUMNS} minWidth="60rem">
+          <DataTableHeader
+            columns={POSITION_COLUMNS}
+            labelKey="positions.columns"
+            interactive={{ specs, view: table.view, facets, onSort: table.setSort, onCriterion: table.setCriterion }}
+          />
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
@@ -85,7 +89,7 @@ export function PositionGroupCard({ title, positions, rows, table, specs, sector
               ))
             )}
           </TableBody>
-        </PositionTable>
+        </DataTable>
       </CardContent>
     </Card>
   );

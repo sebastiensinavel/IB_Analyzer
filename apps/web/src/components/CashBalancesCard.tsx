@@ -4,7 +4,7 @@ import type { CashCheck, LedgerRow } from "@ib/ledger";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
-import { PositionTable } from "@/components/PositionTable";
+import { DataTable } from "@/components/table/DataTable";
 import { formatAmount } from "@/lib/format";
 import { POSITION_COLUMNS } from "@/lib/positionColumns";
 
@@ -30,7 +30,7 @@ export function CashBalancesCard({ rows, checks }: CashBalancesCardProps) {
         <CardTitle>{t("positions.cash.title")}</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <PositionTable>
+        <DataTable columns={POSITION_COLUMNS} minWidth="60rem">
           <TableHeader>
             <TableRow>
               {POSITION_COLUMNS.map(({ key }) =>
@@ -83,7 +83,7 @@ export function CashBalancesCard({ rows, checks }: CashBalancesCardProps) {
               );
             })}
           </TableBody>
-        </PositionTable>
+        </DataTable>
       </CardContent>
     </Card>
   );

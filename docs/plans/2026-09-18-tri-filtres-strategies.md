@@ -82,7 +82,7 @@ Vitest + Testing Library + fake-indexeddb, pnpm workspaces.
   `InteractiveHeader<Row> { specs, view, facets, onSort, onCriterion }`.
 - Consomme : `ColumnHeader` (`@/components/table/ColumnHeader`), inchangé.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Créer `apps/web/src/components/table/DataTable.test.tsx` :
 
@@ -162,12 +162,12 @@ describe("DataTable", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
 Commande : `pnpm --filter web test -- src/components/table/DataTable.test.tsx`
 Attendu : ÉCHEC, « Failed to resolve import "@/components/table/DataTable" ».
 
-- [ ] **Étape 3 : écrire `DataTable.tsx`**
+- [x] **Étape 3 : écrire `DataTable.tsx`**
 
 Créer `apps/web/src/components/table/DataTable.tsx` :
 
@@ -262,12 +262,12 @@ export function DataTableHeader<Row>({
 }
 ```
 
-- [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
 Commande : `pnpm --filter web test -- src/components/table/DataTable.test.tsx`
 Attendu : SUCCÈS, 4 tests.
 
-- [ ] **Étape 5 : brancher les trois appelants et supprimer `PositionTable`**
+- [x] **Étape 5 : brancher les trois appelants et supprimer `PositionTable`**
 
 Dans `apps/web/src/components/PositionGroupCard.tsx`, remplacer l'import
 `import { PositionTable, PositionTableHeader } from "@/components/PositionTable";` par :
@@ -308,7 +308,7 @@ Puis supprimer le fichier :
 rm apps/web/src/components/PositionTable.tsx
 ```
 
-- [ ] **Étape 6 : vérifier que rien n'a bougé**
+- [x] **Étape 6 : vérifier que rien n'a bougé**
 
 Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx src/components/CashBalancesCard.test.tsx`
 Attendu : SUCCÈS, aucun test modifié. Le test « lines up the columns of every table on the page »
@@ -317,7 +317,7 @@ de `PositionsPage.test.tsx` prouve que les dix `<col>` sont toujours posés sur 
 Commande : `pnpm --filter web typecheck`
 Attendu : SUCCÈS (aucune référence restante à `@/components/PositionTable`).
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add apps/web/src/components apps/web/src/pages/StrategyPositionsPage.tsx

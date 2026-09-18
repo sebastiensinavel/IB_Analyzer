@@ -15,11 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
 import { PositionRow } from "@/components/PositionRow";
-import { PositionTable, PositionTableHeader } from "@/components/PositionTable";
+import { DataTable, DataTableHeader } from "@/components/table/DataTable";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
 import type { SnapshotRecord } from "@/db/schema";
 import { formatMoney, formatPrice } from "@/lib/format";
-import { WHEEL_SHARE_COLUMNS } from "@/lib/positionColumns";
+import { POSITION_COLUMNS, WHEEL_SHARE_COLUMNS } from "@/lib/positionColumns";
 import { strategyCoverageBadges, usedBadge } from "@/lib/riskReport";
 import { cn } from "@/lib/utils";
 
@@ -95,8 +95,8 @@ function GroupCard({ title, empty, children }: { title: string; empty: boolean; 
 function LinesCard({ title, lines, sectorOf }: { title: string; lines: readonly StrategyLine[]; sectorOf: SectorOf }) {
   return (
     <GroupCard title={title} empty={lines.length === 0}>
-      <PositionTable>
-        <PositionTableHeader />
+      <DataTable columns={POSITION_COLUMNS} minWidth="60rem">
+        <DataTableHeader columns={POSITION_COLUMNS} labelKey="positions.columns" />
         <TableBody>
           {lines.map((line) => (
             <PositionRow
@@ -116,7 +116,7 @@ function LinesCard({ title, lines, sectorOf }: { title: string; lines: readonly 
             />
           ))}
         </TableBody>
-      </PositionTable>
+      </DataTable>
     </GroupCard>
   );
 }
