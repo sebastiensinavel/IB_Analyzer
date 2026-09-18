@@ -2621,7 +2621,7 @@ MSG
 **Fichiers :**
 - Modifier : `CLAUDE.md`, `docs/specs/2026-09-18-tri-filtres-strategies-design.md`
 
-- [ ] **Étape 1 : réécrire les règles de `CLAUDE.md`**
+- [x] **Étape 1 : réécrire les règles de `CLAUDE.md`**
 
 Dans la section « Règles qui mordent si on les oublie » :
 
@@ -2661,12 +2661,12 @@ Dans la section « Règles qui mordent si on les oublie » :
 | 21 | Recherche, tri et filtres des pages de stratégie, Positions Condors et Autres | fait (2026-09-18) |
 ```
 
-- [ ] **Étape 2 : marquer la spec implémentée**
+- [x] **Étape 2 : marquer la spec implémentée**
 
 Dans `docs/specs/2026-09-18-tri-filtres-strategies-design.md`, remplacer
 `Statut : spécifié (2026-09-18).` par `Statut : implémenté (2026-09-18).`
 
-- [ ] **Étape 3 : vérification complète**
+- [x] **Étape 3 : vérification complète**
 
 Commande : `pnpm check`
 Attendu : SUCCÈS — lint, typage, fraîcheur des types d'API, build et **tous** les tests des
@@ -2674,7 +2674,7 @@ paquets. C'est le seul `pnpm check` du sous-projet.
 
 En cas d'échec, corriger avant de continuer : ne rien commiter de rouge.
 
-- [ ] **Étape 4 : commit**
+- [x] **Étape 4 : commit**
 
 ```bash
 git add CLAUDE.md docs/specs/2026-09-18-tri-filtres-strategies-design.md docs/plans/2026-09-18-tri-filtres-strategies.md

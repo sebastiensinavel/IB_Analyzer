@@ -131,15 +131,17 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   position s'écrit dans `scrollTop`, jamais par `scrollToOffset` (jsdom n'a pas `scrollTo`).
 - **Tri et filtres des tableaux sont un état d'affichage en `localStorage`, jamais en IndexedDB ni
   sur le serveur** : une clé par compte et par tableau (`ib2:tableView:<compte>:history`,
-  `…:positions:<groupe>`) et par page pour la recherche par ticker (`ib2:pageSearch:`), effacées
-  par `deleteAccount`. Le moteur est pur (`lib/tableCriteria.ts`, `lib/tableView.ts`) ; chaque
+  `…:positions:<groupe>`, `…:positions:<stratégie>:<groupe>`, `…:journal:<stratégie>`) et par page
+  pour la recherche par ticker (`ib2:pageSearch:`), effacées par `deleteAccount`. Le moteur est
+  pur (`lib/tableCriteria.ts`, `lib/tableView.ts`) ; chaque
   colonne déclare son type et sa valeur à côté de ses largeurs (`historyColumnSpecs`,
   `positionColumnSpecs`). Un `null` trie en dernier dans les deux sens et n'est retenu que par
   `—`. Les soldes de l'Historique se calculent sur tout le ledger avant tout filtre ou tri. Une
   carte de Positions a sa propre vue : Type, Décision et Couverture n'y ont pas le même sens
   d'un groupe à l'autre ; seule la recherche par ticker est commune. La Couverture se filtre sur
-  `coverageValues`, jamais sur le texte des badges. Hors Historique et Positions, aucun tableau
-  n'est triable.
+  `coverageValues`, jamais sur le texte des badges. L'Historique, Positions, les quatre pages
+  Positions de stratégie et les quatre Journaux se trient et se filtrent par colonne ; aucun autre
+  tableau ne le fait.
 - **Toute heure IB est l'heure murale de New York stampée UTC** (`IB_REPORT_TIME_ZONE`,
   `toReportTime` dans `packages/ib-parsers/src/common.ts`) : Flex et relevés telle quelle,
   l'agent converti depuis son vrai UTC. Seuls les instants de l'application
@@ -263,16 +265,21 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   des puts en cours du journal Wheel (`LABEL_TONE_CLASS.open`), quand le snapshot de **n'importe
   quel compte** détient une action ou une option du ticker (`heldTickers`, même lecture que
   l'ajout par import) ; 0 sinon, y compris sans aucun snapshot.
-- **Les positions d'une stratégie sont une vue calculée, jamais stockée** : `wheelPositions` et
-  `leapsPositions` (`packages/coverage/src/strategy.ts`) lisent les lignes de journal ouvertes
-  (`endWhen === null`) et les apparient au snapshot par `contractId(row.contract)`, la clé de la
+- **Les positions d'une stratégie sont une vue calculée, jamais stockée** : `strategyPositions`
+  (`packages/coverage/src/strategy.ts`) lit les lignes de journal ouvertes
+  (`endWhen === null`) et les apparie au snapshot par `contractId(row.contract)`, la clé de la
   réconciliation. Une ligne montre la part de la stratégie — quantité et prix d'entrée du journal,
   dernier prix d'IB — et, de la couverture IB, seulement celle de la stratégie
   (`STRATEGY_COVER_SOURCES`) : `cash` et `stock` pour une vente Wheel, `leaps` pour une vente
   LEAPS, jamais `UNCOVERED`, la part nue d'un call relevant d'Autres ; un LEAPS acheté garde son
   « used x/y », des actions LEAPS n'ont aucun badge. Les actions Wheel ont leur propre couverture, `coveredShares` (`wheelHoldings`,
-  `packages/ledger/src/journals/holdings.ts`). La page `StrategyPositionsPage` vit sous
-  `positions/wheel` et `positions/leaps`.
+  `packages/ledger/src/journals/holdings.ts`). Les quatre stratégies ont leur page (`positions/wheel`, `/leaps`, `/condors`, `/others`), servies
+  par un seul composant : ses encadrés sont déclarés dans `STRATEGY_BOXES`
+  (`apps/web/src/lib/strategyBoxes.ts`) et un encadré sans ligne ne se rend pas. **Un condor se lit
+  sur ses jambes** — son composite n'a ni right ni strike, donc rien ne le valorise — et les actions
+  de la Wheel restent dans leur table propre, jamais aussi dans le groupe des positions longues.
+  `STRATEGY_COVER_SOURCES` donne `spread` aux Condors et rien à Autres, dont une vente porte
+  `UNCOVERED ×|quantité|` lu sur la ligne elle-même.
 - **La suggestion de position mesure en valeur de risque, jamais en capital** :
   `positionSuggestions` (`packages/coverage/src/suggestions.ts`) additionne `riskValue` des positions
   du compte affiché, par ticker et par secteur de la table sectorielle, et porte
@@ -332,6 +339,7 @@ Ordre des sous-projets et statut (spec §12) :
 | 18 | Propriété de plage en jours de marché | fait (2026-09-16) |
 | 19 | L'agent local relaie Flex | fait (2026-09-16) |
 | 20 | Tri et filtres de colonne de l'Historique et de Positions | fait (2026-09-17) |
+| 21 | Recherche, tri et filtres des pages de stratégie, Positions Condors et Autres | fait (2026-09-18) |
 
 ## Outillage
 
