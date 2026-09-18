@@ -2,7 +2,17 @@ import { describe, expect, it } from "vitest";
 import type { ContractKey, JournalRow, Position } from "@ib/ledger";
 import { option, stock } from "./fixtures.ts";
 import { buildRiskReport } from "./report.ts";
-import { leapsPositions, wheelPositions, type PricedSnapshot } from "./strategy.ts";
+import { strategyPositions, type PricedSnapshot } from "./strategy.ts";
+
+/** The two shapes the old API returned, so the tests below read as they did. */
+const wheelPositions = (rows: readonly JournalRow[], snapshot: PricedSnapshot | null) => {
+  const { shares, groups } = strategyPositions(rows, "wheel", snapshot);
+  return { shares, optionSales: groups.optionSells };
+};
+const leapsPositions = (rows: readonly JournalRow[], snapshot: PricedSnapshot | null) => {
+  const { groups } = strategyPositions(rows, "leaps", snapshot);
+  return { optionBuys: groups.optionBuys, optionSales: groups.optionSells, shares: groups.long };
+};
 
 /** An open Wheel put on `contract`, one contract sold at 2. */
 function row(overrides: Partial<JournalRow> & Pick<JournalRow, "contract">): JournalRow {
@@ -182,5 +192,99 @@ describe("coverage of a call shared between the Wheel and the LEAPS", () => {
     expect(optionSales[0].coverage).toEqual([expect.objectContaining({ source: "leaps", quantity: 1 })]);
     expect(optionBuys[0].coverage).toEqual([]);
     expect(held[0].coverage).toEqual([]);
+  });
+});
+
+const SPY = (right: "C" | "P", strike: number) => opt("SPY", right, strike, "2026-08-29");
+
+/** One open condor: a composite row carrying its four legs, as the journals engine builds it. */
+function condor(overrides: Partial<JournalRow> = {}): JournalRow {
+  const leg = (contract: ContractKey, quantity: number, openPrice: number) =>
+    row({ id: `leg${contract.strike}#1`, contract, strategy: "condors", kind: quantity < 0 ? (contract.right === "P" ? "short_put" : "short_call") : contract.right === "P" ? "long_put" : "long_call", quantity, openPrice });
+  return row({
+    id: "ic#1",
+    strategy: "condors",
+    kind: "condor",
+    contract: { ticker: "SPY", secType: "OPT", right: "", strike: null, expiry: "2026-08-29", currency: "USD" },
+    quantity: -1,
+    legs: [leg(SPY("P", 620), 1, 0.3), leg(SPY("P", 625), -1, 0.6), leg(SPY("C", 660), -1, 0.5), leg(SPY("C", 665), 1, 0.3)],
+    ...overrides,
+  });
+}
+
+describe("strategyPositions — condors", () => {
+  it("reads a condor on its legs: a composite has no right nor strike, so nothing prices it", () => {
+    const snapshot = priced([
+      option({ symbol: "SPY", right: "P", strike: 625, expiry: "2026-08-29", quantity: -1, marketPrice: 0.2, marketValue: -20 }),
+      option({ symbol: "SPY", right: "P", strike: 620, expiry: "2026-08-29", quantity: 1, marketPrice: 0.1, marketValue: 10 }),
+    ]);
+    const { groups } = strategyPositions([condor()], "condors", snapshot);
+    expect(groups.optionSells.map((line) => [line.contract.right, line.contract.strike, line.quantity])).toEqual([
+      ["C", 660, -1],
+      ["P", 625, -1],
+    ]);
+    expect(groups.optionBuys.map((line) => [line.contract.right, line.contract.strike, line.quantity])).toEqual([
+      ["C", 665, 1],
+      ["P", 620, 1],
+    ]);
+    // The sold put is priced from the snapshot; the sold call, absent from it, is not.
+    const put = groups.optionSells.find((line) => line.contract.strike === 625)!;
+    expect(put).toMatchObject({ lastPrice: 0.2, marketValue: -20, kind: "short_put" });
+    expect(groups.optionSells.find((line) => line.contract.strike === 660)!.lastPrice).toBeNull();
+    // No composite line anywhere: a condor is its legs.
+    expect(groups.other).toEqual([]);
+  });
+
+  it("sums the legs of a partly bought-back condor, which the engine splits into two composites", () => {
+    const first = condor();
+    const second = condor({ id: "ic#2" });
+    const { groups } = strategyPositions([first, second], "condors", null);
+    expect(groups.optionSells.find((line) => line.contract.strike === 625)!.quantity).toBe(-2);
+  });
+
+  it("gives a sold leg the spread cover, and the wings their used badge", () => {
+    const snapshot = priced([
+      option({ symbol: "SPY", right: "P", strike: 625, expiry: "2026-08-29", quantity: -1, marketPrice: 0.2, marketValue: -20 }),
+      option({ symbol: "SPY", right: "P", strike: 620, expiry: "2026-08-29", quantity: 1, marketPrice: 0.1, marketValue: 10 }),
+    ]);
+    const { groups } = strategyPositions([condor()], "condors", snapshot);
+    const put = groups.optionSells.find((line) => line.contract.strike === 625)!;
+    expect(put.coverage.map((allocation) => allocation.source)).toEqual(["spread"]);
+  });
+});
+
+describe("strategyPositions — others", () => {
+  it("splits what fits nowhere else into the four groups of the Positions page", () => {
+    const rows = [
+      row({ id: "a#1", strategy: "others", kind: "shares", contract: shares("AAPL"), quantity: 10, openPrice: 180 }),
+      row({ id: "b#1", strategy: "others", kind: "short_call", contract: MARA_CALL, quantity: -1, openPrice: 0.5 }),
+      row({ id: "c#1", strategy: "others", kind: "long_put", contract: XOM_PUT, quantity: 1, openPrice: 2 }),
+      row({ id: "d#1", strategy: "others", kind: "short_shares", contract: shares("TSLA"), quantity: -5, openPrice: 300 }),
+    ];
+    const { groups, shares: wheelShares } = strategyPositions(rows, "others", null);
+    expect(groups.long.map((line) => line.contract.ticker)).toEqual(["AAPL"]);
+    expect(groups.optionBuys.map((line) => line.kind)).toEqual(["long_put"]);
+    expect(groups.optionSells.map((line) => line.kind)).toEqual(["short_call"]);
+    expect(groups.other.map((line) => [line.contract.ticker, line.kind])).toEqual([["TSLA", "short_stock"]]);
+    expect(wheelShares).toEqual([]);
+  });
+
+  it("leaves a sold option of Others without an allocation: its cover is nothing at all", () => {
+    const rows = [row({ id: "b#1", strategy: "others", kind: "short_call", contract: MARA_CALL, quantity: -1, openPrice: 0.5 })];
+    const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -1, marketPrice: 0.25, marketValue: -25 })]);
+    expect(strategyPositions(rows, "others", snapshot).groups.optionSells[0].coverage).toEqual([]);
+  });
+});
+
+describe("strategyPositions — wheel", () => {
+  it("puts the Wheel's shares in `shares` and leaves its long group empty, so they show once", () => {
+    const rows = [
+      row({ id: "s#1", kind: "shares", contract: shares("MQZA"), quantity: 200, openPrice: 17 }),
+      row({ id: "c#1", kind: "short_call", contract: MARA_CALL, quantity: -2, openPrice: 0.5 }),
+    ];
+    const { shares: holdings, groups } = strategyPositions(rows, "wheel", null);
+    expect(holdings.map((holding) => holding.ticker)).toEqual(["MQZA"]);
+    expect(groups.long).toEqual([]);
+    expect(groups.optionSells).toHaveLength(1);
   });
 });

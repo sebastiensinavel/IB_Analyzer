@@ -1,8 +1,7 @@
 import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  leapsPositions,
-  wheelPositions,
+  strategyPositions,
   type PositionsStrategy,
   type PricedSnapshot,
   type RiskReport,
@@ -45,11 +44,11 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   const ready = view.status === "ready" && snapshot !== undefined && report !== undefined;
   const rows = view.status === "ready" ? view.report.rows : NO_ROWS;
   const wheel = useMemo(
-    () => (ready && strategy === "wheel" ? wheelPositions(rows, pricedSnapshot(snapshot, report)) : null),
+    () => (ready && strategy === "wheel" ? strategyPositions(rows, "wheel", pricedSnapshot(snapshot, report)) : null),
     [ready, strategy, rows, snapshot, report],
   );
   const leaps = useMemo(
-    () => (ready && strategy === "leaps" ? leapsPositions(rows, pricedSnapshot(snapshot, report)) : null),
+    () => (ready && strategy === "leaps" ? strategyPositions(rows, "leaps", pricedSnapshot(snapshot, report)) : null),
     [ready, strategy, rows, snapshot, report],
   );
 
@@ -63,15 +62,15 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
           <GroupCard title={t("strategyPositions.groups.assignedShares")} empty={wheel.shares.length === 0}>
             <WheelSharesTable lines={wheel.shares} sectorOf={sectorOf} />
           </GroupCard>
-          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={wheel.optionSales} sectorOf={sectorOf} />
+          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={wheel.groups.optionSells} sectorOf={sectorOf} />
         </>
       )}
       {leaps && (
         <>
-          <LinesCard title={t("strategyPositions.groups.optionBuys")} lines={leaps.optionBuys} sectorOf={sectorOf} />
-          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={leaps.optionSales} sectorOf={sectorOf} />
+          <LinesCard title={t("strategyPositions.groups.optionBuys")} lines={leaps.groups.optionBuys} sectorOf={sectorOf} />
+          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={leaps.groups.optionSells} sectorOf={sectorOf} />
           {/* Shares a LEAPS delivered are rare: their card only shows when there are some. */}
-          {leaps.shares.length > 0 && <LinesCard title={t("strategyPositions.groups.shares")} lines={leaps.shares} sectorOf={sectorOf} />}
+          {leaps.groups.long.length > 0 && <LinesCard title={t("strategyPositions.groups.shares")} lines={leaps.groups.long} sectorOf={sectorOf} />}
         </>
       )}
     </div>
