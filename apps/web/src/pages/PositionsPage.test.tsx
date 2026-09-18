@@ -138,10 +138,10 @@ describe("PositionsPage", () => {
     renderPositions();
     const longs = (await screen.findByText("Positions longues")).closest("[data-slot=card]") as HTMLElement;
     const user = userEvent.setup();
-    await openPanel(user, longs, "Quantité");
-    await user.type(await screen.findByRole("textbox", { name: "Critère pour Quantité" }), ">1000");
+    await openPanel(user, longs, "Qté");
+    await user.type(await screen.findByRole("textbox", { name: "Critère pour Qté" }), ">1000");
     expect(await within(longs).findByText("Aucune position ne correspond.")).toBeInTheDocument();
-    expect(within(longs).getByRole("columnheader", { name: /^Quantité/ })).toBeInTheDocument();
+    expect(within(longs).getByRole("columnheader", { name: /^Qté/ })).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await user.click(within(longs).getByRole("button", { name: "Tout effacer" }));
     expect(await within(longs).findByText("AAPL")).toBeInTheDocument();

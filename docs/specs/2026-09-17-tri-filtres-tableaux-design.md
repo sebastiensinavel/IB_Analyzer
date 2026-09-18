@@ -322,9 +322,13 @@ chargent.
 Les largeurs des deux tableaux sont rééquilibrées pour le chevron permanent : chaque libellé
 français — les plus longs — tient entier à 1280 px, en une ligne dans l'Historique
 (`HISTORY_COLUMNS`) et en deux au plus dans Positions (`POSITION_COLUMNS`), sans qu'un mot déborde
-sur la colonne voisine. La place vient de `symbol` et `dateTime` dans l'Historique, de `position`
-dans Positions ; chaque liste somme toujours 100 %. `WHEEL_SHARE_COLUMNS` n'a pas d'en-tête
-interactif et ne change pas.
+sur la colonne voisine. Le chevron se paie d'abord sur les **titres**, pas sur les colonnes de
+données : quatre libellés sont abrégés dans les deux langues — `history.columns.quantity` et
+`positions.columns.quantity` en « Qté » / « Qty », `history.columns.currency` en « Dev. » /
+« Curr. », `positions.columns.avgPrice` en « Prix init. » / « Init. price » —, et ce qui reste va
+aux données : `dateTime` tient un horodatage entier `AAAA-MM-JJ HH:MM:SS`, `symbol` et `position`
+gardent la part qu'ils avaient avant le tri. Chaque liste somme toujours 100 %.
+`WHEEL_SHARE_COLUMNS` n'a pas d'en-tête interactif et ne change pas.
 
 ### 5.3 `ActiveFilters`
 

@@ -8,24 +8,29 @@ import type { ColumnSpec } from "@/lib/tableView";
  * renders other rows and the columns would resize under the reader. Keys are the i18n keys of
  * `history.columns`.
  *
- * They add up to 100 and are sized on the French labels, the longest, at 1280 px — where the table
- * sits at its 64rem minimum: every label fits whole on its line, sort chevron included, with a few
- * pixels to spare. The room comes from `symbol`, `dateTime` and `type`, the three that had the
- * most of it; a contract label clipped in `symbol` keeps its `title`, whereas a clipped header
- * says nothing at all.
+ * They add up to 100 and are measured at 1280 px on the French labels, the longest, where the table
+ * sits at its 64rem minimum. Each column takes the room its header needs — the label whole on one
+ * line, sort chevron included, a pixel or two to spare — and what is left goes to the data: first
+ * `dateTime`, wide enough for a whole `YYYY-MM-DD HH:MM:SS` (163 px measured), then `symbol`, then
+ * the amounts. Two labels are abbreviated rather than fed, `Qté` and `Dev.`, because spelling them
+ * out would eat a data column for a word the reader does not need.
+ *
+ * `type` and `cash` end up under their share: no width shows `Opération sur titre` or a
+ * seven-figure amount here, so they are sized on what a reader must see — `Dividende` whole
+ * (80 px) and the leading digits of an amount — and give the rest away.
  */
 export const HISTORY_COLUMNS = [
-  { key: "dateTime", width: "13.5%", numeric: false, balance: false },
+  { key: "dateTime", width: "16.25%", numeric: false, balance: false },
   { key: "type", width: "8%", numeric: false, balance: false },
-  { key: "symbol", width: "12%", numeric: false, balance: false },
-  { key: "quantity", width: "9%", numeric: true, balance: false },
-  { key: "price", width: "6.5%", numeric: true, balance: false },
+  { key: "symbol", width: "17%", numeric: false, balance: false },
+  { key: "quantity", width: "5.5%", numeric: true, balance: false },
+  { key: "price", width: "6.25%", numeric: true, balance: false },
   { key: "totalPrice", width: "9.5%", numeric: true, balance: false },
-  { key: "fee", width: "6.5%", numeric: true, balance: false },
-  { key: "cash", width: "7%", numeric: true, balance: false },
-  { key: "currency", width: "8%", numeric: false, balance: false },
-  { key: "usdCash", width: "10%", numeric: true, balance: true },
-  { key: "eurCash", width: "10%", numeric: true, balance: true },
+  { key: "fee", width: "6.25%", numeric: true, balance: false },
+  { key: "cash", width: "6.5%", numeric: true, balance: false },
+  { key: "currency", width: "5.75%", numeric: false, balance: false },
+  { key: "usdCash", width: "9.5%", numeric: true, balance: true },
+  { key: "eurCash", width: "9.5%", numeric: true, balance: true },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean; balance: boolean }[];
 
 /**

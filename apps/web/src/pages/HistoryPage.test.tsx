@@ -200,7 +200,7 @@ describe("HistoryPage", () => {
     const table = screen.getByRole("table");
     expect([...table.querySelectorAll("col")].map((col) => col.style.width)).toEqual(HISTORY_COLUMNS.map((column) => column.width));
     expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
-      "Date/Heure", "Type", "Symbole", "Quantité", "Prix", "Prix total", "Frais", "Cash", "Devise", "Cash USD", "Cash EUR",
+      "Date/Heure", "Type", "Symbole", "Qté", "Prix", "Prix total", "Frais", "Cash", "Dev.", "Cash USD", "Cash EUR",
     ]);
   });
 
@@ -422,10 +422,10 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await openPanel(user, "Quantité");
-    await user.type(await screen.findByRole("textbox", { name: "Critère pour Quantité" }), ">1000000");
+    await openPanel(user, "Qté");
+    await user.type(await screen.findByRole("textbox", { name: "Critère pour Qté" }), ">1000000");
     expect(await screen.findByText("Aucune transaction ne correspond.")).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: /^Quantité/ })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /^Qté/ })).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Tout effacer" }));
     await waitFor(() => expect(rowSymbols()).toHaveLength(4));
