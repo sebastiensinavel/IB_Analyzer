@@ -77,7 +77,7 @@ Aucun fichier créé.
   **non signé**, `others` compris. Le retour ne contient que les stratégies qui perdent quelque
   chose, avec un nombre de contrats non signé. Les tâches 2 et 3 s'en servent.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Dans `packages/coverage/src/strategy.test.ts`, ajouter les imports et le bloc ci-dessous. Les
 imports existants du fichier (`describe`, `expect`, `it`, `strategyPositions`, …) restent ;
@@ -128,12 +128,12 @@ describe("migratedContracts", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: FAIL — `migratedContracts is not a function` / l'import n'existe pas.
 
-- [ ] **Step 3: Écrire l'implémentation**
+- [x] **Step 3: Écrire l'implémentation**
 
 Dans `packages/coverage/src/strategy.ts`, juste après la déclaration de
 `STRATEGY_COVER_SOURCES` :
@@ -180,12 +180,12 @@ Ajouter `import type { CoverageAllocation } from "./types.ts";` s'il n'est pas d
 fichier importe déjà `AnalyzedPosition`, `CoverageAllocation` et `RiskReport` depuis
 `./types.ts`, donc vérifier avant d'ajouter.
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: PASS, tous les tests du fichier, anciens compris.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage/src/strategy.ts packages/coverage/src/strategy.test.ts docs/plans/2026-09-18-part-nue-positions.md
@@ -219,7 +219,7 @@ git commit -m "Partage de la part nue : migratedContracts"
   ```
   Tout reste privé au module ; seule `migratedContracts` est exportée.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Ajouter dans `packages/coverage/src/strategy.test.ts`, après les blocs existants. Les aides
 `row`, `opt`, `shares`, `priced`, `option`, `stock`, `wheelPositions` sont déjà dans le fichier.
@@ -296,12 +296,12 @@ describe("strategyPositions — the naked part leaves the strategy", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: FAIL — le premier test attend `quantity: -1` et reçoit `-2`.
 
-- [ ] **Step 3: Écrire l'implémentation**
+- [x] **Step 3: Écrire l'implémentation**
 
 Dans `packages/coverage/src/strategy.ts` :
 
@@ -372,6 +372,11 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
   };
 }
 ```
+
+Note (code livré) : `unrealizedPnl` ci-dessus se lit `(lastPrice − avgPrice) × quantity ×
+multiplier`, mais le code livré calcule `marketValue − avgPrice × quantity × multiplier` —
+`marketValue` étant déjà publié par la même ligne. Les deux formules sont mathématiquement
+identiques ; la seconde évite l'artefact de fraction binaire d'un `avgPrice` comme 0,7.
 
 b) Ajouter l'index des lignes ouvertes et le partage, au-dessus de `linesByGroup` :
 
@@ -459,7 +464,7 @@ export function strategyPositions(rows: readonly JournalRow[], strategy: Positio
 
 La règle « un contrat migré entièrement ne se rend pas » est la ligne `if (migrated >= …) continue;`.
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: PASS. Le test de la tâche 3 n'existe pas encore ; tous les autres, anciens compris,
@@ -467,7 +472,7 @@ passent — vérifier en particulier que « keeps only the Wheel's part of a cal
 Others » passe toujours : sa position IB a `uncoveredQuantity: 1` mais Autres en détient déjà
 un, donc rien ne migre.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage/src/strategy.ts packages/coverage/src/strategy.test.ts docs/plans/2026-09-18-part-nue-positions.md
@@ -489,7 +494,7 @@ git commit -m "Les lignes d'une stratégie portent leur quantité couverte"
 - Produit : rien de nouveau à l'extérieur. `strategyPositions(rows, "others", snapshot)` rend
   désormais, dans `groups.optionSells`, une ligne par contrat nu, fondue.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 ```ts
 describe("strategyPositions — Others takes the naked part in", () => {
@@ -541,12 +546,12 @@ describe("strategyPositions — Others takes the naked part in", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: FAIL — le premier test reçoit `[]` : la page Autres ne voit rien migrer.
 
-- [ ] **Step 3: Écrire l'implémentation**
+- [x] **Step 3: Écrire l'implémentation**
 
 Dans `linesByGroup`, remplacer la boucle par une version qui, pour `others`, ajoute les
 contributions venues d'ailleurs :
@@ -610,12 +615,12 @@ function firstSoldRow(byStrategy: ReadonlyMap<PositionsStrategy, JournalRow[]>, 
 }
 ```
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: PASS, tout le fichier.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage/src/strategy.ts packages/coverage/src/strategy.test.ts docs/plans/2026-09-18-part-nue-positions.md
@@ -636,7 +641,7 @@ git commit -m "La page Autres absorbe la part nue des autres stratégies"
 - Produit : `WheelShareLine` inchangé dans sa forme ; `openCallContracts`, `averageCallStrike`,
   `coveredShares` et `callStrikeBelowAssignment` sont désormais calculés sur les calls couverts.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 ```ts
 describe("strategyPositions — the Wheel's shares card counts only the covered calls", () => {
@@ -681,12 +686,12 @@ describe("strategyPositions — the Wheel's shares card counts only the covered 
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: FAIL — `openCallContracts` vaut 2 et `coveredShares` 100/… lu sur deux contrats.
 
-- [ ] **Step 3: Écrire l'implémentation**
+- [x] **Step 3: Écrire l'implémentation**
 
 Remplacer la fin de `strategyPositions` :
 
@@ -737,12 +742,12 @@ function coveredCallsByTicker(sales: readonly StrategyLine[]): Map<string, { con
 `wheelHoldings` reste inchangé dans `@ib/ledger` : ses champs `openCallContracts`,
 `averageCallStrike` et `coveredShares` gardent leur sens de journal et sont ici recouverts.
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: PASS, tout le fichier.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage/src/strategy.ts packages/coverage/src/strategy.test.ts docs/plans/2026-09-18-part-nue-positions.md
@@ -761,7 +766,7 @@ git commit -m "La carte des actions Wheel ne compte que les calls couverts"
   n'est modifié par cette tâche — si un test échoue autrement que sur ses chiffres attendus,
   c'est une tâche précédente qui est incomplète.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Ajouter dans `apps/web/src/pages/StrategyPositionsPage.test.tsx`, après le bloc
 `describe("StrategyPositionsPage — LEAPS", …)`. `trade`, `renderPage`, `rowIn`, `texts` et le
@@ -824,7 +829,7 @@ describe("StrategyPositionsPage — a call that lost its cover", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter web test -- StrategyPositionsPage`
 Expected: FAIL si les tâches 1 à 4 ne sont pas faites. **Si elles le sont, ces tests doivent
@@ -832,7 +837,7 @@ passer du premier coup** : c'est leur rôle, cloue le comportement de bout en bo
 échouent alors, corriger les chiffres attendus **seulement** après avoir vérifié à la main que le
 comportement observé est celui de la spec — sinon c'est le code qui est faux.
 
-- [ ] **Step 3: Vérifier les colonnes attendues**
+- [x] **Step 3: Vérifier les colonnes attendues**
 
 Les dix colonnes d'une ligne d'option sont, dans l'ordre : contrat, type, secteur, valeur de
 marché, position, prix d'entrée, dernier prix, P&L latent, décision, couverture. Les neuf d'une
@@ -842,13 +847,13 @@ porte deux calls vendus à 0,80 et 0,60, donc un prix moyen de 0,70 sur les deux
 quantité affichée est `-1` de chaque côté ; `marketValue = 1,00 × −1 × 100` ; `unrealizedPnl =
 (1,00 − 0,70) × −1 × 100`.
 
-- [ ] **Step 4: Lancer toute la suite web du fichier**
+- [x] **Step 4: Lancer toute la suite web du fichier**
 
 Run: `pnpm --filter web test -- StrategyPositionsPage`
 Expected: PASS, y compris les tests existants qui utilisent `seed()` et `SNAPSHOT` — ils gardent
 200 actions et un seul call, donc « used 100/200 » et `stock ×1` inchangés.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/pages/StrategyPositionsPage.test.tsx docs/plans/2026-09-18-part-nue-positions.md
@@ -867,7 +872,7 @@ git commit -m "Test de bout en bout : la part nue passe de la Wheel à Autres"
 - Consomme : le comportement livré par les tâches 1 à 5.
 - Produit : rien de code.
 
-- [ ] **Step 1: Mettre à jour `CLAUDE.md`**
+- [x] **Step 1: Mettre à jour `CLAUDE.md`**
 
 Dans la puce « **Les positions d'une stratégie sont une vue calculée, jamais stockée** », après
 la phrase sur `STRATEGY_COVER_SOURCES`, ajouter :
@@ -890,7 +895,7 @@ Ajouter la ligne au tableau des sous-projets :
 | 22 | La part nue quitte les pages de stratégie | fait (2026-09-18) |
 ```
 
-- [ ] **Step 2: Mettre à jour `docs/points-reportes.md`**
+- [x] **Step 2: Mettre à jour `docs/points-reportes.md`**
 
 Dans la section du sous-projet 21, remplacer la dernière puce (« La page Autres ne montre pas
 toute la part nue du portefeuille ») par :
@@ -930,19 +935,19 @@ Ajouter une section pour le sous-projet 22, avant « Sans échéance » :
 ---
 ```
 
-- [ ] **Step 3: Vérifier tout, une seule fois**
+- [x] **Step 3: Vérifier tout, une seule fois**
 
 Run: `pnpm check`
 Expected: PASS — lint, typage, build et tous les tests.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add CLAUDE.md docs/points-reportes.md docs/plans/2026-09-18-part-nue-positions.md
 git commit -m "Documenter le sous-projet 22 et fermer les points reportés 16 et 21"
 ```
 
-- [ ] **Step 5: Démarrer l'instance de relecture**
+- [x] **Step 5: Démarrer l'instance de relecture**
 
 Run: `pnpm dev:start` **dans le worktree**
 Expected: Vite et Django détachés sur les ports du worktree. Donner les deux URL à Seb : il

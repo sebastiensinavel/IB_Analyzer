@@ -702,13 +702,10 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   assouplirait le seuil de 5 %. Non observé sur des données réelles. Question produit posée à
   l'utilisateur ; correctif possible : écarter les positions hors STK/OPT et le noter comme
   écart au Python au §4.5.
-- **Le badge « used » des actions Wheel est vert quand les calls Wheel ouverts dépassent les
-  actions** (`apps/web/src/pages/StrategyPositionsPage.tsx`, `WheelShareRow`, badge `usedBadge`
-  partagé avec la page Positions ; `coveredShares = min(quantité, contrats × 100)` dans
-  `packages/ledger/src/journals/holdings.ts`) : avec deux calls ouverts et 100 actions restantes,
-  la carte des actions affiche « used 100/100 » en vert alors qu'un call n'a rien derrière lui. La carte « Ventes d'options » montre bien
-  `UNCOVERED ×1` sur le call, rien n'est perdu. Question produit posée à l'utilisateur : une
-  teinte d'alerte quand `openCallContracts × 100 > quantity`.
+- ~~**Le badge « used » des actions Wheel est vert quand les calls Wheel ouverts dépassent les
+  actions**~~ — **fermé par le sous-projet 22** (2026-09-18) : la carte ne compte plus que les
+  calls couverts, donc « used 100/100 » dit vrai et le call sans rien derrière lui est sur la
+  page Autres.
 - **Aucun test web ne montre la carte « Actions » de la page LEAPS remplie, ni les cartes
   LEAPS vides** (`apps/web/src/pages/StrategyPositionsPage.test.tsx`) ; le §6 du spec nomme
   « les trois cartes LEAPS ». Le calcul des actions LEAPS est testé en unitaire
@@ -826,7 +823,10 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **`apps/web/src/routes/AppLayout.test.tsx`, les tests des indicateurs de consistance,
   échouent une fois de temps en temps en suite complète et passent seuls** — même symptôme
   déjà noté pour ce fichier au sous-projet 15 (« Reporté par le sous-projet 15 »), observé à
-  nouveau sur cette branche. Préexistant, indépendant du sous-projet 19.
+  nouveau sur cette branche. Préexistant, indépendant du sous-projet 19. **Revu au sous-projet
+  22** (2026-09-18), troisième occurrence : environ une exécution complète sur trois échoue,
+  le fichier seul passe ses seize tests. La fréquence est donc assez haute pour qu'un
+  `pnpm check` rouge sur ce seul fichier ne prouve rien — le relancer avant de chercher plus loin.
 
 ---
 
@@ -868,10 +868,36 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **`setExpiry` est mémoïsé sur `[defs, views]`**
   (`apps/web/src/pages/StrategyPositionsPage.tsx:69-72`), et `views` (`useStrategyBoxViews`)
   est un objet neuf à chaque rendu : la mémoïsation ne sert à rien.
-- **La page Autres ne montre pas toute la part nue du portefeuille** : un call vendu
-  partiellement couvert par des actions Wheel reste entier dans la Wheel, par classification à
-  la vente ; c'est la dette déjà consignée au sous-projet 16 (badge « used » trompeur sur les
-  actions Wheel), que cette page ne referme pas.
+- ~~**La page Autres ne montre pas toute la part nue du portefeuille**~~ — **fermé par le
+  sous-projet 22** (2026-09-18) : une page de stratégie ne montre que sa part couverte, et la
+  page Autres reprend le reste.
+
+---
+
+## Reporté par le sous-projet 22 (la part nue quitte les pages de stratégie)
+
+- **Un call Wheel réellement couvert par un LEAPS long garde une cellule de couverture vide** sur
+  la page Wheel : sa couverture vient de `leaps`, qui n'est pas une source de la Wheel
+  (`STRATEGY_COVER_SOURCES`). Le plafond de `migratedContracts` l'empêche de migrer à tort vers
+  Autres — rien n'est faux, seulement muet. C'était déjà le comportement avant ce sous-projet.
+  L'élargir demande de décider ce qu'une page de stratégie dit d'une couverture qui ne lui
+  appartient pas.
+- **Un put vendu ne migre jamais**, `secureShortPuts` (`packages/coverage/src/coverage.ts`) lui
+  allouant toujours `cash` sans regarder le cash disponible ; un manque de cash reste un problème
+  global du rapport. La règle est écrite sur les ventes d'options en général et suivra le moteur
+  s'il change.
+- **La page Autres peut afficher `UNCOVERED` sur une de ses propres lignes alors que la barre de
+  titre est verte.** Cas vérifié contre le moteur : un call vendu à nu — classé `others` à la
+  vente, le journal ne reclasse jamais — puis 100 actions du sous-jacent achetées ensuite.
+  `buildRiskReport` rend `allocations: [{source:"stock", quantity:1}]` et `uncoveredQuantity: 0`,
+  donc le verdict Couverture de la barre de titre passe au vert, tandis que la page Autres
+  affiche toujours `UNCOVERED ×1` : `strategyCoverageBadges(line, "others")`
+  (`apps/web/src/lib/riskReport.ts`) lit la quantité propre de la ligne et ne regarde jamais
+  `line.coverage`. Ce n'est pas une régression de ce sous-projet : le comportement date du
+  sous-projet 16, `migratedContracts` ne protège que la part qu'il fait migrer, jamais les lignes
+  qu'Autres détenait déjà. Le corriger demanderait l'opération inverse — sortir une ligne
+  d'Autres pour la rendre à la stratégie qui la couvre désormais —, hors du périmètre de ce
+  sous-projet.
 
 ---
 

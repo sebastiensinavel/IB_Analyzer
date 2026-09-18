@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { ContractKey, JournalRow, Position } from "@ib/ledger";
 import { option, stock } from "./fixtures.ts";
 import { buildRiskReport } from "./report.ts";
-import { strategyPositions, type PricedSnapshot } from "./strategy.ts";
+import { strategyPositions, type PricedSnapshot, migratedContracts, type PositionsStrategy } from "./strategy.ts";
+import type { CoverSource } from "./constants.ts";
+import type { CoverageAllocation } from "./types.ts";
 
 /** The two shapes the old API returned, so the tests below read as they did. */
 const wheelPositions = (rows: readonly JournalRow[], snapshot: PricedSnapshot | null) => {
@@ -30,6 +32,20 @@ const shares = (ticker: string): ContractKey => ({ ticker, secType: "STK", right
 
 const MARA_CALL = opt("MQZA", "C", 20, "2026-11-20");
 const XOM_PUT = opt("XOM", "P", 100, "2026-10-16");
+const MARA_CALL_15 = opt("MQZA", "C", 15, "2026-10-16");
+
+/** 100 Wheel shares left under two Wheel calls: the engine covers one, the other is naked. */
+function nakedCallLedger(): { rows: JournalRow[]; snapshot: PricedSnapshot } {
+  const rows = [
+    row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+    row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -2, openPrice: 0.7 }),
+  ];
+  const snapshot = priced([
+    stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
+    option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -2, avgPrice: 0.7, marketPrice: 1, marketValue: -200 }),
+  ]);
+  return { rows, snapshot };
+}
 
 function priced(positions: Position[]): PricedSnapshot {
   return { positions, report: buildRiskReport(positions, null) };
@@ -138,6 +154,81 @@ describe("wheelPositions — assigned shares", () => {
 
   it("leaves the price and the P&L blank without the IB shares", () => {
     expect(wheelPositions(held(15), null).shares[0]).toMatchObject({ lastPrice: null, unrealizedPnl: null });
+  });
+});
+
+describe("strategyPositions — the Wheel's shares card counts only the covered calls", () => {
+  it("turns 'used 100/100' honest when a call has lost its shares", () => {
+    const { rows, snapshot } = nakedCallLedger();
+    const { shares: held } = wheelPositions(rows, snapshot);
+    expect(held).toHaveLength(1);
+    expect(held[0]).toMatchObject({
+      ticker: "MQZA", quantity: 100, averageAssignmentPrice: 17, assignedTotal: 1700,
+      openCallContracts: 1, averageCallStrike: 15, coveredShares: 100,
+      lastPrice: 18, unrealizedPnl: 100, callStrikeBelowAssignment: true,
+    });
+  });
+
+  it("averages the strikes of the covered calls only", () => {
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -1, openPrice: 0.7 }),
+      row({ id: "c#2", contract: opt("MQZA", "C", 25, "2026-10-16"), kind: "short_call", quantity: -1, openPrice: 0.2 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -1, marketPrice: 1, marketValue: -100 }),
+      option({ symbol: "MQZA", right: "C", strike: 25, expiry: "2026-10-16", quantity: -1, marketPrice: 0.1, marketValue: -10 }),
+    ]);
+    // The engine covers the nearest expiry, lowest strike first: the 15 call keeps the shares.
+    const { shares: held } = wheelPositions(rows, snapshot);
+    expect(held[0]).toMatchObject({ openCallContracts: 1, averageCallStrike: 15, coveredShares: 100 });
+  });
+
+  it("leaves the card alone when every call is still covered", () => {
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 200, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -1, openPrice: 0.7 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 200, avgPrice: 17, marketPrice: 18, marketValue: 3600 }),
+      option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -1, marketPrice: 1, marketValue: -100 }),
+    ]);
+    expect(wheelPositions(rows, snapshot).shares[0]).toMatchObject({ openCallContracts: 1, coveredShares: 100 });
+  });
+
+  it("reads openCallContracts 0 and a null average strike, never 0, once the Wheel's only call has migrated whole", () => {
+    // A non-Wheel call at a nearer expiry sorts first in coverShortCalls and takes the 100 shares,
+    // leaving the Wheel's own call naked: migratedContracts hands it whole to Others, so it drops
+    // out of groups.optionSells and coveredCallsByTicker falls back to its zero default.
+    const NEARER_CALL = opt("MQZA", "C", 22, "2026-09-25");
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+      row({ id: "o#1", contract: NEARER_CALL, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.4 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 22, expiry: "2026-09-25", quantity: -1, avgPrice: 0.4, marketPrice: 0.3, marketValue: -30 }),
+      option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -1, avgPrice: 0.5, marketPrice: 1, marketValue: -100 }),
+    ]);
+    const { shares: held, optionSales } = wheelPositions(rows, snapshot);
+    expect(optionSales).toEqual([]);
+    expect(held[0]).toMatchObject({ openCallContracts: 0, averageCallStrike: null, coveredShares: 0 });
+  });
+
+  it("also reads null, never 0, from a surviving call whose contract carries no strike (unstruck)", () => {
+    // A contract without a strike has no matching snapshot position, so it never migrates and
+    // stays in groups.optionSells whole: coveredCallsByTicker marks it unstruck instead of
+    // averaging a strike of 0 into the card.
+    const UNSTRUCK: ContractKey = { ticker: "MQZA", secType: "OPT", right: "C", strike: null, expiry: "2026-11-20", currency: "USD" };
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: UNSTRUCK, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+    ];
+    const snapshot = priced([stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 })]);
+    const { shares: held } = wheelPositions(rows, snapshot);
+    expect(held[0]).toMatchObject({ openCallContracts: 1, averageCallStrike: null, coveredShares: 100 });
   });
 });
 
@@ -310,5 +401,155 @@ describe("strategyPositions — wheel", () => {
     expect(holdings.map((holding) => holding.ticker)).toEqual(["MQZA"]);
     expect(groups.long).toEqual([]);
     expect(groups.optionSells).toHaveLength(1);
+  });
+});
+
+const alloc = (source: CoverSource, quantity: number): CoverageAllocation => ({ source, quantity, detail: "" });
+const shortsOf = (entries: [PositionsStrategy, number][]) => new Map<PositionsStrategy, number>(entries);
+
+describe("migratedContracts", () => {
+  it("migrates nothing when the engine says nothing is naked", () => {
+    expect(migratedContracts(shortsOf([["wheel", 2]]), [alloc("stock", 2)], 0)).toEqual(new Map());
+  });
+
+  it("migrates the part of a Wheel call its own shares no longer cover", () => {
+    expect(migratedContracts(shortsOf([["wheel", 2]]), [alloc("stock", 1)], 1)).toEqual(new Map([["wheel", 1]]));
+  });
+
+  it("counts what Others already holds against the naked total", () => {
+    // IB holds 3 short: shares cover 2, one is naked — and that one is already Others' own line.
+    expect(migratedContracts(shortsOf([["wheel", 2], ["others", 1]]), [alloc("stock", 2)], 1)).toEqual(new Map());
+  });
+
+  it("never migrates more than the engine calls naked, serving wheel before leaps", () => {
+    // The journal is longer than the IB position: 4 contracts of journal, 2 of position, 1 naked.
+    expect(migratedContracts(shortsOf([["wheel", 2], ["leaps", 2]]), [alloc("stock", 1)], 1)).toEqual(new Map([["wheel", 1]]));
+  });
+
+  it("leaves alone a line covered by a source that is not the strategy's own", () => {
+    expect(migratedContracts(shortsOf([["wheel", 1]]), [alloc("leaps", 1)], 0)).toEqual(new Map());
+  });
+
+  it("migrates a whole line when nothing covers it", () => {
+    expect(migratedContracts(shortsOf([["wheel", 1]]), [], 1)).toEqual(new Map([["wheel", 1]]));
+  });
+
+  it("migrates from the condors too", () => {
+    expect(migratedContracts(shortsOf([["condors", 2]]), [alloc("spread", 1)], 1)).toEqual(new Map([["condors", 1]]));
+  });
+});
+
+describe("strategyPositions — Others takes the naked part in", () => {
+  const othersSales = (rows: readonly JournalRow[], snapshot: PricedSnapshot | null) =>
+    strategyPositions(rows, "others", snapshot).groups.optionSells;
+
+  it("shows the contract the Wheel no longer covers, without saying where it comes from", () => {
+    const { rows, snapshot } = nakedCallLedger();
+    const sales = othersSales(rows, snapshot);
+    expect(sales).toHaveLength(1);
+    expect(sales[0]).toMatchObject({
+      contract: MARA_CALL_15, kind: "short_call", label: "sell of call",
+      quantity: -1, avgPrice: 0.7, lastPrice: 1, marketValue: -100, unrealizedPnl: -30,
+    });
+    expect(sales[0].coverage).toEqual([]);
+  });
+
+  it("melts what it already holds of the contract into one line, prices weighted", () => {
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -2, openPrice: 0.9 }),
+      row({ id: "o#1", contract: MARA_CALL_15, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.3 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -3, marketPrice: 1, marketValue: -300 }),
+    ]);
+    const sales = othersSales(rows, snapshot);
+    expect(sales).toHaveLength(1);
+    // One contract of its own at 0.30, one taken over at the Wheel line's 0.90.
+    expect(sales[0]).toMatchObject({ quantity: -2, avgPrice: 0.6 });
+    expect(wheelPositions(rows, snapshot).optionSales[0].quantity).toBe(-1);
+  });
+
+  it("has no price when a contributing line has none", () => {
+    const rows = [
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -1, openPrice: null }),
+      row({ id: "o#1", contract: MARA_CALL_15, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.3 }),
+    ];
+    const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -2, marketPrice: 1, marketValue: -200 })]);
+    expect(othersSales(rows, snapshot)[0]).toMatchObject({ quantity: -2, avgPrice: null, unrealizedPnl: null });
+  });
+
+  it("keeps its own lines untouched when nothing migrates", () => {
+    const rows = [row({ id: "o#1", contract: MARA_CALL_15, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.3 })];
+    const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -1, marketPrice: 1, marketValue: -100 })]);
+    expect(othersSales(rows, snapshot)[0]).toMatchObject({ quantity: -1, avgPrice: 0.3 });
+  });
+
+  it("takes in both strategies migrating on the same uncovered contract, one contribution each at its own price", () => {
+    // Wheel −1 at 0.5, LEAPS −1 at 0.9, nothing covers either: contributionsTakenIn must push one
+    // contribution per covered strategy still holding the contract, not stop after the first —
+    // otherwise Others would under-report the quantity and the conservation invariant would break.
+    const TWO_STRAT_CALL = opt("NFLX", "C", 30, "2026-12-18");
+    const rows = [
+      row({ contract: TWO_STRAT_CALL, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+      row({ id: "l#1", contract: TWO_STRAT_CALL, strategy: "leaps", kind: "short_call", quantity: -1, openPrice: 0.9 }),
+    ];
+    const snapshot = priced([option({ symbol: "NFLX", right: "C", strike: 30, expiry: "2026-12-18", quantity: -2, marketPrice: 1, marketValue: -200 })]);
+    expect(othersSales(rows, snapshot)).toEqual([expect.objectContaining({ quantity: -2, avgPrice: 0.7 })]);
+    expect(wheelPositions(rows, snapshot).optionSales).toEqual([]);
+    expect(leapsPositions(rows, snapshot).optionSales).toEqual([]);
+  });
+});
+
+describe("strategyPositions — the naked part leaves the strategy", () => {
+  it("shows the Wheel only the contracts its shares still cover", () => {
+    const { rows, snapshot } = nakedCallLedger();
+    const { optionSales } = wheelPositions(rows, snapshot);
+    expect(optionSales).toHaveLength(1);
+    expect(optionSales[0]).toMatchObject({ quantity: -1, avgPrice: 0.7, lastPrice: 1, marketValue: -100, unrealizedPnl: -30 });
+    expect(optionSales[0].coverage).toEqual([expect.objectContaining({ source: "stock", quantity: 1 })]);
+  });
+
+  it("drops the line entirely when nothing covers it any more", () => {
+    const rows = [row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -1, openPrice: 0.7 })];
+    const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -1, marketPrice: 1, marketValue: -100 })]);
+    expect(wheelPositions(rows, snapshot).optionSales).toEqual([]);
+  });
+
+  it("caps a badge at the quantity the line shows", () => {
+    // IB holds 2 short calls against 200 shares: stock ×2. The Wheel's line is one of them.
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 200, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -1, openPrice: 0.7 }),
+      row({ id: "o#1", contract: MARA_CALL_15, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.7 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 200, avgPrice: 17, marketPrice: 18, marketValue: 3600 }),
+      option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -2, marketPrice: 1, marketValue: -200 }),
+    ]);
+    const { optionSales } = wheelPositions(rows, snapshot);
+    expect(optionSales[0].quantity).toBe(-1);
+    expect(optionSales[0].coverage).toEqual([expect.objectContaining({ source: "stock", quantity: 1 })]);
+  });
+
+  it("never migrates a sold put: the engine always secures it with cash", () => {
+    const rows = [row({ contract: XOM_PUT, quantity: -2, openPrice: 2 })];
+    const snapshot = priced([option({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-10-16", quantity: -2, marketPrice: 1.5, marketValue: -300 })]);
+    expect(wheelPositions(rows, snapshot).optionSales[0].quantity).toBe(-2);
+    expect(strategyPositions(rows, "others", snapshot).groups.optionSells).toEqual([]);
+  });
+
+  it("migrates nothing without a snapshot, nor on a contract the snapshot lacks", () => {
+    const { rows } = nakedCallLedger();
+    expect(wheelPositions(rows, null).optionSales[0].quantity).toBe(-2);
+    const elsewhere = priced([stock({ symbol: "AAPL", quantity: 10 })]);
+    expect(wheelPositions(rows, elsewhere).optionSales[0].quantity).toBe(-2);
+  });
+
+  it("leaves a long position alone", () => {
+    const rows = [row({ id: "l#1", contract: opt("ZZZ", "C", 15, "2027-06-18"), strategy: "leaps", kind: "long_call", quantity: 1, openPrice: 3 })];
+    const snapshot = priced([option({ symbol: "ZZZ", right: "C", strike: 15, expiry: "2027-06-18", quantity: 1, marketPrice: 4, marketValue: 400 })]);
+    expect(strategyPositions(rows, "leaps", snapshot).groups.optionBuys[0].quantity).toBe(1);
   });
 });

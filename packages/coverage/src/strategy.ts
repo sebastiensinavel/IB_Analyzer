@@ -72,6 +72,42 @@ export const STRATEGY_COVER_SOURCES: Record<PositionsStrategy, readonly CoverSou
   others: [],
 };
 
+/** The strategies that own a cover, in the order the pages are served when the cap bites. */
+export const COVERED_STRATEGIES: readonly PositionsStrategy[] = ["wheel", "leaps", "condors"];
+
+/**
+ * How many contracts each covered strategy loses on one contract, the naked part the page Autres
+ * takes over (spec of sub-project 22, §3.1). `shorts` counts the open sold contracts of each
+ * strategy on that contract, unsigned, Others included.
+ *
+ * A strategy keeps what its own sources cover (`STRATEGY_COVER_SOURCES`), capped by its own
+ * quantity: the allocations describe the whole IB position, which may exceed the strategy's part.
+ * The total that migrates never exceeds what the engine itself calls naked, minus what Others
+ * already holds — naked by construction, `splitShortCall` having put it there at the sale. That
+ * cap is what keeps the page Autres from contradicting the title bar.
+ */
+export function migratedContracts(
+  shorts: ReadonlyMap<PositionsStrategy, number>,
+  allocations: readonly CoverageAllocation[],
+  uncoveredQuantity: number,
+): Map<PositionsStrategy, number> {
+  const taken = new Map<PositionsStrategy, number>();
+  let migrable = Math.max(0, uncoveredQuantity - (shorts.get("others") ?? 0));
+  for (const strategy of COVERED_STRATEGIES) {
+    if (migrable <= 0) break;
+    const held = shorts.get(strategy) ?? 0;
+    if (held <= 0) continue;
+    const sources = STRATEGY_COVER_SOURCES[strategy];
+    const own = allocations.reduce((sum, a) => (sources.includes(a.source) ? sum + a.quantity : sum), 0);
+    const take = Math.min(held - Math.min(held, own), migrable);
+    if (take > 0) {
+      taken.set(strategy, take);
+      migrable -= take;
+    }
+  }
+  return taken;
+}
+
 interface Priced {
   position: Position;
   analyzed: AnalyzedPosition;
@@ -101,30 +137,70 @@ function pricedByContract(snapshot: PricedSnapshot | null): Map<string, Priced> 
   return byId;
 }
 
-function line(group: readonly JournalRow[], priced: Priced | null, sources: readonly CoverSource[]): StrategyLine {
-  const first = group[0];
-  const kind = LINE_KIND[first.kind] as PositionKind;
-  const quantity = group.reduce((n, row) => n + (row.quantity as number), 0);
-  const weight = group.reduce((n, row) => n + Math.abs(row.quantity as number), 0);
-  const avgPrice =
-    weight === 0 || group.some((row) => row.openPrice === null)
-      ? null
-      : group.reduce((n, row) => n + (row.openPrice as number) * Math.abs(row.quantity as number), 0) / weight;
+/** One journal line's part of a position line: what it brings, and at what price. */
+interface Contribution {
+  quantity: number;
+  openPrice: number | null;
+}
+
+interface LineInput {
+  contract: ContractKey;
+  kind: PositionKind;
+  contributions: readonly Contribution[];
+  /** Contracts that left this line for Others; positive, and 0 on everything but a covered strategy's sales. */
+  migrated: number;
+}
+
+const toContribution = (row: JournalRow): Contribution => ({ quantity: row.quantity as number, openPrice: row.openPrice });
+
+/** Σ openPrice × |quantity| ÷ Σ |quantity|; `null` when a contribution has no price or nothing weighs. */
+function weightedPrice(contributions: readonly Contribution[]): number | null {
+  const weight = contributions.reduce((n, c) => n + Math.abs(c.quantity), 0);
+  if (weight === 0 || contributions.some((c) => c.openPrice === null)) return null;
+  return contributions.reduce((n, c) => n + (c.openPrice as number) * Math.abs(c.quantity), 0) / weight;
+}
+
+/**
+ * The strategy's own cover, cut down to the contracts the line actually shows: the allocations
+ * describe the whole IB position, so nothing stops `stock ×2` from landing on a line of one
+ * contract without this (spec of sub-project 22, §3.2).
+ */
+function cappedCoverage(priced: Priced, sources: readonly CoverSource[], quantity: number): CoverageAllocation[] {
+  const capped: CoverageAllocation[] = [];
+  let capacity = Math.abs(quantity);
+  for (const allocation of priced.analyzed.allocations) {
+    if (capacity <= 0) break;
+    if (!sources.includes(allocation.source)) continue;
+    const take = Math.min(capacity, allocation.quantity);
+    if (take <= 0) continue;
+    capped.push(take === allocation.quantity ? allocation : { ...allocation, quantity: take });
+    capacity -= take;
+  }
+  return capped;
+}
+
+function line({ contract, kind, contributions, migrated }: LineInput, priced: Priced | null, sources: readonly CoverSource[]): StrategyLine {
+  // A sale's quantity is negative, so what migrates brings it back towards zero.
+  const quantity = contributions.reduce((n, c) => n + c.quantity, 0) + migrated;
+  const avgPrice = weightedPrice(contributions);
   const multiplier = kind === "long_stock" || kind === "short_stock" ? 1 : priced ? contractMultiplier(priced.position) : DEFAULT_MULTIPLIER;
   const lastPrice = priced?.position.marketPrice ?? null;
   const sold = kind === "short_put" || kind === "short_call";
+  const marketValue = lastPrice === null ? null : lastPrice * quantity * multiplier;
   return {
-    contract: first.contract,
+    contract,
     kind,
     label: KIND_LABELS[kind],
     quantity,
     avgPrice,
     lastPrice,
-    marketValue: lastPrice === null ? null : lastPrice * quantity * multiplier,
-    unrealizedPnl: lastPrice === null || avgPrice === null ? null : (lastPrice - avgPrice) * quantity * multiplier,
+    marketValue,
+    // marketValue − avgPrice × quantity × multiplier, not (lastPrice − avgPrice) × quantity × multiplier:
+    // mathematically the same, but stable when avgPrice has no exact binary fraction (0.7, e.g.).
+    unrealizedPnl: marketValue === null || avgPrice === null ? null : marketValue - avgPrice * quantity * multiplier,
     decision: sold && lastPrice !== null && avgPrice !== null ? evaluateBuyback(avgPrice, lastPrice) : null,
     position: priced?.analyzed ?? null,
-    coverage: sold && priced ? priced.analyzed.allocations.filter((allocation) => sources.includes(allocation.source)) : [],
+    coverage: sold && priced ? cappedCoverage(priced, sources, quantity) : [],
   };
 }
 
@@ -151,18 +227,106 @@ function flatten(rows: readonly JournalRow[]): JournalRow[] {
   return rows.flatMap((row) => row.legs ?? [row]);
 }
 
-/** The open lines of `strategy`, one per contract, grouped by the DETAIL_GROUPS the page shows. */
-function linesByGroup(rows: readonly JournalRow[], strategy: PositionsStrategy, priced: Map<string, Priced>): Record<DetailGroupId, StrategyLine[]> {
-  const groups = new Map<string, JournalRow[]>();
+/** Every open journal line a page can show, by contract id then by strategy. */
+type OpenRows = Map<string, Map<PositionsStrategy, JournalRow[]>>;
+
+function openRowsByContract(rows: readonly JournalRow[]): OpenRows {
+  const open: OpenRows = new Map();
   for (const row of flatten(rows)) {
-    if (row.strategy !== strategy || row.endWhen !== null || row.quantity === null) continue;
+    if (row.endWhen !== null || row.quantity === null) continue;
     if (LINE_KIND[row.kind] === undefined) continue;
     const id = contractId(row.contract);
-    const group = groups.get(id);
-    if (group) group.push(row);
-    else groups.set(id, [row]);
+    const byStrategy = open.get(id) ?? new Map<PositionsStrategy, JournalRow[]>();
+    byStrategy.set(row.strategy, [...(byStrategy.get(row.strategy) ?? []), row]);
+    open.set(id, byStrategy);
   }
-  const lines = [...groups.entries()].map(([id, group]) => line(group, priced.get(id) ?? null, STRATEGY_COVER_SOURCES[strategy])).sort(compareLines);
+  return open;
+}
+
+const isSold = (row: JournalRow) => LINE_KIND[row.kind] === "short_call" || LINE_KIND[row.kind] === "short_put";
+
+/** What each covered strategy loses on each contract, `migratedContracts` applied to the book. */
+function migratedByContract(open: OpenRows, priced: Map<string, Priced>): Map<string, Map<PositionsStrategy, number>> {
+  const taken = new Map<string, Map<PositionsStrategy, number>>();
+  for (const [id, byStrategy] of open) {
+    const position = priced.get(id)?.analyzed;
+    if (!position) continue;
+    const shorts = new Map<PositionsStrategy, number>();
+    for (const [strategy, rows] of byStrategy) {
+      const held = rows.filter(isSold).reduce((n, r) => n + Math.abs(r.quantity as number), 0);
+      if (held > 0) shorts.set(strategy, held);
+    }
+    const migrated = migratedContracts(shorts, position.allocations, position.uncoveredQuantity);
+    if (migrated.size > 0) taken.set(id, migrated);
+  }
+  return taken;
+}
+
+/**
+ * What Others takes over on one contract: for each covered strategy that loses contracts, one
+ * contribution at that strategy's own average price (spec of sub-project 22, §3.3). Its sign is
+ * that of a sale, negative, like the rows it stands for.
+ */
+function contributionsTakenIn(
+  id: string,
+  byStrategy: ReadonlyMap<PositionsStrategy, JournalRow[]>,
+  taken: Map<string, Map<PositionsStrategy, number>>,
+): Contribution[] {
+  const migrated = taken.get(id);
+  if (!migrated) return [];
+  const contributions: Contribution[] = [];
+  for (const strategy of COVERED_STRATEGIES) {
+    const count = migrated.get(strategy) ?? 0;
+    if (count <= 0) continue;
+    contributions.push({ quantity: -count, openPrice: weightedPrice((byStrategy.get(strategy) ?? []).map(toContribution)) });
+  }
+  return contributions;
+}
+
+/** The contract and kind of a line Others holds nothing of: read off the rows that migrate to it. */
+function firstSoldRow(byStrategy: ReadonlyMap<PositionsStrategy, JournalRow[]>, migrated: Map<PositionsStrategy, number> | undefined): JournalRow {
+  for (const strategy of COVERED_STRATEGIES) {
+    if ((migrated?.get(strategy) ?? 0) <= 0) continue;
+    const row = (byStrategy.get(strategy) ?? []).find(isSold);
+    if (row) return row;
+  }
+  throw new Error("a contract migrates to Others without a sold line to name it");
+}
+
+/** The open lines of `strategy`, one per contract, grouped by the DETAIL_GROUPS the page shows. */
+function linesByGroup(
+  open: OpenRows,
+  strategy: PositionsStrategy,
+  priced: Map<string, Priced>,
+  taken: Map<string, Map<PositionsStrategy, number>>,
+): Record<DetailGroupId, StrategyLine[]> {
+  const lines: StrategyLine[] = [];
+  for (const [id, byStrategy] of open) {
+    const rows = byStrategy.get(strategy) ?? [];
+    const migrated = taken.get(id)?.get(strategy) ?? 0;
+    const takenIn = strategy === "others" ? contributionsTakenIn(id, byStrategy, taken) : [];
+    if (rows.length === 0 && takenIn.length === 0) continue;
+    const held = rows.reduce((n, r) => n + Math.abs(r.quantity as number), 0);
+    // held sums every open row of the strategy on this contract, not only the sold ones that feed
+    // `migrated` (built from `shorts`, filtered by isSold): a contract id carries a right, a
+    // strike and a secType, so one strategy can never hold both a long and a short row on it, and
+    // `held` is therefore already the sold quantity whenever `migrated` is nonzero.
+    if (takenIn.length === 0 && migrated >= held) continue;
+    const source = rows[0] ?? firstSoldRow(byStrategy, taken.get(id));
+    lines.push(
+      line(
+        {
+          contract: source.contract,
+          kind: LINE_KIND[source.kind] as PositionKind,
+          contributions: [...rows.map(toContribution), ...takenIn],
+          migrated,
+        },
+        priced.get(id) ?? null,
+        STRATEGY_COVER_SOURCES[strategy],
+      ),
+    );
+  }
+  lines.sort(compareLines);
   const byGroup = Object.fromEntries(DETAIL_GROUPS.map((group) => [group.id, [] as StrategyLine[]])) as Record<DetailGroupId, StrategyLine[]>;
   for (const candidate of lines) {
     const group = DETAIL_GROUPS.find((entry) => entry.kinds?.has(candidate.kind)) ?? DETAIL_GROUPS[DETAIL_GROUPS.length - 1];
@@ -183,13 +347,21 @@ export interface StrategyPositions {
  */
 export function strategyPositions(rows: readonly JournalRow[], strategy: PositionsStrategy, snapshot: PricedSnapshot | null): StrategyPositions {
   const priced = pricedByContract(snapshot);
-  const groups = linesByGroup(rows, strategy, priced);
+  const open = openRowsByContract(rows);
+  const taken = migratedByContract(open, priced);
+  const groups = linesByGroup(open, strategy, priced, taken);
   if (strategy !== "wheel") return { shares: [], groups };
+  const covered = coveredCallsByTicker(groups.optionSells);
   const shares = wheelHoldings(rows).map((holding): WheelShareLine => {
+    const calls = covered.get(`${holding.ticker}|${holding.currency}`) ?? { contracts: 0, strikeTotal: 0, unstruck: false };
+    const averageCallStrike = calls.contracts === 0 || calls.unstruck ? null : calls.strikeTotal / calls.contracts;
     const lastPrice = priced.get(contractId(sharesContract(holding.ticker, holding.currency)))?.position.marketPrice ?? null;
-    const { averageAssignmentPrice, averageCallStrike } = holding;
+    const { averageAssignmentPrice } = holding;
     return {
       ...holding,
+      openCallContracts: calls.contracts,
+      averageCallStrike,
+      coveredShares: Math.min(holding.quantity, calls.contracts * DEFAULT_MULTIPLIER),
       lastPrice,
       unrealizedPnl: lastPrice === null || averageAssignmentPrice === null ? null : (lastPrice - averageAssignmentPrice) * holding.quantity,
       callStrikeBelowAssignment: averageCallStrike !== null && averageAssignmentPrice !== null && averageCallStrike < averageAssignmentPrice,
@@ -197,4 +369,25 @@ export function strategyPositions(rows: readonly JournalRow[], strategy: Positio
   });
   // The Wheel's shares are its long positions, shown by their own table: never twice.
   return { shares, groups: { ...groups, long: [] } };
+}
+
+/**
+ * The Wheel's calls that still have shares behind them, by ticker and currency: the shares card
+ * counts these, not the journal's, so that "used 100/100" says what the page shows
+ * (spec of sub-project 22, §3.4).
+ */
+function coveredCallsByTicker(sales: readonly StrategyLine[]): Map<string, { contracts: number; strikeTotal: number; unstruck: boolean }> {
+  const covered = new Map<string, { contracts: number; strikeTotal: number; unstruck: boolean }>();
+  for (const sale of sales) {
+    if (sale.kind !== "short_call") continue;
+    const key = `${sale.contract.ticker}|${sale.contract.currency}`;
+    const entry = covered.get(key) ?? { contracts: 0, strikeTotal: 0, unstruck: false };
+    const contracts = Math.abs(sale.quantity);
+    covered.set(key, {
+      contracts: entry.contracts + contracts,
+      strikeTotal: entry.strikeTotal + (sale.contract.strike ?? 0) * contracts,
+      unstruck: entry.unstruck || sale.contract.strike === null,
+    });
+  }
+  return covered;
 }
