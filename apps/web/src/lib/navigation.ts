@@ -61,12 +61,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     labelKey: "nav.sections.strategyCondors",
     items: [
       { labelKey: "nav.journal", icon: Bird, to: accountPath("journal/condors") },
+      { labelKey: "nav.positions", icon: TrendingUp, to: accountPath("positions/condors") },
       { labelKey: "nav.stats", icon: BarChart3, to: accountPath("stats/condors") },
     ],
   },
   {
     labelKey: "nav.sections.strategyOthers",
-    items: [{ labelKey: "nav.journal", icon: Layers, to: accountPath("journal/others") }],
+    items: [
+      { labelKey: "nav.journal", icon: Layers, to: accountPath("journal/others") },
+      { labelKey: "nav.positions", icon: TrendingUp, to: accountPath("positions/others") },
+    ],
   },
   {
     labelKey: "nav.sections.configuration",

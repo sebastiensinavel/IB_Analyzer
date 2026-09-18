@@ -38,9 +38,9 @@ describe("router", () => {
     expect(element.type).toBe(SectorsPage);
   });
 
-  it("routes the Wheel and LEAPS positions pages under the account", () => {
+  it("routes the four strategies' positions pages under the account", () => {
     const account = router.routes.find((r) => r.path === "/accounts/:accountId");
-    for (const strategy of ["wheel", "leaps"] as const) {
+    for (const strategy of ["wheel", "leaps", "condors", "others"] as const) {
       const route = (account?.children ?? []).find((c) => c.path === `positions/${strategy}`);
       const element = route?.element as ReactElement<{ strategy: string }>;
       expect(element.type).toBe(StrategyPositionsPage);

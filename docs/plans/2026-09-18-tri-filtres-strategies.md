@@ -2094,7 +2094,7 @@ MSG
 - Produit : les routes `positions/condors` et `positions/others`, deux entrées de navigation, les
   titres `strategyPositions.title.condors` et `.others`.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `apps/web/src/routes/router.test.tsx`, élargir le test existant :
 
@@ -2204,12 +2204,12 @@ describe("StrategyPositionsPage — Others", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Commande : `pnpm --filter web exec vitest run src/routes/router.test.tsx src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : ÉCHEC — routes absentes, entrées de menu absentes, titres absents.
 
-- [ ] **Étape 3 : ajouter les routes**
+- [x] **Étape 3 : ajouter les routes**
 
 Dans `apps/web/src/routes/router.tsx`, après les deux lignes existantes :
 
@@ -2218,7 +2218,7 @@ Dans `apps/web/src/routes/router.tsx`, après les deux lignes existantes :
       { path: "positions/others", element: <StrategyPositionsPage strategy="others" /> },
 ```
 
-- [ ] **Étape 4 : ajouter les entrées de navigation**
+- [x] **Étape 4 : ajouter les entrées de navigation**
 
 Dans `apps/web/src/lib/navigation.ts`, dans la section Condors, entre Journal et Statistiques :
 
@@ -2238,7 +2238,7 @@ et dans la section Autres, après Journal :
   },
 ```
 
-- [ ] **Étape 5 : ajouter les titres**
+- [x] **Étape 5 : ajouter les titres**
 
 Dans `apps/web/src/i18n/fr.json`, `strategyPositions.title` :
 
@@ -2254,12 +2254,12 @@ Dans `apps/web/src/i18n/en.json` :
    "others": "Others positions"
 ```
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
 Commande : `pnpm --filter web exec vitest run src/routes src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add apps/web/src/routes apps/web/src/lib/navigation.ts apps/web/src/lib/navigation.test.ts apps/web/src/i18n apps/web/src/pages/StrategyPositionsPage.test.tsx

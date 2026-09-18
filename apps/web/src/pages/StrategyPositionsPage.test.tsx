@@ -3,12 +3,12 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
-import type { Transaction } from "@ib/ledger";
+import type { Position, Transaction } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db, type SnapshotRecord } from "@/db/schema";
 import { StrategyPositionsPage, type PositionsStrategy } from "@/pages/StrategyPositionsPage";
 import { WithAccountData } from "@/test/WithAccountData";
-import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
+import { DEMO_TRANSACTIONS, SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 
 function renderPage(strategy: PositionsStrategy) {
   return render(
@@ -214,5 +214,71 @@ describe("StrategyPositionsPage — search, expiries and column filters", () => 
     const box = await screen.findByLabelText("Ventes d'options");
     expect(within(box).getByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
     expect(within(box).queryByText("MQZA Oct16'26 15 Call")).not.toBeInTheDocument();
+  });
+});
+
+/** A TSLA call sold on nothing at all: the Others journal's naked part. */
+const TSLA_CALL: Transaction = {
+  ...SAMPLE_JOURNAL_TRANSACTIONS[0],
+  externalId: "flex:trade:403",
+  symbol: "TSLA  261016C00300000",
+  right: "C",
+  strike: 300,
+  expiry: "2026-10-16",
+  quantity: -1,
+  price: 1,
+  amount: 100,
+  when: "2026-08-04T14:30:00.000Z",
+};
+
+/**
+ * The open QQQ condor of the demo ledger, priced. All four legs: the coverage engine only calls a
+ * leg `spread` when it sees the whole defined-risk structure in the snapshot.
+ */
+const QQQ_LEG = { ...aapl, symbol: "QQQ", secType: "OPT" as const, multiplier: 100, expiry: "2026-10-16" };
+const QQQ_POSITIONS: Position[] = [
+  { ...QQQ_LEG, right: "P", strike: 480, quantity: 1, marketPrice: 0.1, marketValue: 10, description: "QQQ 16OCT26 480 P" },
+  { ...QQQ_LEG, right: "P", strike: 485, quantity: -1, marketPrice: 0.3, marketValue: -30, description: "QQQ 16OCT26 485 P" },
+  { ...QQQ_LEG, right: "C", strike: 520, quantity: -1, marketPrice: 0.2, marketValue: -20, description: "QQQ 16OCT26 520 C" },
+  { ...QQQ_LEG, right: "C", strike: 525, quantity: 1, marketPrice: 0.1, marketValue: 10, description: "QQQ 16OCT26 525 C" },
+];
+
+async function seedCondor() {
+  await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, ...DEMO_TRANSACTIONS]);
+  await db.snapshots.put({ ...SNAPSHOT, positions: [...SNAPSHOT.positions, ...QQQ_POSITIONS] });
+}
+
+describe("StrategyPositionsPage — Condors", () => {
+  it("reads an open condor on its legs, wings bought and body sold, and prices what the snapshot holds", async () => {
+    await seedCondor();
+    renderPage("condors");
+    expect(await screen.findByText("Positions Condors")).toBeInTheDocument();
+    const wing = await rowIn("Achats d'options", "QQQ Oct16'26 480 Put");
+    expect(texts(wing).slice(0, 7)).toEqual(["QQQ Oct16'26 480 Put", "buy of put", "", "$10.00", "1", "0.25", "0.10"]);
+    const sold = await rowIn("Ventes d'options", "QQQ Oct16'26 485 Put");
+    expect(texts(sold)[1]).toBe("sell of put");
+    expect(within(sold).getByText(/spread/)).toBeInTheDocument();
+    // Never the composite: a condor is its legs.
+    expect(screen.queryByText(/IC 480/)).not.toBeInTheDocument();
+  });
+});
+
+describe("StrategyPositionsPage — Others", () => {
+  it("groups what fits nowhere else like the overview does, and marks a naked sale UNCOVERED", async () => {
+    await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, TSLA_CALL]);
+    await db.snapshots.put(SNAPSHOT);
+    renderPage("others");
+    expect(await screen.findByText("Positions Autres")).toBeInTheDocument();
+    expect(within(await screen.findByLabelText("Positions longues")).getByText("AAPL")).toBeInTheDocument();
+    const naked = await rowIn("Ventes d'options", "TSLA Oct16'26 300 Call");
+    expect(within(naked).getByText("UNCOVERED ×1")).toBeInTheDocument();
+  });
+
+  it("shows no cash on a strategy page", async () => {
+    await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
+    await db.snapshots.put(SNAPSHOT);
+    renderPage("others");
+    await screen.findByLabelText("Positions longues");
+    expect(screen.queryByLabelText("Cash")).not.toBeInTheDocument();
   });
 });

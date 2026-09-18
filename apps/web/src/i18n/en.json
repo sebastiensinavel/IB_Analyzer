@@ -106,7 +106,7 @@
     }
   },
   "strategyPositions": {
-    "title": { "wheel": "Wheel positions", "leaps": "LEAPS positions" },
+    "title": { "wheel": "Wheel positions", "leaps": "LEAPS positions", "condors": "Condors positions", "others": "Others positions" },
     "groups": {
       "assignedShares": "Assigned shares",
       "shares": "Shares"
