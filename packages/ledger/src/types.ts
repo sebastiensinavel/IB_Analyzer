@@ -80,6 +80,16 @@ export interface Position {
   marketPrice: number | null;
   marketValue: number | null;
   unrealizedPnl: number | null;
+  /**
+   * Today's P&L as IB computes it, whole position. Agent snapshots only: a Flex response and a
+   * statement have no "today", and write `null`.
+   */
+  dailyPnl: number | null;
+  /**
+   * Today's move of the mark price IB derives `dailyPnl` from, as a fraction (0.0215 for +2.15 %).
+   * Derived by the agent parser, never TWS's own "Change %", which follows the last trade.
+   */
+  dayChange: number | null;
   currency: string;
   /** IB contract id; "" when the source does not give one. */
   conid: string;

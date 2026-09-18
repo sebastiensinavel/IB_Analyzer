@@ -248,6 +248,9 @@ function readPosition(value: unknown, path: string, collected: Collected): Posit
     marketPrice: num(o, "marketPrice", path),
     marketValue: num(o, "marketValue", path),
     unrealizedPnl: num(o, "unrealizedPNL", path),
+    // Wired up in a later pass: the agent does not yet ask TWS for the day's P&L.
+    dailyPnl: null,
+    dayChange: null,
     currency: contract.currency,
     conid: String(contract.conId),
     description,

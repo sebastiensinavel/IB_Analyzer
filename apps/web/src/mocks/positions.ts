@@ -14,6 +14,8 @@ function position(overrides: Partial<Position>): Position {
     marketPrice: 1,
     marketValue: -100,
     unrealizedPnl: 100,
+    dailyPnl: null,
+    dayChange: null,
     currency: "USD",
     conid: "",
     description: "",

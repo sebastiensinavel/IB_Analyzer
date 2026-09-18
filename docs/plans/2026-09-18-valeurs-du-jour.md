@@ -101,7 +101,7 @@ par un test, elle ne le programme pas.
 - Produit : `Position.dailyPnl: number | null` et `Position.dayChange: number | null`, lus par
   les tâches 3, 4, 5, 6 et 7.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Dans `packages/ib-parsers/src/flex.test.ts`, ajouter un test à côté de ceux qui portent déjà sur
 les positions Flex (chercher `marketPrice` pour trouver le bloc) :
@@ -120,12 +120,12 @@ Reprendre le nom de la fixture et de la fonction du test voisin du fichier — n
 (« gives a statement position no day values ») et dans `agent.test.ts` (« gives a position
 without `pnl` no day values », sur une charge utile dont les positions n'ont pas de `pnl`).
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `pnpm --filter @ib/ib-parsers test`
 Attendu : ÉCHEC — `Property 'dailyPnl' does not exist on type 'Position'`.
 
-- [ ] **Étape 3 : ajouter les deux champs au type**
+- [x] **Étape 3 : ajouter les deux champs au type**
 
 Dans `packages/ledger/src/types.ts`, juste après `unrealizedPnl` :
 
@@ -144,7 +144,7 @@ Dans `packages/ledger/src/types.ts`, juste après `unrealizedPnl` :
   currency: string;
 ```
 
-- [ ] **Étape 4 : écrire `null` dans les trois parseurs et les deux fixtures**
+- [x] **Étape 4 : écrire `null` dans les trois parseurs et les deux fixtures**
 
 Dans `packages/ib-parsers/src/flex.ts` et `statement.ts`, à côté de `unrealizedPnl` :
 
@@ -158,7 +158,7 @@ Dans `packages/ib-parsers/src/agent.ts`, même chose pour l'instant — la tâch
 Dans `packages/coverage/src/fixtures.ts`, `option()` et `stock()` posent `dailyPnl: null` et
 `dayChange: null` avant le `...overrides`.
 
-- [ ] **Étape 5 : compléter les littéraux que le typage nomme**
+- [x] **Étape 5 : compléter les littéraux que le typage nomme**
 
 Run : `pnpm -r typecheck`
 Cinq erreurs attendues, toutes dans `packages/ledger` :
@@ -166,13 +166,13 @@ Cinq erreurs attendues, toutes dans `packages/ledger` :
 Ajouter `dailyPnl: null, dayChange: null` à chaque littéral nommé. Ne rien changer d'autre : ces
 tests ne portent pas sur le jour.
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
 Run : `pnpm --filter @ib/ledger test && pnpm --filter @ib/coverage test && pnpm --filter @ib/ib-parsers test`
 Attendu : tout passe. Les assertions `toEqual` des parseurs qui décrivent une position entière
 échouent d'abord : y ajouter les deux champs à `null`, c'est la sortie neuve et juste.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add -A

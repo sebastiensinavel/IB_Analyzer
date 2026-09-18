@@ -9,7 +9,7 @@ const PUT: ContractKey = { ticker: "MQZA", secType: "OPT", right: "P", strike: 1
 function position(overrides: Partial<Position>): Position {
   return {
     symbol: "MQZA", secType: "OPT", right: "P", strike: 17, expiry: "2026-10-02", multiplier: 100, quantity: -2,
-    avgPrice: 0.2, marketPrice: 0.1, marketValue: -20, unrealizedPnl: 20, currency: "USD", conid: "", description: "", ...overrides,
+    avgPrice: 0.2, marketPrice: 0.1, marketValue: -20, unrealizedPnl: 20, dailyPnl: null, dayChange: null, currency: "USD", conid: "", description: "", ...overrides,
   };
 }
 

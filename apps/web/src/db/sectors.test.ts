@@ -117,7 +117,7 @@ function tx(fields: Partial<Transaction>): Transaction {
 function position(fields: Partial<Position>): Position {
   return {
     symbol: "", secType: "STK", right: "", strike: null, expiry: null, multiplier: null, quantity: 1, avgPrice: null,
-    marketPrice: null, marketValue: null, unrealizedPnl: null, currency: "USD", conid: "", description: "", ...fields,
+    marketPrice: null, marketValue: null, unrealizedPnl: null, dailyPnl: null, dayChange: null, currency: "USD", conid: "", description: "", ...fields,
   };
 }
 

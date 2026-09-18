@@ -47,6 +47,8 @@ describe("parseAgentSnapshot", () => {
       marketPrice: 172.1,
       marketValue: 17210,
       unrealizedPnl: 2185,
+      dailyPnl: null,
+      dayChange: null,
       currency: "USD",
       conid: "265598",
       description: "SYMA",
@@ -74,6 +76,12 @@ describe("parseAgentSnapshot", () => {
     expect(snapshot.positions[1].avgPrice).toBeNull();
     expect(snapshot.positions[1].multiplier).toBeNull();
     expect(snapshot.issues).toEqual([{ severity: "warning", code: "multiplier-missing", detail: "SYMB 18DEC26 180 C" }]);
+  });
+
+  it("gives a position without `pnl` no day values", () => {
+    const [stock] = parseAgentSnapshot(payload, ACCOUNT).positions;
+    expect(stock.dailyPnl).toBeNull();
+    expect(stock.dayChange).toBeNull();
   });
 
   it("turns a SLD option fill into a negative-quantity trade with gross proceeds and a negative commission", () => {
