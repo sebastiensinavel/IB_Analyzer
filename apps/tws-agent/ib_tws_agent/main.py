@@ -215,11 +215,10 @@ async def collect_pnl(ib: IB, items: Iterable[Any]) -> dict[int, Any]:
     Never raises: the day's values are a bonus, and the snapshot is due whatever TWS does with
     them. A contract TWS stays silent about is simply absent from the result.
     """
-    keys = [(item.account, item.contract.conId) for item in items]
-    if not keys:
-        return {}
     entries: dict[int, Any] = {}
+    keys: list[tuple[str, int]] = []
     try:
+        keys = [(item.account, item.contract.conId) for item in items]
         for account, con_id in keys:
             entries[con_id] = ib.reqPnLSingle(account, "", con_id)
         deadline = monotonic() + PNL_TIMEOUT_S

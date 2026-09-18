@@ -81,7 +81,9 @@ def test_snapshot_envelope(make_client):
     assert body["executions"] == []
 
 
-def test_positions_are_serialized_raw_stock_and_option_alike(make_client):
+def test_positions_are_serialized_raw_stock_and_option_alike(make_client, monkeypatch):
+    # Neither position is ever answered (no `pnl=` mapping): bound the wait.
+    monkeypatch.setattr("ib_tws_agent.main.PNL_TIMEOUT_S", 0.05)
     fake_ib = FakeIB(
         portfolio=[
             FakePortfolioItem(contract=STOCK, position=100.0, averageCost=150.25, marketPrice=172.1, marketValue=17210.0, unrealizedPNL=2185.0),
@@ -151,6 +153,19 @@ def test_a_value_ib_does_not_have_is_null_never_zero(make_client):
     positions = make_client(fake_ib).get("/snapshot", params={"port": 7502}, headers=HEADERS).json()["positions"]
 
     assert positions[0]["pnl"] == {"dailyPnL": -38.4, "value": None}
+
+
+def test_a_genuine_zero_daily_pnl_survives_never_mistaken_for_absent(make_client):
+    # A flat day is a real dailyPnL of 0.0, not "TWS said nothing" - clean_pnl must not treat
+    # a falsy-but-valid value the same as nan or DBL_MAX.
+    fake_ib = FakeIB(
+        portfolio=[FakePortfolioItem(contract=STOCK, position=100.0)],
+        pnl={265598: FakePnLSingle(conId=265598, dailyPnL=0.0, value=17210.0)},
+    )
+
+    positions = make_client(fake_ib).get("/snapshot", params={"port": 7502}, headers=HEADERS).json()["positions"]
+
+    assert positions[0]["pnl"] == {"dailyPnL": 0.0, "value": 17210.0}
 
 
 def test_the_pnl_step_never_fails_the_snapshot(make_client, monkeypatch):
