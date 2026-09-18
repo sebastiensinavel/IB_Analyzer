@@ -714,11 +714,6 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   « les trois cartes LEAPS ». Le calcul des actions LEAPS est testé en unitaire
   (`packages/coverage/src/strategy.test.ts`) et les cartes vides passent par le même
   `GroupCard` que la Wheel, testée.
-- **`WheelSharesTable` recopie la disposition fixe de `PositionTable`** (classes du tableau et
-  `<colgroup>`, `apps/web/src/pages/StrategyPositionsPage.tsx` vs
-  `apps/web/src/components/PositionTable.tsx`) : une règle de largeur ou de retour à la ligne
-  changée d'un côté ne suit pas de l'autre. Correctif : un paramètre `columns` sur
-  `PositionTable`.
 - **Le comparateur de chaînes `a < b ? -1 : a > b ? 1 : 0` existe désormais en quatre copies
   privées** : `packages/ledger/src/journals/holdings.ts` (`compare`),
   `packages/coverage/src/strategy.ts` (`compareText`), le tri inline de
@@ -848,6 +843,35 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   observé au sous-projet 19 pour `radio-group`) : réécrire les imports `@/` ne suffit plus, il
   faut aussi déplacer le fichier et retirer la dépendance ajoutée. La recette est à réécrire
   le jour où l'on ajoute un composant.
+
+---
+
+## Reporté par le sous-projet 21 (recherche, tri et filtres des pages de stratégie)
+
+- **`FilteredTableBox` pose un `aria-label` en plus du `CardTitle` visible**
+  (`apps/web/src/components/table/FilteredTableBox.tsx:64`) : sans rôle sur le conteneur, rien
+  n'est annoncé deux fois, et c'est l'ancrage dont les tests de page se servent pour naviguer.
+- **`def.id as DetailGroupId` dans `StrategyPositionsPage`**
+  (`apps/web/src/pages/StrategyPositionsPage.tsx:78`) : un prédicat de type sur le `.filter()`
+  qui le précède éviterait l'assertion.
+- **Le `beforeEach` du describe « search, expiries and column filters » de
+  `StrategyPositionsPage.test.tsx` (ligne 140-141) vide `localStorage`** que le `beforeEach`
+  global du fichier (ligne 73-74) vide déjà.
+- **« sorts on a column and keeps the legs under their condor »
+  (`apps/web/src/pages/JournalPage.test.tsx:183`) compte les jambes après tri sans assurer
+  l'ordre des lignes de tête** : la garantie réelle est structurelle, le moteur ne plaçant
+  jamais une jambe à la racine (`buildJournals`), pas un fait que ce tri-là démontre.
+- **Pour la Wheel et les Condors, `linesByGroup`
+  (`packages/coverage/src/strategy.ts`) calcule les quatre `DETAIL_GROUPS` sans exception,
+  mais `STRATEGY_BOXES` (`apps/web/src/lib/strategyBoxes.ts`) n'en déclare que deux pour
+  chacune** : le prix de la fonction unique, des groupes calculés et jamais rendus.
+- **`setExpiry` est mémoïsé sur `[defs, views]`**
+  (`apps/web/src/pages/StrategyPositionsPage.tsx:69-72`), et `views` (`useStrategyBoxViews`)
+  est un objet neuf à chaque rendu : la mémoïsation ne sert à rien.
+- **La page Autres ne montre pas toute la part nue du portefeuille** : un call vendu
+  partiellement couvert par des actions Wheel reste entier dans la Wheel, par classification à
+  la vente ; c'est la dette déjà consignée au sous-projet 16 (badge « used » trompeur sur les
+  actions Wheel), que cette page ne referme pas.
 
 ---
 

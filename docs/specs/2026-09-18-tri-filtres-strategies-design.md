@@ -1,6 +1,6 @@
 # Sous-projet 21 — Recherche, tri et filtres des pages de stratégie
 
-Statut : spécifié (2026-09-18).
+Statut : implémenté (2026-09-18).
 
 Le sous-projet 20 a donné à l'Historique et à la page Positions de la vue d'ensemble une
 recherche par ticker, un tri et un filtre par colonne, mémorisés par compte. Il s'était

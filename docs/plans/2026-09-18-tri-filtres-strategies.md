@@ -35,8 +35,8 @@ Vitest + Testing Library + fake-indexeddb, pnpm workspaces.
 - **shadcn ici est base-ui** : `render={<X/>}`, jamais `asChild`.
 - **`apps/web/src/pages/PositionsPage.test.tsx` ne doit pas être modifié** : c'est le filet de
   sécurité de tout le portage. S'il casse, c'est le code qui a tort.
-- Commandes : `pnpm --filter web test -- <chemin>` pour un test web,
-  `pnpm --filter @ib/coverage test -- <chemin>` pour `coverage`. `pnpm check` **une seule fois à
+- Commandes : `pnpm --filter web exec vitest run <chemin>` pour un test web,
+  `pnpm --filter @ib/coverage exec vitest run <chemin>` pour `coverage`. `pnpm check` **une seule fois à
   la fin** (tâche 10) : il lance lint, typage, build et tous les tests.
 - Chaque tâche finit par un commit dont le message est en français, à l'impératif, et se termine
   par la ligne `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`.
@@ -82,7 +82,7 @@ Vitest + Testing Library + fake-indexeddb, pnpm workspaces.
   `InteractiveHeader<Row> { specs, view, facets, onSort, onCriterion }`.
 - Consomme : `ColumnHeader` (`@/components/table/ColumnHeader`), inchangé.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Créer `apps/web/src/components/table/DataTable.test.tsx` :
 
@@ -162,12 +162,12 @@ describe("DataTable", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/components/table/DataTable.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/components/table/DataTable.test.tsx`
 Attendu : ÉCHEC, « Failed to resolve import "@/components/table/DataTable" ».
 
-- [ ] **Étape 3 : écrire `DataTable.tsx`**
+- [x] **Étape 3 : écrire `DataTable.tsx`**
 
 Créer `apps/web/src/components/table/DataTable.tsx` :
 
@@ -262,12 +262,12 @@ export function DataTableHeader<Row>({
 }
 ```
 
-- [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
-Commande : `pnpm --filter web test -- src/components/table/DataTable.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/components/table/DataTable.test.tsx`
 Attendu : SUCCÈS, 4 tests.
 
-- [ ] **Étape 5 : brancher les trois appelants et supprimer `PositionTable`**
+- [x] **Étape 5 : brancher les trois appelants et supprimer `PositionTable`**
 
 Dans `apps/web/src/components/PositionGroupCard.tsx`, remplacer l'import
 `import { PositionTable, PositionTableHeader } from "@/components/PositionTable";` par :
@@ -308,16 +308,16 @@ Puis supprimer le fichier :
 rm apps/web/src/components/PositionTable.tsx
 ```
 
-- [ ] **Étape 6 : vérifier que rien n'a bougé**
+- [x] **Étape 6 : vérifier que rien n'a bougé**
 
-Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx src/components/CashBalancesCard.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx src/components/CashBalancesCard.test.tsx`
 Attendu : SUCCÈS, aucun test modifié. Le test « lines up the columns of every table on the page »
 de `PositionsPage.test.tsx` prouve que les dix `<col>` sont toujours posés sur les quatre tables.
 
 Commande : `pnpm --filter web typecheck`
 Attendu : SUCCÈS (aucune référence restante à `@/components/PositionTable`).
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add apps/web/src/components apps/web/src/pages/StrategyPositionsPage.tsx
@@ -349,7 +349,7 @@ MSG
 - Produit : `FilteredTableBox<Row>(props)` avec
   `{ title?, columns, labelKey, minWidth?, specs, facetRows, rows, table, emptyKey, rowKey, renderRow }`.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Créer `apps/web/src/components/table/FilteredTableBox.test.tsx` :
 
@@ -389,7 +389,10 @@ function table(view: TableView = EMPTY_VIEW): TableViewState {
   return { view, setCriterion: vi.fn(), setSort: vi.fn(), clearColumn: vi.fn(), clearAll: vi.fn() };
 }
 
-function renderBox(rows: Line[], state = table(), title: string | undefined = "Ventes d'options") {
+// Variadic, not a default parameter: a default also fires on an explicit `undefined`, so the
+// "no title" case below would have received the title anyway and tested nothing.
+function renderBox(rows: Line[], state = table(), ...titleArg: [title: string | undefined] | []) {
+  const title = titleArg.length > 0 ? titleArg[0] : "Ventes d'options";
   return render(
     <I18nextProvider i18n={i18n}>
       <FilteredTableBox
@@ -436,8 +439,9 @@ describe("FilteredTableBox", () => {
     const header = screen.getByRole("columnheader", { name: /^Type/ });
     await userEvent.click(within(header).getByRole("button"));
     // Both values of facetRows are offered, each counted once, although one row is displayed.
-    expect(await screen.findByRole("checkbox", { name: "long_stock" })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "short_put" })).toBeInTheDocument();
+    // By regex: a facet's checkbox is named with its count too ("long_stock 1").
+    expect(await screen.findByRole("checkbox", { name: /^long_stock/ })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /^short_put/ })).toBeInTheDocument();
   });
 
   it("shows a pill per filtered column, above the table", () => {
@@ -447,12 +451,12 @@ describe("FilteredTableBox", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/components/table/FilteredTableBox.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/components/table/FilteredTableBox.test.tsx`
 Attendu : ÉCHEC, « Failed to resolve import "@/components/table/FilteredTableBox" ».
 
-- [ ] **Étape 3 : écrire `FilteredTableBox.tsx`**
+- [x] **Étape 3 : écrire `FilteredTableBox.tsx`**
 
 Créer `apps/web/src/components/table/FilteredTableBox.tsx` :
 
@@ -558,12 +562,12 @@ export function FilteredTableBox<Row>({
 }
 ```
 
-- [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
-Commande : `pnpm --filter web test -- src/components/table/FilteredTableBox.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/components/table/FilteredTableBox.test.tsx`
 Attendu : SUCCÈS, 5 tests.
 
-- [ ] **Étape 5 : faire de `PositionGroupCard` l'adaptateur `AnalyzedPosition`**
+- [x] **Étape 5 : faire de `PositionGroupCard` l'adaptateur `AnalyzedPosition`**
 
 Remplacer tout le corps de `apps/web/src/components/PositionGroupCard.tsx` par :
 
@@ -627,12 +631,12 @@ export function PositionGroupCard({ title, positions, rows, table, specs, sector
 Le composant ne traduit plus rien lui-même — l'encadré s'en charge —, donc il n'importe plus
 `react-i18next`.
 
-- [ ] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé**
+- [x] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé**
 
-Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
 Attendu : SUCCÈS, fichier de test non modifié.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add apps/web/src/components
@@ -668,7 +672,7 @@ MSG
   `filterBoxes(boxes, specs, views, expiryActive): PreparedBox<Row>[]`,
   `activeExpiry(choices, ids, views): string | null`.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Créer `apps/web/src/lib/tableBoxes.test.ts` :
 
@@ -771,12 +775,12 @@ describe("activeExpiry", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/lib/tableBoxes.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/tableBoxes.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/tableBoxes" ».
 
-- [ ] **Étape 3 : écrire `tableBoxes.ts`**
+- [x] **Étape 3 : écrire `tableBoxes.ts`**
 
 Créer `apps/web/src/lib/tableBoxes.ts` :
 
@@ -810,9 +814,10 @@ export interface PreparedBox<Row> extends SearchedBox<Row> {
 }
 
 /**
- * The boxes the page search leaves. A box with no line at all never renders — the strategy holds
- * nothing of that kind — and neither does one the search empties: the search means the same thing
- * in every box and is cleared from the top of the page, so losing the box coins nobody.
+ * The boxes the page search leaves: a box the search empties never renders, a box with no line
+ * at all being the degenerate case of the same rule — the strategy holds nothing of that kind
+ * even before a search runs. Losing the box traps nobody: the search means the same thing in
+ * every box and is cleared from the top of the page, unlike a column filter.
  */
 export function searchBoxes<Row>(
   boxes: readonly TableBoxInput<Row>[],
@@ -821,7 +826,6 @@ export function searchBoxes<Row>(
 ): SearchedBox<Row>[] {
   const kept: SearchedBox<Row>[] = [];
   for (const box of boxes) {
-    if (box.all.length === 0) continue;
     const searched = applyView(box.all, specs, EMPTY_VIEW, search);
     if (searched.length === 0) continue;
     kept.push({ ...box, searched });
@@ -864,12 +868,12 @@ export function activeExpiry(
 }
 ```
 
-- [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
-Commande : `pnpm --filter web test -- src/lib/tableBoxes.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/tableBoxes.test.ts`
 Attendu : SUCCÈS, 10 tests.
 
-- [ ] **Étape 5 : porter `PositionsPage` dessus**
+- [x] **Étape 5 : porter `PositionsPage` dessus**
 
 Dans `apps/web/src/pages/PositionsPage.tsx`, remplacer le bloc qui va de
 `// Groups empty in the snapshot never show.` jusqu'à la ligne `.filter(({ rows }) => activeExpiry === null || rows.length > 0);`
@@ -931,12 +935,12 @@ Enfin, le rendu remplace `activeExpiry` par `expiry` et `groups` par `boxes` :
 
 en important `type DetailGroupId` depuis `@ib/coverage`.
 
-- [ ] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé d'un pixel**
+- [x] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé d'un pixel**
 
-Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx`
-Attendu : SUCCÈS, fichier de test non modifié — les 20 tests, expirations comprises.
+Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
+Attendu : SUCCÈS, fichier de test non modifié — ses 25 tests, expirations comprises.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add apps/web/src/lib/tableBoxes.ts apps/web/src/lib/tableBoxes.test.ts apps/web/src/pages/PositionsPage.tsx
@@ -968,7 +972,7 @@ MSG
 - Produit : `PageSearchInput({ search }: { search: PageSearchState })`, et les clés i18n
   `search.placeholder` / `search.label`.
 
-- [ ] **Étape 1 : déplacer les clés i18n**
+- [x] **Étape 1 : déplacer les clés i18n**
 
 Dans `apps/web/src/i18n/fr.json`, ajouter à la racine, en gardant l'ordre alphabétique des blocs
 de premier niveau existants :
@@ -994,7 +998,7 @@ Dans `apps/web/src/i18n/en.json`, de même :
 et retirer `positions.searchLabel` et `positions.searchPlaceholder`. **Ne pas toucher à
 `journal.filterPlaceholder`** : la page Journal l'utilise encore jusqu'à la tâche 9.
 
-- [ ] **Étape 2 : écrire `PageSearchInput.tsx`**
+- [x] **Étape 2 : écrire `PageSearchInput.tsx`**
 
 Créer `apps/web/src/components/table/PageSearchInput.tsx` :
 
@@ -1022,23 +1026,23 @@ export function PageSearchInput({ search }: { search: PageSearchState }) {
 }
 ```
 
-- [ ] **Étape 3 : brancher la vue d'ensemble**
+- [x] **Étape 3 : brancher la vue d'ensemble**
 
 Dans `apps/web/src/pages/PositionsPage.tsx`, remplacer le bloc `<Input …/>` par
 `<PageSearchInput search={search} />`, importer
 `import { PageSearchInput } from "@/components/table/PageSearchInput";` et retirer l'import
 désormais inutile de `@ib/ui/input`.
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
-Commande : `pnpm --filter web test -- src/pages/PositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
 Attendu : SUCCÈS sans modifier le test — les libellés rendus (« Rechercher un ticker »,
 « Rechercher un ticker : AAPL, AAPL|MSFT… ») sont exactement les mêmes, sous une autre clé.
 
 Commande : `grep -rn "positions.searchPlaceholder\|positions.searchLabel" apps/web/src`
 Attendu : aucune ligne.
 
-- [ ] **Étape 5 : commit**
+- [x] **Étape 5 : commit**
 
 ```bash
 git add apps/web/src/components/table/PageSearchInput.tsx apps/web/src/pages/PositionsPage.tsx apps/web/src/i18n
@@ -1068,7 +1072,7 @@ MSG
   `STRATEGY_COVER_SOURCES: Record<PositionsStrategy, readonly CoverSource[]>` étendu.
 - Disparaissent : `wheelPositions`, `leapsPositions`, `WheelPositions`, `LeapsPositions`.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `packages/coverage/src/strategy.test.ts` :
 
@@ -1084,7 +1088,7 @@ const wheelPositions = (rows: readonly JournalRow[], snapshot: PricedSnapshot | 
 };
 const leapsPositions = (rows: readonly JournalRow[], snapshot: PricedSnapshot | null) => {
   const { groups } = strategyPositions(rows, "leaps", snapshot);
-  return { optionBuys: groups.optionBuys, optionSells: groups.optionSells, shares: groups.long };
+  return { optionBuys: groups.optionBuys, optionSales: groups.optionSells, shares: groups.long };
 };
 ```
 
@@ -1146,6 +1150,9 @@ describe("strategyPositions — condors", () => {
     const { groups } = strategyPositions([condor()], "condors", snapshot);
     const put = groups.optionSells.find((line) => line.contract.strike === 625)!;
     expect(put.coverage.map((allocation) => allocation.source)).toEqual(["spread"]);
+    // The wing that covered it (pairLegs, coverage.ts) is marked used on its own IB position.
+    const wing = groups.optionBuys.find((line) => line.contract.strike === 620)!;
+    expect(wing.position!.usedQuantity).toBe(1);
   });
 });
 
@@ -1166,9 +1173,20 @@ describe("strategyPositions — others", () => {
   });
 
   it("leaves a sold option of Others without an allocation: its cover is nothing at all", () => {
+    // This unit test builds its lines by hand: it exercises the strategy filter alone, not which
+    // journal the journals engine would file this call under (a Wheel call shares MQZA shares in
+    // other tests above; here the point is only that Others reads none of a real allocation).
     const rows = [row({ id: "b#1", strategy: "others", kind: "short_call", contract: MARA_CALL, quantity: -1, openPrice: 0.5 })];
-    const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -1, marketPrice: 0.25, marketValue: -25 })]);
-    expect(strategyPositions(rows, "others", snapshot).groups.optionSells[0].coverage).toEqual([]);
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -1, marketPrice: 0.25, marketValue: -25 }),
+    ]);
+    const sold = strategyPositions(rows, "others", snapshot).groups.optionSells[0];
+    // The engine really allocates the stock as cover on the IB position...
+    expect(sold.position!.allocations).toEqual([expect.objectContaining({ source: "stock" })]);
+    // ...but STRATEGY_COVER_SOURCES.others is empty, so Others reads none of it: the filter, not
+    // an absent allocation, is what leaves this line's own coverage empty.
+    expect(sold.coverage).toEqual([]);
   });
 });
 
@@ -1189,12 +1207,12 @@ describe("strategyPositions — wheel", () => {
 Ajouter `type ContractKey` à l'import de `@ib/ledger` en tête de fichier s'il n'y est pas déjà
 (il y est), et `shares` est déjà défini en tête du fichier.
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
-Commande : `pnpm --filter @ib/coverage test -- src/strategy.test.ts`
+Commande : `pnpm --filter @ib/coverage exec vitest run src/strategy.test.ts`
 Attendu : ÉCHEC — `strategyPositions` n'existe pas.
 
-- [ ] **Étape 3 : écrire le moteur**
+- [x] **Étape 3 : écrire le moteur**
 
 Dans `packages/coverage/src/strategy.ts` :
 
@@ -1313,14 +1331,14 @@ Supprimer les interfaces `WheelPositions` et `LeapsPositions` devenues inutiles.
   const multiplier = kind === "long_stock" || kind === "short_stock" ? 1 : priced ? contractMultiplier(priced.position) : DEFAULT_MULTIPLIER;
 ```
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
 Commande : `pnpm --filter @ib/coverage test`
 Attendu : SUCCÈS — les cas neufs **et** tous les anciens, qui passent par les deux adaptateurs
 définis en tête du fichier de test : c'est ce qui prouve que la Wheel et les LEAPS n'ont pas
 changé.
 
-- [ ] **Étape 5 : rendre `apps/web` compilable**
+- [x] **Étape 5 : rendre `apps/web` compilable**
 
 `StrategyPositionsPage.tsx` appelle encore `wheelPositions` et `leapsPositions`. Le brancher
 provisoirement sur la fonction neuve, sans rien changer d'autre :
@@ -1340,15 +1358,15 @@ et, dans le rendu, `wheel.optionSales` devient `wheel.groups.optionSells`, `leap
 devient `leaps.groups.optionBuys`, `leaps.optionSells` devient `leaps.groups.optionSells` et
 `leaps.shares` devient `leaps.groups.long`. L'import passe à `strategyPositions`.
 
-- [ ] **Étape 6 : vérifier**
+- [x] **Étape 6 : vérifier**
 
-Commande : `pnpm --filter web test -- src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS, fichier de test non modifié.
 
 Commande : `pnpm --filter web typecheck`
 Attendu : SUCCÈS.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add packages/coverage/src apps/web/src/pages/StrategyPositionsPage.tsx
@@ -1382,7 +1400,7 @@ MSG
   `strategyCoverageBadges(line, strategy): CoverageBadge[]`,
   `strategyCoverageValues(line, strategy): string[]`.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Créer `apps/web/src/lib/strategyColumns.test.ts` :
 
@@ -1459,12 +1477,12 @@ describe("wheelShareColumnSpecs", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/lib/strategyColumns.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/strategyColumns.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/strategyColumns" ».
 
-- [ ] **Étape 3 : étendre `riskReport.ts`**
+- [x] **Étape 3 : étendre `riskReport.ts`**
 
 Dans `apps/web/src/lib/riskReport.ts`, remplacer `strategyCoverageBadges` par ces deux fonctions,
 et ajouter `type PositionsStrategy` à l'import de `@ib/coverage` :
@@ -1506,7 +1524,7 @@ export function strategyCoverageValues(line: StrategyLine, strategy: PositionsSt
 `["unused"]` pour une option achetée absente du snapshot — c'est voulu : une aile qu'aucune
 position ne porte ne couvre rien, et la facette doit pouvoir la ramener.
 
-- [ ] **Étape 4 : écrire `strategyColumns.ts`**
+- [x] **Étape 4 : écrire `strategyColumns.ts`**
 
 Créer `apps/web/src/lib/strategyColumns.ts` :
 
@@ -1557,15 +1575,15 @@ export function wheelShareColumnSpecs(sectorOf: SectorOf): ColumnSpec<WheelShare
 }
 ```
 
-- [ ] **Étape 5 : brancher l'appel existant et lancer les tests**
+- [x] **Étape 5 : brancher l'appel existant et lancer les tests**
 
 Dans `apps/web/src/pages/StrategyPositionsPage.tsx`, `strategyCoverageBadges(line)` prend son
 second argument : `strategyCoverageBadges(line, strategy)` — passer `strategy` à `LinesCard`.
 
-Commande : `pnpm --filter web test -- src/lib/strategyColumns.test.ts src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/lib/strategyColumns.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS.
 
-- [ ] **Étape 6 : commit**
+- [x] **Étape 6 : commit**
 
 ```bash
 git add apps/web/src/lib/strategyColumns.ts apps/web/src/lib/strategyColumns.test.ts apps/web/src/lib/riskReport.ts apps/web/src/pages/StrategyPositionsPage.tsx
@@ -1600,7 +1618,7 @@ MSG
   `StrategyBoxId = DetailGroupId | "shares"`,
   `useStrategyBoxViews(accountId, strategy, lineColumns, shareColumns): Record<StrategyBoxId, TableViewState>`.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `apps/web/src/pages/StrategyPositionsPage.test.tsx` :
 
@@ -1710,13 +1728,13 @@ import userEvent from "@testing-library/user-event";
 
 et ajouter `window.localStorage.clear();` au `beforeEach` global du fichier.
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
-Commande : `pnpm --filter web test -- src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/StrategyPositionsPage.test.tsx`
 Attendu : ÉCHEC — pas de champ « Rechercher un ticker », pas de barre d'expiration, en-têtes
 inertes.
 
-- [ ] **Étape 3 : écrire `strategyBoxes.ts`**
+- [x] **Étape 3 : écrire `strategyBoxes.ts`**
 
 Créer `apps/web/src/lib/strategyBoxes.ts` :
 
@@ -1762,7 +1780,7 @@ export const STRATEGY_BOXES: Record<PositionsStrategy, readonly StrategyBoxDef[]
 };
 ```
 
-- [ ] **Étape 4 : écrire `useStrategyBoxViews.ts`**
+- [x] **Étape 4 : écrire `useStrategyBoxViews.ts`**
 
 Créer `apps/web/src/hooks/useStrategyBoxViews.ts` :
 
@@ -1796,7 +1814,7 @@ export function useStrategyBoxViews(
 }
 ```
 
-- [ ] **Étape 5 : réécrire la page**
+- [x] **Étape 5 : réécrire la page**
 
 Remplacer entièrement `apps/web/src/pages/StrategyPositionsPage.tsx` par :
 
@@ -2030,22 +2048,22 @@ function WheelShareRow({ line, sector }: { line: WheelShareLine; sector: string 
 }
 ```
 
-- [ ] **Étape 6 : retirer la clé i18n devenue inutile**
+- [x] **Étape 6 : retirer la clé i18n devenue inutile**
 
 Dans `apps/web/src/i18n/fr.json` et `en.json`, retirer `strategyPositions.empty` et
 `strategyPositions.groups.optionSales` et `strategyPositions.groups.optionBuys` : les titres
 partagés de `positions.groups` portent le même texte, et un encadré vide ne se rend plus.
 Garder `strategyPositions.groups.assignedShares` et `strategyPositions.groups.shares`.
 
-- [ ] **Étape 7 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 7 : lancer les tests, vérifier qu'ils passent**
 
-Commande : `pnpm --filter web test -- src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS — les trois tests d'origine (adaptés) et les six neufs.
 
 Commande : `grep -rn "strategyPositions.empty\|groups.optionSales" apps/web/src`
 Attendu : aucune ligne.
 
-- [ ] **Étape 8 : commit**
+- [x] **Étape 8 : commit**
 
 ```bash
 git add apps/web/src/lib/strategyBoxes.ts apps/web/src/hooks/useStrategyBoxViews.ts apps/web/src/pages/StrategyPositionsPage.tsx apps/web/src/pages/StrategyPositionsPage.test.tsx apps/web/src/i18n
@@ -2076,7 +2094,7 @@ MSG
 - Produit : les routes `positions/condors` et `positions/others`, deux entrées de navigation, les
   titres `strategyPositions.title.condors` et `.others`.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `apps/web/src/routes/router.test.tsx`, élargir le test existant :
 
@@ -2138,7 +2156,8 @@ const TSLA_CALL: Transaction = {
  * leg `spread` when it sees the whole defined-risk structure in the snapshot.
  */
 const QQQ_LEG = { ...aapl, symbol: "QQQ", secType: "OPT" as const, multiplier: 100, expiry: "2026-10-16" };
-const QQQ_POSITIONS = [
+// Annotated: without a target type, `right: "P"` widens to `string` and the typecheck fails.
+const QQQ_POSITIONS: Position[] = [
   { ...QQQ_LEG, right: "P", strike: 480, quantity: 1, marketPrice: 0.1, marketValue: 10, description: "QQQ 16OCT26 480 P" },
   { ...QQQ_LEG, right: "P", strike: 485, quantity: -1, marketPrice: 0.3, marketValue: -30, description: "QQQ 16OCT26 485 P" },
   { ...QQQ_LEG, right: "C", strike: 520, quantity: -1, marketPrice: 0.2, marketValue: -20, description: "QQQ 16OCT26 520 C" },
@@ -2186,12 +2205,12 @@ describe("StrategyPositionsPage — Others", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
-Commande : `pnpm --filter web test -- src/routes/router.test.tsx src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/routes/router.test.tsx src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : ÉCHEC — routes absentes, entrées de menu absentes, titres absents.
 
-- [ ] **Étape 3 : ajouter les routes**
+- [x] **Étape 3 : ajouter les routes**
 
 Dans `apps/web/src/routes/router.tsx`, après les deux lignes existantes :
 
@@ -2200,7 +2219,7 @@ Dans `apps/web/src/routes/router.tsx`, après les deux lignes existantes :
       { path: "positions/others", element: <StrategyPositionsPage strategy="others" /> },
 ```
 
-- [ ] **Étape 4 : ajouter les entrées de navigation**
+- [x] **Étape 4 : ajouter les entrées de navigation**
 
 Dans `apps/web/src/lib/navigation.ts`, dans la section Condors, entre Journal et Statistiques :
 
@@ -2220,7 +2239,7 @@ et dans la section Autres, après Journal :
   },
 ```
 
-- [ ] **Étape 5 : ajouter les titres**
+- [x] **Étape 5 : ajouter les titres**
 
 Dans `apps/web/src/i18n/fr.json`, `strategyPositions.title` :
 
@@ -2236,12 +2255,12 @@ Dans `apps/web/src/i18n/en.json` :
    "others": "Others positions"
 ```
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
-Commande : `pnpm --filter web test -- src/routes src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/routes src/lib/navigation.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add apps/web/src/routes apps/web/src/lib/navigation.ts apps/web/src/lib/navigation.test.ts apps/web/src/i18n apps/web/src/pages/StrategyPositionsPage.test.tsx
@@ -2271,7 +2290,7 @@ MSG
   `usePageSearch`, `applyView`.
 - Produit : `JOURNAL_COLUMNS: readonly ColumnDef[]`, `journalColumnSpecs(t): ColumnSpec<JournalRow>[]`.
 
-- [ ] **Étape 1 : écrire le test des colonnes**
+- [x] **Étape 1 : écrire le test des colonnes**
 
 Créer `apps/web/src/lib/journalColumns.test.ts` :
 
@@ -2319,12 +2338,12 @@ describe("journalColumnSpecs", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
-Commande : `pnpm --filter web test -- src/lib/journalColumns.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/journalColumns.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/journalColumns" ».
 
-- [ ] **Étape 3 : écrire `journalColumns.ts`**
+- [x] **Étape 3 : écrire `journalColumns.ts`**
 
 Créer `apps/web/src/lib/journalColumns.ts` :
 
@@ -2392,12 +2411,12 @@ export function journalColumnSpecs(t: Translate): ColumnSpec<JournalRow>[] {
 }
 ```
 
-- [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
-Commande : `pnpm --filter web test -- src/lib/journalColumns.test.ts`
+Commande : `pnpm --filter web exec vitest run src/lib/journalColumns.test.ts`
 Attendu : SUCCÈS, 3 tests.
 
-- [ ] **Étape 5 : écrire les tests de page qui échouent**
+- [x] **Étape 5 : écrire les tests de page qui échouent**
 
 Dans `apps/web/src/pages/JournalPage.test.tsx` :
 
@@ -2434,7 +2453,8 @@ Dans `apps/web/src/pages/JournalPage.test.tsx` :
     const user = userEvent.setup();
     const header = screen.getByRole("columnheader", { name: /^En cours/ });
     await user.click(within(header).getByRole("button", { name: /^En cours/ }));
-    await user.click(await screen.findByRole("checkbox", { name: "0" }));
+    // By regex: a facet's checkbox is named with its count too ("0 3").
+    await user.click(await screen.findByRole("checkbox", { name: /^0/ }));
     await waitFor(() => expect(screen.queryByText("MQZA Oct02'26 17 Put")).not.toBeInTheDocument());
     await user.keyboard("{Escape}");
     expect(screen.getByText("En cours : 0")).toBeInTheDocument();
@@ -2455,13 +2475,13 @@ Dans `apps/web/src/pages/JournalPage.test.tsx` :
 3. ajouter `waitFor` à l'import de `@testing-library/react` et `window.localStorage.clear();` au
    `beforeEach` du fichier.
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils échouent**
 
-Commande : `pnpm --filter web test -- src/pages/JournalPage.test.tsx`
+Commande : `pnpm --filter web exec vitest run src/pages/JournalPage.test.tsx`
 Attendu : ÉCHEC — le champ s'appelle encore « Filtrer sur le ticker… », les en-têtes n'ont pas de
 bouton.
 
-- [ ] **Étape 7 : réécrire la page**
+- [x] **Étape 7 : réécrire la page**
 
 Dans `apps/web/src/pages/JournalPage.tsx`, remplacer l'entête du fichier et le corps de
 `JournalPage` (les composants `JournalRows` et `JournalTableRow` en bas ne changent pas, sauf la
@@ -2565,20 +2585,20 @@ export function JournalPage({ strategy }: JournalPageProps) {
 Le reste du fichier (`JournalRows`, `JournalTableRow`) est inchangé ; retirer seulement l'import
 `Table, TableBody, TableHead, TableHeader` devenu inutile — `TableCell` et `TableRow` restent.
 
-- [ ] **Étape 8 : retirer la clé i18n du champ**
+- [x] **Étape 8 : retirer la clé i18n du champ**
 
 Dans `apps/web/src/i18n/fr.json` et `en.json`, retirer `journal.filterPlaceholder`.
 
-- [ ] **Étape 9 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 9 : lancer les tests, vérifier qu'ils passent**
 
-Commande : `pnpm --filter web test -- src/pages/JournalPage.test.tsx src/lib/journalColumns.test.ts`
+Commande : `pnpm --filter web exec vitest run src/pages/JournalPage.test.tsx src/lib/journalColumns.test.ts`
 Attendu : SUCCÈS — les treize tests d'origine (dont un adapté) et les trois neufs. Le test
 « shows the seventeen columns in order » prouve que l'ordre et les libellés n'ont pas bougé.
 
 Commande : `grep -rn "journal.filterPlaceholder" apps/web/src`
 Attendu : aucune ligne.
 
-- [ ] **Étape 10 : commit**
+- [x] **Étape 10 : commit**
 
 ```bash
 git add apps/web/src/lib/journalColumns.ts apps/web/src/lib/journalColumns.test.ts apps/web/src/pages/JournalPage.tsx apps/web/src/pages/JournalPage.test.tsx apps/web/src/i18n
@@ -2601,7 +2621,7 @@ MSG
 **Fichiers :**
 - Modifier : `CLAUDE.md`, `docs/specs/2026-09-18-tri-filtres-strategies-design.md`
 
-- [ ] **Étape 1 : réécrire les règles de `CLAUDE.md`**
+- [x] **Étape 1 : réécrire les règles de `CLAUDE.md`**
 
 Dans la section « Règles qui mordent si on les oublie » :
 
@@ -2641,12 +2661,12 @@ Dans la section « Règles qui mordent si on les oublie » :
 | 21 | Recherche, tri et filtres des pages de stratégie, Positions Condors et Autres | fait (2026-09-18) |
 ```
 
-- [ ] **Étape 2 : marquer la spec implémentée**
+- [x] **Étape 2 : marquer la spec implémentée**
 
 Dans `docs/specs/2026-09-18-tri-filtres-strategies-design.md`, remplacer
 `Statut : spécifié (2026-09-18).` par `Statut : implémenté (2026-09-18).`
 
-- [ ] **Étape 3 : vérification complète**
+- [x] **Étape 3 : vérification complète**
 
 Commande : `pnpm check`
 Attendu : SUCCÈS — lint, typage, fraîcheur des types d'API, build et **tous** les tests des
@@ -2654,7 +2674,7 @@ paquets. C'est le seul `pnpm check` du sous-projet.
 
 En cas d'échec, corriger avant de continuer : ne rien commiter de rouge.
 
-- [ ] **Étape 4 : commit**
+- [x] **Étape 4 : commit**
 
 ```bash
 git add CLAUDE.md docs/specs/2026-09-18-tri-filtres-strategies-design.md docs/plans/2026-09-18-tri-filtres-strategies.md
@@ -2666,7 +2686,7 @@ MSG
 )"
 ```
 
-- [ ] **Étape 5 : démarrer l'instance de relecture**
+- [x] **Étape 5 : démarrer l'instance de relecture**
 
 Commande : `pnpm dev:start`
 Attendu : Vite et Django détachés sur les ports du worktree. Relever les deux URL et les donner à

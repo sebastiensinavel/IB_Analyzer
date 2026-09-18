@@ -7,10 +7,11 @@ import {
   type JournalRow,
   type Position,
   type RowKind,
+  type Strategy,
   type WheelHolding,
 } from "@ib/ledger";
 import { contractMultiplier, evaluateBuyback } from "./classify.ts";
-import { DEFAULT_MULTIPLIER, KIND_LABELS, type CoverSource, type PositionKind } from "./constants.ts";
+import { DEFAULT_MULTIPLIER, DETAIL_GROUPS, KIND_LABELS, type CoverSource, type DetailGroupId, type PositionKind } from "./constants.ts";
 import type { AnalyzedPosition, CoverageAllocation, RiskReport } from "./types.ts";
 
 /** A strategy's part of one IB contract: one line of the option or share tables (spec of sub-project 16, §3). */
@@ -49,33 +50,26 @@ export interface WheelShareLine extends WheelHolding {
   callStrikeBelowAssignment: boolean;
 }
 
-export interface WheelPositions {
-  shares: WheelShareLine[];
-  optionSales: StrategyLine[];
-}
-
-export interface LeapsPositions {
-  optionBuys: StrategyLine[];
-  optionSales: StrategyLine[];
-  shares: StrategyLine[];
-}
-
 /** The snapshot's positions and the risk report built from them, index for index. */
 export interface PricedSnapshot {
   positions: readonly Position[];
   report: RiskReport;
 }
 
-export type PositionsStrategy = "wheel" | "leaps";
+/** Every strategy has a positions page; each shows the boxes its lines fill (spec of sub-project 21, §4). */
+export type PositionsStrategy = Strategy;
 
 /**
  * The cover each strategy owns on a sold option: the Wheel's calls lean on its shares and its puts
- * on cash, the LEAPS' calls on the LEAPS. A naked part belongs to the Others journal, so UNCOVERED —
- * never an allocation anyway — is shown by neither page.
+ * on cash, the LEAPS' calls on the LEAPS, a condor's legs on the other legs of the structure.
+ * Others owns none: what is left there is precisely what nothing covers, and UNCOVERED is never an
+ * allocation — the page shows it from the line's own quantity.
  */
 export const STRATEGY_COVER_SOURCES: Record<PositionsStrategy, readonly CoverSource[]> = {
   wheel: ["cash", "stock"],
   leaps: ["leaps"],
+  condors: ["spread"],
+  others: [],
 };
 
 interface Priced {
@@ -87,7 +81,9 @@ const LINE_KIND: Partial<Record<RowKind, PositionKind>> = {
   short_put: "short_put",
   short_call: "short_call",
   long_call: "long_call",
+  long_put: "long_put",
   shares: "long_stock",
+  short_shares: "short_stock",
 };
 
 /**
@@ -114,7 +110,7 @@ function line(group: readonly JournalRow[], priced: Priced | null, sources: read
     weight === 0 || group.some((row) => row.openPrice === null)
       ? null
       : group.reduce((n, row) => n + (row.openPrice as number) * Math.abs(row.quantity as number), 0) / weight;
-  const multiplier = kind === "long_stock" ? 1 : priced ? contractMultiplier(priced.position) : DEFAULT_MULTIPLIER;
+  const multiplier = kind === "long_stock" || kind === "short_stock" ? 1 : priced ? contractMultiplier(priced.position) : DEFAULT_MULTIPLIER;
   const lastPrice = priced?.position.marketPrice ?? null;
   const sold = kind === "short_put" || kind === "short_call";
   return {
@@ -145,21 +141,50 @@ function compareLines(a: StrategyLine, b: StrategyLine): number {
   );
 }
 
-/** The open lines of `strategy` whose kind is one of `kinds`, one line per contract. */
-function strategyLines(rows: readonly JournalRow[], strategy: PositionsStrategy, kinds: readonly RowKind[], priced: Map<string, Priced>): StrategyLine[] {
+/**
+ * A condor is read on its legs: its composite row carries a contract without a right nor a strike,
+ * which no snapshot position answers, so it never prices. Its four legs do. A condor partly bought
+ * back is several composites, each with its legs scaled to the units it covers; grouping by
+ * contract sums them back into what is still open.
+ */
+function flatten(rows: readonly JournalRow[]): JournalRow[] {
+  return rows.flatMap((row) => row.legs ?? [row]);
+}
+
+/** The open lines of `strategy`, one per contract, grouped by the DETAIL_GROUPS the page shows. */
+function linesByGroup(rows: readonly JournalRow[], strategy: PositionsStrategy, priced: Map<string, Priced>): Record<DetailGroupId, StrategyLine[]> {
   const groups = new Map<string, JournalRow[]>();
-  for (const row of rows) {
-    if (row.strategy !== strategy || row.endWhen !== null || row.quantity === null || !kinds.includes(row.kind)) continue;
+  for (const row of flatten(rows)) {
+    if (row.strategy !== strategy || row.endWhen !== null || row.quantity === null) continue;
+    if (LINE_KIND[row.kind] === undefined) continue;
     const id = contractId(row.contract);
     const group = groups.get(id);
     if (group) group.push(row);
     else groups.set(id, [row]);
   }
-  return [...groups.entries()].map(([id, group]) => line(group, priced.get(id) ?? null, STRATEGY_COVER_SOURCES[strategy])).sort(compareLines);
+  const lines = [...groups.entries()].map(([id, group]) => line(group, priced.get(id) ?? null, STRATEGY_COVER_SOURCES[strategy])).sort(compareLines);
+  const byGroup = Object.fromEntries(DETAIL_GROUPS.map((group) => [group.id, [] as StrategyLine[]])) as Record<DetailGroupId, StrategyLine[]>;
+  for (const candidate of lines) {
+    const group = DETAIL_GROUPS.find((entry) => entry.kinds?.has(candidate.kind)) ?? DETAIL_GROUPS[DETAIL_GROUPS.length - 1];
+    byGroup[group.id].push(candidate);
+  }
+  return byGroup;
 }
 
-export function wheelPositions(rows: readonly JournalRow[], snapshot: PricedSnapshot | null): WheelPositions {
+export interface StrategyPositions {
+  /** Wheel only: its assigned shares, which are its long positions — `groups.long` stays empty. */
+  shares: WheelShareLine[];
+  groups: Record<DetailGroupId, StrategyLine[]>;
+}
+
+/**
+ * What a strategy holds open, priced from the snapshot: one line per contract, grouped as the
+ * Positions page groups a portfolio (spec of sub-project 21, §4.1). Computed, never stored.
+ */
+export function strategyPositions(rows: readonly JournalRow[], strategy: PositionsStrategy, snapshot: PricedSnapshot | null): StrategyPositions {
   const priced = pricedByContract(snapshot);
+  const groups = linesByGroup(rows, strategy, priced);
+  if (strategy !== "wheel") return { shares: [], groups };
   const shares = wheelHoldings(rows).map((holding): WheelShareLine => {
     const lastPrice = priced.get(contractId(sharesContract(holding.ticker, holding.currency)))?.position.marketPrice ?? null;
     const { averageAssignmentPrice, averageCallStrike } = holding;
@@ -170,14 +195,6 @@ export function wheelPositions(rows: readonly JournalRow[], snapshot: PricedSnap
       callStrikeBelowAssignment: averageCallStrike !== null && averageAssignmentPrice !== null && averageCallStrike < averageAssignmentPrice,
     };
   });
-  return { shares, optionSales: strategyLines(rows, "wheel", ["short_put", "short_call"], priced) };
-}
-
-export function leapsPositions(rows: readonly JournalRow[], snapshot: PricedSnapshot | null): LeapsPositions {
-  const priced = pricedByContract(snapshot);
-  return {
-    optionBuys: strategyLines(rows, "leaps", ["long_call"], priced),
-    optionSales: strategyLines(rows, "leaps", ["short_call"], priced),
-    shares: strategyLines(rows, "leaps", ["shares"], priced),
-  };
+  // The Wheel's shares are its long positions, shown by their own table: never twice.
+  return { shares, groups: { ...groups, long: [] } };
 }

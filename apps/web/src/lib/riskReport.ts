@@ -1,4 +1,12 @@
-import { COVER_NONE, type AnalyzedPosition, type CoverageAllocation, type CoverSource, type DetailGroupId, type StrategyLine } from "@ib/coverage";
+import {
+  COVER_NONE,
+  type AnalyzedPosition,
+  type CoverageAllocation,
+  type CoverSource,
+  type DetailGroupId,
+  type PositionsStrategy,
+  type StrategyLine,
+} from "@ib/coverage";
 
 export function groupTitleKey(id: DetailGroupId): string {
   return `positions.groups.${id}`;
@@ -86,12 +94,32 @@ export function coverageValues(position: AnalyzedPosition): string[] {
 }
 
 /**
- * The coverage a strategy's positions page shows (spec of sub-project 16, §3.4): on a sold option
- * the strategy's own cover, never UNCOVERED; on a LEAPS bought how much of it covers calls; nothing
- * on shares, whose cover of calls is the Wheel's.
+ * The coverage a strategy's positions page shows (spec of sub-project 16, §3.4, extended by
+ * sub-project 21, §4.5): on a sold option the strategy's own cover — the Wheel's shares and cash,
+ * the LEAPS' calls, a condor's spread —, on a LEAPS or a condor's wing how much of it covers
+ * calls, nothing on shares, whose cover of calls is the Wheel's.
+ *
+ * Others is the exception: what is filed there is precisely what nothing covers, and UNCOVERED is
+ * never an allocation. Its quantity is the naked part, the engine having already split off the
+ * part the Wheel or the LEAPS cover, so the badge is read off the line itself.
  */
-export function strategyCoverageBadges(line: StrategyLine): CoverageBadge[] {
-  if (line.kind === "short_call" || line.kind === "short_put") return allocationBadges(line.coverage);
-  if (line.kind === "long_call") return coverageBadges(line.position);
+export function strategyCoverageBadges(line: StrategyLine, strategy: PositionsStrategy): CoverageBadge[] {
+  if (line.kind === "short_call" || line.kind === "short_put") {
+    if (strategy !== "others") return allocationBadges(line.coverage);
+    return [{ variant: COVERAGE_SOURCE_VARIANT[COVER_NONE], label: `${COVER_NONE} ×${Math.abs(line.quantity)}`, tooltip: null }];
+  }
+  if (line.kind === "long_call" || line.kind === "long_put") return coverageBadges(line.position);
+  return [];
+}
+
+/** The same branches, as filterable values: the filter never reads the badges' text. */
+export function strategyCoverageValues(line: StrategyLine, strategy: PositionsStrategy): string[] {
+  if (line.kind === "short_call" || line.kind === "short_put") {
+    if (strategy === "others") return [COVER_NONE];
+    return [...new Set(line.coverage.map((allocation) => allocation.source))];
+  }
+  if (line.kind === "long_call" || line.kind === "long_put") {
+    return line.position === null ? [] : [line.position.usedQuantity > 0 ? "used" : "unused"];
+  }
   return [];
 }

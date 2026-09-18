@@ -73,8 +73,6 @@
     }
   },
   "positions": {
-    "searchLabel": "Search a ticker",
-    "searchPlaceholder": "Search a ticker: AAPL, AAPL|MSFT…",
     "asOf": "Data as of {{date}}",
     "empty": "No positions yet — import an HTML statement or a Flex query response with Open Positions.",
     "emptyLink": "Go to data sources",
@@ -108,11 +106,9 @@
     }
   },
   "strategyPositions": {
-    "title": { "wheel": "Wheel positions", "leaps": "LEAPS positions" },
+    "title": { "wheel": "Wheel positions", "leaps": "LEAPS positions", "condors": "Condors positions", "others": "Others positions" },
     "groups": {
       "assignedShares": "Assigned shares",
-      "optionSales": "Option sells",
-      "optionBuys": "Option buys",
       "shares": "Shares"
     },
     "columns": {
@@ -126,11 +122,9 @@
       "unrealizedPnl": "Unrealized P&L",
       "coverage": "Coverage"
     },
-    "callBelowAssignment": "Average call strike below the assignment price",
-    "empty": "No open position in this strategy."
+    "callBelowAssignment": "Average call strike below the assignment price"
   },
   "journal": {
-    "filterPlaceholder": "Filter on the ticker…",
     "empty": "No position for this strategy.",
     "noResults": "No position matches.",
     "expand": "Show legs",
@@ -276,6 +270,10 @@
       "corporate_action": "Corporate action",
       "transfer": "Deposit/Withdrawal"
     }
+  },
+  "search": {
+    "label": "Search a ticker",
+    "placeholder": "Search a ticker: AAPL, AAPL|MSFT…"
   },
   "sources": {
     "account": { "title": "Account", "label": "Label", "ibAccountId": "IB account id" },

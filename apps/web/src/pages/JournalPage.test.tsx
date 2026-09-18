@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
@@ -61,6 +61,7 @@ function cells(row: HTMLTableRowElement): string[] {
 }
 
 beforeEach(async () => {
+  window.localStorage.clear();
   await Promise.all([db.transactions.clear(), db.snapshots.clear()]);
   await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
   await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);
@@ -159,10 +160,10 @@ describe("JournalPage", () => {
     expect(cells(await rowFor("AAPL"))[3]).toBe("10");
   });
 
-  it("filters on the ticker and says when nothing matches", async () => {
+  it("searches on the ticker with the shared grammar and says when nothing matches", async () => {
     renderJournal("wheel");
     await screen.findByText("MQZA Oct02'26 17 Put");
-    await userEvent.type(screen.getByLabelText("Filtrer sur le ticker…"), "zzz");
+    await userEvent.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=ZZZ");
     expect(await screen.findByText("Aucune position ne correspond.")).toBeInTheDocument();
   });
 
@@ -177,5 +178,42 @@ describe("JournalPage", () => {
     await screen.findAllByTestId("journal-label");
     expect(screen.queryByLabelText("Reconstitution du portefeuille")).not.toBeInTheDocument();
     expect(screen.queryByText(/Portefeuille reconstitué/)).not.toBeInTheDocument();
+  });
+
+  it("sorts on a column and keeps the legs under their condor", async () => {
+    renderJournal("condors");
+    const row = await rowFor("SPY Aug29'26 IC 620/625/660/665");
+    const user = userEvent.setup();
+    await user.click(within(row).getByRole("button", { name: "Voir les jambes" }));
+    expect(screen.getAllByTestId("journal-leg")).toHaveLength(4);
+    const header = screen.getByRole("columnheader", { name: /^Gain\/Perte/ });
+    await user.click(within(header).getByRole("button", { name: /^Gain\/Perte/ }));
+    await user.click(await screen.findByRole("button", { name: "Croissant" }));
+    // The sort runs on the head rows; the legs stay attached to theirs.
+    expect(screen.getAllByTestId("journal-leg")).toHaveLength(4);
+  });
+
+  it("filters a column and keeps the table, with a way back", async () => {
+    renderJournal("wheel");
+    await screen.findByText("MQZA Oct02'26 17 Put");
+    const user = userEvent.setup();
+    const header = screen.getByRole("columnheader", { name: /^En cours/ });
+    await user.click(within(header).getByRole("button", { name: /^En cours/ }));
+    // By regex: a facet's checkbox is named with its count too ("0 3").
+    await user.click(await screen.findByRole("checkbox", { name: /^0/ }));
+    await waitFor(() => expect(screen.queryByText("MQZA Oct02'26 17 Put")).not.toBeInTheDocument());
+    await user.keyboard("{Escape}");
+    expect(screen.getByText("En cours : 0")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Tout effacer" }));
+    expect(await screen.findByText("MQZA Oct02'26 17 Put")).toBeInTheDocument();
+  });
+
+  it("remembers the view of each journal apart, per account", async () => {
+    window.localStorage.setItem(
+      "ib2:tableView:beta:journal:wheel",
+      JSON.stringify({ v: 1, sort: [], criteria: { ticker: "=NOPE" } }),
+    );
+    renderJournal("wheel");
+    expect(await screen.findByText("Aucune position ne correspond.")).toBeInTheDocument();
   });
 });

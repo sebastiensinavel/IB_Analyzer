@@ -1,14 +1,14 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
-import { DETAIL_GROUPS, groupedPositions } from "@ib/coverage";
+import { DETAIL_GROUPS, groupedPositions, type AnalyzedPosition, type DetailGroupId } from "@ib/coverage";
 import { anchoredBalances } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
-import { Input } from "@ib/ui/input";
 import { CashBalancesCard } from "@/components/CashBalancesCard";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
 import { PositionGroupCard } from "@/components/PositionGroupCard";
+import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountRiskReport } from "@/db/AccountDataProvider";
 import { useCashPoints, useLedger } from "@/db/hooks";
 import { usePositionGroupViews } from "@/hooks/usePositionGroupViews";
@@ -17,7 +17,7 @@ import { BALANCE_CURRENCIES } from "@/lib/currencies";
 import { expiryChoices, reportToday } from "@/lib/expiryFilter";
 import { positionColumnSpecs } from "@/lib/positionColumns";
 import { groupTitleKey } from "@/lib/riskReport";
-import { applyView, EMPTY_VIEW } from "@/lib/tableView";
+import { activeExpiry, filterBoxes, searchBoxes } from "@/lib/tableBoxes";
 import { pageSearchKey } from "@/lib/tableViewStorage";
 
 export function PositionsPage() {
@@ -61,39 +61,30 @@ export function PositionsPage() {
     );
   }
 
-  // Groups empty in the snapshot never show. The page search runs on the ticker, which means the
-  // same thing in every group; a group it empties goes away. A group emptied by its own column
-  // filters stays, so its filters can be cleared — unless an expiry is chosen, which empties the
-  // shares' table by construction: it goes away rather than show a table nothing can fill.
-  const searchedGroups = groupedPositions(report.positions)
-    .filter((group) => group.positions.length > 0)
-    .map((group) => ({ group, searched: applyView(group.positions, specs, EMPTY_VIEW, { text: search.applied, ticker: (position) => position.symbol }) }))
-    .filter(({ searched }) => searched.length > 0);
+  // Which boxes show, and what each one holds: lib/tableBoxes.ts, shared with the strategy pages.
+  const ids = DETAIL_GROUPS.map((group) => group.id);
+  const viewOf = Object.fromEntries(ids.map((id) => [id, views[id].view]));
+  const searched = searchBoxes(
+    groupedPositions(report.positions).map((group) => ({ id: group.id, title: t(groupTitleKey(group.id)), all: group.positions })),
+    specs,
+    { text: search.applied, ticker: (position: AnalyzedPosition) => position.symbol },
+  );
 
   // The buttons follow the ticker search but never the column filters: the expiry chosen would
   // otherwise be the only one left to choose.
-  const choices = expiryChoices(searchedGroups.flatMap(({ searched }) => searched), reportToday());
-  const activeExpiry = choices.find((choice) => DETAIL_GROUPS.every((group) => views[group.id].view.criteria.position === choice.label))?.label ?? null;
-
-  const groups = searchedGroups
-    .map(({ group, searched }) => ({ group, rows: applyView(searched, specs, views[group.id].view) }))
-    .filter(({ rows }) => activeExpiry === null || rows.length > 0);
+  const choices = expiryChoices(searched.flatMap((box) => box.searched), reportToday());
+  const expiry = activeExpiry(choices, ids, viewOf);
+  const boxes = filterBoxes(searched, specs, viewOf, expiry !== null);
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.positions")}</h1>
 
-      <Input
-        value={search.input}
-        onChange={(event) => search.setInput(event.target.value)}
-        placeholder={t("positions.searchPlaceholder")}
-        aria-label={t("positions.searchLabel")}
-        className="font-mono"
-      />
+      <PageSearchInput search={search} />
 
-      <ExpiryFilterBar choices={choices} active={activeExpiry} onPick={setExpiry} />
+      <ExpiryFilterBar choices={choices} active={expiry} onPick={setExpiry} />
 
-      {groups.length === 0 && (
+      {boxes.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <p className="text-sm text-muted-foreground">{t("positions.noResults")}</p>
@@ -101,13 +92,13 @@ export function PositionsPage() {
         </Card>
       )}
 
-      {groups.map(({ group, rows }) => (
+      {boxes.map((box) => (
         <PositionGroupCard
-          key={group.id}
-          title={t(groupTitleKey(group.id))}
-          positions={group.positions}
-          rows={rows}
-          table={views[group.id]}
+          key={box.id}
+          title={box.title as string}
+          positions={box.facetRows}
+          rows={box.rows}
+          table={views[box.id as DetailGroupId]}
           specs={specs}
           sectorOf={sectorOf}
         />

@@ -30,10 +30,17 @@ describe("NAV_SECTIONS", () => {
         section: "nav.sections.strategyCondors",
         items: [
           ["nav.journal", "/accounts/beta/journal/condors"],
+          ["nav.positions", "/accounts/beta/positions/condors"],
           ["nav.stats", "/accounts/beta/stats/condors"],
         ],
       },
-      { section: "nav.sections.strategyOthers", items: [["nav.journal", "/accounts/beta/journal/others"]] },
+      {
+        section: "nav.sections.strategyOthers",
+        items: [
+          ["nav.journal", "/accounts/beta/journal/others"],
+          ["nav.positions", "/accounts/beta/positions/others"],
+        ],
+      },
     ]);
     expect(NAV_SECTIONS.map((section) => section.labelKey)).toEqual([
       "nav.sections.overview",

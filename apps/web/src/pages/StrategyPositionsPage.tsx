@@ -1,8 +1,9 @@
-import { useMemo, type ReactNode } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router";
 import {
-  leapsPositions,
-  wheelPositions,
+  strategyPositions,
+  type DetailGroupId,
   type PositionsStrategy,
   type PricedSnapshot,
   type RiskReport,
@@ -11,16 +12,25 @@ import {
 } from "@ib/coverage";
 import { contractId, formatContractLabel, type JournalRow } from "@ib/ledger";
 import { Badge } from "@ib/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
+import { Card, CardContent } from "@ib/ui/card";
+import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
+import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
 import { PositionRow } from "@/components/PositionRow";
-import { PositionTable, PositionTableHeader } from "@/components/PositionTable";
+import { FilteredTableBox } from "@/components/table/FilteredTableBox";
+import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
 import type { SnapshotRecord } from "@/db/schema";
+import { useStrategyBoxViews } from "@/hooks/useStrategyBoxViews";
+import { usePageSearch, type TableViewState } from "@/hooks/useTableView";
+import { expiryChoices, reportToday } from "@/lib/expiryFilter";
 import { formatMoney, formatPrice } from "@/lib/format";
-import { WHEEL_SHARE_COLUMNS } from "@/lib/positionColumns";
+import { POSITION_COLUMNS, WHEEL_SHARE_COLUMNS } from "@/lib/positionColumns";
 import { strategyCoverageBadges, usedBadge } from "@/lib/riskReport";
+import { STRATEGY_BOXES } from "@/lib/strategyBoxes";
+import { strategyColumnSpecs, wheelShareColumnSpecs } from "@/lib/strategyColumns";
+import { activeExpiry, filterBoxes, searchBoxes, type PreparedBox } from "@/lib/tableBoxes";
+import { pageSearchKey } from "@/lib/tableViewStorage";
 import { cn } from "@/lib/utils";
 
 export type { PositionsStrategy };
@@ -35,116 +45,152 @@ function pricedSnapshot(snapshot: SnapshotRecord | null | undefined, report: Ris
 }
 
 /**
- * A strategy's open positions (spec of sub-project 16, §5.2): its journal's open lines priced from
- * the snapshot, computed from what the shell already holds, never stored.
+ * A strategy's open positions (spec of sub-project 16, §5.2, extended by sub-project 21): its
+ * journal's open lines priced from the snapshot, computed from what the shell already holds, never
+ * stored, and equipped like the Positions page — one ticker search, the strategy's own expiries,
+ * and a sort and filters per box.
  */
 export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrategy }) {
+  const { accountId = "" } = useParams<{ accountId: string }>();
   const { t } = useTranslation();
-  const view = useAccountJournals();
+  const journals = useAccountJournals();
   const { snapshot, report, sectorOf } = useAccountRiskReport();
-  const ready = view.status === "ready" && snapshot !== undefined && report !== undefined;
-  const rows = view.status === "ready" ? view.report.rows : NO_ROWS;
-  const wheel = useMemo(
-    () => (ready && strategy === "wheel" ? wheelPositions(rows, pricedSnapshot(snapshot, report)) : null),
-    [ready, strategy, rows, snapshot, report],
+  const lineSpecs = useMemo(() => strategyColumnSpecs(sectorOf, strategy), [sectorOf, strategy]);
+  const shareSpecs = useMemo(() => wheelShareColumnSpecs(sectorOf), [sectorOf]);
+  const search = usePageSearch(pageSearchKey(accountId, `positions:${strategy}`));
+  const views = useStrategyBoxViews(accountId, strategy, lineSpecs, shareSpecs);
+  const defs = STRATEGY_BOXES[strategy];
+  const ready = journals.status === "ready" && snapshot !== undefined && report !== undefined;
+  const rows = journals.status === "ready" ? journals.report.rows : NO_ROWS;
+  const positions = useMemo(
+    () => (ready ? strategyPositions(rows, strategy, pricedSnapshot(snapshot, report)) : null),
+    [ready, rows, strategy, snapshot, report],
   );
-  const leaps = useMemo(
-    () => (ready && strategy === "leaps" ? leapsPositions(rows, pricedSnapshot(snapshot, report)) : null),
-    [ready, strategy, rows, snapshot, report],
+  const setExpiry = useCallback(
+    (label: string | null) => defs.forEach((def) => views[def.id].setCriterion("position", label)),
+    [defs, views],
   );
 
-  if (!ready) return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
+  if (!ready || positions === null) return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
+
+  const viewOf = Object.fromEntries(defs.map((def) => [def.id, views[def.id].view]));
+  const searchedLines = searchBoxes(
+    defs.filter((def) => def.id !== "shares").map((def) => ({ id: def.id, title: t(def.titleKey), all: positions.groups[def.id as DetailGroupId] })),
+    lineSpecs,
+    { text: search.applied, ticker: (line: StrategyLine) => line.contract.ticker },
+  );
+  const searchedShares = searchBoxes(
+    defs.filter((def) => def.id === "shares").map((def) => ({ id: def.id, title: t(def.titleKey), all: positions.shares })),
+    shareSpecs,
+    { text: search.applied, ticker: (line: WheelShareLine) => line.ticker },
+  );
+
+  // The expiries of this strategy's own options, never the portfolio's: built after the search,
+  // before the filters, and on every searched box — including the ones the expiry empties, so the
+  // button that emptied them stays in the bar to be undone.
+  const choices = expiryChoices(
+    searchedLines.flatMap((box) => box.searched.map((line) => ({ expiry: line.contract.expiry }))),
+    reportToday(),
+  );
+  const expiry = activeExpiry(choices, defs.map((def) => def.id), viewOf);
+  const lines = new Map(filterBoxes(searchedLines, lineSpecs, viewOf, expiry !== null).map((box) => [box.id, box]));
+  const shares = new Map(filterBoxes(searchedShares, shareSpecs, viewOf, expiry !== null).map((box) => [box.id, box]));
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t(`strategyPositions.title.${strategy}`)}</h1>
-      {wheel && (
-        <>
-          <GroupCard title={t("strategyPositions.groups.assignedShares")} empty={wheel.shares.length === 0}>
-            <WheelSharesTable lines={wheel.shares} sectorOf={sectorOf} />
-          </GroupCard>
-          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={wheel.optionSales} sectorOf={sectorOf} />
-        </>
+
+      <PageSearchInput search={search} />
+      <ExpiryFilterBar choices={choices} active={expiry} onPick={setExpiry} />
+
+      {lines.size === 0 && shares.size === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+            <p className="text-sm text-muted-foreground">{t("positions.noResults")}</p>
+          </CardContent>
+        </Card>
       )}
-      {leaps && (
-        <>
-          <LinesCard title={t("strategyPositions.groups.optionBuys")} lines={leaps.optionBuys} sectorOf={sectorOf} />
-          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={leaps.optionSales} sectorOf={sectorOf} />
-          {/* Shares a LEAPS delivered are rare: their card only shows when there are some. */}
-          {leaps.shares.length > 0 && <LinesCard title={t("strategyPositions.groups.shares")} lines={leaps.shares} sectorOf={sectorOf} />}
-        </>
-      )}
+
+      {defs.map((def) => {
+        const holdings = shares.get(def.id);
+        if (holdings) return <SharesBox key={def.id} box={holdings} specs={shareSpecs} table={views[def.id]} sectorOf={sectorOf} />;
+        const box = lines.get(def.id);
+        return box ? <LinesBox key={def.id} box={box} specs={lineSpecs} table={views[def.id]} strategy={strategy} sectorOf={sectorOf} /> : null;
+      })}
     </div>
   );
 }
 
-function GroupCard({ title, empty, children }: { title: string; empty: boolean; children: ReactNode }) {
-  const { t } = useTranslation();
+function LinesBox({
+  box,
+  specs,
+  table,
+  strategy,
+  sectorOf,
+}: {
+  box: PreparedBox<StrategyLine>;
+  specs: ReturnType<typeof strategyColumnSpecs>;
+  table: TableViewState;
+  strategy: PositionsStrategy;
+  sectorOf: SectorOf;
+}) {
   return (
-    <Card aria-label={title}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="overflow-x-auto">
-        {empty ? <p className="text-sm text-muted-foreground">{t("strategyPositions.empty")}</p> : children}
-      </CardContent>
-    </Card>
+    <FilteredTableBox
+      title={box.title}
+      columns={POSITION_COLUMNS}
+      labelKey="positions.columns"
+      minWidth="60rem"
+      specs={specs}
+      facetRows={box.facetRows}
+      rows={box.rows}
+      table={table}
+      emptyKey="positions.noResults"
+      rowKey={(line) => contractId(line.contract)}
+      renderRow={(line) => (
+        <PositionRow
+          values={{
+            contract: formatContractLabel(line.contract),
+            label: line.label,
+            sector: sectorOf(line.contract.ticker),
+            marketValue: line.marketValue,
+            quantity: line.quantity,
+            avgPrice: line.avgPrice,
+            lastPrice: line.lastPrice,
+            unrealizedPnl: line.unrealizedPnl,
+            decision: line.decision,
+            coverage: strategyCoverageBadges(line, strategy),
+          }}
+        />
+      )}
+    />
   );
 }
 
-function LinesCard({ title, lines, sectorOf }: { title: string; lines: readonly StrategyLine[]; sectorOf: SectorOf }) {
+function SharesBox({
+  box,
+  specs,
+  table,
+  sectorOf,
+}: {
+  box: PreparedBox<WheelShareLine>;
+  specs: ReturnType<typeof wheelShareColumnSpecs>;
+  table: TableViewState;
+  sectorOf: SectorOf;
+}) {
   return (
-    <GroupCard title={title} empty={lines.length === 0}>
-      <PositionTable>
-        <PositionTableHeader />
-        <TableBody>
-          {lines.map((line) => (
-            <PositionRow
-              key={contractId(line.contract)}
-              values={{
-                contract: formatContractLabel(line.contract),
-                label: line.label,
-                sector: sectorOf(line.contract.ticker),
-                marketValue: line.marketValue,
-                quantity: line.quantity,
-                avgPrice: line.avgPrice,
-                lastPrice: line.lastPrice,
-                unrealizedPnl: line.unrealizedPnl,
-                decision: line.decision,
-                coverage: strategyCoverageBadges(line),
-              }}
-            />
-          ))}
-        </TableBody>
-      </PositionTable>
-    </GroupCard>
-  );
-}
-
-function WheelSharesTable({ lines, sectorOf }: { lines: readonly WheelShareLine[]; sectorOf: SectorOf }) {
-  const { t } = useTranslation();
-  return (
-    <Table className="min-w-[60rem] table-fixed [&_td]:whitespace-normal [&_th]:whitespace-normal">
-      <colgroup>
-        {WHEEL_SHARE_COLUMNS.map((column) => (
-          <col key={column.key} style={{ width: column.width }} />
-        ))}
-      </colgroup>
-      <TableHeader>
-        <TableRow>
-          {WHEEL_SHARE_COLUMNS.map((column) => (
-            <TableHead key={column.key} className={cn(column.numeric && "text-right")}>
-              {t(`strategyPositions.columns.${column.key}`)}
-            </TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {lines.map((line) => (
-          <WheelShareRow key={`${line.ticker}|${line.currency}`} line={line} sector={sectorOf(line.ticker)} />
-        ))}
-      </TableBody>
-    </Table>
+    <FilteredTableBox
+      title={box.title}
+      columns={WHEEL_SHARE_COLUMNS}
+      labelKey="strategyPositions.columns"
+      minWidth="60rem"
+      specs={specs}
+      facetRows={box.facetRows}
+      rows={box.rows}
+      table={table}
+      emptyKey="positions.noResults"
+      rowKey={(line) => `${line.ticker}|${line.currency}`}
+      renderRow={(line) => <WheelShareRow line={line} sector={sectorOf(line.ticker)} />}
+    />
   );
 }
 
