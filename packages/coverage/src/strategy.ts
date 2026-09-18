@@ -307,6 +307,10 @@ function linesByGroup(
     const takenIn = strategy === "others" ? contributionsTakenIn(id, byStrategy, taken) : [];
     if (rows.length === 0 && takenIn.length === 0) continue;
     const held = rows.reduce((n, r) => n + Math.abs(r.quantity as number), 0);
+    // held sums every open row of the strategy on this contract, not only the sold ones that feed
+    // `migrated` (built from `shorts`, filtered by isSold): a contract id carries a right, a
+    // strike and a secType, so one strategy can never hold both a long and a short row on it, and
+    // `held` is therefore already the sold quantity whenever `migrated` is nonzero.
     if (takenIn.length === 0 && migrated >= held) continue;
     const source = rows[0] ?? firstSoldRow(byStrategy, taken.get(id));
     lines.push(

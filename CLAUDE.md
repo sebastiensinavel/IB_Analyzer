@@ -284,7 +284,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   (`packages/coverage/src/strategy.ts`) retranche d'une vente d'options les contrats que la
   couverture du snapshot ne porte plus, et la page Autres les reprend, fondus par contrat et sans
   badge d'origine — une position nue n'appartient à aucune stratégie. Le total repris ne dépasse
-  jamais l'`uncoveredQuantity` du moteur, moins ce qu'Autres détient déjà, donc la page Autres ne
+  jamais l'`uncoveredQuantity` du moteur, moins ce qu'Autres détient déjà, donc la part migrée ne
   peut pas contredire la barre de titre ; sans snapshot rien ne migre. La quantité d'une telle
   ligne ne vaut alors plus celle du Journal de la stratégie, qui reste le registre des lots : la
   classification se fait une fois, à la vente. La carte « Actions assignées » de la Wheel ne
@@ -389,7 +389,9 @@ qui porte un graphique ECharts attend d'elle-même 1 200 ms avant sa capture, la
 l'animation d'entrée ; `--wait=<ms>` impose un autre délai, sur toute page.
 L'anonymiseur Flex (`packages/ib-parsers/scripts/anonymize-flex.mjs`) accepte `--full`, qui lève
 le plafond de lignes par section pour produire un corpus complet — utilisé pour l'oracle des
-journaux.
+journaux. `pnpm --filter web test -- <motif>` ne filtre pas : le script est `vitest run`, donc
+le `--` de pnpm donne `vitest run -- <motif>` ; la forme qui filtre est `npx vitest run <motif>`
+depuis `apps/web`.
 
 **`apps/api`** : un unique workspace uv à la racine du dépôt (`pyproject.toml`, `uv.lock`),
 membres `apps/api` et `apps/tws-agent`. `pnpm test:api` (`uv run

@@ -196,6 +196,40 @@ describe("strategyPositions — the Wheel's shares card counts only the covered 
     ]);
     expect(wheelPositions(rows, snapshot).shares[0]).toMatchObject({ openCallContracts: 1, coveredShares: 100 });
   });
+
+  it("reads openCallContracts 0 and a null average strike, never 0, once the Wheel's only call has migrated whole", () => {
+    // A non-Wheel call at a nearer expiry sorts first in coverShortCalls and takes the 100 shares,
+    // leaving the Wheel's own call naked: migratedContracts hands it whole to Others, so it drops
+    // out of groups.optionSells and coveredCallsByTicker falls back to its zero default.
+    const NEARER_CALL = opt("MQZA", "C", 22, "2026-09-25");
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+      row({ id: "o#1", contract: NEARER_CALL, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.4 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 22, expiry: "2026-09-25", quantity: -1, avgPrice: 0.4, marketPrice: 0.3, marketValue: -30 }),
+      option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -1, avgPrice: 0.5, marketPrice: 1, marketValue: -100 }),
+    ]);
+    const { shares: held, optionSales } = wheelPositions(rows, snapshot);
+    expect(optionSales).toEqual([]);
+    expect(held[0]).toMatchObject({ openCallContracts: 0, averageCallStrike: null, coveredShares: 0 });
+  });
+
+  it("also reads null, never 0, from a surviving call whose contract carries no strike (unstruck)", () => {
+    // A contract without a strike has no matching snapshot position, so it never migrates and
+    // stays in groups.optionSells whole: coveredCallsByTicker marks it unstruck instead of
+    // averaging a strike of 0 into the card.
+    const UNSTRUCK: ContractKey = { ticker: "MQZA", secType: "OPT", right: "C", strike: null, expiry: "2026-11-20", currency: "USD" };
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: UNSTRUCK, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+    ];
+    const snapshot = priced([stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 })]);
+    const { shares: held } = wheelPositions(rows, snapshot);
+    expect(held[0]).toMatchObject({ openCallContracts: 1, averageCallStrike: null, coveredShares: 100 });
+  });
 });
 
 describe("leapsPositions", () => {
@@ -450,6 +484,21 @@ describe("strategyPositions — Others takes the naked part in", () => {
     const rows = [row({ id: "o#1", contract: MARA_CALL_15, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.3 })];
     const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -1, marketPrice: 1, marketValue: -100 })]);
     expect(othersSales(rows, snapshot)[0]).toMatchObject({ quantity: -1, avgPrice: 0.3 });
+  });
+
+  it("takes in both strategies migrating on the same uncovered contract, one contribution each at its own price", () => {
+    // Wheel −1 at 0.5, LEAPS −1 at 0.9, nothing covers either: contributionsTakenIn must push one
+    // contribution per covered strategy still holding the contract, not stop after the first —
+    // otherwise Others would under-report the quantity and the conservation invariant would break.
+    const TWO_STRAT_CALL = opt("NFLX", "C", 30, "2026-12-18");
+    const rows = [
+      row({ contract: TWO_STRAT_CALL, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+      row({ id: "l#1", contract: TWO_STRAT_CALL, strategy: "leaps", kind: "short_call", quantity: -1, openPrice: 0.9 }),
+    ];
+    const snapshot = priced([option({ symbol: "NFLX", right: "C", strike: 30, expiry: "2026-12-18", quantity: -2, marketPrice: 1, marketValue: -200 })]);
+    expect(othersSales(rows, snapshot)).toEqual([expect.objectContaining({ quantity: -2, avgPrice: 0.7 })]);
+    expect(wheelPositions(rows, snapshot).optionSales).toEqual([]);
+    expect(leapsPositions(rows, snapshot).optionSales).toEqual([]);
   });
 });
 

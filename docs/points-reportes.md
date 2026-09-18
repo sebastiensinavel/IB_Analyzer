@@ -883,6 +883,18 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   allouant toujours `cash` sans regarder le cash disponible ; un manque de cash reste un problème
   global du rapport. La règle est écrite sur les ventes d'options en général et suivra le moteur
   s'il change.
+- **La page Autres peut afficher `UNCOVERED` sur une de ses propres lignes alors que la barre de
+  titre est verte.** Cas vérifié contre le moteur : un call vendu à nu — classé `others` à la
+  vente, le journal ne reclasse jamais — puis 100 actions du sous-jacent achetées ensuite.
+  `buildRiskReport` rend `allocations: [{source:"stock", quantity:1}]` et `uncoveredQuantity: 0`,
+  donc le verdict Couverture de la barre de titre passe au vert, tandis que la page Autres
+  affiche toujours `UNCOVERED ×1` : `strategyCoverageBadges(line, "others")`
+  (`apps/web/src/lib/riskReport.ts`) lit la quantité propre de la ligne et ne regarde jamais
+  `line.coverage`. Ce n'est pas une régression de ce sous-projet : le comportement date du
+  sous-projet 16, `migratedContracts` ne protège que la part qu'il fait migrer, jamais les lignes
+  qu'Autres détenait déjà. Le corriger demanderait l'opération inverse — sortir une ligne
+  d'Autres pour la rendre à la stratégie qui la couvre désormais —, hors du périmètre de ce
+  sous-projet.
 
 ---
 

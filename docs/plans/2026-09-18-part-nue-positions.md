@@ -373,6 +373,11 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
 }
 ```
 
+Note (code livré) : `unrealizedPnl` ci-dessus se lit `(lastPrice − avgPrice) × quantity ×
+multiplier`, mais le code livré calcule `marketValue − avgPrice × quantity × multiplier` —
+`marketValue` étant déjà publié par la même ligne. Les deux formules sont mathématiquement
+identiques ; la seconde évite l'artefact de fraction binaire d'un `avgPrice` comme 0,7.
+
 b) Ajouter l'index des lignes ouvertes et le partage, au-dessus de `linesByGroup` :
 
 ```ts
