@@ -197,10 +197,15 @@ describe("coverage of a call shared between the Wheel and the LEAPS", () => {
 
 const SPY = (right: "C" | "P", strike: number) => opt("SPY", right, strike, "2026-08-29");
 
-/** One open condor: a composite row carrying its four legs, as the journals engine builds it. */
-function condor(overrides: Partial<JournalRow> = {}): JournalRow {
+/**
+ * One condor: a composite row carrying its four legs, as the journals engine builds it. `legId`
+ * distinguishes the legs of two composites in the same test — a real journals engine never gives
+ * two rows the same id — and `legOverrides` lets a caller close every leg (and, separately, the
+ * composite itself via `overrides`) to build a bought-back condor.
+ */
+function condor(overrides: Partial<JournalRow> = {}, legOverrides: Partial<JournalRow> = {}, legId = "1"): JournalRow {
   const leg = (contract: ContractKey, quantity: number, openPrice: number) =>
-    row({ id: `leg${contract.strike}#1`, contract, strategy: "condors", kind: quantity < 0 ? (contract.right === "P" ? "short_put" : "short_call") : contract.right === "P" ? "long_put" : "long_call", quantity, openPrice });
+    row({ id: `leg${contract.strike}#${legId}`, contract, strategy: "condors", kind: quantity < 0 ? (contract.right === "P" ? "short_put" : "short_call") : contract.right === "P" ? "long_put" : "long_call", quantity, openPrice, ...legOverrides });
   return row({
     id: "ic#1",
     strategy: "condors",
@@ -235,11 +240,16 @@ describe("strategyPositions — condors", () => {
     expect(groups.other).toEqual([]);
   });
 
-  it("sums the legs of a partly bought-back condor, which the engine splits into two composites", () => {
+  it("reads only the still-open composite of a partly bought-back condor", () => {
+    const closeWhen = "2026-08-20T14:30:00.000Z";
+    // The engine splits a partial buyback into two composites: `second`, closed (every leg and
+    // the composite itself carry an `endWhen`), and `first`, still open. Only `first` should
+    // count — a test that just summed two open composites would pass even without the
+    // `endWhen !== null` guard in `linesByGroup`.
     const first = condor();
-    const second = condor({ id: "ic#2" });
+    const second = condor({ id: "ic#2", endWhen: closeWhen }, { endWhen: closeWhen }, "2");
     const { groups } = strategyPositions([first, second], "condors", null);
-    expect(groups.optionSells.find((line) => line.contract.strike === 625)!.quantity).toBe(-2);
+    expect(groups.optionSells.find((line) => line.contract.strike === 625)!.quantity).toBe(-1);
   });
 
   it("gives a sold leg the spread cover, and the wings their used badge", () => {

@@ -266,20 +266,20 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   quel compte** détient une action ou une option du ticker (`heldTickers`, même lecture que
   l'ajout par import) ; 0 sinon, y compris sans aucun snapshot.
 - **Les positions d'une stratégie sont une vue calculée, jamais stockée** : `strategyPositions`
-  (`packages/coverage/src/strategy.ts`) lit les lignes de journal ouvertes
-  (`endWhen === null`) et les apparie au snapshot par `contractId(row.contract)`, la clé de la
-  réconciliation. Une ligne montre la part de la stratégie — quantité et prix d'entrée du journal,
-  dernier prix d'IB — et, de la couverture IB, seulement celle de la stratégie
-  (`STRATEGY_COVER_SOURCES`) : `cash` et `stock` pour une vente Wheel, `leaps` pour une vente
-  LEAPS, jamais `UNCOVERED`, la part nue d'un call relevant d'Autres ; un LEAPS acheté garde son
-  « used x/y », des actions LEAPS n'ont aucun badge. Les actions Wheel ont leur propre couverture, `coveredShares` (`wheelHoldings`,
-  `packages/ledger/src/journals/holdings.ts`). Les quatre stratégies ont leur page (`positions/wheel`, `/leaps`, `/condors`, `/others`), servies
-  par un seul composant : ses encadrés sont déclarés dans `STRATEGY_BOXES`
-  (`apps/web/src/lib/strategyBoxes.ts`) et un encadré sans ligne ne se rend pas. **Un condor se lit
-  sur ses jambes** — son composite n'a ni right ni strike, donc rien ne le valorise — et les actions
-  de la Wheel restent dans leur table propre, jamais aussi dans le groupe des positions longues.
-  `STRATEGY_COVER_SOURCES` donne `spread` aux Condors et rien à Autres, dont une vente porte
-  `UNCOVERED ×|quantité|` lu sur la ligne elle-même.
+  (`packages/coverage/src/strategy.ts`) lit les lignes de journal ouvertes (`endWhen === null`) et
+  les apparie au snapshot par `contractId(row.contract)`, la clé de la réconciliation. Une ligne
+  montre la part de la stratégie — quantité et prix d'entrée du journal, dernier prix d'IB — et, de
+  la couverture IB, seulement celle de la stratégie (`STRATEGY_COVER_SOURCES`) : `cash` et `stock`
+  pour une vente Wheel, `leaps` pour une vente LEAPS, jamais `UNCOVERED`, la part nue d'un call
+  relevant d'Autres ; un LEAPS acheté garde son « used x/y », des actions LEAPS n'ont aucun badge.
+  Les actions Wheel ont leur propre couverture, `coveredShares` (`wheelHoldings`,
+  `packages/ledger/src/journals/holdings.ts`). Les quatre stratégies ont leur page
+  (`positions/wheel`, `/leaps`, `/condors`, `/others`), servies par un seul composant : ses
+  encadrés sont déclarés dans `STRATEGY_BOXES` (`apps/web/src/lib/strategyBoxes.ts`) et un encadré
+  sans ligne ne se rend pas. **Un condor se lit sur ses jambes** — son composite n'a ni right ni
+  strike, donc rien ne le valorise — et les actions de la Wheel restent dans leur table propre,
+  jamais aussi dans le groupe des positions longues. `STRATEGY_COVER_SOURCES` donne `spread` aux
+  Condors et rien à Autres, dont une vente porte `UNCOVERED ×|quantité|` lu sur la ligne elle-même.
 - **La suggestion de position mesure en valeur de risque, jamais en capital** :
   `positionSuggestions` (`packages/coverage/src/suggestions.ts`) additionne `riskValue` des positions
   du compte affiché, par ticker et par secteur de la table sectorielle, et porte

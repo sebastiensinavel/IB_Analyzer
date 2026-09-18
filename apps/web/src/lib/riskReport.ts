@@ -119,7 +119,7 @@ export function strategyCoverageValues(line: StrategyLine, strategy: PositionsSt
     return [...new Set(line.coverage.map((allocation) => allocation.source))];
   }
   if (line.kind === "long_call" || line.kind === "long_put") {
-    return line.position === null ? ["unused"] : [line.position.usedQuantity > 0 ? "used" : "unused"];
+    return line.position === null ? [] : [line.position.usedQuantity > 0 ? "used" : "unused"];
   }
   return [];
 }

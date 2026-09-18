@@ -29,7 +29,7 @@ export interface PreparedBox<Row> extends SearchedBox<Row> {
 /**
  * The boxes the page search leaves: a box the search empties never renders, a box with no line
  * at all being the degenerate case of the same rule — the strategy holds nothing of that kind
- * even before a search runs. Losing the box coins nobody: the search means the same thing in
+ * even before a search runs. Losing the box traps nobody: the search means the same thing in
  * every box and is cleared from the top of the page, unlike a column filter.
  */
 export function searchBoxes<Row>(

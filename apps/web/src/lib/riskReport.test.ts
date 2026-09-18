@@ -184,8 +184,12 @@ describe("strategyCoverageValues", () => {
     expect(strategyCoverageValues(line({ kind: "short_call", quantity: -3, coverage: [] }), "others")).toEqual(["UNCOVERED"]);
     const bought = position({ kind: "long_call", quantity: 8, usedQuantity: 8 });
     expect(strategyCoverageValues(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought }), "leaps")).toEqual(["used"]);
-    const unusedWing = line({ kind: "long_put", label: "buy of put", quantity: 1, position: null });
-    expect(strategyCoverageValues(unusedWing, "condors")).toEqual(["unused"]);
+    // No position at all — the journal reads the wing open, the snapshot does not carry it — so
+    // both halves of the mirror stay empty: an empty badge cell (nothing to render) and an empty
+    // filterable value (facetValues files it under "—", the rule for any absent value).
+    const wingWithoutPosition = line({ kind: "long_put", label: "buy of put", quantity: 1, position: null });
+    expect(strategyCoverageBadges(wingWithoutPosition, "condors")).toEqual([]);
+    expect(strategyCoverageValues(wingWithoutPosition, "condors")).toEqual([]);
     const held = position({ kind: "long_stock", quantity: 100, usedQuantity: 100 });
     expect(strategyCoverageValues(line({ kind: "long_stock", label: "long position", quantity: 100, position: held }), "wheel")).toEqual([]);
   });

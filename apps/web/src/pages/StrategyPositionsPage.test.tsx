@@ -232,8 +232,11 @@ const TSLA_CALL: Transaction = {
 };
 
 /**
- * The open QQQ condor of the demo ledger, priced. All four legs: the coverage engine only calls a
- * leg `spread` when it sees the whole defined-risk structure in the snapshot.
+ * The open QQQ condor of the demo ledger, priced. All four legs, because this reproduces the
+ * real condor of the demo ledger, not because the engine requires them: `pairLegs`
+ * (`packages/coverage/src/coverage.ts`) already pairs a single short leg with a single long leg
+ * into a `call spread` or `put spread`, and only calls the pair an `iron condor` once both sides
+ * of the same expiry are paired.
  */
 const QQQ_LEG = { ...aapl, symbol: "QQQ", secType: "OPT" as const, multiplier: 100, expiry: "2026-10-16" };
 const QQQ_POSITIONS: Position[] = [

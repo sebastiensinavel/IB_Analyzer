@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
-import type { StrategyLine, WheelShareLine } from "@ib/coverage";
+import type { AnalyzedPosition, StrategyLine, WheelShareLine } from "@ib/coverage";
 import { POSITION_COLUMNS, WHEEL_SHARE_COLUMNS } from "@/lib/positionColumns";
 import { strategyColumnSpecs, wheelShareColumnSpecs } from "@/lib/strategyColumns";
 
 const CONTRACT = { ticker: "XOM", secType: "OPT", right: "P" as const, strike: 100, expiry: "2026-03-20", currency: "USD" };
+
+function analyzedPosition(overrides: Partial<AnalyzedPosition> = {}): AnalyzedPosition {
+  return {
+    description: "TEST", kind: "long_put", label: "buy of put", marketValue: 0, quantity: 1,
+    avgPrice: 1, lastPrice: 1, unrealizedPnl: 0, action: "to evaluate", decision: null,
+    symbol: "XOM", secType: "OPT", right: "P", strike: 100, expiry: "2026-03-20", multiplier: 100,
+    allocations: [], uncoveredQuantity: 0, usedQuantity: 0, requiredCash: 0, riskNotes: [], ...overrides,
+  };
+}
 
 function line(overrides: Partial<StrategyLine> = {}): StrategyLine {
   return {
@@ -45,10 +54,14 @@ describe("strategyColumnSpecs", () => {
 
   it("filters a condor's sold leg on its spread allocation and its wing on its use", () => {
     const sold = line({ coverage: [{ source: "spread", quantity: 1, detail: "" }] });
-    const wing = line({ kind: "long_put", quantity: 1, position: null });
+    const usedWing = line({ kind: "long_put", quantity: 1, position: analyzedPosition({ usedQuantity: 1 }) });
     const specs = Object.fromEntries(strategyColumnSpecs(() => null, "condors").map((spec) => [spec.key, spec]));
     expect(specs.coverage.value(sold)).toEqual(["spread"]);
-    expect(specs.coverage.value(wing)).toEqual(["unused"]);
+    expect(specs.coverage.value(usedWing)).toEqual(["used"]);
+    // No position at all — the journal reads the wing open, the snapshot does not carry it — files
+    // under no filterable value, same as the empty badge cell (riskReport.test.ts mirrors this).
+    const wingWithoutPosition = line({ kind: "long_put", quantity: 1, position: null });
+    expect(specs.coverage.value(wingWithoutPosition)).toEqual([]);
   });
 });
 
