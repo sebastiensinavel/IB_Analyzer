@@ -9,7 +9,7 @@ par P/L latent, ni isoler les montants supérieurs à 1 000, ni demander deux ti
 
 Ce sous-projet donne à l'Historique et à Positions :
 
-- un **tri** par clic sur l'en-tête, tri secondaire compris ;
+- un **tri** choisi dans le panneau de la colonne, tri secondaire compris ;
 - un **filtre par colonne**, écrit dans une petite grammaire (`>100`, `100..500`, `AAPL|MSFT`,
   `—`), ou coché dans la liste des valeurs présentes pour une colonne à valeurs fixes ;
 - une **recherche de page** par ticker, commune à tous les tableaux de la page ;
@@ -222,16 +222,24 @@ Les lignes passées sont, **par décision** :
   la liste parce qu'un autre filtre a vidé ses lignes ;
 - Positions : les positions du groupe dans le snapshot, avant recherche et filtres.
 
-### 3.6 Clics de tri
+### 3.6 Tri demandé par le panneau
 
-- Clic simple sur une colonne : si elle est la **seule** clé, `asc` → `desc` → aucune clé ;
-  sinon elle devient la seule clé, en `asc`.
-- Shift+clic : ajoute la colonne en fin de clés en `asc`, ou fait avancer la sienne
-  `asc` → `desc` → retirée, sans toucher aux autres.
-- L'en-tête porte `aria-sort` sur la première clé, et affiche ↑/↓ ; avec plusieurs clés, un
-  numéro d'ordre (①, ②…).
+Le tri ne se demande pas par un clic sur l'en-tête : il se choisit dans le panneau de la colonne
+(§5.2), qui appelle `applySort(sort, column, dir, additive)`. `dir` est `asc`, `desc` ou `null`
+(« Réinitialiser le tri »), `additive` vient de la touche Maj :
 
-Fonction pure `nextSort(sort, column, additive)`, testée à part.
+- non additif, `dir` donné : la colonne devient la **seule** clé, dans ce sens ;
+- non additif, `dir` à `null` : le tri se **vide** entièrement ;
+- additif, colonne déjà clé : sa direction est remplacée sur place, ou la clé est **retirée** si
+  `dir` est `null`, les autres clés ne bougeant pas ;
+- additif, colonne inconnue : la clé est **ajoutée en fin**, ou, avec `dir` à `null`, rien ne change.
+
+L'en-tête porte `aria-sort` sur la première clé. Une colonne triable montre en permanence son
+indicateur, à côté du libellé : un double chevron atténué tant qu'elle n'est pas triée, la flèche
+du sens ↑/↓ dès qu'elle l'est, suivie du numéro d'ordre quand il y a plusieurs clés. Une colonne
+non triable n'a pas d'indicateur du tout.
+
+Fonction pure `applySort(sort, column, dir, additive)`, testée à part.
 
 ---
 
@@ -268,9 +276,9 @@ Valeur JSON `{ "v": 1, "sort": [...], "criteria": {...} }` ; la recherche de pag
 
 Hooks de `apps/web/src/hooks/`. Ils lisent l'état à chaque changement de clé — changer de compte
 relit la vue de l'autre compte —, exposent `view`, `setCriterion(column, value)`,
-`toggleSort(column, additive)`, `clearColumn(column)`, `clearAll()`, et écrivent à chaque
+`setSort(column, dir, additive)`, `clearColumn(column)`, `clearAll()`, et écrivent à chaque
 changement valide. La saisie texte en cours, éventuellement invalide, reste un état local du
-popover ; seul un critère valide atteint le hook.
+panneau ; seul un critère valide atteint le hook.
 
 La recherche de page garde la temporisation actuelle de 300 ms avant d'être appliquée et
 enregistrée.
@@ -293,20 +301,30 @@ réécrits en relatifs (`packages/ui/README.md`).
 
 ### 5.2 `ColumnHeader`
 
-`apps/web/src/components/table/ColumnHeader.tsx`, rendu dans un `TableHead` :
+`apps/web/src/components/table/ColumnHeader.tsx`, rendu dans un `TableHead` : la cellule entière
+est **un seul bouton**, libellé et indicateur de tri (§3.6) compris, et ce bouton ouvre **un seul
+panneau**, qui porte le tri et le filtre de la colonne :
 
-- le libellé est un `button` de tri quand la colonne est triable, avec la flèche et le numéro
-  d'ordre (§3.6) ; texte simple sinon ;
-- à côté, une icône entonnoir (`lucide-react`) ouvre un popover ; pleine et colorée
-  (`text-primary`) quand la colonne a un critère valide ;
-- popover d'une colonne `text`, `number` ou `date` : un champ, une aide d'une ligne propre au
+- rangée de tri : « Croissant » et « Décroissant », le sens en vigueur marqué (`aria-pressed`),
+  puis « Réinitialiser le tri » quand la colonne est une clé ; choisir referme le panneau ;
+- un séparateur, puis le titre « Filtre » ;
+- filtre d'une colonne `text`, `number` ou `date` : un champ, une aide d'une ligne propre au
   type (`>100 · 10..20 · A|B · —`), le message d'erreur en rouge, un bouton « Effacer » ;
-  Entrée ferme le popover ;
-- popover d'une colonne `enum` : une case par valeur de `facetValues`, libellé et nombre, puis
-  « Effacer ».
+  Entrée ferme le panneau. Le champ ne prend le focus à l'ouverture que sur une colonne **non
+  triable**, dont le panneau ne contient que lui ;
+- filtre d'une colonne `enum` : une case par valeur de `facetValues`, libellé et nombre, puis
+  « Effacer » ;
+- en bas, la ligne d'indice sur Maj+clic, quand la colonne est triable.
 
-La largeur des colonnes ne change pas : icône et flèche tiennent dans la cellule, le libellé se
-tronque (`truncate`) comme aujourd'hui dans l'Historique et passe à la ligne dans Positions.
+Rien dans l'en-tête ne signale un filtre actif : les pastilles d'`ActiveFilters` (§5.3) s'en
+chargent.
+
+Les largeurs des deux tableaux sont rééquilibrées pour le chevron permanent : chaque libellé
+français — les plus longs — tient entier à 1280 px, en une ligne dans l'Historique
+(`HISTORY_COLUMNS`) et en deux au plus dans Positions (`POSITION_COLUMNS`), sans qu'un mot déborde
+sur la colonne voisine. La place vient de `symbol` et `dateTime` dans l'Historique, de `position`
+dans Positions ; chaque liste somme toujours 100 %. `WHEEL_SHARE_COLUMNS` n'a pas d'en-tête
+interactif et ne change pas.
 
 ### 5.3 `ActiveFilters`
 
@@ -323,7 +341,7 @@ colonne `enum`.
 
 - **Barre du haut** : la recherche de page (`history.searchPlaceholder`), puis la liste **Type**,
   `Select` base-ui à choix multiple, dont les options sont `facetValues` de la colonne `type`
-  (§3.5). Elle lit et écrit **le même critère** que le popover de la colonne Type : cocher dans
+  (§3.5). Elle lit et écrit **le même critère** que le panneau de la colonne Type : cocher dans
   l'une coche dans l'autre.
 - Champs de date, `Select` simple, raccourcis de période et `periodPresets.ts` sont retirés.
 - Sous la barre, `ActiveFilters` ; la carte du tableau garde `flex-1` dans la colonne à hauteur
@@ -339,9 +357,9 @@ colonne `enum`.
   recherche, de critère ou de tri remet `scrollTop` à 0 dans un `useLayoutEffect` sur une
   `resetKey` (`JSON.stringify([search, view])`) et émet un événement `scroll` synchrone pour que
   le virtualiseur suive avant la peinture. Remonter le tableau à chaque frappe fermerait le
-  popover de filtre, qui vit dans son en-tête. Une ligne arrivée en direct ne change pas la
+  panneau de colonne, qui vit dans son en-tête. Une ligne arrivée en direct ne change pas la
   `resetKey`.
-- **Aucun résultat** : le tableau reste affiché — en-têtes, popovers, `ActiveFilters` — et
+- **Aucun résultat** : le tableau reste affiché — en-têtes, panneaux, `ActiveFilters` — et
   `history.noResults` s'affiche dans son corps, sous l'en-tête. La carte « Aucun résultat » qui
   remplaçait le tableau disparaît. `HistoryTable` reçoit donc aussi zéro ligne.
 
@@ -365,9 +383,12 @@ colonne `enum`.
 
 ### 5.6 Traductions
 
-`apps/web/src/i18n/{fr,en}.json`, nouvel espace `tableFilter` : titres des popovers, aides par
-type, « Effacer », « Tout effacer », « — (vide) », libellés de tri pour lecteur d'écran, codes
-d'erreur. `history.searchPlaceholder`, `history.kindFilter` (libellé de la liste multiple),
+`apps/web/src/i18n/{fr,en}.json`, nouvel espace `tableFilter` : `panel` (le nom accessible du
+panneau de colonne), `sortAsc`, `sortDesc`, `sortReset`, `sortAddHint` (l'indice sur Maj+clic :
+il ajoute au tri, ou n'en retire que cette colonne), `filterSection`, aides par type, « Effacer »,
+« Tout effacer », « — (vide) », libellés de tri pour lecteur d'écran, codes d'erreur. Pas de clé
+`tableFilter.open` : l'en-tête n'a plus d'icône d'ouverture à nommer, le bouton du libellé ouvre
+le panneau. `history.searchPlaceholder`, `history.kindFilter` (libellé de la liste multiple),
 `positions.searchPlaceholder`. Suppression de `history.presets.*`, `history.startDate`,
 `history.endDate`, `history.allKinds` et `history.filterPlaceholder`, `positions.filterPlaceholder`
 s'ils ne servent plus.
@@ -386,8 +407,9 @@ s'ils ne servent plus.
 - `tableView.test.ts` : `applyView` (ET entre colonnes, critère invalide ignoré, colonne inconnue
   ignorée, recherche de page sur le ticker, tri stable, `null` en fin dans les deux sens, tri
   secondaire, `95` avant `150`, enum sur libellé, colonne non triable ignorée) ; `facetValues`
-  (comptes, `null` en dernier, valeur cochée absente à 0, multi-valuée) ; `nextSort` (cycle simple,
-  remplacement par une autre colonne, ajout et retrait par Shift).
+  (comptes, `null` en dernier, valeur cochée absente à 0, multi-valuée) ; `applySort` (la colonne
+  devient seule clé, `null` non additif qui vide le tri, ajout en fin, direction remplacée sur
+  place, retrait d'une seule clé par Shift, colonne inconnue avec `null` sans effet).
 - `tableViewStorage.test.ts` : aller-retour, JSON illisible, `v` inconnu, colonne inconnue et
   critère invalide ignorés, vue vide qui supprime la clé, `localStorage` qui lève, isolement
   alpha/beta, `clearTableViews` qui épargne un compte dont l'id a le même préfixe.
@@ -397,7 +419,7 @@ s'ils ne servent plus.
 **Pages (Vitest, `fake-indexeddb`, ledger et snapshot semés en base, jamais de hooks moqués)**
 
 - `HistoryPage.test.tsx` : tri par montant puis retour à l'ordre par défaut ; filtre `>1000` ;
-  liste Type du haut et popover de colonne synchronisés ; valeurs de Type comptées sur tout le
+  liste Type du haut et panneau de colonne synchronisés ; valeurs de Type comptées sur tout le
   ledger ; barre temporelle absente sous un tri, présente sans tri ; solde d'une ligne identique
   filtrée ou non ; filtre qui vide tout garde en-têtes, pastilles et « Tout effacer » ; état
   retrouvé après remontage ; état distinct entre deux comptes ; recherche `AAPL|MSFT` ; saisie
@@ -414,7 +436,7 @@ s'ils ne servent plus.
 `packages/ledger/src/filter.test.ts` (ceux de `dayOf` restent).
 
 **Visuel** : `run-frontend` sur `--seed`, Historique et Positions en fr, clair et sombre, avec un
-popover ouvert et des pastilles actives.
+panneau de colonne ouvert et des pastilles actives.
 
 Pas de Playwright : aucune interaction avec le serveur n'est concernée.
 

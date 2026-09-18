@@ -161,8 +161,8 @@ identifiant de compte, un jeton ou un montant réel.
   passe à la ligne : la barre place un mois à `index × hauteur` sans rien mesurer, une ligne plus
   haute la fausserait. La barre suit les lignes filtrées. Un changement de compte remonte le
   tableau (`key`) ; un changement de recherche, de critère ou de tri le ramène en haut par
-  `resetKey` sans le remonter, pour ne pas fermer le popover de filtre de l'en-tête ; une ligne
-  arrivée en direct ne fait ni l'un ni l'autre. La barre temporelle n'est rendue que sans tri. La
+  `resetKey` sans le remonter, pour ne pas fermer le panneau de colonne de l'en-tête, qui porte
+  le tri et le filtre ; une ligne arrivée en direct ne fait ni l'un ni l'autre. La barre temporelle n'est rendue que sans tri. La
   position s'écrit dans `scrollTop`, jamais par `scrollToOffset` (jsdom n'a pas `scrollTo`).
 - **Tri et filtres des tableaux sont un état d'affichage en `localStorage`, jamais en IndexedDB ni
   sur le serveur** : une clé par compte et par tableau (`ib2:tableView:<compte>:history`,
