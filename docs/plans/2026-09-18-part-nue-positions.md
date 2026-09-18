@@ -489,7 +489,7 @@ git commit -m "Les lignes d'une stratégie portent leur quantité couverte"
 - Produit : rien de nouveau à l'extérieur. `strategyPositions(rows, "others", snapshot)` rend
   désormais, dans `groups.optionSells`, une ligne par contrat nu, fondue.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 ```ts
 describe("strategyPositions — Others takes the naked part in", () => {
@@ -541,12 +541,12 @@ describe("strategyPositions — Others takes the naked part in", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: FAIL — le premier test reçoit `[]` : la page Autres ne voit rien migrer.
 
-- [ ] **Step 3: Écrire l'implémentation**
+- [x] **Step 3: Écrire l'implémentation**
 
 Dans `linesByGroup`, remplacer la boucle par une version qui, pour `others`, ajoute les
 contributions venues d'ailleurs :
@@ -610,12 +610,12 @@ function firstSoldRow(byStrategy: ReadonlyMap<PositionsStrategy, JournalRow[]>, 
 }
 ```
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: PASS, tout le fichier.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage/src/strategy.ts packages/coverage/src/strategy.test.ts docs/plans/2026-09-18-part-nue-positions.md

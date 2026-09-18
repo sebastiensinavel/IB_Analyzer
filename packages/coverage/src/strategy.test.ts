@@ -364,6 +364,54 @@ describe("migratedContracts", () => {
   });
 });
 
+describe("strategyPositions — Others takes the naked part in", () => {
+  const othersSales = (rows: readonly JournalRow[], snapshot: PricedSnapshot | null) =>
+    strategyPositions(rows, "others", snapshot).groups.optionSells;
+
+  it("shows the contract the Wheel no longer covers, without saying where it comes from", () => {
+    const { rows, snapshot } = nakedCallLedger();
+    const sales = othersSales(rows, snapshot);
+    expect(sales).toHaveLength(1);
+    expect(sales[0]).toMatchObject({
+      contract: MARA_CALL_15, kind: "short_call", label: "sell of call",
+      quantity: -1, avgPrice: 0.7, lastPrice: 1, marketValue: -100, unrealizedPnl: -30,
+    });
+    expect(sales[0].coverage).toEqual([]);
+  });
+
+  it("melts what it already holds of the contract into one line, prices weighted", () => {
+    const rows = [
+      row({ id: "s#1", contract: shares("MQZA"), kind: "shares", quantity: 100, openPrice: 17, strike: null }),
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -2, openPrice: 0.9 }),
+      row({ id: "o#1", contract: MARA_CALL_15, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.3 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
+      option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -3, marketPrice: 1, marketValue: -300 }),
+    ]);
+    const sales = othersSales(rows, snapshot);
+    expect(sales).toHaveLength(1);
+    // One contract of its own at 0.30, one taken over at the Wheel line's 0.90.
+    expect(sales[0]).toMatchObject({ quantity: -2, avgPrice: 0.6 });
+    expect(wheelPositions(rows, snapshot).optionSales[0].quantity).toBe(-1);
+  });
+
+  it("has no price when a contributing line has none", () => {
+    const rows = [
+      row({ id: "c#1", contract: MARA_CALL_15, kind: "short_call", quantity: -1, openPrice: null }),
+      row({ id: "o#1", contract: MARA_CALL_15, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.3 }),
+    ];
+    const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -2, marketPrice: 1, marketValue: -200 })]);
+    expect(othersSales(rows, snapshot)[0]).toMatchObject({ quantity: -2, avgPrice: null, unrealizedPnl: null });
+  });
+
+  it("keeps its own lines untouched when nothing migrates", () => {
+    const rows = [row({ id: "o#1", contract: MARA_CALL_15, strategy: "others", kind: "short_call", quantity: -1, openPrice: 0.3 })];
+    const snapshot = priced([option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2026-10-16", quantity: -1, marketPrice: 1, marketValue: -100 })]);
+    expect(othersSales(rows, snapshot)[0]).toMatchObject({ quantity: -1, avgPrice: 0.3 });
+  });
+});
+
 describe("strategyPositions — the naked part leaves the strategy", () => {
   it("shows the Wheel only the contracts its shares still cover", () => {
     const { rows, snapshot } = nakedCallLedger();

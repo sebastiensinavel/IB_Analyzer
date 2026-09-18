@@ -262,6 +262,37 @@ function migratedByContract(open: OpenRows, priced: Map<string, Priced>): Map<st
   return taken;
 }
 
+/**
+ * What Others takes over on one contract: for each covered strategy that loses contracts, one
+ * contribution at that strategy's own average price (spec of sub-project 22, §3.3). Its sign is
+ * that of a sale, negative, like the rows it stands for.
+ */
+function contributionsTakenIn(
+  id: string,
+  byStrategy: ReadonlyMap<PositionsStrategy, JournalRow[]>,
+  taken: Map<string, Map<PositionsStrategy, number>>,
+): Contribution[] {
+  const migrated = taken.get(id);
+  if (!migrated) return [];
+  const contributions: Contribution[] = [];
+  for (const strategy of COVERED_STRATEGIES) {
+    const count = migrated.get(strategy) ?? 0;
+    if (count <= 0) continue;
+    contributions.push({ quantity: -count, openPrice: weightedPrice((byStrategy.get(strategy) ?? []).map(toContribution)) });
+  }
+  return contributions;
+}
+
+/** The contract and kind of a line Others holds nothing of: read off the rows that migrate to it. */
+function firstSoldRow(byStrategy: ReadonlyMap<PositionsStrategy, JournalRow[]>, migrated: Map<PositionsStrategy, number> | undefined): JournalRow {
+  for (const strategy of COVERED_STRATEGIES) {
+    if ((migrated?.get(strategy) ?? 0) <= 0) continue;
+    const row = (byStrategy.get(strategy) ?? []).find(isSold);
+    if (row) return row;
+  }
+  throw new Error("a contract migrates to Others without a sold line to name it");
+}
+
 /** The open lines of `strategy`, one per contract, grouped by the DETAIL_GROUPS the page shows. */
 function linesByGroup(
   open: OpenRows,
@@ -272,12 +303,20 @@ function linesByGroup(
   const lines: StrategyLine[] = [];
   for (const [id, byStrategy] of open) {
     const rows = byStrategy.get(strategy) ?? [];
-    if (rows.length === 0) continue;
     const migrated = taken.get(id)?.get(strategy) ?? 0;
-    if (migrated >= rows.reduce((n, r) => n + Math.abs(r.quantity as number), 0)) continue;
+    const takenIn = strategy === "others" ? contributionsTakenIn(id, byStrategy, taken) : [];
+    if (rows.length === 0 && takenIn.length === 0) continue;
+    const held = rows.reduce((n, r) => n + Math.abs(r.quantity as number), 0);
+    if (takenIn.length === 0 && migrated >= held) continue;
+    const source = rows[0] ?? firstSoldRow(byStrategy, taken.get(id));
     lines.push(
       line(
-        { contract: rows[0].contract, kind: LINE_KIND[rows[0].kind] as PositionKind, contributions: rows.map(toContribution), migrated },
+        {
+          contract: source.contract,
+          kind: LINE_KIND[source.kind] as PositionKind,
+          contributions: [...rows.map(toContribution), ...takenIn],
+          migrated,
+        },
         priced.get(id) ?? null,
         STRATEGY_COVER_SOURCES[strategy],
       ),
