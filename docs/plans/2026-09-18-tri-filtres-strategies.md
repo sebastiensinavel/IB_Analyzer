@@ -1088,7 +1088,7 @@ const wheelPositions = (rows: readonly JournalRow[], snapshot: PricedSnapshot | 
 };
 const leapsPositions = (rows: readonly JournalRow[], snapshot: PricedSnapshot | null) => {
   const { groups } = strategyPositions(rows, "leaps", snapshot);
-  return { optionBuys: groups.optionBuys, optionSells: groups.optionSells, shares: groups.long };
+  return { optionBuys: groups.optionBuys, optionSales: groups.optionSells, shares: groups.long };
 };
 ```
 
