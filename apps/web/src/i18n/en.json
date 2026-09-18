@@ -555,7 +555,7 @@
     "sortAsc": "Ascending",
     "sortDesc": "Descending",
     "sortReset": "Reset the sort",
-    "sortAddHint": "Shift+click: add to the sort",
+    "sortAddHint": "Shift+click: adds to the sort, or drops only this column",
     "filterSection": "Filter",
     "input": "Criterion for {{column}}",
     "clear": "Clear",

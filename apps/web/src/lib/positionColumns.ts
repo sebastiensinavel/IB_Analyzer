@@ -6,20 +6,23 @@ import type { ColumnSpec } from "@/lib/tableView";
 /**
  * The ten columns every table of the Positions page shares, in order, the cash table included.
  * Their widths are fixed, as a share of the table, so the tables line up whatever their content.
- * Sized on a real Flex account at 1280 px wide with the menu open: a long contract or header then
- * wraps to a second line rather than pushing the Coverage column out of sight.
+ * Sized on a real Flex account at 1280 px wide with the menu open, where the table sits at its
+ * 60rem minimum: a long contract wraps to a second line rather than pushing the Coverage column
+ * out of sight, and each French header — the longest — takes at most two lines with its sort
+ * chevron, no word of it overflowing onto its neighbour. They add up to 100, the room taken from
+ * `position` and from the shortest labels, all of them columns whose cells wrap anyway.
  */
 export const POSITION_COLUMNS = [
-  { key: "position", width: "20%", numeric: false },
-  { key: "type", width: "11%", numeric: false },
-  { key: "sector", width: "9%", numeric: false },
-  { key: "marketValue", width: "10%", numeric: true },
-  { key: "quantity", width: "5%", numeric: true },
-  { key: "avgPrice", width: "8%", numeric: true },
-  { key: "lastPrice", width: "8%", numeric: true },
-  { key: "unrealizedPnl", width: "9%", numeric: true },
-  { key: "decision", width: "8%", numeric: false },
-  { key: "coverage", width: "12%", numeric: false },
+  { key: "position", width: "15.5%", numeric: false },
+  { key: "type", width: "7%", numeric: false },
+  { key: "sector", width: "9.5%", numeric: false },
+  { key: "marketValue", width: "10.5%", numeric: true },
+  { key: "quantity", width: "9.5%", numeric: true },
+  { key: "avgPrice", width: "10.5%", numeric: true },
+  { key: "lastPrice", width: "9%", numeric: true },
+  { key: "unrealizedPnl", width: "7.5%", numeric: true },
+  { key: "decision", width: "10%", numeric: false },
+  { key: "coverage", width: "11%", numeric: false },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean }[];
 
 /**

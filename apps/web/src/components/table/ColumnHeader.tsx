@@ -32,9 +32,10 @@ export interface ColumnHeaderProps {
  * actions above the column's filter. Renders its own TableHead so aria-sort sits on the header cell.
  *
  * Nothing in the header says the column is filtered: the pills above the table do. The sort, on the
- * other hand, has to be read on the column itself: the direction's arrow, permanently, once the
- * column is sorted, and a faint double chevron while it is not — that one only while the header is
- * pointed at, focused or open, since these tables are too narrow to give every label away.
+ * other hand, has to be read on the column itself, permanently: the direction's arrow once the
+ * column is sorted, a faint double chevron while it is not. That chevron stays in the layout —
+ * revealing it on hover would shrink the label under the very cursor asking about it, and the
+ * column widths are sized with it in place.
  */
 export function ColumnHeader({ meta, label, view, facets = [], numeric = false, wrap = false, className, title, onSort, onCriterion }: ColumnHeaderProps) {
   const { t } = useTranslation();
@@ -58,27 +59,16 @@ export function ColumnHeader({ meta, label, view, facets = [], numeric = false, 
               <button
                 type="button"
                 className={cn(
-                  "group/header -mx-1 inline-flex min-w-0 items-center rounded px-1 py-0.5 outline-none",
+                  "-mx-1 inline-flex min-w-0 cursor-pointer items-center rounded px-1 py-0.5 outline-none",
                   "hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-muted data-popup-open:text-foreground",
                 )}
               />
             }
           >
             <span className={wrap ? "break-words whitespace-normal" : "truncate"}>{label}</span>
-            {meta.sortable &&
-              (sortKey ? (
-                <SortIcon aria-hidden="true" className="ml-0.5 size-3 shrink-0" />
-              ) : (
-                <SortIcon
-                  aria-hidden="true"
-                  className={cn(
-                    // Out of the layout until the header is pointed at, focused or open: these
-                    // tables are narrow enough that a permanent icon would clip every label.
-                    "ml-0.5 hidden size-3 shrink-0 opacity-40 group-hover/header:block group-focus-visible/header:block pointer-coarse:block",
-                    open && "block",
-                  )}
-                />
-              ))}
+            {meta.sortable && (
+              <SortIcon aria-hidden="true" data-testid="sort-indicator" className={cn("ml-0.5 size-3 shrink-0", !sortKey && "opacity-40")} />
+            )}
             {sortKey && view.sort.length > 1 && (
               <>
                 <span aria-hidden="true" className="text-[0.65rem] tabular-nums">
@@ -124,6 +114,9 @@ export function ColumnHeader({ meta, label, view, facets = [], numeric = false, 
             <TextFilter
               type={meta.type}
               label={label}
+              // Only a column with no sort row opens on its input: on a sortable one that would put
+              // the focus below the buttons the panel opens on, and Shift+Tab would be the way back.
+              autoFocus={!meta.sortable}
               initial={typeof criterion === "string" ? criterion : ""}
               onCriterion={onCriterion}
               onDone={() => setOpen(false)}
@@ -139,12 +132,14 @@ export function ColumnHeader({ meta, label, view, facets = [], numeric = false, 
 function TextFilter({
   type,
   label,
+  autoFocus,
   initial,
   onCriterion,
   onDone,
 }: {
   type: "text" | "number" | "date";
   label: string;
+  autoFocus: boolean;
   initial: string;
   onCriterion: (criterion: Criterion | null) => void;
   onDone: () => void;
@@ -161,7 +156,7 @@ function TextFilter({
   return (
     <div className="flex flex-col gap-2">
       <Input
-        autoFocus
+        autoFocus={autoFocus}
         value={draft}
         onChange={(event) => change(event.target.value)}
         onKeyDown={(event) => {

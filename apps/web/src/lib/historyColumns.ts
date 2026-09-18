@@ -7,17 +7,23 @@ import type { ColumnSpec } from "@/lib/tableView";
  * The widths are fixed because the table is virtualized: under an automatic layout, each scroll
  * renders other rows and the columns would resize under the reader. Keys are the i18n keys of
  * `history.columns`.
+ *
+ * They add up to 100 and are sized on the French labels, the longest, at 1280 px — where the table
+ * sits at its 64rem minimum: every label fits whole on its line, sort chevron included, with a few
+ * pixels to spare. The room comes from `symbol`, `dateTime` and `type`, the three that had the
+ * most of it; a contract label clipped in `symbol` keeps its `title`, whereas a clipped header
+ * says nothing at all.
  */
 export const HISTORY_COLUMNS = [
-  { key: "dateTime", width: "14%", numeric: false, balance: false },
-  { key: "type", width: "9%", numeric: false, balance: false },
-  { key: "symbol", width: "17%", numeric: false, balance: false },
-  { key: "quantity", width: "6%", numeric: true, balance: false },
-  { key: "price", width: "7%", numeric: true, balance: false },
-  { key: "totalPrice", width: "8%", numeric: true, balance: false },
-  { key: "fee", width: "6%", numeric: true, balance: false },
-  { key: "cash", width: "8%", numeric: true, balance: false },
-  { key: "currency", width: "5%", numeric: false, balance: false },
+  { key: "dateTime", width: "13.5%", numeric: false, balance: false },
+  { key: "type", width: "8%", numeric: false, balance: false },
+  { key: "symbol", width: "12%", numeric: false, balance: false },
+  { key: "quantity", width: "9%", numeric: true, balance: false },
+  { key: "price", width: "6.5%", numeric: true, balance: false },
+  { key: "totalPrice", width: "9.5%", numeric: true, balance: false },
+  { key: "fee", width: "6.5%", numeric: true, balance: false },
+  { key: "cash", width: "7%", numeric: true, balance: false },
+  { key: "currency", width: "8%", numeric: false, balance: false },
   { key: "usdCash", width: "10%", numeric: true, balance: true },
   { key: "eurCash", width: "10%", numeric: true, balance: true },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean; balance: boolean }[];

@@ -555,7 +555,7 @@
     "sortAsc": "Croissant",
     "sortDesc": "Décroissant",
     "sortReset": "Réinitialiser le tri",
-    "sortAddHint": "Maj+clic : ajouter au tri",
+    "sortAddHint": "Maj+clic : ajoute au tri, ou n’en retire que cette colonne",
     "filterSection": "Filtre",
     "input": "Critère pour {{column}}",
     "clear": "Effacer",

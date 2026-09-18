@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Table, TableHeader, TableRow } from "@ib/ui/table";
 import { ColumnHeader, type ColumnHeaderProps } from "@/components/table/ColumnHeader";
@@ -36,7 +36,7 @@ describe("ColumnHeader", () => {
     expect(onSort).toHaveBeenLastCalledWith("desc", true);
   });
 
-  it("marks the direction in force and resets the sort", async () => {
+  it("marks the direction in force and resets the sort, that one key only with shift", async () => {
     const { onSort } = renderHeader({ view: { sort: [{ column: "amount", dir: "desc" }], criteria: {} } });
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Montant" }));
@@ -44,6 +44,34 @@ describe("ColumnHeader", () => {
     expect(screen.getByRole("button", { name: "Croissant" })).toHaveAttribute("aria-pressed", "false");
     await user.click(screen.getByRole("button", { name: "Réinitialiser le tri" }));
     expect(onSort).toHaveBeenLastCalledWith(null, false);
+    await user.click(screen.getByRole("button", { name: /^Montant/ }));
+    await user.keyboard("{Shift>}");
+    await user.click(await screen.findByRole("button", { name: "Réinitialiser le tri" }));
+    await user.keyboard("{/Shift}");
+    expect(onSort).toHaveBeenLastCalledWith(null, true);
+  });
+
+  it("closes its panel once a direction is chosen", async () => {
+    renderHeader();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /^Montant/ }));
+    await screen.findByRole("dialog");
+    await user.click(screen.getByRole("button", { name: "Croissant" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("shows the double chevron of a sortable column that is not sorted", () => {
+    renderHeader();
+    // Permanently, in the layout: hiding it until hover would shrink the label under the cursor,
+    // and the column widths are sized with it in place.
+    const indicator = screen.getByTestId("sort-indicator");
+    expect(indicator).toBeVisible();
+    expect(indicator).not.toHaveClass("hidden");
+  });
+
+  it("gives a non-sortable column no indicator at all", () => {
+    renderHeader({ meta: { key: "coverage", type: "enum", sortable: false }, label: "Couverture" });
+    expect(screen.queryByTestId("sort-indicator")).not.toBeInTheDocument();
   });
 
   it("offers no reset while its column is not a sort key", async () => {
