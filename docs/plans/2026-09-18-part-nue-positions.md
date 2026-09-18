@@ -219,7 +219,7 @@ git commit -m "Partage de la part nue : migratedContracts"
   ```
   Tout reste privé au module ; seule `migratedContracts` est exportée.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Ajouter dans `packages/coverage/src/strategy.test.ts`, après les blocs existants. Les aides
 `row`, `opt`, `shares`, `priced`, `option`, `stock`, `wheelPositions` sont déjà dans le fichier.
@@ -296,12 +296,12 @@ describe("strategyPositions — the naked part leaves the strategy", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: FAIL — le premier test attend `quantity: -1` et reçoit `-2`.
 
-- [ ] **Step 3: Écrire l'implémentation**
+- [x] **Step 3: Écrire l'implémentation**
 
 Dans `packages/coverage/src/strategy.ts` :
 
@@ -459,7 +459,7 @@ export function strategyPositions(rows: readonly JournalRow[], strategy: Positio
 
 La règle « un contrat migré entièrement ne se rend pas » est la ligne `if (migrated >= …) continue;`.
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `pnpm --filter @ib/coverage test -- strategy`
 Expected: PASS. Le test de la tâche 3 n'existe pas encore ; tous les autres, anciens compris,
@@ -467,7 +467,7 @@ passent — vérifier en particulier que « keeps only the Wheel's part of a cal
 Others » passe toujours : sa position IB a `uncoveredQuantity: 1` mais Autres en détient déjà
 un, donc rien ne migre.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage/src/strategy.ts packages/coverage/src/strategy.test.ts docs/plans/2026-09-18-part-nue-positions.md
