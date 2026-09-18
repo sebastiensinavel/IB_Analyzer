@@ -814,9 +814,10 @@ export interface PreparedBox<Row> extends SearchedBox<Row> {
 }
 
 /**
- * The boxes the page search leaves. A box with no line at all never renders — the strategy holds
- * nothing of that kind — and neither does one the search empties: the search means the same thing
- * in every box and is cleared from the top of the page, so losing the box coins nobody.
+ * The boxes the page search leaves: a box the search empties never renders, a box with no line
+ * at all being the degenerate case of the same rule — the strategy holds nothing of that kind
+ * even before a search runs. Losing the box traps nobody: the search means the same thing in
+ * every box and is cleared from the top of the page, unlike a column filter.
  */
 export function searchBoxes<Row>(
   boxes: readonly TableBoxInput<Row>[],
@@ -825,7 +826,6 @@ export function searchBoxes<Row>(
 ): SearchedBox<Row>[] {
   const kept: SearchedBox<Row>[] = [];
   for (const box of boxes) {
-    if (box.all.length === 0) continue;
     const searched = applyView(box.all, specs, EMPTY_VIEW, search);
     if (searched.length === 0) continue;
     kept.push({ ...box, searched });
