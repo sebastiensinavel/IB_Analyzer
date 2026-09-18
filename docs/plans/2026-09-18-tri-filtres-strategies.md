@@ -349,7 +349,7 @@ MSG
 - Produit : `FilteredTableBox<Row>(props)` avec
   `{ title?, columns, labelKey, minWidth?, specs, facetRows, rows, table, emptyKey, rowKey, renderRow }`.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Créer `apps/web/src/components/table/FilteredTableBox.test.tsx` :
 
@@ -447,12 +447,12 @@ describe("FilteredTableBox", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
 Commande : `pnpm --filter web exec vitest run src/components/table/FilteredTableBox.test.tsx`
 Attendu : ÉCHEC, « Failed to resolve import "@/components/table/FilteredTableBox" ».
 
-- [ ] **Étape 3 : écrire `FilteredTableBox.tsx`**
+- [x] **Étape 3 : écrire `FilteredTableBox.tsx`**
 
 Créer `apps/web/src/components/table/FilteredTableBox.tsx` :
 
@@ -558,12 +558,12 @@ export function FilteredTableBox<Row>({
 }
 ```
 
-- [ ] **Étape 4 : lancer le test, vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test, vérifier qu'il passe**
 
 Commande : `pnpm --filter web exec vitest run src/components/table/FilteredTableBox.test.tsx`
 Attendu : SUCCÈS, 5 tests.
 
-- [ ] **Étape 5 : faire de `PositionGroupCard` l'adaptateur `AnalyzedPosition`**
+- [x] **Étape 5 : faire de `PositionGroupCard` l'adaptateur `AnalyzedPosition`**
 
 Remplacer tout le corps de `apps/web/src/components/PositionGroupCard.tsx` par :
 
@@ -627,12 +627,12 @@ export function PositionGroupCard({ title, positions, rows, table, specs, sector
 Le composant ne traduit plus rien lui-même — l'encadré s'en charge —, donc il n'importe plus
 `react-i18next`.
 
-- [ ] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé**
+- [x] **Étape 6 : vérifier que la vue d'ensemble n'a pas bougé**
 
 Commande : `pnpm --filter web exec vitest run src/pages/PositionsPage.test.tsx`
 Attendu : SUCCÈS, fichier de test non modifié.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add apps/web/src/components
