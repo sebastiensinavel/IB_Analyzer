@@ -62,15 +62,17 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
           <GroupCard title={t("strategyPositions.groups.assignedShares")} empty={wheel.shares.length === 0}>
             <WheelSharesTable lines={wheel.shares} sectorOf={sectorOf} />
           </GroupCard>
-          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={wheel.groups.optionSells} sectorOf={sectorOf} />
+          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={wheel.groups.optionSells} sectorOf={sectorOf} strategy={strategy} />
         </>
       )}
       {leaps && (
         <>
-          <LinesCard title={t("strategyPositions.groups.optionBuys")} lines={leaps.groups.optionBuys} sectorOf={sectorOf} />
-          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={leaps.groups.optionSells} sectorOf={sectorOf} />
+          <LinesCard title={t("strategyPositions.groups.optionBuys")} lines={leaps.groups.optionBuys} sectorOf={sectorOf} strategy={strategy} />
+          <LinesCard title={t("strategyPositions.groups.optionSales")} lines={leaps.groups.optionSells} sectorOf={sectorOf} strategy={strategy} />
           {/* Shares a LEAPS delivered are rare: their card only shows when there are some. */}
-          {leaps.groups.long.length > 0 && <LinesCard title={t("strategyPositions.groups.shares")} lines={leaps.groups.long} sectorOf={sectorOf} />}
+          {leaps.groups.long.length > 0 && (
+            <LinesCard title={t("strategyPositions.groups.shares")} lines={leaps.groups.long} sectorOf={sectorOf} strategy={strategy} />
+          )}
         </>
       )}
     </div>
@@ -91,7 +93,17 @@ function GroupCard({ title, empty, children }: { title: string; empty: boolean; 
   );
 }
 
-function LinesCard({ title, lines, sectorOf }: { title: string; lines: readonly StrategyLine[]; sectorOf: SectorOf }) {
+function LinesCard({
+  title,
+  lines,
+  sectorOf,
+  strategy,
+}: {
+  title: string;
+  lines: readonly StrategyLine[];
+  sectorOf: SectorOf;
+  strategy: PositionsStrategy;
+}) {
   return (
     <GroupCard title={title} empty={lines.length === 0}>
       <DataTable columns={POSITION_COLUMNS} minWidth="60rem">
@@ -110,7 +122,7 @@ function LinesCard({ title, lines, sectorOf }: { title: string; lines: readonly 
                 lastPrice: line.lastPrice,
                 unrealizedPnl: line.unrealizedPnl,
                 decision: line.decision,
-                coverage: strategyCoverageBadges(line),
+                coverage: strategyCoverageBadges(line, strategy),
               }}
             />
           ))}

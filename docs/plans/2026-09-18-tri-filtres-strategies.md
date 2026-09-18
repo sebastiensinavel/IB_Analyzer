@@ -1400,7 +1400,7 @@ MSG
   `strategyCoverageBadges(line, strategy): CoverageBadge[]`,
   `strategyCoverageValues(line, strategy): string[]`.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Créer `apps/web/src/lib/strategyColumns.test.ts` :
 
@@ -1477,12 +1477,12 @@ describe("wheelShareColumnSpecs", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
 Commande : `pnpm --filter web exec vitest run src/lib/strategyColumns.test.ts`
 Attendu : ÉCHEC, « Failed to resolve import "@/lib/strategyColumns" ».
 
-- [ ] **Étape 3 : étendre `riskReport.ts`**
+- [x] **Étape 3 : étendre `riskReport.ts`**
 
 Dans `apps/web/src/lib/riskReport.ts`, remplacer `strategyCoverageBadges` par ces deux fonctions,
 et ajouter `type PositionsStrategy` à l'import de `@ib/coverage` :
@@ -1524,7 +1524,7 @@ export function strategyCoverageValues(line: StrategyLine, strategy: PositionsSt
 `["unused"]` pour une option achetée absente du snapshot — c'est voulu : une aile qu'aucune
 position ne porte ne couvre rien, et la facette doit pouvoir la ramener.
 
-- [ ] **Étape 4 : écrire `strategyColumns.ts`**
+- [x] **Étape 4 : écrire `strategyColumns.ts`**
 
 Créer `apps/web/src/lib/strategyColumns.ts` :
 
@@ -1575,7 +1575,7 @@ export function wheelShareColumnSpecs(sectorOf: SectorOf): ColumnSpec<WheelShare
 }
 ```
 
-- [ ] **Étape 5 : brancher l'appel existant et lancer les tests**
+- [x] **Étape 5 : brancher l'appel existant et lancer les tests**
 
 Dans `apps/web/src/pages/StrategyPositionsPage.tsx`, `strategyCoverageBadges(line)` prend son
 second argument : `strategyCoverageBadges(line, strategy)` — passer `strategy` à `LinesCard`.
@@ -1583,7 +1583,7 @@ second argument : `strategyCoverageBadges(line, strategy)` — passer `strategy`
 Commande : `pnpm --filter web exec vitest run src/lib/strategyColumns.test.ts src/pages/StrategyPositionsPage.test.tsx`
 Attendu : SUCCÈS.
 
-- [ ] **Étape 6 : commit**
+- [x] **Étape 6 : commit**
 
 ```bash
 git add apps/web/src/lib/strategyColumns.ts apps/web/src/lib/strategyColumns.test.ts apps/web/src/lib/riskReport.ts apps/web/src/pages/StrategyPositionsPage.tsx

@@ -2,7 +2,16 @@ import { describe, expect, it } from "vitest";
 import { buildRiskReport, type AnalyzedPosition, type StrategyLine } from "@ib/coverage";
 import { formatContract } from "@/lib/format";
 import { SAMPLE_POSITIONS } from "@/mocks/positions";
-import { allocationBadges, coverageBadges, coverageValues, decisionBadge, groupTitleKey, strategyCoverageBadges, usedBadge } from "@/lib/riskReport";
+import {
+  allocationBadges,
+  coverageBadges,
+  coverageValues,
+  decisionBadge,
+  groupTitleKey,
+  strategyCoverageBadges,
+  strategyCoverageValues,
+  usedBadge,
+} from "@/lib/riskReport";
 
 function position(overrides: Partial<AnalyzedPosition>): AnalyzedPosition {
   return {
@@ -139,19 +148,46 @@ describe("strategyCoverageBadges", () => {
       ],
       uncoveredQuantity: 1,
     });
-    expect(strategyCoverageBadges(line({ position: whole, coverage: [{ source: "stock", quantity: 1, detail: "" }] }))).toEqual([
+    expect(strategyCoverageBadges(line({ position: whole, coverage: [{ source: "stock", quantity: 1, detail: "" }] }), "wheel")).toEqual([
       { variant: "success", label: "stock ×1", tooltip: null },
     ]);
-    expect(strategyCoverageBadges(line({ position: whole, coverage: [] }))).toEqual([]);
+    expect(strategyCoverageBadges(line({ position: whole, coverage: [] }), "wheel")).toEqual([]);
   });
 
   it("keeps 'used X/Y' on a LEAPS bought, and shows nothing on shares", () => {
     const bought = position({ kind: "long_call", quantity: 8, usedQuantity: 8 });
-    expect(strategyCoverageBadges(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought }))).toEqual([
+    expect(strategyCoverageBadges(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought }), "leaps")).toEqual([
       { variant: "success", label: "used 8/8", tooltip: null },
     ]);
     const held = position({ kind: "long_stock", quantity: 100, usedQuantity: 100 });
-    expect(strategyCoverageBadges(line({ kind: "long_stock", label: "long position", quantity: 100, position: held }))).toEqual([]);
+    expect(strategyCoverageBadges(line({ kind: "long_stock", label: "long position", quantity: 100, position: held }), "leaps")).toEqual([]);
+  });
+
+  it("shows a sold option of Others the naked quantity only, never an allocation", () => {
+    expect(strategyCoverageBadges(line({ kind: "short_call", quantity: -3, coverage: [{ source: "stock", quantity: 3, detail: "" }] }), "others")).toEqual(
+      [{ variant: "destructive", label: "UNCOVERED ×3", tooltip: null }],
+    );
+  });
+});
+
+describe("strategyCoverageValues", () => {
+  it("mirrors strategyCoverageBadges branch for branch, as filterable values", () => {
+    const whole = position({
+      kind: "short_call",
+      allocations: [
+        { source: "stock", quantity: 1, detail: "" },
+        { source: "leaps", quantity: 1, detail: "" },
+      ],
+      uncoveredQuantity: 1,
+    });
+    expect(strategyCoverageValues(line({ position: whole, coverage: [{ source: "stock", quantity: 1, detail: "" }] }), "wheel")).toEqual(["stock"]);
+    expect(strategyCoverageValues(line({ kind: "short_call", quantity: -3, coverage: [] }), "others")).toEqual(["UNCOVERED"]);
+    const bought = position({ kind: "long_call", quantity: 8, usedQuantity: 8 });
+    expect(strategyCoverageValues(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought }), "leaps")).toEqual(["used"]);
+    const unusedWing = line({ kind: "long_put", label: "buy of put", quantity: 1, position: null });
+    expect(strategyCoverageValues(unusedWing, "condors")).toEqual(["unused"]);
+    const held = position({ kind: "long_stock", quantity: 100, usedQuantity: 100 });
+    expect(strategyCoverageValues(line({ kind: "long_stock", label: "long position", quantity: 100, position: held }), "wheel")).toEqual([]);
   });
 });
 
