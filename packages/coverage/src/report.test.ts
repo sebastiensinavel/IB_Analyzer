@@ -115,6 +115,8 @@ function position(description: string, kind: PositionKind, overrides: Partial<An
     avgPrice: 2,
     lastPrice: 0.8,
     unrealizedPnl: 120,
+    dailyPnl: null,
+    dayChange: null,
     action: "to evaluate",
     decision: "buy back",
     symbol: description.split(" ")[0],

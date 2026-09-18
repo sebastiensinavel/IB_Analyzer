@@ -20,6 +20,10 @@ export interface AnalyzedPosition {
   avgPrice: number | null;
   lastPrice: number | null;
   unrealizedPnl: number | null;
+  /** Today's P&L IB computes for the whole position; `null` outside an agent snapshot. */
+  dailyPnl: number | null;
+  /** Today's move of the mark price, as a fraction; `null` for a contract traded today. */
+  dayChange: number | null;
   action: "to evaluate" | "ignore";
   decision: "buy back" | "keep" | null;
   symbol: string;

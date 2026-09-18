@@ -31,6 +31,10 @@ export interface StrategyLine {
   marketValue: number | null;
   /** (lastPrice − avgPrice) × quantity × multiplier */
   unrealizedPnl: number | null;
+  /** The strategy's prorated share of the IB position's day P&L; `null` with its dayChange. */
+  dailyPnl: number | null;
+  /** The IB position's move of the day, unprorated: it does not depend on the quantity. */
+  dayChange: number | null;
   /** Short options only: evaluateBuyback(avgPrice, lastPrice); `null` otherwise or without both prices. */
   decision: "buy back" | "keep" | null;
   /** The whole IB position; `null` when the snapshot does not hold the contract. */
@@ -46,6 +50,10 @@ export interface WheelShareLine extends WheelHolding {
   lastPrice: number | null;
   /** (lastPrice − averageAssignmentPrice) × quantity */
   unrealizedPnl: number | null;
+  /** The strategy's prorated share of the IB position's day P&L; `null` with its dayChange. */
+  dailyPnl: number | null;
+  /** The IB position's move of the day, unprorated: it does not depend on the quantity. */
+  dayChange: number | null;
   /** averageCallStrike < averageAssignmentPrice; `false` when either is `null`. */
   callStrikeBelowAssignment: boolean;
 }
@@ -179,6 +187,19 @@ function cappedCoverage(priced: Priced, sources: readonly CoverSource[], quantit
   return capped;
 }
 
+/**
+ * A strategy's share of the day. The move is the position's, whatever the quantity; the P&L is
+ * prorated. Both are `null` as soon as the position's move is — a contract traded today: IB's
+ * day P&L then starts from the execution price, and what entered this morning does not carry the
+ * same day's P&L per unit as what was held yesterday, so no share of it can be cut (spec §6).
+ */
+function dayShare(position: Position | null, quantity: number): { dailyPnl: number | null; dayChange: number | null } {
+  if (!position || position.dayChange === null || position.dailyPnl === null || position.quantity === 0) {
+    return { dailyPnl: null, dayChange: null };
+  }
+  return { dailyPnl: (position.dailyPnl * quantity) / position.quantity, dayChange: position.dayChange };
+}
+
 function line({ contract, kind, contributions, migrated }: LineInput, priced: Priced | null, sources: readonly CoverSource[]): StrategyLine {
   // A sale's quantity is negative, so what migrates brings it back towards zero.
   const quantity = contributions.reduce((n, c) => n + c.quantity, 0) + migrated;
@@ -187,6 +208,7 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
   const lastPrice = priced?.position.marketPrice ?? null;
   const sold = kind === "short_put" || kind === "short_call";
   const marketValue = lastPrice === null ? null : lastPrice * quantity * multiplier;
+  const day = dayShare(priced?.position ?? null, quantity);
   return {
     contract,
     kind,
@@ -198,6 +220,8 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
     // marketValue − avgPrice × quantity × multiplier, not (lastPrice − avgPrice) × quantity × multiplier:
     // mathematically the same, but stable when avgPrice has no exact binary fraction (0.7, e.g.).
     unrealizedPnl: marketValue === null || avgPrice === null ? null : marketValue - avgPrice * quantity * multiplier,
+    dailyPnl: day.dailyPnl,
+    dayChange: day.dayChange,
     decision: sold && lastPrice !== null && avgPrice !== null ? evaluateBuyback(avgPrice, lastPrice) : null,
     position: priced?.analyzed ?? null,
     coverage: sold && priced ? cappedCoverage(priced, sources, quantity) : [],
@@ -355,7 +379,9 @@ export function strategyPositions(rows: readonly JournalRow[], strategy: Positio
   const shares = wheelHoldings(rows).map((holding): WheelShareLine => {
     const calls = covered.get(`${holding.ticker}|${holding.currency}`) ?? { contracts: 0, strikeTotal: 0, unstruck: false };
     const averageCallStrike = calls.contracts === 0 || calls.unstruck ? null : calls.strikeTotal / calls.contracts;
-    const lastPrice = priced.get(contractId(sharesContract(holding.ticker, holding.currency)))?.position.marketPrice ?? null;
+    const share = priced.get(contractId(sharesContract(holding.ticker, holding.currency)));
+    const lastPrice = share?.position.marketPrice ?? null;
+    const day = dayShare(share?.position ?? null, holding.quantity);
     const { averageAssignmentPrice } = holding;
     return {
       ...holding,
@@ -364,6 +390,7 @@ export function strategyPositions(rows: readonly JournalRow[], strategy: Positio
       coveredShares: Math.min(holding.quantity, calls.contracts * DEFAULT_MULTIPLIER),
       lastPrice,
       unrealizedPnl: lastPrice === null || averageAssignmentPrice === null ? null : (lastPrice - averageAssignmentPrice) * holding.quantity,
+      ...day,
       callStrikeBelowAssignment: averageCallStrike !== null && averageAssignmentPrice !== null && averageCallStrike < averageAssignmentPrice,
     };
   });

@@ -715,7 +715,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 recopiée champ par champ dans `classify.ts`. Les deux valeurs n'arrivent donc pas toutes seules
 sur la page Positions : il faut les recopier, comme `unrealizedPnl` l'est déjà.
 
-- [ ] **Étape 0 : faire traverser `AnalyzedPosition`**
+- [x] **Étape 0 : faire traverser `AnalyzedPosition`**
 
 Le test d'abord, dans `packages/coverage/src/classify.test.ts` :
 
@@ -749,7 +749,7 @@ et dans `classify.ts`, après `unrealizedPnl: pos.unrealizedPnl,` :
 
 Le relancer, le voir passer.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `packages/coverage/src/strategy.test.ts`, en reprenant les helpers du fichier
 (`option()` / `stock()` de `fixtures.ts`, et la façon dont il sème des lignes de journal) :
@@ -798,12 +798,12 @@ Les noms `rowsHoldingShortCalls`, `pricedWith`, `emptySnapshot`,
 existent déjà pour les tests du sous-projet 22. Ne pas en créer de nouveaux si un équivalent
 est là.
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `cd packages/coverage && npx vitest run src/strategy.test.ts`
 Attendu : ÉCHEC — `Property 'dailyPnl' does not exist on type 'StrategyLine'`.
 
-- [ ] **Étape 3 : implémenter**
+- [x] **Étape 3 : implémenter**
 
 Une fonction pure, au-dessus de `line` :
 
@@ -857,12 +857,12 @@ Extraire cette recherche dans une constante et s'en servir deux fois :
 puis `...day` dans l'objet rendu, et les deux champs déclarés sur `WheelShareLine` avec les mêmes
 commentaires.
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
 Run : `pnpm --filter @ib/coverage test`
 Attendu : tout passe.
 
-- [ ] **Étape 5 : commit**
+- [x] **Étape 5 : commit**
 
 ```bash
 git add -A
