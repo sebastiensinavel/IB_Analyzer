@@ -636,7 +636,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Interfaces :**
 - Consomme : `Position.dailyPnl` / `dayChange` de la tâche 1.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Reprendre exactement la façon dont le fichier de test de la version 8 ouvre une base à l'ancienne
 version, y écrit une ligne, puis rouvre à la version courante. Le cas :
@@ -652,12 +652,12 @@ it("gives a stored snapshot's positions the two day fields, at null", async () =
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
 Run : `cd apps/web && npx vitest run src/db/schema.test.ts`
 Attendu : ÉCHEC — les deux clés sont `undefined`.
 
-- [ ] **Étape 3 : implémenter la version 9**
+- [x] **Étape 3 : implémenter la version 9**
 
 Dans `apps/web/src/db/schema.ts`, après le bloc de la version 8 :
 
@@ -680,12 +680,12 @@ Dans `apps/web/src/db/schema.ts`, après le bloc de la version 8 :
       );
 ```
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
 Run : `cd apps/web && npx vitest run src/db/`
 Attendu : tout passe.
 
-- [ ] **Étape 5 : commit**
+- [x] **Étape 5 : commit**
 
 ```bash
 git add -A

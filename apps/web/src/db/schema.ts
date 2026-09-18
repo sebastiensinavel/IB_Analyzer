@@ -187,6 +187,22 @@ export class AppDatabase extends Dexie {
             if (!Number.isNaN(Date.parse(row.asOf))) row.asOf = toReportTime(row.asOf);
           });
       });
+    // Sub-project 23: a position carries the day's P&L and move. A snapshot written before it
+    // has neither, and `undefined` is not `null`: every reader would have to second-guess the
+    // type. No store changes — only the rows.
+    this.version(9)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table("snapshots")
+          .toCollection()
+          .modify((row: { positions?: Record<string, unknown>[] }) => {
+            for (const position of row.positions ?? []) {
+              position.dailyPnl ??= null;
+              position.dayChange ??= null;
+            }
+          }),
+      );
   }
 }
 
