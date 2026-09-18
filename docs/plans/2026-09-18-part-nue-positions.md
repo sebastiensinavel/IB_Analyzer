@@ -761,7 +761,7 @@ git commit -m "La carte des actions Wheel ne compte que les calls couverts"
   n'est modifié par cette tâche — si un test échoue autrement que sur ses chiffres attendus,
   c'est une tâche précédente qui est incomplète.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Ajouter dans `apps/web/src/pages/StrategyPositionsPage.test.tsx`, après le bloc
 `describe("StrategyPositionsPage — LEAPS", …)`. `trade`, `renderPage`, `rowIn`, `texts` et le
@@ -824,7 +824,7 @@ describe("StrategyPositionsPage — a call that lost its cover", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `pnpm --filter web test -- StrategyPositionsPage`
 Expected: FAIL si les tâches 1 à 4 ne sont pas faites. **Si elles le sont, ces tests doivent
@@ -832,7 +832,7 @@ passer du premier coup** : c'est leur rôle, cloue le comportement de bout en bo
 échouent alors, corriger les chiffres attendus **seulement** après avoir vérifié à la main que le
 comportement observé est celui de la spec — sinon c'est le code qui est faux.
 
-- [ ] **Step 3: Vérifier les colonnes attendues**
+- [x] **Step 3: Vérifier les colonnes attendues**
 
 Les dix colonnes d'une ligne d'option sont, dans l'ordre : contrat, type, secteur, valeur de
 marché, position, prix d'entrée, dernier prix, P&L latent, décision, couverture. Les neuf d'une
@@ -842,13 +842,13 @@ porte deux calls vendus à 0,80 et 0,60, donc un prix moyen de 0,70 sur les deux
 quantité affichée est `-1` de chaque côté ; `marketValue = 1,00 × −1 × 100` ; `unrealizedPnl =
 (1,00 − 0,70) × −1 × 100`.
 
-- [ ] **Step 4: Lancer toute la suite web du fichier**
+- [x] **Step 4: Lancer toute la suite web du fichier**
 
 Run: `pnpm --filter web test -- StrategyPositionsPage`
 Expected: PASS, y compris les tests existants qui utilisent `seed()` et `SNAPSHOT` — ils gardent
 200 actions et un seul call, donc « used 100/200 » et `stock ×1` inchangés.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/pages/StrategyPositionsPage.test.tsx docs/plans/2026-09-18-part-nue-positions.md

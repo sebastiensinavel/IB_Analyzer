@@ -136,6 +136,60 @@ describe("StrategyPositionsPage — LEAPS", () => {
   });
 });
 
+/** A second MQZA 15 call, sold while the 200 assigned shares still covered two. */
+const MARA_CALL_2: Transaction = { ...MARA_CALL, externalId: "flex:trade:403", price: 0.6, amount: 60, when: "2026-08-26T14:30:00.000Z" };
+
+/** 100 of the 200 assigned shares sold afterwards: one of the two calls loses its cover. */
+const MARA_SHARES_SOLD: Transaction = {
+  ...MARA_CALL,
+  externalId: "flex:trade:404",
+  symbol: "MQZA",
+  secType: "STK",
+  right: "",
+  strike: null,
+  expiry: null,
+  quantity: -100,
+  price: 18,
+  amount: 1800,
+  when: "2026-08-27T14:30:00.000Z",
+};
+
+/** What IB holds then: 100 shares and the two calls, one of which nothing covers. */
+const NAKED_SNAPSHOT: SnapshotRecord = {
+  ...SAMPLE_JOURNAL_SNAPSHOT,
+  positions: [
+    { ...maraShares, quantity: 100, marketPrice: 18, marketValue: 1800 },
+    { ...zzzLeaps, marketPrice: 4, marketValue: 400 },
+    { ...zzzCall, marketPrice: 0.25, marketValue: -25 },
+    aapl,
+    { ...zzzLeaps, symbol: "MQZA", strike: 15, expiry: "2026-10-16", quantity: -2, marketPrice: 1, marketValue: -200, description: "MQZA 16OCT26 15 C" },
+  ],
+};
+
+async function seedNaked() {
+  await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, MARA_CALL_2, MARA_SHARES_SOLD]);
+  await db.snapshots.put(NAKED_SNAPSHOT);
+}
+
+describe("StrategyPositionsPage — a call that lost its cover", () => {
+  it("shows the Wheel only the covered call, and its shares card says used 100/100", async () => {
+    await seedNaked();
+    renderPage("wheel");
+    const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
+    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "-$30.00", "keep", "stock ×1"]);
+    const held = await rowIn("Actions assignées", "MQZA");
+    expect(texts(held)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "$100.00", "used 100/100"]);
+  });
+
+  it("shows the naked contract on Others, without naming where it comes from", async () => {
+    await seedNaked();
+    renderPage("others");
+    const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
+    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "-$30.00", "keep", "UNCOVERED ×1"]);
+    expect(within(screen.getByLabelText("Ventes d'options")).queryByText("Wheel")).not.toBeInTheDocument();
+  });
+});
+
 describe("StrategyPositionsPage — search, expiries and column filters", () => {
   beforeEach(() => {
     window.localStorage.clear();
