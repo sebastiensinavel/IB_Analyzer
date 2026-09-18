@@ -4,7 +4,7 @@
 
 **Goal:** Les pages Positions et Dashboard fonctionnent sans serveur ni agent : un import Flex avec Open Positions et Cash Report suffit à voir chaque position, sa couverture, la décision de rachat, le cash requis contre le cash disponible et les positions non couvertes.
 
-**Architecture:** `packages/coverage` (TS pur) est le port ligne à ligne du moteur Python `ib_analysis`, vérifié par des fixtures d'oracle générées par ce même Python gelé dans `tools/coverage-oracle`. `packages/ib-parsers` lit Open Positions et Cash Report du Flex XML et rend un `FlexSnapshot`. `apps/web` cache le snapshot en IndexedDB (un document par compte), la table sectorielle dans une table unique, calcule le `RiskReport` dans le navigateur et copie les pages de l'ancien frontend.
+**Architecture:** `packages/coverage` (TS pur) est le port ligne à ligne du moteur Python `ib_analysis`, vérifié par des fixtures d'oracle générées par ce même Python gelé dans `tools/coverage-oracle`. `packages/ib-parsers` lit Open Positions et Cash Report du Flex XML et rend un `FlexSnapshot`. `apps/web` cache le snapshot en IndexedDB (un document par compte), la table sectorielle dans une table unique, calcule le `RiskReport` dans le navigateur et reprend les pages de la première version.
 
 **Tech Stack:** Node 22 (type stripping natif), pnpm, TypeScript 6, Vitest 4, React 19, react-router 8, Dexie 4, dexie-react-hooks, fake-indexeddb, echarts 6 + echarts-for-react 3, uv + Python 3.14 (oracle seulement), Playwright (skill `run-frontend`).
 
@@ -12,7 +12,6 @@
 
 ## Global Constraints
 
-- Ancien dépôt `/home/seb/IA/IB_Analyzer` en **lecture seule** : on copie, on ne modifie jamais.
 - `private/` n'est jamais versionné ; aucun identifiant de compte, jeton ou montant réel dans un fichier committé. La fixture Flex régénérée est **contrôlée à la main** avant commit (tâche 6).
 - Une valeur absente reste `null`, jamais `0`, et s'affiche « — ».
 - `BUYBACK_RATIO = 2`, `MAX_STRUCTURE_LOSS = 1000`, `DEFAULT_MULTIPLIER = 100`, les libellés `KIND_LABELS`, les sources de couverture et les sortes de structures sont définis **une seule fois** dans `packages/coverage/src/constants.ts`. Un test de `apps/web` le vérifie (tâche 12).
@@ -57,7 +56,7 @@ packages/coverage/
 tools/coverage-oracle/
   pyproject.toml, .python-version, uv.lock
   README.md
-  engine/ib_analysis/__init__.py          copie verbatim de l'ancien moteur
+  engine/ib_analysis/__init__.py          copie verbatim du moteur de la première version
   engine/tests/{conftest,test_*}.py       copie verbatim des 115 tests
   generate.py                             corpus/*.json -> packages/coverage/tests/oracle/*.json
   corpus/*.json                           portefeuilles synthétiques + flex-sample.json
@@ -77,8 +76,8 @@ apps/web/
   src/db/sectors.ts                       parseSectorCsv, importSectorCsv
   src/lib/format.ts                       formatMoney/formatPrice acceptent null -> "—"
   src/lib/riskReport.ts                   decisionBadge, coverageBadges, groupTitleKey
-  src/pages/PositionsPage.tsx             copiée de l'ancien frontend
-  src/pages/DashboardPage.tsx             copiée de l'ancien frontend
+  src/pages/PositionsPage.tsx             reprise de la première version
+  src/pages/DashboardPage.tsx             reprise de la première version
   src/pages/SourcesPage.tsx               + carte Table sectorielle
   src/components/ImportReportCard.tsx     + positions, cash, snapshot ignoré
   src/mocks/positions.ts                  SAMPLE_POSITIONS, SAMPLE_SNAPSHOT, SAMPLE_SECTORS
@@ -2451,10 +2450,10 @@ Claude-Session: https://claude.ai/code/session_01LJLvsD7TGEDB8mTSTxfmwy"
 
 - [x] **Étape 1 : copier le moteur et ses tests**
 
+Reprendre `ib_analysis/__init__.py` et ses 115 tests de la première version dans
+`tools/coverage-oracle/engine/`, puis :
+
 ```bash
-mkdir -p tools/coverage-oracle/engine/ib_analysis tools/coverage-oracle/engine/tests tools/coverage-oracle/corpus
-cp /home/seb/IA/IB_Analyzer/ib_analysis/src/ib_analysis/__init__.py tools/coverage-oracle/engine/ib_analysis/__init__.py
-cp /home/seb/IA/IB_Analyzer/ib_analysis/tests/*.py tools/coverage-oracle/engine/tests/
 echo "3.14" > tools/coverage-oracle/.python-version
 ```
 
@@ -2464,7 +2463,7 @@ echo "3.14" > tools/coverage-oracle/.python-version
 [project]
 name = "coverage-oracle"
 version = "0.0.0"
-description = "Frozen Python coverage engine of the first IB_Analyzer, used only to generate the oracle fixtures of packages/coverage."
+description = "Frozen Python coverage engine of the first version, used only to generate the oracle fixtures of packages/coverage."
 requires-python = ">=3.14"
 dependencies = []
 
@@ -2484,7 +2483,7 @@ pythonpath = ["engine", "engine/tests"]
 ```markdown
 # coverage-oracle
 
-Copie **gelée** de `ib_analysis` (première version d'IB_Analyzer) et de ses 115 tests. Ne suit
+Copie **gelée** de `ib_analysis` (moteur de la première version) et de ses 115 tests. Ne suit
 jamais une évolution du métier : le moteur vivant est `packages/coverage`, en TypeScript.
 
 Sert uniquement à produire les fixtures d'oracle que `packages/coverage/src/oracle.test.ts`
@@ -4513,7 +4512,7 @@ voir sur des données réelles :
 
     node .claude/skills/run-frontend/driver.mjs /accounts/beta/positions /accounts/beta/dashboard \
       --seed --ib-account=U1234567 --import=private/flex_<compte>_<date>.xml \
-      --sectors=/home/seb/IA/IB_Analyzer/original/company.csv
+      --sectors=private/company.csv
 ```
 
 - [x] **Étape 4 : captures sur la graine**
@@ -4523,7 +4522,7 @@ node .claude/skills/run-frontend/driver.mjs /accounts/alpha/positions /accounts/
 node .claude/skills/run-frontend/driver.mjs /accounts/alpha/dashboard --seed --dark
 ```
 
-Ouvrir chaque PNG avec l'outil Read et vérifier : quatre groupes sur Positions avec les badges de couverture et la colonne Secteur remplie pour AAPL, MSFT, XOM ; sur le Dashboard, la jauge verte, « Cash requis $20,500.00 », « Cash disponible $42,000.00 », la carte des non couvertes avec `AAPL 2026-02-20 C 155 — 1` ; sur Sources, la carte Table sectorielle avec « 3 tickers ». Comparer avec l'ancien frontend si un doute visuel subsiste (`/home/seb/IA/IB_Analyzer/frontend/.claude/skills/run-frontend/`, option `--mock`). Aucune erreur console.
+Ouvrir chaque PNG avec l'outil Read et vérifier : quatre groupes sur Positions avec les badges de couverture et la colonne Secteur remplie pour AAPL, MSFT, XOM ; sur le Dashboard, la jauge verte, « Cash requis $20,500.00 », « Cash disponible $42,000.00 », la carte des non couvertes avec `AAPL 2026-02-20 C 155 — 1` ; sur Sources, la carte Table sectorielle avec « 3 tickers ». Aucune erreur console.
 
 - [x] **Étape 5 : commit**
 
@@ -4546,7 +4545,7 @@ Aucun fichier committé. Lire l'identifiant IB réel dans `private/flex_<compte>
 ```bash
 node .claude/skills/run-frontend/driver.mjs /accounts/beta/positions /accounts/beta/dashboard /accounts/beta/sources \
   --seed --ib-account=<accountId réel> --import=private/flex_<compte>_<date>.xml \
-  --sectors=/home/seb/IA/IB_Analyzer/original/company.csv --out=/tmp/ib-real-shots
+  --sectors=private/company.csv --out=/tmp/ib-real-shots
 ```
 
 Lire les PNG. Vérifier :
@@ -4555,9 +4554,9 @@ Lire les PNG. Vérifier :
 - Positions : 30 lignes réparties dans les groupes, 12 positions courtes avec un badge de couverture chacune, secteurs remplis pour les tickers présents dans `company.csv`, badge « Données du 2026-09-02 ».
 - Dashboard : cash requis, cash disponible, verdict, liste des non couvertes.
 
-- [x] **Étape 2 : comparaison avec l'ancienne application**
+- [x] **Étape 2 : comparaison avec la première version**
 
-Relever dans un message à Seb, sans identifiant de compte : le cash requis, le cash disponible, le verdict, la liste des positions non couvertes et les badges de couverture des 12 jambes courtes. Lui demander de lancer l'ancienne application sur son Mac (`./launch_ib_option_analyzer.sh`, TWS ouvert) le même jour et de comparer : mêmes positions, mêmes verdicts de couverture, même cash requis, mêmes non couvertes. Les prix et le P&L diffèrent (intraday contre clôture de la veille) ; le cash disponible diffère des mouvements du jour. Tout écart de couverture est un bug à traiter avant la fin de branche, avec `superpowers:systematic-debugging`.
+Relever dans un message à Seb, sans identifiant de compte : le cash requis, le cash disponible, le verdict, la liste des positions non couvertes et les badges de couverture des 12 jambes courtes. Lui demander de lancer la première version sur son Mac (`./launch_ib_option_analyzer.sh`, TWS ouvert) le même jour et de comparer : mêmes positions, mêmes verdicts de couverture, même cash requis, mêmes non couvertes. Les prix et le P&L diffèrent (intraday contre clôture de la veille) ; le cash disponible diffère des mouvements du jour. Tout écart de couverture est un bug à traiter avant la fin de branche, avec `superpowers:systematic-debugging`.
 
 ---
 
@@ -4570,7 +4569,7 @@ Relever dans un message à Seb, sans identifiant de compte : le cash requis, le 
 
 - Table des sous-projets : ligne 2 passe de `en cours, branche couverture-positions…` à
   `fait (2026-09-xx)` avec la date du merge.
-- Tableau « Reste à copier » du dépôt de référence : supprimer les trois lignes du sous-projet 2
+- Tableau « Reste à copier » : supprimer les trois lignes du sous-projet 2
   (moteur Python, pages Positions et Dashboard, table sectorielle) ; seule reste la passerelle
   TWS du sous-projet 4. Le compte de tests (115) y est déjà correct.
 - Section « Règles qui mordent » : ajouter « **`Position` vit dans `packages/ledger`**, `avgPrice` par unité, `expiry` en `YYYY-MM-DD`, `symbol` = sous-jacent pour une option » et « **Le snapshot de positions est un document par compte**, remplacé quand le `asOf` du fichier est supérieur ou égal ».
@@ -4580,7 +4579,7 @@ Relever dans un message à Seb, sans identifiant de compte : le cash requis, le 
 - [x] **Étape 2 : spec fondateur et dette**
 
 - `docs/specs/2026-09-03-architecture-design.md` : §6.4 « Les 197 tests Python portés » → « Les 115 tests Python portés » ; §14 « ses 197 tests » → « ses 115 tests ». Rien d'autre.
-- `docs/points-reportes.md` : supprimer « Avant tout le reste : régénérer la fixture Flex » (fait). Déplacer les quatre points « Parseurs » et les deux points « Fixture anonymisée » vers « Sans échéance », en corrigeant : `column-missing` est câblé sur `Trades` et `Open Positions`, pas sur les sections de cash ; l'énumération des codes du spec §4.1 reste périmée. Ajouter sous « À traiter au sous-projet 4 » : « `SnapshotRecord.source` n'accepte que `flex` ; l'agent y ajoutera `agent` et le bouton Actualiser ». Ajouter sous « Sans échéance » : « Le corpus de l'oracle ne contient qu'un portefeuille réel (`beta`) ; en extraire un de `alpha` quand un Flex en existera » et « `label` des positions reste en anglais quelle que soit la langue, comme dans l'ancienne application ».
+- `docs/points-reportes.md` : supprimer « Avant tout le reste : régénérer la fixture Flex » (fait). Déplacer les quatre points « Parseurs » et les deux points « Fixture anonymisée » vers « Sans échéance », en corrigeant : `column-missing` est câblé sur `Trades` et `Open Positions`, pas sur les sections de cash ; l'énumération des codes du spec §4.1 reste périmée. Ajouter sous « À traiter au sous-projet 4 » : « `SnapshotRecord.source` n'accepte que `flex` ; l'agent y ajoutera `agent` et le bouton Actualiser ». Ajouter sous « Sans échéance » : « Le corpus de l'oracle ne contient qu'un portefeuille réel (`beta`) ; en extraire un de `alpha` quand un Flex en existera » et « `label` des positions reste en anglais quelle que soit la langue, comme dans la première version ».
 
 - [x] **Étape 3 : `README.md`**
 

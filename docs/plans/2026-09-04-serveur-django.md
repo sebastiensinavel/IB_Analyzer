@@ -2786,7 +2786,7 @@ pnpm --filter web test
 pnpm dlx tsx .claude/skills/run-frontend/driver.mjs --seed --route=/login
 ```
 
-Vérifier que le rendu reste celui de l'ancien frontend : mêmes composants, même thème.
+Vérifier que le rendu reste celui de la première version : mêmes composants, même thème.
 
 - [x] **Étape 7 : commit**
 

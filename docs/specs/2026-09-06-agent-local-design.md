@@ -16,8 +16,8 @@ jour dans les pages qui existent déjà, rafraîchis toutes les cinq minutes ou 
 
 **Dans le périmètre :**
 
-- `apps/tws-agent` : paquet Python `ib-tws-agent`, troisième membre du workspace uv,
-  repris de `ib-bridge/main.py` de l'ancien dépôt. Cette reprise épuise l'ancien dépôt.
+- `apps/tws-agent` : paquet Python `ib-tws-agent`, troisième membre du workspace uv, repris
+  du pont TWS de la première version. Cette reprise épuise la dette envers elle.
 - `packages/ib-parsers` : troisième parseur, `parseAgentSnapshot`.
 - `packages/ledger` : `planAgent`, la règle « n'écrit qu'après la borne Flex ».
 - `apps/web` : module `agent/`, port TWS par compte, rafraîchissement périodique, bouton
@@ -645,11 +645,9 @@ texte d'origine :
 
 ### 12.2 `CLAUDE.md`
 
-- La table « reste à copier » et la section « Dépôt de référence » entière disparaissent :
-  `ib-bridge/main.py` repris, l'ancien dépôt n'a plus de dette envers nous. La quarantaine
-  reste, en une phrase, parce que l'ancien dépôt existe toujours sur le disque.
-- La ligne « Aujourd'hui, Journaux, Portefeuilles » de l'état de l'ancienne application ne
-  mentionne plus Aujourd'hui.
+- La table « reste à copier » disparaît : le pont TWS repris, la première version n'a plus
+  de dette envers nous.
+- La ligne « Aujourd'hui, Journaux, Portefeuilles » ne mentionne plus Aujourd'hui.
 - Sous-projet 4 : statut et nouveau titre, « Agent local, positions intraday, exécutions du
   jour ».
 - Règles qui mordent : « le nom de domaine » précise que l'agent le reçoit par son fichier

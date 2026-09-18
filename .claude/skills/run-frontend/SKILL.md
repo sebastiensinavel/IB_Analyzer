@@ -96,7 +96,7 @@ voir sur des données réelles :
 ```bash
 node .claude/skills/run-frontend/driver.mjs /accounts/beta/positions /accounts/beta/dashboard \
   --seed --ib-account=U1234567 --import=private/flex_<compte>_<date>.xml \
-  --sectors=/home/seb/IA/IB_Analyzer/original/company.csv
+  --sectors=private/company.csv
 ```
 
 Pour chaque route, le driver écrit `<route>.png` (page entière) **et**

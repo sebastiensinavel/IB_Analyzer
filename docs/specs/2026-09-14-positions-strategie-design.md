@@ -28,7 +28,7 @@ Dans le périmètre :
 - le croisement des lignes ouvertes d'une stratégie avec le snapshot (`wheelPositions`,
   `leapsPositions`, `packages/coverage`) ;
 - la sélection des suggestions (`positionSuggestions`, `packages/coverage`), portée de
-  `select_put_sell_candidates` de l'ancien outil Python ;
+  `select_put_sell_candidates` de l'outil Python d'origine ;
 - deux routes `positions/wheel` et `positions/leaps`, leur entrée de menu, la page
   `StrategyPositionsPage` ;
 - la carte `PositionSuggestionsCard` en bas du tableau de bord.
@@ -38,8 +38,8 @@ Hors périmètre, déclaré tel :
 - **une page Positions pour les Condors ou pour Autres** : non demandée ;
 - **un filtre texte** sur les nouvelles pages : non demandé, la page Positions garde le sien ;
 - **la conversion de devise** : les montants s'affichent comme sur Positions, et les valeurs de
-  risque s'additionnent sans conversion, comme dans l'ancien outil ;
-- **les graphiques de répartition** (« Breakdown ») de l'ancien rapport HTML : seule la mesure
+  risque s'additionnent sans conversion, comme dans l'outil Python d'origine ;
+- **les graphiques de répartition** (« Breakdown ») de son rapport HTML : seule la mesure
   qu'ils utilisaient, la valeur de risque, est reprise pour la suggestion ;
 - **le repli sur les colonnes `S-2` à `S-22`** quand le score est vide : l'import CSV les ignore
   déjà (sous-projet 15) ;
@@ -321,7 +321,7 @@ Tri lexicographique sur :
 Puis coupe aux `MAX_SUGGESTIONS` premiers, `rank` valant la position dans la liste coupée,
 à partir de 1.
 
-### 4.5 Écarts à l'ancien outil
+### 4.5 Écarts à l'outil Python d'origine
 
 - une valeur de risque inconnue compte pour 0 : le Python n'avait jamais de `null` ;
 - le statut est comparé sans casse ni espaces, comme le Python qui le normalisait au chargement ;

@@ -1,7 +1,7 @@
 # IB Options Analyzer 2 — Architecture
 
-> Spec fondateur du dépôt. Décisions arrêtées le 3 septembre 2026 après revue de
-> `IB_Analyzer` (première version, Django + cookiecutter, données côté serveur).
+> Spec fondateur du dépôt. Décisions arrêtées le 3 septembre 2026 après revue de la
+> première version (Django + cookiecutter, données côté serveur).
 > Ce document fixe l'architecture. Chaque sous-projet (§12) aura ensuite son propre spec
 > et son propre plan.
 
@@ -279,9 +279,9 @@ Entrée : positions et cash, quelle que soit leur origine (Flex ou agent), dans 
 `Position` commun. Sortie : le `RiskReport` que consomment déjà les pages Positions et
 Dashboard.
 
-**Vérification du port** : au sous-projet 2, un oracle Python (l'ancien moteur et un
-générateur de paires entrée/sortie) a prouvé que le moteur TS reproduisait l'ancien à
-l'identique, et les 115 tests Python ont été portés un par un en Vitest. Le port acquis,
+**Vérification du port** : au sous-projet 2, un oracle Python (le moteur de la première
+version et un générateur de paires entrée/sortie) a prouvé que le moteur TS le reproduisait
+à l'identique, et les 115 tests Python ont été portés un par un en Vitest. Le port acquis,
 l'oracle a été retiré du dépôt (2026-09-17) : il ne suivait plus le moteur, n'attrapait
 qu'une seule mutation que les tests écrits à la main laissaient passer — fixée depuis par un
 test dédié — et portait un portefeuille réel anonymisé. Le moteur n'est plus fixé que par
@@ -499,7 +499,7 @@ relevés HTML ; les 365 jours Flex se rechargent seuls.
 |---|---|---|
 | `ledger` | Vitest | Propriété de plage, soldes, journaux sur fixtures de séquences |
 | `ib-parsers` | Vitest | Fichiers réels anonymisés : sections, sous-totaux, quantités négatives, multi-devises, conversions |
-| `coverage` | Vitest | Tests écrits à la main, dont les 115 portés de l'ancien moteur |
+| `coverage` | Vitest | Tests écrits à la main, dont les 115 portés du moteur Python de la première version |
 | `apps/web` | Vitest + Testing Library | Pages, navigation, formatage |
 | `apps/api` | pytest + Ninja TestClient | Auth, invitations, throttling, proxy stubbé, sauvegarde |
 | `apps/tws-agent` | pytest, ib_async stubbé | Endpoints, CORS, TWS éteint |
@@ -541,7 +541,7 @@ Chacun a son spec et son plan. Chaque étape livre quelque chose d'utilisable.
 |---|---|
 | Flex Query appelée depuis le navigateur | Pas de CORS chez IB, vérifié |
 | Relais navigateur → serveur → agent (WebSocket sortant) | Un agent sur localhost avec CORS suffit tant que TWS et le navigateur sont sur la même machine, et le serveur ne voit alors aucune donnée live. Possible plus tard pour consulter depuis un autre appareil |
-| Transactions, positions et secteurs stockés côté serveur | L'architecture de l'ancien dépôt (`portfolio.Transaction`, `SectorMap`, `PositionSnapshot` en PostgreSQL). Le serveur ne voit aucune donnée de portefeuille : c'est la contrainte fondatrice, pas un détail d'implémentation. Le ledger vit en IndexedDB, la sauvegarde chiffrée du sous-projet 6 ne rend le serveur ni lisible ni responsable |
+| Transactions, positions et secteurs stockés côté serveur | L'architecture de la première version (`portfolio.Transaction`, `SectorMap`, `PositionSnapshot` en PostgreSQL). Le serveur ne voit aucune donnée de portefeuille : c'est la contrainte fondatrice, pas un détail d'implémentation. Le ledger vit en IndexedDB, la sauvegarde chiffrée du sous-projet 6 ne rend le serveur ni lisible ni responsable |
 | Ingestion Flex ou relevés HTML côté serveur | Même raison : le fichier et son contenu ne quittent pas le navigateur. Le serveur ne fait que relayer l'appel Flex, jeton en transit, jamais journalisé |
 | Moteur de couverture sur le serveur, endpoint sans état | Les positions transiteraient par le serveur. Le port TS, vérifié par oracle, garde tout dans le navigateur |
 | Moteur de couverture dans l'agent | Les paliers 1 et 2 n'ont pas d'agent |
@@ -558,8 +558,6 @@ Chacun a son spec et son plan. Chaque étape livre quelque chose d'utilisable.
 
 ## 14. Références
 
-- `IB_Analyzer` (première version) : `ib_analysis/` et ses 115 tests, `ib-bridge/main.py`,
-  `backend/backend/portfolio/ingestion/` et ses fixtures, `frontend/src/`, `ARCHITECTURE.md` §2.
 - [Flex Web Service](https://www.interactivebrokers.com/campus/ibkr-api-page/flex-web-service/)
 - [`ib_async`](https://github.com/ib-api-reloaded/ib_async)
 - [`django-allauth` — Headless](https://docs.allauth.org/en/latest/headless/introduction.html) · [MFA](https://docs.allauth.org/en/latest/mfa/introduction.html)

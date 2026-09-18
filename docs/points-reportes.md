@@ -694,7 +694,7 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 - **Le total de la suggestion compte toutes les positions du snapshot, pas seulement les
   actions et les options** (`packages/coverage/src/suggestions.ts`, boucle sur
-  `report.positions`, ligne 54). Conforme à l'ancien outil et au §4.2 du spec, mais
+  `report.positions`, ligne 54). Conforme à l'outil Python d'origine et au §4.2 du spec, mais
   `heldTickers`/`missingSectorRecords` ne gardent que STK/OPT (`apps/web/src/db/sectors.ts`,
   `CLASSIFIED_TYPES`), et l'agent rend `ib.portfolio()` sans filtre
   (`apps/tws-agent/ib_tws_agent/main.py:165`) : une position de change `CASH` (par exemple
@@ -875,7 +875,7 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   restent, la règle énoncée ci-dessus est contredite par le dépôt lui-même : les corriger, ou
   dire pourquoi on ne le fait pas.
 - **`packages/ui/src/hooks/use-mobile.ts` déclenche un avertissement oxlint** (`set-state-in-effect`),
-  hérité tel quel de l'ancien frontend. **Neuf avertissements au total** sur la branche, comptés
+  hérité tel quel de la première version. **Neuf avertissements au total** sur la branche, comptés
   à la fin du sous-projet 3 : `api/session.tsx` ×3 (`only-export-components` ×2,
   `set-state-in-effect`), `db/DbProvider.tsx` ×2 (`only-export-components`),
   `pages/SettingsPage.tsx`, `pages/SourcesPage.tsx`, `flex/useFlexAutoSync.test.tsx` et

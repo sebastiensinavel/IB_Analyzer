@@ -4,7 +4,7 @@
 
 **Goal:** Une application web sans serveur où l'on crée un compte, importe un XML Flex et un relevé HTML depuis le disque, et lit la page Historique avec ses soldes cumulés USD et EUR.
 
-**Architecture:** Monorepo pnpm. `packages/ledger` (TS pur) porte le modèle de transaction, les soldes et la propriété de plage ; `packages/ib-parsers` (TS pur, DOMParser) transforme Flex XML et relevé HTML en lignes de ledger ; `apps/web` (Vite + React) persiste en IndexedDB via Dexie, lit par `useLiveQuery`, et reprend la coquille visuelle de l'ancien frontend ; `packages/ui` porte les composants shadcn.
+**Architecture:** Monorepo pnpm. `packages/ledger` (TS pur) porte le modèle de transaction, les soldes et la propriété de plage ; `packages/ib-parsers` (TS pur, DOMParser) transforme Flex XML et relevé HTML en lignes de ledger ; `apps/web` (Vite + React) persiste en IndexedDB via Dexie, lit par `useLiveQuery`, et reprend la coquille visuelle de la première version ; `packages/ui` porte les composants shadcn.
 
 **Tech Stack:** Node 22, pnpm (corepack), TypeScript 6, Vite 8, Vitest 4, React 19, react-router 8, react-i18next, Tailwind 4, shadcn base-ui, Dexie 4, dexie-react-hooks, fake-indexeddb, @noble/hashes, oxlint, Playwright (driver du skill `run-frontend` seulement).
 
@@ -12,7 +12,6 @@
 
 ## Global Constraints
 
-- Ancien dépôt `/home/seb/IA/IB_Analyzer` en **lecture seule** : on copie, on ne modifie jamais.
 - `private/` n'est jamais versionné ; aucun identifiant de compte, jeton ou montant réel dans un fichier committé.
 - Une valeur absente reste `null`, jamais `0`, et s'affiche « — ».
 - Paire de devises reconnue à la forme du symbole `^[A-Z]{3}\.[A-Z]{3}$` : `amount` à la devise de cotation, `quantity` et `commission` à la devise de base.
@@ -1989,8 +1988,10 @@ Claude-Session: https://claude.ai/code/session_01TpMePkmtKDUowT2gMLfEZF"
 
 - [ ] **Étape 1 : copier et adapter la fixture**
 
+Reprendre `activity_statement_sample.htm`, la fixture de relevé de la première version, dans
+`packages/ib-parsers/tests/fixtures/`, puis :
+
 ```bash
-cp /home/seb/IA/IB_Analyzer/backend/backend/portfolio/tests/fixtures/activity_statement_sample.htm packages/ib-parsers/tests/fixtures/activity_statement_sample.htm
 sed -i 's/_TESTBody/_U0000001Body/g' packages/ib-parsers/tests/fixtures/activity_statement_sample.htm
 head -5 packages/ib-parsers/tests/fixtures/activity_statement_sample.htm
 ```
@@ -2776,7 +2777,7 @@ Rien à committer.
 
 ```bash
 mkdir -p packages/ui/src/components/ui packages/ui/src/lib packages/ui/src/hooks
-OLD=/home/seb/IA/IB_Analyzer/frontend
+OLD=<racine du frontend de la première version>
 cp $OLD/src/components/ui/*.tsx packages/ui/src/components/ui/
 cp $OLD/src/lib/utils.ts packages/ui/src/lib/utils.ts
 cp $OLD/src/hooks/use-mobile.ts packages/ui/src/hooks/use-mobile.ts
@@ -3071,7 +3072,7 @@ Attendu : `1`. Le rendu visuel est vérifié à la tâche 17 avec le skill.
 
 ```bash
 git add pnpm-lock.yaml packages/ui apps/web
-git commit -m "feat(web): squelette Vite, paquet ui shadcn, thème et i18n copiés de l'ancien frontend
+git commit -m "feat(web): squelette Vite, paquet ui shadcn, thème et i18n copiés de la première version
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01TpMePkmtKDUowT2gMLfEZF"
@@ -5217,7 +5218,7 @@ export async function seedDemo(): Promise<void> {
 
 - [ ] **Étape 2 : driver**
 
-Copier `/home/seb/IA/IB_Analyzer/frontend/.claude/skills/run-frontend/driver.mjs` vers `.claude/skills/run-frontend/driver.mjs`, puis :
+Reprendre le driver `run-frontend` de la première version dans `.claude/skills/run-frontend/driver.mjs`, puis :
 
 - remplacer l'en-tête d'options `--mock` par `--seed  seed IndexedDB with two demo accounts and a sample ledger (src/mocks/seed.ts)` ;
 - `BASE` devient `http://127.0.0.1:${PORT}` et le commentaire CORS disparaît (plus de backend) ;
@@ -5246,13 +5247,8 @@ node .claude/skills/run-frontend/driver.mjs /accounts/alpha/history /accounts/al
 node .claude/skills/run-frontend/driver.mjs /accounts/alpha/history --seed --dark --out=/tmp/claude-1001/-home-seb-IA-IB-Analyzer2/f14ce816-9eef-425c-9968-5b7ce6092366/scratchpad/shots
 ```
 
-Puis l'ancienne application, page Historique avec ses fixtures :
-
-```bash
-cd /home/seb/IA/IB_Analyzer/frontend && node .claude/skills/run-frontend/driver.mjs /accounts/alpha/history --mock --port=5174 --out=/tmp/claude-1001/-home-seb-IA-IB-Analyzer2/f14ce816-9eef-425c-9968-5b7ce6092366/scratchpad/shots-old
-```
-
-**Ouvrir chaque PNG avec l'outil Read** et comparer : barre latérale (mêmes sections, Sources de données et Paramètres à la place de Portefeuilles), en-tête, filtres, colonnes de la table, alignements, polices, thème sombre. Corriger tout écart de rendu avant de continuer ; les données diffèrent, pas la mise en page.
+**Ouvrir chaque PNG avec l'outil Read** et le comparer au rendu de la première version, page
+Historique avec ses fixtures : barre latérale (mêmes sections, Sources de données et Paramètres à la place de Portefeuilles), en-tête, filtres, colonnes de la table, alignements, polices, thème sombre. Corriger tout écart de rendu avant de continuer ; les données diffèrent, pas la mise en page.
 
 - [ ] **Étape 4 : commit**
 

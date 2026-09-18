@@ -1348,7 +1348,7 @@ Trois retouches :
    reconstruit cette forme depuis ses termes (`packedOptionSymbol`) pour interroger la table ;
    et une conversion 1 pour 1 du sous-jacent greffe l'ancienne orthographe sur la classe du
    nouveau ticker, sur preuve qu'elle existe (spec §5.2, règle 9). »*
-2. Dans la section « État de l'ancienne application », la phrase sur `alpha` : remplacer
+2. La phrase sur `alpha` (oracles du cash) : remplacer
    « Relevés seuls, son portefeuille garde 4 écarts d'options renommées, figés par
    `alpha.private.test.ts` jusqu'au sous-projet 10 » par « Relevés seuls, son portefeuille se
    reconstruit sans un écart depuis le sous-projet 10 ». La phrase suivante, sur l'écart USD du

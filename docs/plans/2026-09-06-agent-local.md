@@ -4327,8 +4327,8 @@ jour remplacée par sa jumelle Flex après la synchro du matin.
 
 - [x] **Étape 2 : `CLAUDE.md`**
 
-- Supprimer la section « Dépôt de référence (lecture seule, en voie d'extinction) » **jusqu'à la sous-section « Quarantaine » exclue** : la table « reste à copier », la phrase « Cette ligne épuise… » et le paragraphe « Déjà copié… ». Les remplacer par deux phrases : l'ancien dépôt `/home/seb/IA/IB_Analyzer` n'a plus rien à nous donner, ne jamais le modifier, et le rendu visuel de son frontend reste la maquette.
-- Garder « Quarantaine » et « État de l'ancienne application » ; dans cette dernière, la ligne « Aujourd'hui, Journaux, Portefeuilles » devient « Journaux, Portefeuilles ».
+- Supprimer la table « reste à copier », la phrase « Cette ligne épuise… » et le paragraphe « Déjà copié… » : la première version n'a plus rien à nous donner.
+- La ligne « Aujourd'hui, Journaux, Portefeuilles » devient « Journaux, Portefeuilles ».
 - Tableau des sous-projets : ligne 4 → « Agent local, positions intraday, exécutions du jour | fait (2026-09-06) ».
 - « Règles qui mordent », ajouter :
   - **L'agent n'écrit qu'après `max(when)` Flex, strictement, et ne supprime jamais.** Un snapshot `agent` remplace toujours le courant ; un fichier remplace si son `asOf` atteint le jour du courant (`db/snapshot.ts`).
@@ -4388,7 +4388,7 @@ Skill `superpowers:requesting-code-review` sur la branche entière. Traiter ce q
 
 ```bash
 git add -A
-git commit -m "docs: sous-projet 4 livré, dette reportée, ancien dépôt épuisé"
+git commit -m "docs: sous-projet 4 livré, dette reportée, première version épuisée"
 ```
 
 Skill `superpowers:finishing-a-development-branch` : merge sur `main`, suppression du worktree.

@@ -18,12 +18,13 @@ rachat, le cash requis contre le cash disponible et les positions non couvertes.
 
 - `packages/coverage` : port TS du moteur `ib_analysis`, vérifié par oracle et par les tests
   Python portés un par un.
-- `tools/coverage-oracle` : l'ancien moteur Python gelé, ses tests, le générateur de fixtures.
+- `tools/coverage-oracle` : le moteur Python de la première version, gelé, ses tests, le
+  générateur de fixtures.
 - `packages/ledger` : type `Position`.
 - `packages/ib-parsers` : lecture d'Open Positions et de Cash Report dans le Flex XML,
   fixture régénérée.
 - `apps/web` : cache des positions et table sectorielle en IndexedDB, import CSV de la
-  table sectorielle, pages Positions et Dashboard copiées de l'ancien frontend, carte
+  table sectorielle, pages Positions et Dashboard reprises de la première version, carte
   sectorielle sur Sources de données.
 - Mise à jour de `CLAUDE.md`, du spec fondateur et de `docs/points-reportes.md`.
 
@@ -34,8 +35,8 @@ rachat, le cash requis contre le cash disponible et les positions non couvertes.
 - Agrégations par secteur et primes (sous-projet 5, avec l'appariement des journaux).
 - Positions dérivées du ledger : écartées par le spec fondateur §13.
 
-**Constat corrigé :** l'ancien moteur fait 803 lignes en un fichier et **115 tests**, pas 197.
-Le chiffre 197 était celui de tout l'ancien backend. `CLAUDE.md` et le spec fondateur sont
+**Constat corrigé :** le moteur Python de la première version fait 803 lignes en un fichier
+et **115 tests**, pas 197. Le chiffre 197 était celui de tout son backend. `CLAUDE.md` et le spec fondateur sont
 corrigés dans ce sous-projet.
 
 ---
@@ -248,7 +249,7 @@ pour `position`, `markPrice`, `positionValue`, `costBasisPrice`, `fifoPnlUnreali
 ### 5.3 Cash Report
 
 Ligne `<CashReportCurrency currency="USD" levelOfDetail="Currency">`, attribut `endingCash` :
-l'équivalent du `TotalCashBalance` USD que l'ancienne application lisait dans TWS. La ligne
+l'équivalent du `TotalCashBalance` USD que la première version lisait dans TWS. La ligne
 `BASE_SUMMARY` est ignorée.
 
 - Section `<CashReport>` absente : `section-missing` « Cash Report », `cashAvailable: null`.
@@ -325,7 +326,7 @@ couverture et quelques secteurs, pour que les captures des deux pages montrent q
 
 ## 7. `apps/web` : pages
 
-### 7.1 Copié de l'ancien frontend
+### 7.1 Repris de la première version
 
 `PositionsPage.tsx`, `DashboardPage.tsx`, leurs tests, `lib/riskReport.ts` réduit à
 `decisionBadge` et `coverageBadges` (choix de présentation ; le reste vient de
@@ -388,8 +389,8 @@ dépend pas du cash.
 
 ### 8.2 Manuel, sur données réelles
 
-Importer le Flex réel de `beta` du 2026-09-03 et comparer avec l'ancienne application
-lancée le même jour : mêmes positions, mêmes verdicts de couverture, même cash requis,
+Importer le Flex réel de `beta` du 2026-09-03 et comparer avec la première version lancée
+le même jour : mêmes positions, mêmes verdicts de couverture, même cash requis,
 mêmes positions non couvertes. Les prix et le P&L diffèrent (intraday contre clôture de la
 veille), les verdicts de couverture ne doivent pas. Le cash disponible Flex doit être proche
 du `TotalCashBalance` USD de TWS, l'écart étant les mouvements du jour.

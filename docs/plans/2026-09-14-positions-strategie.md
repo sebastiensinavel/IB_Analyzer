@@ -4,7 +4,7 @@
 
 **Goal:** Ajouter une page « Positions » aux stratégies Wheel et LEAPS, qui ne montre que la part de la stratégie dans le portefeuille IB, et une carte « Suggestion de Position » au tableau de bord.
 
-**Architecture:** (1) `packages/ledger` : chaque `JournalRow` porte sa clé de contrat (`contract`), et `wheelHoldings` agrège par ticker les actions Wheel ouvertes et les calls Wheel ouverts. (2) `packages/coverage` : `wheelPositions` et `leapsPositions` croisent les lignes de journal ouvertes avec le snapshot par `contractId` (prix, valeur, P&L, décision, badges de la position IB) ; `positionSuggestions` porte `select_put_sell_candidates` de l'ancien outil, sur la valeur de risque (`riskValue`). (3) `apps/web` : `StrategyPositionsPage` sous `positions/wheel` et `positions/leaps`, entrée de menu, `PositionRow` partagée avec la page Positions, `PositionSuggestionsCard` en bas du tableau de bord. Rien n'est stocké.
+**Architecture:** (1) `packages/ledger` : chaque `JournalRow` porte sa clé de contrat (`contract`), et `wheelHoldings` agrège par ticker les actions Wheel ouvertes et les calls Wheel ouverts. (2) `packages/coverage` : `wheelPositions` et `leapsPositions` croisent les lignes de journal ouvertes avec le snapshot par `contractId` (prix, valeur, P&L, décision, badges de la position IB) ; `positionSuggestions` porte `select_put_sell_candidates` de l'outil Python d'origine, sur la valeur de risque (`riskValue`). (3) `apps/web` : `StrategyPositionsPage` sous `positions/wheel` et `positions/leaps`, entrée de menu, `PositionRow` partagée avec la page Positions, `PositionSuggestionsCard` en bas du tableau de bord. Rien n'est stocké.
 
 **Tech Stack:** TypeScript 6, Vitest 4, React 19, react-router 8, Dexie 4 (`fake-indexeddb` en test), react-i18next, shadcn base-ui, Testing Library. Node 22, pnpm.
 
@@ -824,7 +824,7 @@ Claude-Session: https://claude.ai/code/session_01NACu2yrhhokgAokMgFU55P"
 
 - [x] **Step 1: Write the failing test**
 
-`packages/coverage/src/suggestions.test.ts` (les huit premiers cas portent `test_html_report.py` de l'ancien outil) :
+`packages/coverage/src/suggestions.test.ts` (les huit premiers cas portent `test_html_report.py` de l'outil Python d'origine) :
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -1070,7 +1070,7 @@ Expected: PASS.
 
 ```bash
 git add packages/coverage/src apps/web/src/lib/businessConstants.test.ts docs/plans/2026-09-14-positions-strategie.md
-git commit -m "feat(coverage): positionSuggestions, portage de la sélection de l'ancien outil sur la valeur de risque
+git commit -m "feat(coverage): positionSuggestions, portage de la sélection de l'outil Python d'origine sur la valeur de risque
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01NACu2yrhhokgAokMgFU55P"
@@ -2106,7 +2106,7 @@ Expected: PASS (réconciliation sans écart, points de cash calés, holdings).
 - **La suggestion de position mesure en valeur de risque, jamais en capital** :
   `positionSuggestions` (`packages/coverage/src/suggestions.ts`) additionne `riskValue` des positions
   du compte affiché, par ticker et par secteur de la table sectorielle, et porte
-  `select_put_sell_candidates` de l'ancien outil. `MIN_SUGGESTION_SCORE`, `MAX_SUGGESTIONS` et
+  `select_put_sell_candidates` de l'outil Python d'origine. `MIN_SUGGESTION_SCORE`, `MAX_SUGGESTIONS` et
   `MAX_SUGGESTION_TICKER_SHARE` vivent une seule fois dans `packages/coverage/src/constants.ts`.
 ```
 

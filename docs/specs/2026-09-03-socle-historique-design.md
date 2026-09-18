@@ -20,7 +20,7 @@ soldes cumulés USD et EUR.
 - `ib-parsers` : Flex XML (Trades, Cash Transactions, Corporate Actions) et relevé HTML
   (sections de la première version plus Option Cash Settlement), avec compte rendu des manques.
 - IndexedDB via Dexie : comptes, transactions, journal des imports.
-- Coquille web copiée de l'ancien frontend, page Historique fonctionnelle, page Sources de
+- Coquille web reprise de la première version, page Historique fonctionnelle, page Sources de
   données en version fichier, page de création de compte, coquilles vides pour le reste.
 - Skill `run-frontend` copié et adapté.
 
@@ -59,7 +59,7 @@ IB_Analyzer2/
 - **Pas d'étape de build pour les paquets.** Chaque `package.json` exporte `src/index.ts` ;
   Vite et Vitest consomment le TS directement. `typecheck` est un `tsc --noEmit` par paquet.
   Seul `apps/web` a un build.
-- **Versions reprises de l'ancien frontend** : TypeScript 6, Vite 8, Vitest 4, React 19,
+- **Versions reprises de la première version** : TypeScript 6, Vite 8, Vitest 4, React 19,
   react-router 8, `@base-ui/react`, Tailwind 4, oxlint, Testing Library, jsdom. Les fichiers
   copiés compilent sans adaptation. ECharts et TanStack Query ne sont **pas** installés :
   la page Historique n'a pas de graphique et aucun appel serveur n'existe.
@@ -75,7 +75,7 @@ IB_Analyzer2/
   `fake-indexeddb` en dev.
 
 Code et commentaires en anglais, documentation et messages de commit en français, comme
-dans l'ancien dépôt.
+dans la première version.
 
 ---
 
@@ -117,7 +117,7 @@ interface Transaction {
   la première version : Flex Query et relevés doivent être configurés sur le même fuseau
   dans le Client Portal. Une ligne datée sans heure prend minuit.
 - **Une valeur absente reste `null`**, jamais `0`, et s'affiche « — ».
-- Nombres en `number` flottant, comme partout dans l'ancienne version.
+- Nombres en `number` flottant, comme partout dans la première version.
 
 ### 3.2 Ordre de référence
 
@@ -284,9 +284,9 @@ elle se rattache au contrat par ses quatre champs.
 
 ### 4.5 Fixtures
 
-- **HTML** : `activity_statement_sample.htm` de l'ancien dépôt
-  (`backend/backend/portfolio/tests/fixtures/`), copié tel quel puis complété d'une section
-  `OptionCashSettlement` d'une ligne et d'une paire de lignes jumelles.
+- **HTML** : `activity_statement_sample.htm`, la fixture de relevé de la première version,
+  reprise telle quelle puis complétée d'une section `OptionCashSettlement` d'une ligne et
+  d'une paire de lignes jumelles.
 - **Flex** : produite par un **script d'anonymisation versionné**,
   `packages/ib-parsers/scripts/anonymize-flex.ts`, qui prend un XML de `private/` et
   réécrit identifiant de compte, identifiants de transactions, symboles, libellés et montants
@@ -345,7 +345,7 @@ résultat live ; `undefined` tant que la requête n'a pas répondu.
 
 ## 6. `apps/web` : pages et navigation
 
-### 6.1 Copié de l'ancien frontend
+### 6.1 Repris de la première version
 
 Tel quel, tests inclus : `AppLayout`, `app-sidebar`, `LanguageSwitcher`, `ThemeToggle`,
 `useTheme`, `use-mobile`, `index.css`, `format.ts`, `utils.ts`, `PlaceholderPage`, `en.json`
@@ -355,7 +355,7 @@ Adaptés : `AccountSwitcher` et `RootRedirect` lisent les comptes en IndexedDB a
 liste codée en dur ; `navigation.ts` remplace Portefeuilles par Sources de données et ajoute
 Paramètres ; `accountStorage.ts` perd le type `AccountId` fermé au profit d'un `string`.
 
-Le rendu visuel est celui de l'ancien frontend, vérifié côte à côte (§7).
+Le rendu visuel est celui de la première version, vérifié côte à côte (§7).
 
 ### 6.2 Routes
 
@@ -418,7 +418,7 @@ Pas de Playwright avant le sous-projet 3.
 
 Documenté dans le plan et rejoué avant le merge :
 
-1. Lancer l'ancienne application et la nouvelle côte à côte (skill `run-frontend`), page
+1. Lancer la première version et la nouvelle côte à côte (skill `run-frontend`), page
    Historique de `beta` : mêmes lignes, même rendu.
 2. Importer le XML Flex de `beta` depuis `private/`. Le compte a été ouvert dans la
    fenêtre Flex (premier dépôt le 17 décembre 2025), Flex seul couvre tout son historique.
