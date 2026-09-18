@@ -476,7 +476,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 valider deux fois. Un `conId` illisible n'est pas une erreur ici : `readExecution` la lèvera au
 bon endroit, avec son propre chemin.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `packages/ib-parsers/src/agent.test.ts`, en reprenant la façon dont le fichier construit
 déjà une charge utile (un helper local existe sans doute — le réutiliser plutôt qu'en écrire un) :
@@ -529,12 +529,12 @@ it.each([
 Le dernier cas — `value === dailyPnL` — est la division par zéro : la position valait 0 à la
 clôture.
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `cd packages/ib-parsers && npx vitest run src/agent.test.ts`
 Attendu : ÉCHEC — `expected null to be 100`.
 
-- [ ] **Étape 3 : implémenter**
+- [x] **Étape 3 : implémenter**
 
 Le type d'abord, dans `AgentPosition` :
 
@@ -606,7 +606,7 @@ Dans `parseAgentSnapshot`, avant la ligne qui mappe `positions` :
 
 `list(root, "executions", …)` n'est plus appelé deux fois.
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
 Run : `cd packages/ib-parsers && npx vitest run src/agent.test.ts`
 Attendu : tout passe. Les assertions `toEqual` du fichier qui décrivent une position entière
@@ -615,7 +615,7 @@ gagnent les deux champs.
 Puis : `pnpm --filter @ib/ib-parsers test` — le corpus d'oracle des journaux ne bouge pas, il est
 Flex.
 
-- [ ] **Étape 5 : commit**
+- [x] **Étape 5 : commit**
 
 ```bash
 git add -A

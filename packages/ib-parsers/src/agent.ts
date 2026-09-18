@@ -26,6 +26,11 @@ export interface AgentPosition extends AgentContract {
   marketPrice: number;
   marketValue: number;
   unrealizedPNL: number;
+  /**
+   * One `PnLSingle` message: the day's P&L and the position's value at the same instant, so
+   * their ratio is coherent. Absent from an older agent, `null` when TWS said nothing in time.
+   */
+  pnl?: { dailyPnL: number | null; value: number | null } | null;
 }
 
 export interface AgentExecution {
@@ -225,7 +230,21 @@ function optionMultiplier(
   return fields.multiplier;
 }
 
-function readPosition(value: unknown, path: string, collected: Collected): Position {
+/**
+ * Today's move of the mark price, from one PnLSingle message: `value − dailyPnL` is what the
+ * position was worth at yesterday's close, so the ratio is `(price − close) / close` — right for
+ * a long and for a short alike. `null` when either value is missing, when the position was worth
+ * nothing at the close, or when the contract traded today: the day's P&L then starts from the
+ * execution price, not from the close, and no ratio recovers the move. That repairs itself
+ * tomorrow.
+ */
+function dayChangeOf(dailyPnL: number | null, value: number | null, tradedToday: boolean): number | null {
+  if (tradedToday || dailyPnL === null || value === null) return null;
+  const previous = value - dailyPnL;
+  return previous === 0 ? null : dailyPnL / previous;
+}
+
+function readPosition(value: unknown, path: string, collected: Collected, tradedToday: ReadonlySet<number>): Position {
   const o = obj(value, path);
   const contract = readContract(o, path);
   const fields = readFields(contract, path);
@@ -236,6 +255,9 @@ function readPosition(value: unknown, path: string, collected: Collected): Posit
   const avgPrice = multiplier === null ? null : averageCost / multiplier;
   const identity = identityOf(contract, fields);
   if (identity) collected.identities.push(identity);
+  const pnl = o["pnl"] === undefined || o["pnl"] === null ? null : obj(o["pnl"], `${path}.pnl`);
+  const dailyPnl = pnl === null ? null : numOrNull(pnl, "dailyPnL", `${path}.pnl`);
+  const pnlValue = pnl === null ? null : numOrNull(pnl, "value", `${path}.pnl`);
   return {
     symbol: fields.symbol,
     secType: fields.secType,
@@ -248,9 +270,8 @@ function readPosition(value: unknown, path: string, collected: Collected): Posit
     marketPrice: num(o, "marketPrice", path),
     marketValue: num(o, "marketValue", path),
     unrealizedPnl: num(o, "unrealizedPNL", path),
-    // Wired up in a later pass: the agent does not yet ask TWS for the day's P&L.
-    dailyPnl: null,
-    dayChange: null,
+    dailyPnl,
+    dayChange: dayChangeOf(dailyPnl, pnlValue, tradedToday.has(contract.conId)),
     currency: contract.currency,
     conid: String(contract.conId),
     description,
@@ -305,10 +326,19 @@ export function parseAgentSnapshot(payload: unknown, accountId: string): AgentSn
   );
   const fetchedAt = toReportTime(instant(root, "fetchedAt", "payload"));
   const cashAvailable = numOrNull(root, "cashAvailable", "payload");
-  const positions = list(root, "positions", "payload").map((v, i) => readPosition(v, `payload.positions[${i}]`, collected));
-  const transactions = list(root, "executions", "payload").map((v, i) =>
-    readExecution(v, `payload.executions[${i}]`, accountId, collected),
+  const rawExecutions = list(root, "executions", "payload");
+  // Which contracts moved today, read off the same response. A conId this loop cannot read is
+  // left alone: readExecution below raises on it, at its own path.
+  const tradedToday = new Set<number>(
+    rawExecutions.flatMap((e) => {
+      const conId = (e as Obj | null)?.["contract"] && ((e as Obj)["contract"] as Obj)["conId"];
+      return typeof conId === "number" ? [conId] : [];
+    }),
   );
+  const positions = list(root, "positions", "payload").map((v, i) =>
+    readPosition(v, `payload.positions[${i}]`, collected, tradedToday),
+  );
+  const transactions = rawExecutions.map((v, i) => readExecution(v, `payload.executions[${i}]`, accountId, collected));
   const identities = mergeIdentities([collected.identities]);
   return { accounts, fetchedAt, cashAvailable, positions, transactions, identities, issues: collected.issues };
 }
