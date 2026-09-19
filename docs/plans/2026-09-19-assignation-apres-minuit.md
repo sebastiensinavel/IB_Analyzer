@@ -152,7 +152,7 @@ Le test `deletes rows of other sources over its whole days, bounds included` a u
 `html("next-day", "2026-03-06T00:00:00.000Z")` qui doit rester en vie. S'il devient rouge, la
 bascule a été appliquée à toutes les sources au lieu de l'agent seul.
 
-- [ ] **Étape 1 : mettre à jour les deux tests existants que le comportement change**
+- [x] **Étape 1 : mettre à jour les deux tests existants que le comportement change**
 
 Dans `packages/ledger/src/import.test.ts`, `describe("planImport from the agent")`, remplacer la
 constante du bloc :
@@ -205,7 +205,7 @@ Dans `describe("planImport from Flex, over agent rows")`, remplacer le corps du 
   });
 ```
 
-- [ ] **Étape 2 : ajouter les quatre tests neufs**
+- [x] **Étape 2 : ajouter les quatre tests neufs**
 
 Dans `describe("planImport from the agent")`, après le test
 `leaves out an assignment Flex already dated at 16:20 that TWS reports in the evening` :
@@ -251,12 +251,12 @@ Dans `describe("planImport from Flex, over agent rows")`, après le test
   });
 ```
 
-- [ ] **Étape 3 : lancer les tests et vérifier qu'ils échouent**
+- [x] **Étape 3 : lancer les tests et vérifier qu'ils échouent**
 
 Depuis `packages/ledger` : `npx vitest run src/import.test.ts`
 Attendu : ÉCHEC sur les six tests touchés ou ajoutés. Les vingt-quatre autres passent déjà.
 
-- [ ] **Étape 4 : écrire l'implémentation minimale**
+- [x] **Étape 4 : écrire l'implémentation minimale**
 
 Dans `packages/ledger/src/import.ts` :
 
@@ -296,14 +296,14 @@ Réécrire aussi les deux commentaires de bloc qui énoncent l'ancienne règle :
   « only the **market** days after Flex's newest day », avec l'exemple de l'assignation d'un
   vendredi passée le samedi à 01:02 à côté de celle de 22:13 qui y est déjà.
 
-- [ ] **Étape 5 : lancer les tests et vérifier qu'ils passent**
+- [x] **Étape 5 : lancer les tests et vérifier qu'ils passent**
 
 Depuis `packages/ledger` : `npx vitest run`
 Attendu : SUCCÈS, tous les fichiers du paquet. En particulier
 `deletes rows of other sources over its whole days, bounds included` doit être **vert sans avoir
 été touché**.
 
-- [ ] **Étape 6 : commiter**
+- [x] **Étape 6 : commiter**
 
 ```bash
 git add packages/ledger/src/import.ts packages/ledger/src/import.test.ts docs/plans/2026-09-19-assignation-apres-minuit.md

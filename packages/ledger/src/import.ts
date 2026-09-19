@@ -1,4 +1,4 @@
-import { dayOf } from "./filter.ts";
+import { dayOf, marketDayOf } from "./filter.ts";
 import { TRANSACTION_KINDS, type Transaction, type TransactionKind, type TransactionSource } from "./types.ts";
 
 export interface ImportBatch {
@@ -78,11 +78,12 @@ function countByKind(transactions: readonly Transaction[]): DroppedCount[] {
  * the 365-day window is history Flex once vouched for, and it stays.
  *
  * Both bounds are whole days. If Flex's oldest row is at 14:30, its query covered that
- * whole day. And a response always runs to the previous close, so its newest day is
- * complete too: whatever the agent reported that day, at whatever hour, Flex reports it
- * as well. The hours do not match across sources — Flex dates an assignment 16:20, TWS at
- * the evening hour IB processed it — so an instant bound would keep both. The upper bound
- * is not clamped to `toDate`: a row beyond the declared end has never been observed, while
+ * whole day. And a response always runs to the previous close, so its newest **market**
+ * day is complete too — the night that follows it comprised, where IB books an
+ * expiration's assignments, and the weekend that follows a Friday. The hours do not match
+ * across sources — Flex dates an assignment 16:20, TWS at the hour IB actually processed
+ * it, sometimes past midnight — so an instant bound would keep both. The upper bound is
+ * not clamped to `toDate`: a row beyond the declared end has never been observed, while
  * the floor is dragged back by an ordinary late adjustment. Clamping it would also silently
  * hide such a row, where the asymmetry leaves it visible.
  */
@@ -107,7 +108,12 @@ function planFlex(
   const doomed = existing.filter((tx) => {
     if (tx.source === "flex") return false;
     const day = dayOf(tx.when);
-    return day >= minDay && day <= maxDay;
+    // Only the agent stamps the hour IB *booked* something, and IB books an expiration's
+    // assignments in the night that follows it. Flex stamps 16:20 and a statement stamps the
+    // transaction's own hour, or midnight when it gives none: shifting those would retire a
+    // statement row dated the day after Flex's last one, which Flex will never replace.
+    const upper = tx.source === "agent" ? marketDayOf(tx.when) : day;
+    return day >= minDay && upper <= maxDay;
   });
   return {
     delete: doomed.map((tx) => tx.externalId),
@@ -161,14 +167,14 @@ function planStatement(
 }
 
 /**
- * The agent writes only the days *after* Flex's newest day, strictly: Flex owns its days
- * whole (`planFlex`), and an execution TWS reports in the evening of a day Flex already
- * covers — an assignment IB processed at 22:13 that Flex dates 16:20 — is Flex's row under
- * another hour. It never deletes: a TWS restarted mid-day no longer reports the morning's
- * fills, and erasing them would lose true information. The next Flex sync replaces the
- * whole day anyway (spec fondateur §6.2). Upserting by externalId makes a five-minute
- * cadence idempotent, and lets a later pass fill in a commission that IB reported after the
- * fill.
+ * The agent writes only the **market** days after Flex's newest day, strictly: Flex owns
+ * its days whole (`planFlex`), and an execution TWS reports for a day Flex already covers
+ * — an assignment IB processed at 22:13 on a Friday, or at 01:02 the following Saturday
+ * night, both of a Friday expiry that Flex dates 16:20 — is Flex's row under another hour.
+ * It never deletes: a TWS restarted mid-day no longer reports the morning's fills, and
+ * erasing them would lose true information. The next Flex sync replaces the whole day
+ * anyway (spec fondateur §6.2). Upserting by externalId makes a five-minute cadence
+ * idempotent, and lets a later pass fill in a commission that IB reported after the fill.
  */
 function planAgent(existing: readonly Transaction[], incoming: readonly Transaction[]): ImportPlan {
   let flexMax: string | null = null;
@@ -176,6 +182,6 @@ function planAgent(existing: readonly Transaction[], incoming: readonly Transact
     if (tx.source === "flex" && (flexMax === null || tx.when > flexMax)) flexMax = tx.when;
   }
   const flexDay = flexMax === null ? null : dayOf(flexMax);
-  const kept = flexDay === null ? [...incoming] : incoming.filter((tx) => dayOf(tx.when) > flexDay);
+  const kept = flexDay === null ? [...incoming] : incoming.filter((tx) => marketDayOf(tx.when) > flexDay);
   return { delete: [], upsert: kept, dropped: [], skipped: incoming.length - kept.length };
 }
