@@ -51,7 +51,7 @@ la tâche 1.
   (`src/index.ts` fait déjà `export * from "./filter.ts"` : **ne rien ajouter** à `index.ts`).
   La tâche 2 l'importe par `import { dayOf, marketDayOf } from "./filter.ts";`.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Ajouter à la fin de `packages/ledger/src/filter.test.ts`, et corriger la ligne d'import du haut
 du fichier en `import { dayOf, marketDayOf } from "./filter.ts";` :
@@ -88,12 +88,12 @@ describe("marketDayOf", () => {
 Repères de calendrier, vérifiés : 2026-09-18 vendredi, 09-19 samedi, 09-20 dimanche,
 09-21 lundi, 09-22 mardi, 09-30 mercredi, 2026-10-01 jeudi, 2025-12-31 mercredi.
 
-- [ ] **Étape 2 : lancer le test et vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test et vérifier qu'il échoue**
 
 Depuis `packages/ledger` : `npx vitest run src/filter.test.ts`
 Attendu : ÉCHEC, `marketDayOf` n'est pas exporté.
 
-- [ ] **Étape 3 : écrire l'implémentation minimale**
+- [x] **Étape 3 : écrire l'implémentation minimale**
 
 Ajouter à `packages/ledger/src/filter.ts`, après `dayOf` :
 
@@ -117,12 +117,12 @@ export function marketDayOf(when: string): string {
 }
 ```
 
-- [ ] **Étape 4 : lancer le test et vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test et vérifier qu'il passe**
 
 Depuis `packages/ledger` : `npx vitest run src/filter.test.ts`
 Attendu : SUCCÈS, 6 tests (le `dayOf` existant compris).
 
-- [ ] **Étape 5 : commiter**
+- [x] **Étape 5 : commiter**
 
 ```bash
 git add packages/ledger/src/filter.ts packages/ledger/src/filter.test.ts docs/plans/2026-09-19-assignation-apres-minuit.md
