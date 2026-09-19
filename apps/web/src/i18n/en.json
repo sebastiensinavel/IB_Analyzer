@@ -95,6 +95,8 @@
       "quantity": "Qty",
       "avgPrice": "Init. price",
       "lastPrice": "Last price",
+      "dayChange": "Day chg",
+      "dailyPnl": "Daily P&L",
       "unrealizedPnl": "Unrealized P&L",
       "decision": "Decision",
       "coverage": "Coverage"
@@ -119,6 +121,8 @@
       "averageCallStrike": "Avg. call price",
       "assignedTotal": "Total assigned",
       "lastPrice": "Last price",
+      "dayChange": "Day chg",
+      "dailyPnl": "Daily P&L",
       "unrealizedPnl": "Unrealized P&L",
       "coverage": "Coverage"
     },
@@ -506,7 +510,8 @@
     "title": "Help",
     "what": {
       "title": "The local agent",
-      "text": "The agent reads TWS on your machine and talks to this site and to Interactive Brokers only. It stores nothing: positions, cash and today's fills never leave your computer. It also relays this site's Flex Query calls to Interactive Brokers, keeping nothing: in \"local agent only\" mode, the Flex token never goes through the server. Without it, the app works with statements, and with Flex Query if you let the server relay."
+      "text": "The agent reads TWS on your machine and talks to this site and to Interactive Brokers only. It stores nothing: positions, cash and today's fills never leave your computer. It also relays this site's Flex Query calls to Interactive Brokers, keeping nothing: in \"local agent only\" mode, the Flex token never goes through the server. Without it, the app works with statements, and with Flex Query if you let the server relay.",
+      "dayValues": "Day chg and Daily P&L come from the local agent: a portfolio rebuilt from a statement or a Flex response leaves them at \"—\", as does a contract bought or sold today."
     },
     "uv": {
       "title": "1. Install uv",

@@ -64,6 +64,8 @@ export function analyze(pos: Position): AnalyzedPosition {
     avgPrice: pos.avgPrice,
     lastPrice: pos.marketPrice,
     unrealizedPnl: pos.unrealizedPnl,
+    dailyPnl: pos.dailyPnl,
+    dayChange: pos.dayChange,
     action,
     decision,
     symbol: pos.symbol,

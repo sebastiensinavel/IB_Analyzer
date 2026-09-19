@@ -187,6 +187,29 @@ export class AppDatabase extends Dexie {
             if (!Number.isNaN(Date.parse(row.asOf))) row.asOf = toReportTime(row.asOf);
           });
       });
+    // Sub-project 23: a position carries the day's P&L and move. A snapshot written before it
+    // has neither, and `undefined` is not `null`: every reader would have to second-guess the
+    // type. No store changes — only the rows.
+    this.version(9)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table("snapshots")
+          .toCollection()
+          .modify((row: { positions?: unknown }) => {
+            // `Array.isArray` covers a missing or non-array `positions`, not just an absent one:
+            // a bad shape here must not throw inside `modify` and abort the upgrade for every
+            // account (the version-8 comment above). No per-element guard: unlike `when`/`asOf`
+            // strings, which real historical bugs have left unparseable, every element of
+            // `positions` is a full `Position` object written by this app's own snapshot code —
+            // there is no code path that has ever put a primitive or a hole in that array.
+            const positions = Array.isArray(row.positions) ? row.positions : [];
+            for (const position of positions as Record<string, unknown>[]) {
+              position.dailyPnl ??= null;
+              position.dayChange ??= null;
+            }
+          }),
+      );
   }
 }
 

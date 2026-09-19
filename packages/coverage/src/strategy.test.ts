@@ -142,7 +142,8 @@ describe("wheelPositions — assigned shares", () => {
     expect(wheelPositions(held(15), snapshot).shares).toEqual([
       {
         ticker: "MQZA", currency: "USD", quantity: 200, averageAssignmentPrice: 17, assignedTotal: 3400, openCallContracts: 1,
-        averageCallStrike: 15, coveredShares: 100, lastPrice: 18, unrealizedPnl: 200, callStrikeBelowAssignment: true,
+        averageCallStrike: 15, coveredShares: 100, lastPrice: 18, unrealizedPnl: 200, dailyPnl: null, dayChange: null,
+        callStrikeBelowAssignment: true,
       },
     ]);
   });
@@ -229,6 +230,63 @@ describe("strategyPositions — the Wheel's shares card counts only the covered 
     const snapshot = priced([stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 })]);
     const { shares: held } = wheelPositions(rows, snapshot);
     expect(held[0]).toMatchObject({ openCallContracts: 1, averageCallStrike: null, coveredShares: 100 });
+  });
+});
+
+describe("day's values on a strategy line", () => {
+  it("prorates the day's P&L to the strategy's share and keeps the move whole", () => {
+    // The Wheel holds 2 of the 5 contracts IB reports; the move does not depend on the quantity.
+    const rows = [
+      row({ contract: MARA_CALL, kind: "short_call", quantity: -2, openPrice: 0.5 }),
+      row({ id: "y#1", contract: MARA_CALL, strategy: "others", kind: "short_call", quantity: -3, openPrice: 0.5 }),
+    ];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 500, avgPrice: 17, marketPrice: 18, marketValue: 9000 }),
+      option({
+        symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -5, avgPrice: 0.5,
+        marketPrice: 0.25, marketValue: -1250, dailyPnl: -250, dayChange: 0.08,
+      }),
+    ]);
+    const { optionSales } = wheelPositions(rows, snapshot);
+    expect(optionSales[0].dailyPnl).toBeCloseTo(-100, 12);
+    expect(optionSales[0].dayChange).toBeCloseTo(0.08, 12);
+  });
+
+  it("gives a line no day values when the position's move is unknown", () => {
+    // A contract traded today: IB's dailyPnL starts from the execution price, so the shares
+    // entered this morning do not carry the same day's P&L per unit as those held since yesterday.
+    const rows = [row({ contract: XOM_PUT, quantity: -1, openPrice: 1.25 })];
+    const snapshot = priced([
+      option({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-10-16", quantity: -1, dailyPnl: -250, dayChange: null }),
+    ]);
+    expect(wheelPositions(rows, snapshot).optionSales[0].dailyPnl).toBeNull();
+    expect(wheelPositions(rows, snapshot).optionSales[0].dayChange).toBeNull();
+  });
+
+  it("gives a line without a position in the snapshot no day values", () => {
+    const rows = [row({ contract: XOM_PUT, quantity: -1, openPrice: 1.25 })];
+    expect(wheelPositions(rows, null).optionSales[0].dailyPnl).toBeNull();
+    expect(wheelPositions(rows, null).optionSales[0].dayChange).toBeNull();
+  });
+
+  it("guards a priced position of zero quantity against a division by zero", () => {
+    const rows = [row({ contract: XOM_PUT, quantity: -1, openPrice: 1.25 })];
+    const snapshot = priced([
+      option({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-10-16", quantity: 0, marketValue: 0, dailyPnl: 5, dayChange: 0.1 }),
+    ]);
+    const sold = wheelPositions(rows, snapshot).optionSales[0];
+    expect(sold.dailyPnl).toBeNull();
+    expect(sold.dayChange).toBeNull();
+  });
+
+  it("prorates the day's P&L of the Wheel's shares too", () => {
+    const rows = [row({ id: "s#1", kind: "shares", contract: shares("MQZA"), quantity: 100, openPrice: 17, strike: null })];
+    const snapshot = priced([
+      stock({ symbol: "MQZA", quantity: 200, avgPrice: 16, marketPrice: 18, marketValue: 3600, dailyPnl: 40, dayChange: 0.01 }),
+    ]);
+    const held = wheelPositions(rows, snapshot).shares;
+    expect(held[0].dailyPnl).toBeCloseTo(20, 12);
+    expect(held[0].dayChange).toBeCloseTo(0.01, 12);
   });
 });
 

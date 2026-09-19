@@ -234,6 +234,8 @@ describe("parseFlexXml: open positions and cash report", () => {
       marketPrice: 3.43,
       marketValue: 686,
       unrealizedPnl: -154,
+      dailyPnl: null,
+      dayChange: null,
       currency: "USD",
       conid: "123",
       description: "SYMA HOLDINGS INC",
@@ -254,10 +256,18 @@ describe("parseFlexXml: open positions and cash report", () => {
       marketPrice: 0.4982,
       marketValue: -99.64,
       unrealizedPnl: 120.36,
+      dailyPnl: null,
+      dayChange: null,
       currency: "USD",
       conid: "456",
       description: "SYMB 21JAN28 2.5 C",
     });
+  });
+
+  it("gives a Flex position no day values: a file has no today", () => {
+    const { snapshot } = parseFlexXml(flex(COMPLETE), TARGET);
+    expect(snapshot?.positions[0].dailyPnl).toBeNull();
+    expect(snapshot?.positions[0].dayChange).toBeNull();
   });
 
   it("ignores LOT rows: a lot would double the summary's quantity", () => {

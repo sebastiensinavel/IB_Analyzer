@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Position } from "@ib/ledger";
 import { DEFAULT_MULTIPLIER } from "./constants.ts";
-import { classify, contractMultiplier, describeContract } from "./classify.ts";
+import { analyze, classify, contractMultiplier, describeContract } from "./classify.ts";
 import { option, stock } from "./fixtures.ts";
 
 // `right` is typed "C" | "P" | "" on Position; the engine still tolerates the
@@ -41,6 +41,16 @@ describe("classify", () => {
 
   it("classifies a zero-quantity option as long, not short", () => {
     expect(classify(option({ right: "C", quantity: 0 }))).toBe("long_call");
+  });
+});
+
+describe("analyze", () => {
+  it("carries the day's values through to the analyzed position", () => {
+    // AnalyzedPosition is a flat copy, not an extension of Position: what is not copied is lost.
+    const analyzed = analyze(stock({ dailyPnl: 550.45, dayChange: 0.0816 }));
+
+    expect(analyzed.dailyPnl).toBe(550.45);
+    expect(analyzed.dayChange).toBeCloseTo(0.0816, 12);
   });
 });
 

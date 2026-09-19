@@ -20,6 +20,20 @@ function withExecutionContract(
   return { ...payload, executions };
 }
 
+/**
+ * A payload with a single position (the fixture's stock, conId 265598) carrying the given `pnl`
+ * overrides, and no executions unless `tradedConId` asks for one on that contract: the day-move
+ * tests need full control of "traded today" rather than the fixture's own unrelated fills.
+ */
+function payloadWith(overrides: Partial<AgentSnapshotPayload["positions"][number]>, opts: { tradedConId?: number } = {}): AgentSnapshotPayload {
+  const positions = [{ ...payload.positions[0], ...overrides }];
+  const executions =
+    opts.tradedConId === undefined
+      ? []
+      : [{ ...payload.executions[0], contract: { ...payload.executions[0].contract, conId: opts.tradedConId } }];
+  return { ...payload, positions, executions };
+}
+
 describe("parseAgentSnapshot", () => {
   it("passes the envelope through and brings fetchedAt to New York's wall clock", () => {
     const snapshot = parseAgentSnapshot(payload, ACCOUNT);
@@ -47,6 +61,8 @@ describe("parseAgentSnapshot", () => {
       marketPrice: 172.1,
       marketValue: 17210,
       unrealizedPnl: 2185,
+      dailyPnl: null,
+      dayChange: null,
       currency: "USD",
       conid: "265598",
       description: "SYMA",
@@ -74,6 +90,52 @@ describe("parseAgentSnapshot", () => {
     expect(snapshot.positions[1].avgPrice).toBeNull();
     expect(snapshot.positions[1].multiplier).toBeNull();
     expect(snapshot.issues).toEqual([{ severity: "warning", code: "multiplier-missing", detail: "SYMB 18DEC26 180 C" }]);
+  });
+
+  it("derives the day's move from the P&L and the value of the same message", () => {
+    const { positions } = parseAgentSnapshot(payloadWith({ pnl: { dailyPnL: 100, value: 5100 } }), "alpha");
+
+    expect(positions[0].dailyPnl).toBe(100);
+    // 5100 − 100 = 5000 at yesterday's close, so +2 %.
+    expect(positions[0].dayChange).toBeCloseTo(0.02, 12);
+  });
+
+  it("gives a sold position the right sign: a short that loses shows a rise", () => {
+    // −540 now, +60 of P&L today: the position was worth −600 at the close, so the option rose 10 %.
+    const { positions } = parseAgentSnapshot(payloadWith({ pnl: { dailyPnL: 60, value: -540 } }), "alpha");
+
+    expect(positions[0].dayChange).toBeCloseTo(-0.1, 12);
+  });
+
+  it("keeps the day's P&L of a contract traded today but never its move", () => {
+    // IB still computes dailyPnL right, from the execution price; the formula no longer can.
+    const payload = payloadWith({ pnl: { dailyPnL: 100, value: 5100 } }, { tradedConId: 265598 });
+
+    const { positions } = parseAgentSnapshot(payload, "alpha");
+
+    expect(positions[0].dailyPnl).toBe(100);
+    expect(positions[0].dayChange).toBeNull();
+  });
+
+  it("takes an older agent's payload without a pnl field", () => {
+    // The agent is optional, and so is its version: features missing, never a failed sync. The
+    // fixture's own stock position now carries an explicit `pnl: null` (sub-project 23's whole-
+    // branch review: the fixture should show both shapes an agent can send), so this case is
+    // built here rather than read off the fixture, to keep the truly-absent-key path covered.
+    const { positions } = parseAgentSnapshot(payloadWith({ pnl: undefined }), "alpha");
+
+    expect(positions[0].dailyPnl).toBeNull();
+    expect(positions[0].dayChange).toBeNull();
+  });
+
+  it.each([
+    ["a null pnl", null],
+    ["a pnl without a value", { dailyPnL: 100, value: null }],
+    ["a value equal to the day's P&L", { dailyPnL: 100, value: 100 }],
+  ])("gives no day move for %s", (_label, pnl) => {
+    const { positions } = parseAgentSnapshot(payloadWith({ pnl }), "alpha");
+
+    expect(positions[0].dayChange).toBeNull();
   });
 
   it("turns a SLD option fill into a negative-quantity trade with gross proceeds and a negative commission", () => {

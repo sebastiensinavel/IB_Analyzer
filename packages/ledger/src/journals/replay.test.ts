@@ -337,7 +337,7 @@ describe("buildJournals — snapshot boundary", () => {
   const snapshot = (asOf: string) => ({
     asOf,
     positions: [
-      { symbol: "MQZA", secType: "OPT", right: "P" as const, strike: 17, expiry: "2026-10-02", multiplier: 100, quantity: -1, avgPrice: 0.3, marketPrice: 0.1, marketValue: -10, unrealizedPnl: 20, currency: "USD", conid: "", description: "" },
+      { symbol: "MQZA", secType: "OPT", right: "P" as const, strike: 17, expiry: "2026-10-02", multiplier: 100, quantity: -1, avgPrice: 0.3, marketPrice: 0.1, marketValue: -10, unrealizedPnl: 20, dailyPnl: null, dayChange: null, currency: "USD", conid: "", description: "" },
     ],
   });
   const ledger = () => [
@@ -419,7 +419,7 @@ describe("buildJournals and corporate actions", () => {
       {
         asOf: "2022-09-10",
         positions: [
-          { symbol: "TESTV", secType: "STK", right: "", strike: null, expiry: null, multiplier: null, quantity: 114, avgPrice: 9.85, marketPrice: null, marketValue: null, unrealizedPnl: null, currency: "USD", conid: "", description: "" },
+          { symbol: "TESTV", secType: "STK", right: "", strike: null, expiry: null, multiplier: null, quantity: 114, avgPrice: 9.85, marketPrice: null, marketValue: null, unrealizedPnl: null, dailyPnl: null, dayChange: null, currency: "USD", conid: "", description: "" },
         ],
       },
     );

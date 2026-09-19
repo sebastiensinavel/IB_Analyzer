@@ -13,6 +13,7 @@ from tests.conftest import (
     FakeExecution,
     FakeFill,
     FakeIB,
+    FakePnLSingle,
     FakePortfolioItem,
 )
 
@@ -80,7 +81,9 @@ def test_snapshot_envelope(make_client):
     assert body["executions"] == []
 
 
-def test_positions_are_serialized_raw_stock_and_option_alike(make_client):
+def test_positions_are_serialized_raw_stock_and_option_alike(make_client, monkeypatch):
+    # Neither position is ever answered (no `pnl=` mapping): bound the wait.
+    monkeypatch.setattr("ib_tws_agent.main.PNL_TIMEOUT_S", 0.05)
     fake_ib = FakeIB(
         portfolio=[
             FakePortfolioItem(contract=STOCK, position=100.0, averageCost=150.25, marketPrice=172.1, marketValue=17210.0, unrealizedPNL=2185.0),
@@ -95,14 +98,92 @@ def test_positions_are_serialized_raw_stock_and_option_alike(make_client):
             "conId": 265598, "symbol": "AAPL", "localSymbol": "AAPL", "secType": "STK", "right": "", "strike": 0.0,
             "lastTradeDateOrContractMonth": "", "multiplier": "", "currency": "USD",
             "position": 100.0, "averageCost": 150.25, "marketPrice": 172.1, "marketValue": 17210.0, "unrealizedPNL": 2185.0,
+            "pnl": None,
         },
         {
             "conId": 700000001, "symbol": "AAPL", "localSymbol": "AAPL  261218C00180000", "secType": "OPT", "right": "C",
             "strike": 180.0, "lastTradeDateOrContractMonth": "20261218", "multiplier": "100", "currency": "USD",
             # Per contract, as TWS gives it: the browser divides by the multiplier, not the agent.
             "position": -1.0, "averageCost": 250.0, "marketPrice": 2.0, "marketValue": -200.0, "unrealizedPNL": 50.0,
+            "pnl": None,
         },
     ]
+
+
+def test_each_position_carries_the_day_pnl_and_the_subscriptions_are_cancelled(make_client):
+    fake_ib = FakeIB(
+        portfolio=[FakePortfolioItem(contract=STOCK, position=100.0, marketPrice=172.1)],
+        pnl={265598: FakePnLSingle(conId=265598, dailyPnL=-38.4, value=3369.6)},
+    )
+
+    positions = make_client(fake_ib).get("/snapshot", params={"port": 7502}, headers=HEADERS).json()["positions"]
+
+    assert positions[0]["pnl"] == {"dailyPnL": -38.4, "value": 3369.6}
+    assert fake_ib.pnl_subscribed == [("U1234567", "", 265598)]
+    # Cancelled whatever happens: a subscription left open outlives the connection's usefulness.
+    assert fake_ib.pnl_cancelled == [("U1234567", "", 265598)]
+
+
+def test_a_position_tws_never_answers_for_gets_a_null_pnl_and_never_holds_the_others(make_client, monkeypatch):
+    # Bounding the wait to 0.05s: this position is never answered, and five real seconds of
+    # polling per test run is not acceptable.
+    monkeypatch.setattr("ib_tws_agent.main.PNL_TIMEOUT_S", 0.05)
+    fake_ib = FakeIB(
+        portfolio=[
+            FakePortfolioItem(contract=STOCK, position=100.0),
+            FakePortfolioItem(contract=OPTION, position=-1.0),
+        ],
+        pnl={265598: FakePnLSingle(conId=265598, dailyPnL=-38.4, value=3369.6)},
+    )
+
+    positions = make_client(fake_ib).get("/snapshot", params={"port": 7502}, headers=HEADERS).json()["positions"]
+
+    assert positions[0]["pnl"] == {"dailyPnL": -38.4, "value": 3369.6}
+    assert positions[1]["pnl"] is None
+    assert len(fake_ib.pnl_cancelled) == 2
+
+
+def test_a_value_ib_does_not_have_is_null_never_zero(make_client):
+    # IB sends DBL_MAX for "no value", and ib_async leaves nan in an object it has not filled.
+    fake_ib = FakeIB(
+        portfolio=[FakePortfolioItem(contract=STOCK, position=100.0)],
+        pnl={265598: FakePnLSingle(conId=265598, dailyPnL=-38.4, value=1.7976931348623157e308)},
+    )
+
+    positions = make_client(fake_ib).get("/snapshot", params={"port": 7502}, headers=HEADERS).json()["positions"]
+
+    assert positions[0]["pnl"] == {"dailyPnL": -38.4, "value": None}
+
+
+def test_a_genuine_zero_daily_pnl_survives_never_mistaken_for_absent(make_client):
+    # A flat day is a real dailyPnL of 0.0, not "TWS said nothing" - clean_pnl must not treat
+    # a falsy-but-valid value the same as nan or DBL_MAX.
+    fake_ib = FakeIB(
+        portfolio=[FakePortfolioItem(contract=STOCK, position=100.0)],
+        pnl={265598: FakePnLSingle(conId=265598, dailyPnL=0.0, value=17210.0)},
+    )
+
+    positions = make_client(fake_ib).get("/snapshot", params={"port": 7502}, headers=HEADERS).json()["positions"]
+
+    assert positions[0]["pnl"] == {"dailyPnL": 0.0, "value": 17210.0}
+
+
+def test_the_pnl_step_never_fails_the_snapshot(make_client, monkeypatch):
+    # Every position is left unanswered here too: bound the wait the same way.
+    monkeypatch.setattr("ib_tws_agent.main.PNL_TIMEOUT_S", 0.05)
+    fake_ib = FakeIB(
+        portfolio=[FakePortfolioItem(contract=STOCK, position=100.0, marketPrice=172.1)],
+        pnl_error=RuntimeError("boom"),
+    )
+
+    response = make_client(fake_ib).get("/snapshot", params={"port": 7502}, headers=HEADERS)
+
+    assert response.status_code == 200
+    position = response.json()["positions"][0]
+    assert position["pnl"] is None
+    # The rest of the position is untouched: only the day's values are missing.
+    assert position["marketPrice"] == 172.1
+    assert fake_ib.disconnected is True
 
 
 def test_execution_with_a_commission_report(make_client):

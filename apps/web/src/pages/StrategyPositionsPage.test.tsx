@@ -99,7 +99,7 @@ describe("StrategyPositionsPage — Wheel", () => {
     renderPage("wheel");
     expect(await screen.findByText("Positions Wheel")).toBeInTheDocument();
     const row = await rowIn("Actions assignées", "MQZA");
-    expect(texts(row)).toEqual(["MQZA", "", "200", "17.00", "15.00", "$3,400.00", "18.00", "$200.00", "used 100/200"]);
+    expect(texts(row)).toEqual(["MQZA", "", "200", "17.00", "15.00", "$3,400.00", "18.00", "—", "—", "$200.00", "used 100/200"]);
     expect(cells(row)[4]).toHaveClass("bg-warning/25");
     expect(cells(row)[3]).not.toHaveClass("bg-warning/25");
   });
@@ -108,9 +108,9 @@ describe("StrategyPositionsPage — Wheel", () => {
     await seed();
     renderPage("wheel");
     const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
-    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.80", "1.00", "-$20.00", "keep", "stock ×1"]);
+    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.80", "1.00", "—", "—", "-$20.00", "keep", "stock ×1"]);
     const put = await rowIn("Ventes d'options", "XOM Oct16'26 110 Put");
-    expect(texts(put)).toEqual(["XOM Oct16'26 110 Put", "sell of put", "", "—", "-1", "1.20", "—", "—", "", ""]);
+    expect(texts(put)).toEqual(["XOM Oct16'26 110 Put", "sell of put", "", "—", "-1", "1.20", "—", "—", "—", "—", "", ""]);
     // The LEAPS call is not the Wheel's.
     expect(within(screen.getByLabelText("Ventes d'options")).queryByText("ZZZ Sep18'26 20 Call")).not.toBeInTheDocument();
   });
@@ -121,6 +121,40 @@ describe("StrategyPositionsPage — Wheel", () => {
     expect(screen.queryByLabelText("Actions assignées")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Ventes d'options")).not.toBeInTheDocument();
   });
+
+  it("shows the day's move and P&L in their own cells, not just somewhere in the row", async () => {
+    // The whole MQZA call belongs to the Wheel (quantity -1 on both sides), so its share is the
+    // position's own dailyPnl/dayChange unprorated — a real, non-null, distinguishable pair.
+    // SNAPSHOT.positions[4] is the MQZA call itself (index 2 is ZZZ's unrelated LEAPS call).
+    await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, XOM_PUT]);
+    await db.snapshots.put({
+      ...SNAPSHOT,
+      positions: SNAPSHOT.positions.map((position) =>
+        position === SNAPSHOT.positions[4] ? { ...position, dailyPnl: -20, dayChange: 0.05 } : position,
+      ),
+    });
+    renderPage("wheel");
+    const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
+    // dayChange is POSITION_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
+    expect(cells(call)[7]).toHaveTextContent("+5.0%");
+    expect(cells(call)[8]).toHaveTextContent("-$20.00");
+  });
+
+  it("prorates the assigned shares' day P&L to the Wheel's share of the position, day change unprorated", async () => {
+    // 200 MQZA shares assigned, 100 of them sold off later: the Wheel still tracks 100, the snapshot
+    // still reports the IB position at 200 — a real, non-null, distinguishable pair (1% / $20, not
+    // $20 twice over): dailyPnl 40 × 100/200 = 20, dayChange 0.01 carried unprorated.
+    await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, MARA_SHARES_SOLD]);
+    await db.snapshots.put({
+      ...SNAPSHOT,
+      positions: SNAPSHOT.positions.map((position) => (position === SNAPSHOT.positions[0] ? { ...position, dailyPnl: 40, dayChange: 0.01 } : position)),
+    });
+    renderPage("wheel");
+    const row = await rowIn("Actions assignées", "MQZA");
+    // dayChange is WHEEL_SHARE_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
+    expect(cells(row)[7]).toHaveTextContent("+1.0%");
+    expect(cells(row)[8]).toHaveTextContent("$20.00");
+  });
 });
 
 describe("StrategyPositionsPage — LEAPS", () => {
@@ -129,9 +163,9 @@ describe("StrategyPositionsPage — LEAPS", () => {
     renderPage("leaps");
     expect(await screen.findByText("Positions LEAPS")).toBeInTheDocument();
     const leaps = await rowIn("Achats d'options", "ZZZ Jun18'27 15 Call");
-    expect(texts(leaps)).toEqual(["ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "$100.00", "", "used 1/1"]);
+    expect(texts(leaps)).toEqual(["ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "used 1/1"]);
     const call = await rowIn("Ventes d'options", "ZZZ Sep18'26 20 Call");
-    expect(texts(call)).toEqual(["ZZZ Sep18'26 20 Call", "sell of call", "", "-$25.00", "-1", "0.50", "0.25", "$25.00", "buy back", "leaps ×1"]);
+    expect(texts(call)).toEqual(["ZZZ Sep18'26 20 Call", "sell of call", "", "-$25.00", "-1", "0.50", "0.25", "—", "—", "$25.00", "buy back", "leaps ×1"]);
     expect(screen.queryByLabelText("Actions")).not.toBeInTheDocument();
   });
 });
@@ -176,16 +210,16 @@ describe("StrategyPositionsPage — a call that lost its cover", () => {
     await seedNaked();
     renderPage("wheel");
     const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
-    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "-$30.00", "keep", "stock ×1"]);
+    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "—", "—", "-$30.00", "keep", "stock ×1"]);
     const held = await rowIn("Actions assignées", "MQZA");
-    expect(texts(held)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "$100.00", "used 100/100"]);
+    expect(texts(held)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
   });
 
   it("shows the naked contract on Others, without naming where it comes from", async () => {
     await seedNaked();
     renderPage("others");
     const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
-    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "-$30.00", "keep", "UNCOVERED ×1"]);
+    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "—", "—", "-$30.00", "keep", "UNCOVERED ×1"]);
     expect(within(screen.getByLabelText("Ventes d'options")).queryByText("Wheel")).not.toBeInTheDocument();
   });
 });

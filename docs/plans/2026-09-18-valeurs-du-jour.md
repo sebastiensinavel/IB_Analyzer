@@ -101,7 +101,7 @@ par un test, elle ne le programme pas.
 - Produit : `Position.dailyPnl: number | null` et `Position.dayChange: number | null`, lus par
   les tâches 3, 4, 5, 6 et 7.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Dans `packages/ib-parsers/src/flex.test.ts`, ajouter un test à côté de ceux qui portent déjà sur
 les positions Flex (chercher `marketPrice` pour trouver le bloc) :
@@ -120,12 +120,12 @@ Reprendre le nom de la fixture et de la fonction du test voisin du fichier — n
 (« gives a statement position no day values ») et dans `agent.test.ts` (« gives a position
 without `pnl` no day values », sur une charge utile dont les positions n'ont pas de `pnl`).
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `pnpm --filter @ib/ib-parsers test`
 Attendu : ÉCHEC — `Property 'dailyPnl' does not exist on type 'Position'`.
 
-- [ ] **Étape 3 : ajouter les deux champs au type**
+- [x] **Étape 3 : ajouter les deux champs au type**
 
 Dans `packages/ledger/src/types.ts`, juste après `unrealizedPnl` :
 
@@ -144,7 +144,7 @@ Dans `packages/ledger/src/types.ts`, juste après `unrealizedPnl` :
   currency: string;
 ```
 
-- [ ] **Étape 4 : écrire `null` dans les trois parseurs et les deux fixtures**
+- [x] **Étape 4 : écrire `null` dans les trois parseurs et les deux fixtures**
 
 Dans `packages/ib-parsers/src/flex.ts` et `statement.ts`, à côté de `unrealizedPnl` :
 
@@ -158,7 +158,7 @@ Dans `packages/ib-parsers/src/agent.ts`, même chose pour l'instant — la tâch
 Dans `packages/coverage/src/fixtures.ts`, `option()` et `stock()` posent `dailyPnl: null` et
 `dayChange: null` avant le `...overrides`.
 
-- [ ] **Étape 5 : compléter les littéraux que le typage nomme**
+- [x] **Étape 5 : compléter les littéraux que le typage nomme**
 
 Run : `pnpm -r typecheck`
 Cinq erreurs attendues, toutes dans `packages/ledger` :
@@ -166,13 +166,13 @@ Cinq erreurs attendues, toutes dans `packages/ledger` :
 Ajouter `dailyPnl: null, dayChange: null` à chaque littéral nommé. Ne rien changer d'autre : ces
 tests ne portent pas sur le jour.
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
 Run : `pnpm --filter @ib/ledger test && pnpm --filter @ib/coverage test && pnpm --filter @ib/ib-parsers test`
 Attendu : tout passe. Les assertions `toEqual` des parseurs qui décrivent une position entière
 échouent d'abord : y ajouter les deux champs à `null`, c'est la sortie neuve et juste.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add -A
@@ -202,7 +202,7 @@ aussitôt un objet `PnLSingle` mutable (champs `dailyPnL`, `unrealizedPnL`, `rea
 émettant `ib.pnlSingleEvent`. `ib.cancelPnLSingle(account, modelCode, conId)` annule. Le
 `modelCode` est `""`. Mesuré sur un vrai TWS : première valeur entre 0,65 s et 2,32 s.
 
-- [ ] **Étape 1 : outiller le double**
+- [x] **Étape 1 : outiller le double**
 
 Dans `apps/tws-agent/tests/conftest.py`, après `FakePortfolioItem` :
 
@@ -257,7 +257,7 @@ Le `FakeIB` final n'a que ces membres neufs : `_pnl`, `_pnl_error`, `pnl_subscri
 objets rendus, il ne s'abonne pas à l'événement — un objet muté en place se relit sans lui, et
 un événement de moins est un point de défaillance de moins.
 
-- [ ] **Étape 2 : écrire les tests qui échouent**
+- [x] **Étape 2 : écrire les tests qui échouent**
 
 Dans `apps/tws-agent/tests/test_snapshot.py` :
 
@@ -323,12 +323,12 @@ def test_the_pnl_step_never_fails_the_snapshot(make_client):
 Compléter aussi `test_positions_are_serialized_raw_stock_and_option_alike` : les deux
 dictionnaires attendus portent désormais `"pnl": None` (aucun `pnl` n'est fourni au double).
 
-- [ ] **Étape 3 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 3 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `pnpm test:agent`
 Attendu : ÉCHEC — `KeyError: 'pnl'` ou `AttributeError: 'FakeIB' object has no attribute 'reqPnLSingle'`.
 
-- [ ] **Étape 4 : implémenter dans l'agent**
+- [x] **Étape 4 : implémenter dans l'agent**
 
 Dans `apps/tws-agent/ib_tws_agent/main.py`, près de `CONNECT_TIMEOUT_S` :
 
@@ -428,7 +428,7 @@ Dans `/snapshot`, le bloc `try` final devient :
 `ib.portfolio()` n'est appelé qu'une fois : deux appels donneraient deux listes et l'index ne
 correspondrait plus.
 
-- [ ] **Étape 5 : borner l'attente dans les tests**
+- [x] **Étape 5 : borner l'attente dans les tests**
 
 Le test « TWS never answers » attendrait cinq vraies secondes. Le boucler n'est pas acceptable :
 dans `test_snapshot.py`, poser `monkeypatch.setattr("ib_tws_agent.main.PNL_TIMEOUT_S", 0.05)`
@@ -436,18 +436,18 @@ sur ce seul test (et sur tout autre qui laisse une position muette), via la fixt
 `monkeypatch` de pytest. Vérifier que la valeur est bien lue à l'exécution — `collect_pnl` lit
 le module, donc le patch prend.
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
 Run : `pnpm test:agent`
 Attendu : tout passe, en moins de deux secondes en tout.
 
-- [ ] **Étape 7 : monter la version de l'agent**
+- [x] **Étape 7 : monter la version de l'agent**
 
 Dans `apps/tws-agent/pyproject.toml`, monter le `version` d'un cran mineur (`0.2.0` →
 `0.3.0` : lire la valeur courante, ne pas la deviner). `/health` la rend déjà, rien d'autre à
 faire.
 
-- [ ] **Étape 8 : commit**
+- [x] **Étape 8 : commit**
 
 ```bash
 git add -A
@@ -476,7 +476,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 valider deux fois. Un `conId` illisible n'est pas une erreur ici : `readExecution` la lèvera au
 bon endroit, avec son propre chemin.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `packages/ib-parsers/src/agent.test.ts`, en reprenant la façon dont le fichier construit
 déjà une charge utile (un helper local existe sans doute — le réutiliser plutôt qu'en écrire un) :
@@ -529,12 +529,12 @@ it.each([
 Le dernier cas — `value === dailyPnL` — est la division par zéro : la position valait 0 à la
 clôture.
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `cd packages/ib-parsers && npx vitest run src/agent.test.ts`
 Attendu : ÉCHEC — `expected null to be 100`.
 
-- [ ] **Étape 3 : implémenter**
+- [x] **Étape 3 : implémenter**
 
 Le type d'abord, dans `AgentPosition` :
 
@@ -606,7 +606,7 @@ Dans `parseAgentSnapshot`, avant la ligne qui mappe `positions` :
 
 `list(root, "executions", …)` n'est plus appelé deux fois.
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
 Run : `cd packages/ib-parsers && npx vitest run src/agent.test.ts`
 Attendu : tout passe. Les assertions `toEqual` du fichier qui décrivent une position entière
@@ -615,7 +615,7 @@ gagnent les deux champs.
 Puis : `pnpm --filter @ib/ib-parsers test` — le corpus d'oracle des journaux ne bouge pas, il est
 Flex.
 
-- [ ] **Étape 5 : commit**
+- [x] **Étape 5 : commit**
 
 ```bash
 git add -A
@@ -636,7 +636,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 **Interfaces :**
 - Consomme : `Position.dailyPnl` / `dayChange` de la tâche 1.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Reprendre exactement la façon dont le fichier de test de la version 8 ouvre une base à l'ancienne
 version, y écrit une ligne, puis rouvre à la version courante. Le cas :
@@ -652,12 +652,12 @@ it("gives a stored snapshot's positions the two day fields, at null", async () =
 });
 ```
 
-- [ ] **Étape 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test, vérifier qu'il échoue**
 
 Run : `cd apps/web && npx vitest run src/db/schema.test.ts`
 Attendu : ÉCHEC — les deux clés sont `undefined`.
 
-- [ ] **Étape 3 : implémenter la version 9**
+- [x] **Étape 3 : implémenter la version 9**
 
 Dans `apps/web/src/db/schema.ts`, après le bloc de la version 8 :
 
@@ -680,12 +680,12 @@ Dans `apps/web/src/db/schema.ts`, après le bloc de la version 8 :
       );
 ```
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
 Run : `cd apps/web && npx vitest run src/db/`
 Attendu : tout passe.
 
-- [ ] **Étape 5 : commit**
+- [x] **Étape 5 : commit**
 
 ```bash
 git add -A
@@ -715,7 +715,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 recopiée champ par champ dans `classify.ts`. Les deux valeurs n'arrivent donc pas toutes seules
 sur la page Positions : il faut les recopier, comme `unrealizedPnl` l'est déjà.
 
-- [ ] **Étape 0 : faire traverser `AnalyzedPosition`**
+- [x] **Étape 0 : faire traverser `AnalyzedPosition`**
 
 Le test d'abord, dans `packages/coverage/src/classify.test.ts` :
 
@@ -749,7 +749,7 @@ et dans `classify.ts`, après `unrealizedPnl: pos.unrealizedPnl,` :
 
 Le relancer, le voir passer.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 Dans `packages/coverage/src/strategy.test.ts`, en reprenant les helpers du fichier
 (`option()` / `stock()` de `fixtures.ts`, et la façon dont il sème des lignes de journal) :
@@ -798,12 +798,12 @@ Les noms `rowsHoldingShortCalls`, `pricedWith`, `emptySnapshot`,
 existent déjà pour les tests du sous-projet 22. Ne pas en créer de nouveaux si un équivalent
 est là.
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `cd packages/coverage && npx vitest run src/strategy.test.ts`
 Attendu : ÉCHEC — `Property 'dailyPnl' does not exist on type 'StrategyLine'`.
 
-- [ ] **Étape 3 : implémenter**
+- [x] **Étape 3 : implémenter**
 
 Une fonction pure, au-dessus de `line` :
 
@@ -857,12 +857,12 @@ Extraire cette recherche dans une constante et s'en servir deux fois :
 puis `...day` dans l'objet rendu, et les deux champs déclarés sur `WheelShareLine` avec les mêmes
 commentaires.
 
-- [ ] **Étape 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 4 : lancer les tests, vérifier qu'ils passent**
 
 Run : `pnpm --filter @ib/coverage test`
 Attendu : tout passe.
 
-- [ ] **Étape 5 : commit**
+- [x] **Étape 5 : commit**
 
 ```bash
 git add -A
@@ -894,7 +894,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   `position, type, sector, marketValue, quantity, avgPrice, lastPrice, dayChange, dailyPnl,
   unrealizedPnl, decision, coverage` ; `formatDayChange(ratio: number | null): string`.
 
-- [ ] **Étape 1 : préparer la mesure (l'instance et le script)**
+- [x] **Étape 1 : préparer la mesure (l'instance et le script)**
 
 Démarrer l'instance de dev du worktree, **une fois pour toute la tâche** — et la laisser tourner
 jusqu'à la fin de la tâche 8 :
@@ -956,7 +956,7 @@ console.log(`total natural width: ${total.toFixed(0)}px at a 60rem minimum (960p
 await browser.close();
 ```
 
-- [ ] **Étape 2 : écrire les tests qui échouent**
+- [x] **Étape 2 : écrire les tests qui échouent**
 
 Dans `apps/web/src/lib/format.test.ts` :
 
@@ -1027,12 +1027,12 @@ it("leaves the day columns of the cash table empty", async () => {
 });
 ```
 
-- [ ] **Étape 3 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 3 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `cd apps/web && npx vitest run src/lib/format.test.ts src/lib/positionColumns.test.ts`
 Attendu : ÉCHEC — `formatDayChange is not a function`, puis dix colonnes au lieu de douze.
 
-- [ ] **Étape 4 : implémenter, largeurs provisoires**
+- [x] **Étape 4 : implémenter, largeurs provisoires**
 
 `apps/web/src/lib/format.ts`, après `formatRate` :
 
@@ -1104,7 +1104,7 @@ i18n, dans `positions.columns` de `fr.json`, entre `lastPrice` et `unrealizedPnl
 
 et dans `en.json` : `"dayChange": "Day chg"`, `"dailyPnl": "Daily P&L"`.
 
-- [ ] **Étape 5 : mesurer et fixer les largeurs**
+- [x] **Étape 5 : mesurer et fixer les largeurs**
 
 L'instance tourne depuis l'étape 1. Capturer la page avec la fixture d'agent — la tâche 8 ajoute
 `pnl` à `agent-snapshot.json`, donc **le faire maintenant** si ce n'est pas fait : sans lui, les
@@ -1122,12 +1122,12 @@ déborde sur sa voisine ; si la somme naturelle dépasse 960 px, monter `minWidt
 valeur mesurée arrondie au rem supérieur, **dans les trois endroits** qui la portent
 (`PositionGroupCard`, `StrategyPositionsPage` ×2, `CashBalancesCard`).
 
-- [ ] **Étape 6 : lancer les tests, vérifier qu'ils passent**
+- [x] **Étape 6 : lancer les tests, vérifier qu'ils passent**
 
 Run : `cd apps/web && npx vitest run src/lib/ src/components/ src/pages/PositionsPage.test.tsx src/pages/StrategyPositionsPage.test.tsx`
 Attendu : tout passe.
 
-- [ ] **Étape 7 : commit**
+- [x] **Étape 7 : commit**
 
 ```bash
 git add -A
@@ -1155,7 +1155,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   averageAssignmentPrice, averageCallStrike, assignedTotal, lastPrice, dayChange, dailyPnl,
   unrealizedPnl, coverage`.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 ```ts
 it("declares the eleven columns of the Wheel's shares, summing to 100", () => {
@@ -1172,12 +1172,12 @@ Et, dans `StrategyPositionsPage.test.tsx`, le cas rendu : des actions assignées
 du snapshot porte `dailyPnl: 40, dayChange: 0.01` sur 200 titres dont la Wheel en tient 100
 affichent « +1.0% » et « 20.00 ».
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `cd apps/web && npx vitest run src/lib/strategyColumns.test.ts`
 Attendu : ÉCHEC — neuf clés au lieu de onze.
 
-- [ ] **Étape 3 : implémenter**
+- [x] **Étape 3 : implémenter**
 
 Insérer les deux colonnes dans `WHEEL_SHARE_COLUMNS` (largeurs provisoires), les deux specs dans
 `wheelShareColumnSpecs` (mêmes deux lignes que la tâche 6, sur `WheelShareLine`), les deux
@@ -1185,7 +1185,7 @@ cellules dans `WheelShareRow` entre `lastPrice` et `unrealizedPnl`, avec `NUMERI
 importés depuis `PositionRow.tsx` — les exporter là-bas plutôt que de les recopier —, et les
 deux clés i18n dans `strategyPositions.columns`, mêmes libellés qu'à la tâche 6.
 
-- [ ] **Étape 4 : mesurer les onze largeurs**
+- [x] **Étape 4 : mesurer les onze largeurs**
 
 L'instance tourne encore. Même script, sur la page Wheel, en visant la deuxième table :
 
@@ -1198,12 +1198,17 @@ troisième argument et remplacer cette ligne par `document.querySelectorAll("tab
 une modification d'une ligne dans un script jetable, pas un outil à généraliser. Reporter les
 onze pourcentages, somme exactement 100.
 
-- [ ] **Étape 5 : lancer les tests, vérifier qu'ils passent**
+Réalisé avec un script dérivé (`measure-wheel-shares.mjs`, scratchpad de session), qui imprime
+d'abord l'`aria-label` de chaque table : sur la page Wheel, « Actions assignées » est la table
+d'index **0**, « Ventes d'options » l'index 1 — l'inverse de l'hypothèse du plan, vérifié plutôt
+que supposé. Mesures et largeurs finales détaillées dans le rapport de tâche.
+
+- [x] **Étape 5 : lancer les tests, vérifier qu'ils passent**
 
 Run : `pnpm --filter web test`
 Attendu : tout passe.
 
-- [ ] **Étape 6 : commit**
+- [x] **Étape 6 : commit**
 
 ```bash
 git add -A
@@ -1223,7 +1228,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   `docs/specs/2026-09-18-valeurs-du-jour-design.md` (statut)
 - Test : `apps/web/src/pages/HelpPage.test.tsx`
 
-- [ ] **Étape 1 : garnir la fixture de l'agent**
+- [x] **Étape 1 : garnir la fixture de l'agent**
 
 Dans `apps/web/src/mocks/agent-snapshot.json`, la position `265598` (AAPL, 200 titres) gagne :
 
@@ -1238,7 +1243,7 @@ démontre le cas du contrat mouvementé sur une capture.
 
 Si la tâche 6 a déjà fait cette étape pour mesurer, la vérifier et passer.
 
-- [ ] **Étape 2 : une phrase sur la page Aide**
+- [x] **Étape 2 : une phrase sur la page Aide**
 
 Dans `HelpPage.tsx`, à l'endroit qui décrit ce que l'agent apporte, une clé i18n neuve :
 
@@ -1249,7 +1254,7 @@ Dans `HelpPage.tsx`, à l'endroit qui décrit ce que l'agent apporte, une clé i
 
 Ajouter l'assertion correspondante dans `HelpPage.test.tsx`, à côté de celles qui existent.
 
-- [ ] **Étape 3 : CLAUDE.md**
+- [x] **Étape 3 : CLAUDE.md**
 
 Ajouter une puce à « Règles qui mordent si on les oublie », après celle qui parle des heures IB :
 
@@ -1268,7 +1273,7 @@ devient « les douze colonnes », « ses neuf colonnes propres » devient « ses
 propres ». Ajouter la ligne 23 au tableau des sous-projets : `| 23 | Valeurs du jour : P&L du
 jour et variation par position | fait (2026-09-18) |`.
 
-- [ ] **Étape 4 : points reportés**
+- [x] **Étape 4 : points reportés**
 
 Ajouter, dans la section de l'agent :
 
@@ -1281,11 +1286,11 @@ Ajouter, dans la section de l'agent :
 > - **Le « jour » est celui du réglage de TWS** (heure de remise à zéro du P&L dans Global
 >   Configuration), pas nécessairement la clôture de New York. L'application ne le lit nulle part.
 
-- [ ] **Étape 5 : passer la spec en implémenté**
+- [x] **Étape 5 : passer la spec en implémenté**
 
 `docs/specs/2026-09-18-valeurs-du-jour-design.md`, ligne 3 : `Statut : implémenté (2026-09-18).`
 
-- [ ] **Étape 6 : vérification complète**
+- [x] **Étape 6 : vérification complète**
 
 ```bash
 pnpm check       # lint, typage, fraîcheur du schéma d'API, build, tous les tests TS
@@ -1294,7 +1299,7 @@ pnpm test:agent  # pytest de l'agent : pnpm check ne lance jamais Python
 
 Attendu : les deux verts. Ne rien déclarer avant d'avoir lu les deux sorties.
 
-- [ ] **Étape 7 : deux captures, vérifiées différentes**
+- [x] **Étape 7 : deux captures, vérifiées différentes**
 
 L'instance de dev tourne toujours. Capturer avec la fixture d'agent :
 
@@ -1307,7 +1312,7 @@ Vérifier que les deux fichiers diffèrent réellement (`cmp` ou leur taille), p
 douze colonnes alignées, aucune en-tête coupée, « +0.8% » sur AAPL, « — » sur le contrat
 mouvementé.
 
-- [ ] **Étape 8 : commit**
+- [x] **Étape 8 : commit**
 
 ```bash
 git add -A
@@ -1316,7 +1321,7 @@ git commit -m "Documenter le sous-projet 23 et garnir la fixture de l'agent
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```
 
-- [ ] **Étape 9 : laisser l'instance tournée pour la relecture**
+- [x] **Étape 9 : laisser l'instance tournée pour la relecture**
 
 `pnpm dev:start` si elle a été arrêtée, puis donner à Seb les deux URL (Vite et Django) du
 worktree. **Ne pas merger** : il regarde la branche d'abord. Au merge seulement, `pnpm dev:stop`

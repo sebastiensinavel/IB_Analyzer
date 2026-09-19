@@ -95,6 +95,8 @@
       "quantity": "Qté",
       "avgPrice": "Prix init.",
       "lastPrice": "Dernier prix",
+      "dayChange": "Var. jour",
+      "dailyPnl": "P&L jour",
       "unrealizedPnl": "P&L latent",
       "decision": "Décision",
       "coverage": "Couverture"
@@ -119,6 +121,8 @@
       "averageCallStrike": "Prix moyen des calls",
       "assignedTotal": "Prix total assigné",
       "lastPrice": "Dernier prix",
+      "dayChange": "Var. jour",
+      "dailyPnl": "P&L jour",
       "unrealizedPnl": "P&L latent",
       "coverage": "Couverture"
     },
@@ -506,7 +510,8 @@
     "title": "Aide",
     "what": {
       "title": "L'agent local",
-      "text": "L'agent lit TWS sur votre machine et ne parle qu'à ce site et à Interactive Brokers. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de ce site vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer."
+      "text": "L'agent lit TWS sur votre machine et ne parle qu'à ce site et à Interactive Brokers. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de ce site vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer.",
+      "dayValues": "Var. jour et P&L jour viennent de l'agent local : un portefeuille reconstruit depuis un relevé ou une réponse Flex les laisse à « — », comme un contrat acheté ou vendu le jour même."
     },
     "uv": {
       "title": "1. Installer uv",

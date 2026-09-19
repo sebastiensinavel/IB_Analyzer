@@ -45,7 +45,7 @@ describe("AppDatabase upgrades", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(8);
+      expect(upgraded.verno).toBe(9);
       const account = await upgraded.accounts.get("beta");
       expect(account).toMatchObject({
         id: "beta",
@@ -149,7 +149,7 @@ describe("AppDatabase version 6", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(8);
+      expect(upgraded.verno).toBe(9);
       expect(await upgraded.accounts.get("beta")).toEqual(account);
       expect(await upgraded.statements.get(statement.id)).toEqual(statement);
       expect(await upgraded.contracts.get(["beta", "123"])).toEqual(contract);
@@ -216,7 +216,7 @@ describe("AppDatabase version 7", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(8);
+      expect(upgraded.verno).toBe(9);
       const rows = await upgraded.sectors.toArray();
       expect(rows).toEqual([
         { ticker: "AAPL", name: "Apple Inc.", category: "Tech", score: 7.5, status: "on", updatedAt: "2026-09-03T08:00:00.000Z" },
@@ -267,7 +267,7 @@ describe("AppDatabase version 8", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(8);
+      expect(upgraded.verno).toBe(9);
       expect((await upgraded.transactions.get(["beta", "agent:e1"]))?.when).toBe("2026-09-15T22:13:46.000Z");
       expect((await upgraded.transactions.get(["beta", "flex:trade:1"]))?.when).toBe("2026-09-15T16:20:00.000Z");
       // The compound index follows the rewrite: the row is found by its new time.
@@ -303,10 +303,92 @@ describe("AppDatabase version 8", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(8);
+      expect(upgraded.verno).toBe(9);
       expect((await upgraded.transactions.get(["beta", "agent:bad"]))?.when).toBe("not a date");
       expect((await upgraded.transactions.get(["beta", "agent:good"]))?.when).toBe("2026-09-15T22:13:46.000Z");
       expect((await upgraded.snapshots.get("alpha"))?.asOf).toBe("not a date");
+    } finally {
+      upgraded.close();
+      await upgraded.delete();
+    }
+  });
+});
+
+/** The schema as it stood right before version 9: version 8 touched no store, only rows. */
+class LegacyDatabaseV8 extends LegacyDatabaseV7 {
+  constructor(name: string) {
+    super(name);
+    this.version(8).stores({});
+  }
+}
+
+describe("AppDatabase version 9", () => {
+  const position = (overrides: Record<string, unknown> = {}) => ({
+    symbol: "AAPL", secType: "STK", right: "", strike: null, expiry: null, multiplier: null,
+    quantity: 100, avgPrice: 150, marketPrice: 160, marketValue: 16000, unrealizedPnl: 1000,
+    currency: "USD", conid: "265598",
+    ...overrides,
+  });
+
+  it("gives a stored snapshot's positions the two day fields, at null", async () => {
+    const name = `ib-analyzer-v9-migration-test-${Date.now()}`;
+    const legacy = new LegacyDatabaseV8(name);
+    await legacy.open();
+    // A snapshot written before sub-project 23 has neither field: the fixture below omits them,
+    // exactly like every stored row does today.
+    await legacy.table("snapshots").put({
+      accountId: "alpha", source: "agent", asOf: "2026-09-17T15:04:26.000Z",
+      importedAt: "2026-09-17T15:04:27.000Z", positions: [position()], cashAvailable: 500,
+    });
+    legacy.close();
+
+    const upgraded = new AppDatabase(name);
+    await upgraded.open();
+    try {
+      expect(upgraded.verno).toBe(9);
+      const snapshot = await upgraded.snapshots.get("alpha");
+      expect(snapshot?.positions[0]).toMatchObject({ dailyPnl: null, dayChange: null });
+    } finally {
+      upgraded.close();
+      await upgraded.delete();
+    }
+  });
+
+  it("leaves a position's day fields alone when it already carries them, fills a sibling position that has none, and tolerates a snapshot with no positions array", async () => {
+    const name = `ib-analyzer-v9-migration-edge-test-${Date.now()}`;
+    const legacy = new LegacyDatabaseV8(name);
+    await legacy.open();
+    await legacy.table("snapshots").bulkPut([
+      {
+        accountId: "beta", source: "agent", asOf: "2026-09-17T15:04:26.000Z",
+        importedAt: "2026-09-17T15:04:27.000Z",
+        positions: [
+          // A position already carrying a value — an agent sync landed before this tab
+          // reopened — must not be clobbered back to null by `??=`.
+          position({ dailyPnl: 0, dayChange: -0.1 }),
+          // Its sibling has neither field, proving the migration actually ran on this snapshot:
+          // deleting the `.upgrade()` body would leave this one `undefined`, not `null`.
+          position({ symbol: "MSFT" }),
+        ],
+        cashAvailable: null,
+      },
+      {
+        // No positions array at all must not throw inside `modify` and abort the whole upgrade.
+        accountId: "gamma", source: "flex", asOf: "2025-12-31", importedAt: "2026-09-17T15:04:27.000Z",
+        cashAvailable: null,
+      },
+    ]);
+    legacy.close();
+
+    const upgraded = new AppDatabase(name);
+    await upgraded.open();
+    try {
+      expect(upgraded.verno).toBe(9);
+      const beta = await upgraded.snapshots.get("beta");
+      expect(beta?.positions[0]).toMatchObject({ dailyPnl: 0, dayChange: -0.1 });
+      expect(beta?.positions[1]).toMatchObject({ dailyPnl: null, dayChange: null });
+      const gamma = await upgraded.snapshots.get("gamma");
+      expect(gamma?.positions).toBeUndefined();
     } finally {
       upgraded.close();
       await upgraded.delete();

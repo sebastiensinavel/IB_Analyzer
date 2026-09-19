@@ -43,7 +43,7 @@ export const SAMPLE_JOURNAL_TRANSACTIONS: Transaction[] = [
 function position(overrides: Partial<Position>): Position {
   return {
     symbol: "", secType: "OPT", right: "", strike: null, expiry: null, multiplier: 100, quantity: 0, avgPrice: null,
-    marketPrice: null, marketValue: null, unrealizedPnl: null, currency: "USD", conid: "", description: "", ...overrides,
+    marketPrice: null, marketValue: null, unrealizedPnl: null, dailyPnl: null, dayChange: null, currency: "USD", conid: "", description: "", ...overrides,
   };
 }
 

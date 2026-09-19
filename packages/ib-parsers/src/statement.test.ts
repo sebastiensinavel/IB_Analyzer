@@ -526,15 +526,15 @@ describe("parseActivityStatement cash report", () => {
 describe("parseActivityStatement open positions", () => {
   const TESTE = {
     symbol: "TESTE", secType: "STK", right: "", strike: null, expiry: null, multiplier: 1, quantity: 10,
-    avgPrice: 20.5, marketPrice: 21, marketValue: 210, unrealizedPnl: 5, currency: "EUR", conid: "", description: "TESTE",
+    avgPrice: 20.5, marketPrice: 21, marketValue: 210, unrealizedPnl: 5, dailyPnl: null, dayChange: null, currency: "EUR", conid: "", description: "TESTE",
   };
   const TWINX = {
     symbol: "TWINX", secType: "STK", right: "", strike: null, expiry: null, multiplier: 1, quantity: 20,
-    avgPrice: 5.1, marketPrice: 6, marketValue: 120, unrealizedPnl: 18, currency: "USD", conid: "", description: "TWINX",
+    avgPrice: 5.1, marketPrice: 6, marketValue: 120, unrealizedPnl: 18, dailyPnl: null, dayChange: null, currency: "USD", conid: "", description: "TWINX",
   };
   const PUT = {
     symbol: "TESTX", secType: "OPT", right: "P", strike: 15, expiry: "2026-01-16", multiplier: 100, quantity: -1,
-    avgPrice: 1.4935, marketPrice: 0.8, marketValue: -80, unrealizedPnl: 69.35, currency: "USD", conid: "",
+    avgPrice: 1.4935, marketPrice: 0.8, marketValue: -80, unrealizedPnl: 69.35, dailyPnl: null, dayChange: null, currency: "USD", conid: "",
     description: "TESTX 16JAN26 15 P",
   };
 
@@ -542,6 +542,12 @@ describe("parseActivityStatement open positions", () => {
     const result = parseActivityStatement(html, TARGET);
     expect(result.issues).toEqual([]);
     expect(result.snapshot).toEqual({ asOf: "2025-12-31", positions: [TESTE, TWINX, PUT], cashAvailable: 2803.63 });
+  });
+
+  it("gives a statement position no day values: a file has no today", () => {
+    const result = parseActivityStatement(html, TARGET);
+    expect(result.snapshot?.positions[0].dailyPnl).toBeNull();
+    expect(result.snapshot?.positions[0].dayChange).toBeNull();
   });
 
   it("keeps the summary row and skips a lot row: a lot repeats part of its summary's quantity", () => {

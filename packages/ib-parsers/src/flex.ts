@@ -344,6 +344,9 @@ function parseOpenPosition(el: Element): Position {
     marketPrice: parseNumber(attr(el, "markPrice"), `${what} markPrice`),
     marketValue: parseNumber(attr(el, "positionValue"), `${what} positionValue`),
     unrealizedPnl: parseNumber(attr(el, "fifoPnlUnrealized"), `${what} fifoPnlUnrealized`),
+    // A file has no "today": only an agent pass carries the day's values.
+    dailyPnl: null,
+    dayChange: null,
     currency: attr(el, "currency") ?? "",
     conid: attr(el, "conid") ?? "",
     description: attr(el, "description") ?? "",

@@ -4,16 +4,24 @@ Every JSON field carries the name of the ib_async attribute it comes from, uncon
 `lastTradeDateOrContractMonth` stays "20261218", `multiplier` stays a string, an option's
 `averageCost` stays per contract, a commission stays positive. The browser's parser
 (packages/ib-parsers/src/agent.ts) does every conversion, and is where they are tested.
-The one exception is `cashAvailable` (see `extract_usd_cash`).
+The one exception is `cashAvailable` (see `extract_usd_cash`). The per-position `pnl` is the
+same story: `dailyPnL` and `value` pass through as `PnLSingle` names them, and the browser
+derives the day's percentage move from them (§4 of the design doc); the agent computes
+nothing.
 
 It also relays the two Flex Web Service calls, bytes untouched.
 """
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from collections.abc import Awaitable, Callable, Iterable
+from contextlib import suppress
 from datetime import datetime, timezone
 from importlib.metadata import version as package_version
+from math import isnan
+from time import monotonic
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Query
@@ -25,6 +33,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .config import Config
 from .cors import OriginMiddleware
 from .flex import FlexTimeout, FlexUnreachable, call_flex
+
+logger = logging.getLogger(__name__)
 
 # Only 127.0.0.1 and localhost ever legitimately reach this agent: it listens on the loopback
 # interface for a reason. Without this check, a page served from an attacker-controlled domain
@@ -39,6 +49,13 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 IB_HOST = "127.0.0.1"
 CLIENT_ID = 0  # Mandatory to see the orders placed from the TWS window itself (spec fondateur §3.4).
 CONNECT_TIMEOUT_S = 5
+# How long /snapshot waits, in all, for TWS's first per-position P&L message. Measured against a
+# real TWS: the last of 78 positions answered in 2.32 s. CONNECT_TIMEOUT_S + PNL_TIMEOUT_S stays
+# under the browser's AGENT_FETCH_TIMEOUT_MS (15 s).
+PNL_TIMEOUT_S = 5
+PNL_POLL_S = 0.05
+# IB's "no value": DBL_MAX, and the nan ib_async leaves in an object TWS has not filled yet.
+UNSET_THRESHOLD = 1e300
 CASH_TAGS = ("TotalCashBalance", "CashBalance", "AvailableFunds")
 
 
@@ -147,7 +164,16 @@ def serialize_contract(contract: Any) -> dict[str, Any]:
     }
 
 
-def serialize_position(item: Any) -> dict[str, Any]:
+def clean_pnl(value: float | None) -> float | None:
+    """A value IB does not have is `None`, never 0.0 — and `nan` is not JSON anyway."""
+    if value is None or isnan(value) or abs(value) >= UNSET_THRESHOLD:
+        return None
+    return value
+
+
+def serialize_position(item: Any, pnl: Any | None) -> dict[str, Any]:
+    daily = clean_pnl(getattr(pnl, "dailyPnL", None)) if pnl is not None else None
+    value = clean_pnl(getattr(pnl, "value", None)) if pnl is not None else None
     return {
         **serialize_contract(item.contract),
         "position": item.position,
@@ -155,6 +181,9 @@ def serialize_position(item: Any) -> dict[str, Any]:
         "marketPrice": item.marketPrice,
         "marketValue": item.marketValue,
         "unrealizedPNL": item.unrealizedPNL,
+        # Both from the same PnLSingle message, so their ratio is coherent — `marketValue` above
+        # comes from updatePortfolio, at another instant. `None` when TWS said nothing in time.
+        "pnl": None if daily is None else {"dailyPnL": daily, "value": value},
     }
 
 
@@ -178,6 +207,30 @@ def serialize_execution(fill: Any) -> dict[str, Any]:
         "commission": report.commission if has_report else None,
         "commissionCurrency": report.currency if has_report else None,
     }
+
+
+async def collect_pnl(ib: IB, items: Iterable[Any]) -> dict[int, Any]:
+    """Subscribe to each position's P&L, wait for TWS's first values, cancel, and hand them back.
+
+    Never raises: the day's values are a bonus, and the snapshot is due whatever TWS does with
+    them. A contract TWS stays silent about is simply absent from the result.
+    """
+    entries: dict[int, Any] = {}
+    keys: list[tuple[str, int]] = []
+    try:
+        keys = [(item.account, item.contract.conId) for item in items]
+        for account, con_id in keys:
+            entries[con_id] = ib.reqPnLSingle(account, "", con_id)
+        deadline = monotonic() + PNL_TIMEOUT_S
+        while monotonic() < deadline and any(clean_pnl(e.dailyPnL) is None for e in entries.values()):
+            await asyncio.sleep(PNL_POLL_S)
+    except Exception:  # noqa: BLE001 - whatever ib_async raises, the snapshot is still due
+        logger.warning("per-position P&L unavailable; the snapshot goes out without it", exc_info=True)
+    finally:
+        for account, con_id in keys:
+            with suppress(Exception):
+                ib.cancelPnLSingle(account, "", con_id)
+    return entries
 
 
 def create_app(config: Config) -> FastAPI:
@@ -211,11 +264,13 @@ def create_app(config: Config) -> FastAPI:
                 content={"code": "tws-unreachable", "detail": f"{type(exc).__name__}: {exc}"},
             )
         try:
+            items = ib.portfolio()
+            pnl = await collect_pnl(ib, items)
             return {
                 "accounts": ib.managedAccounts(),
                 "fetchedAt": utc_now_iso(),
                 "cashAvailable": extract_usd_cash(ib.accountValues()),
-                "positions": [serialize_position(item) for item in ib.portfolio()],
+                "positions": [serialize_position(item, pnl.get(item.contract.conId)) for item in items],
                 "executions": [serialize_execution(fill) for fill in ib.fills()],
             }
         finally:

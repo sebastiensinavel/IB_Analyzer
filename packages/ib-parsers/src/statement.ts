@@ -586,6 +586,9 @@ function openPosition(ctx: Context, row: SectionRow): Position {
     marketPrice: parseNumber(row.cells["Close Price"], `${what} close price`),
     marketValue: parseNumber(row.cells["Value"], `${what} value`),
     unrealizedPnl: parseNumber(row.cells["Unrealized P/L"], `${what} unrealized P/L`),
+    // A file has no "today": only an agent pass carries the day's values.
+    dailyPnl: null,
+    dayChange: null,
     currency: row.currency,
     // The section carries no conid.
     conid: "",

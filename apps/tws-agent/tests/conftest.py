@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from math import nan
 
 import pytest
 from fastapi.testclient import TestClient
@@ -31,11 +32,26 @@ class FakeContract:
 @dataclass
 class FakePortfolioItem:
     contract: FakeContract = field(default_factory=FakeContract)
+    account: str = "U1234567"
     position: float = 0.0
     marketPrice: float = 0.0
     marketValue: float = 0.0
     averageCost: float = 0.0
     unrealizedPNL: float = 0.0
+
+
+@dataclass
+class FakePnLSingle:
+    """ib_async's PnLSingle: nan until TWS fills it in, which the real one does asynchronously."""
+
+    account: str = "U1234567"
+    modelCode: str = ""
+    conId: int = 0
+    dailyPnL: float = nan
+    unrealizedPnL: float = nan
+    realizedPnL: float = nan
+    position: int = 0
+    value: float = nan
 
 
 @dataclass
@@ -84,6 +100,8 @@ class FakeIB:
         fills=None,
         connect_error: Exception | None = None,
         portfolio_error: Exception | None = None,
+        pnl=None,
+        pnl_error: Exception | None = None,
     ):
         self._managed_accounts = managed_accounts if managed_accounts is not None else ["U1234567"]
         self._portfolio = portfolio if portfolio is not None else []
@@ -91,6 +109,12 @@ class FakeIB:
         self._fills = fills if fills is not None else []
         self._connect_error = connect_error
         self._portfolio_error = portfolio_error
+        # conId -> the FakePnLSingle TWS has already filled in. A conId absent from this mapping
+        # is a contract TWS stays silent about: it gets a default, all-nan object.
+        self._pnl = pnl if pnl is not None else {}
+        self._pnl_error = pnl_error
+        self.pnl_subscribed: list[tuple[str, str, int]] = []
+        self.pnl_cancelled: list[tuple[str, str, int]] = []
         self.connected_to: tuple | None = None
         self.readonly: bool | None = None
         self.disconnected = False
@@ -117,6 +141,15 @@ class FakeIB:
 
     def fills(self):
         return list(self._fills)
+
+    def reqPnLSingle(self, account, modelCode, conId):
+        if self._pnl_error is not None:
+            raise self._pnl_error
+        self.pnl_subscribed.append((account, modelCode, conId))
+        return self._pnl.get(conId, FakePnLSingle(account=account, conId=conId))
+
+    def cancelPnLSingle(self, account, modelCode, conId):
+        self.pnl_cancelled.append((account, modelCode, conId))
 
 
 @pytest.fixture
