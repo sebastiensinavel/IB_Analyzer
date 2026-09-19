@@ -465,8 +465,10 @@ Dans `docs/specs/2026-09-03-architecture-design.md`, section « 6.2 Propriété 
 
 - [x] **Étape 2 : spec fondateur §12**
 
-Ajouter la ligne 24 au tableau des sous-projets : « L'assignation d'après minuit : propriété de
-plage en jour de marché » — fait (2026-09-19).
+Caduque : le §12 est la liste de conception d'origine, arrêtée à l'entrée 6 parce que les
+sous-projets 7 à 23 n'existaient pas encore quand elle a été écrite ; ce n'est pas le registre
+vivant des sous-projets, qui est le tableau de `CLAUDE.md` (déjà tenu à jour à l'étape 3).
+Aucune entrée 24 n'est ajoutée au §12.
 
 - [x] **Étape 3 : `CLAUDE.md`**
 

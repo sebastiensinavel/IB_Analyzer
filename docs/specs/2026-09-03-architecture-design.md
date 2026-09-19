@@ -539,11 +539,6 @@ Chacun a son spec et son plan. Chaque étape livre quelque chose d'utilisable.
    quatrième journal, Others, et trois pages de statistiques
    (`2026-09-07-journaux-design.md`).
 6. **Sauvegarde chiffrée et Paramètres.**
-24. **L'assignation d'après minuit : propriété de plage en jour de marché.** IB traite
-    l'assignation d'une échéance dans la nuit qui la suit, parfois après minuit heure de New
-    York ; la borne haute que l'agent respecte au §6.2 se lit désormais en jour de marché,
-    pour ses seules lignes. **Fait (2026-09-19)**
-    (`2026-09-19-assignation-apres-minuit-design.md`).
 
 ---
 
