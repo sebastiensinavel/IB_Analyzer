@@ -333,7 +333,7 @@ L'ordre inverse (Flex qui arrive après l'agent) est couvert au niveau de `planI
 tâche 2 ; ce bloc couvre l'ordre agent-après-Flex de bout en bout, comme le fait déjà le bloc
 `syncAgent over an assignment Flex already reported` pour le cas de 22:13.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Ajouter à la fin de `apps/web/src/agent/sync.test.ts` :
 
@@ -398,7 +398,7 @@ describe("syncAgent over an assignment IB only booked after midnight", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test et vérifier qu'il échoue sur la bonne assertion**
+- [x] **Étape 2 : lancer le test et vérifier qu'il échoue sur la bonne assertion**
 
 Depuis `apps/web` : `npx vitest run src/agent/sync.test.ts`
 
@@ -421,12 +421,12 @@ Si `reconciliation.differences` n'est pas vide **avec** le nouveau `import.ts`, 
 du test qui est fausse, pas le moteur : vérifier que le ledger Flex ferme bien le put (−2 puis
 +2) et livre 200 actions au strike, et que le snapshot en porte 200.
 
-- [ ] **Étape 3 : lancer la suite du paquet**
+- [x] **Étape 3 : lancer la suite du paquet**
 
 Depuis `apps/web` : `npx vitest run src/agent/`
 Attendu : SUCCÈS, aucun test existant touché.
 
-- [ ] **Étape 4 : commiter**
+- [x] **Étape 4 : commiter**
 
 ```bash
 git add apps/web/src/agent/sync.test.ts docs/plans/2026-09-19-assignation-apres-minuit.md

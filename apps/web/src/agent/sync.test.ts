@@ -233,3 +233,62 @@ describe("syncAgent over an assignment Flex already reported", () => {
     expect((await db.transactions.get(["beta", "agent:buy"]))?.when).toBe("2026-09-16T10:00:00.000Z");
   });
 });
+
+describe("syncAgent over an assignment IB only booked after midnight", () => {
+  const ZKVA = {
+    conId: 11, symbol: "ZKVA", localSymbol: "ZKVA", secType: "STK", right: "", strike: 0,
+    lastTradeDateOrContractMonth: "", multiplier: "", currency: "USD",
+  };
+  const ZKVA_PUT = {
+    conId: 12, symbol: "ZKVA", localSymbol: "ZKVA  260918P00025000", secType: "OPT", right: "P", strike: 25,
+    lastTradeDateOrContractMonth: "20260918", multiplier: "100", currency: "USD",
+  };
+  const put: Pick<Transaction, "symbol" | "secType" | "right" | "strike" | "expiry"> = {
+    symbol: "ZKVA  260918P00025000", secType: "OPT", right: "P", strike: 25, expiry: "2026-09-18",
+  };
+  const flexRow = (id: string, when: string, fields: Partial<Transaction>): Transaction => ({
+    accountId: "beta", externalId: `flex:trade:${id}`, source: "flex", kind: "trade", symbol: "ZKVA", secType: "STK",
+    right: "", strike: null, expiry: null, quantity: 0, price: 0, amount: 0, commission: 0, currency: "USD", when,
+    description: "", ...fields,
+  });
+  const execution = (execId: string, contract: typeof ZKVA, shares: number, price: number, time: string) => ({
+    execId, time, acctNumber: "U1234567", side: "BOT", shares, price, cumQty: shares, avgPrice: price, orderRef: "",
+    contract, commission: null, commissionCurrency: null,
+  });
+  // Friday's expiry. Flex dates the assignment 16:20 on the 18th; IB only got to booking it at
+  // 01:02:45 on the Saturday, New York time — 05:02:45 UTC, the hour TWS reports it at.
+  const flexLedger = [
+    flexRow("open", "2026-09-01T10:00:00.000Z", { ...put, quantity: -2, price: 1.1, amount: 220, commission: -1.3 }),
+    flexRow("put", "2026-09-18T16:20:00.000Z", { ...put, quantity: 2 }),
+    flexRow("stk", "2026-09-18T16:20:00.000Z", { quantity: 200, price: 25, amount: -5000 }),
+  ];
+  const overnightPass = payload({
+    fetchedAt: "2026-09-19T16:12:05.000Z",
+    positions: [{ ...ZKVA, position: 200, averageCost: 25, marketPrice: 26, marketValue: 5200, unrealizedPNL: 200 }],
+    executions: [
+      execution("put", ZKVA_PUT, 2, 0, "2026-09-19T05:02:45+00:00"),
+      execution("stk", ZKVA, 200, 25, "2026-09-19T05:02:45+00:00"),
+    ],
+  });
+
+  it("writes none of it, and the ledger reconciles with the live snapshot", async () => {
+    await db.transactions.bulkPut(flexLedger);
+    const outcome = await syncAgent(ok(overnightPass), ACCOUNT);
+    expect(outcome).toEqual({ status: "ok", transactions: 0, positions: 1 });
+
+    const ledger = await db.transactions.where("accountId").equals("beta").toArray();
+    expect(ledger.map((row) => row.externalId).sort()).toEqual(["flex:trade:open", "flex:trade:put", "flex:trade:stk"]);
+    const snapshot = await db.snapshots.get("beta");
+    expect(snapshot?.asOf).toBe("2026-09-19T12:12:05.000Z");
+    const report = buildJournals(ledger, { asOf: snapshot!.asOf, positions: snapshot!.positions });
+    expect(report.reconciliation.differences).toEqual([]);
+  });
+
+  it("still writes Monday's fill, the first market day Flex does not own", async () => {
+    await db.transactions.bulkPut(flexLedger);
+    const monday = payload({ executions: [execution("buy", ZKVA, 10, 26, "2026-09-21T13:35:00+00:00")] });
+    const outcome = await syncAgent(ok(monday), ACCOUNT);
+    expect(outcome).toMatchObject({ status: "ok", transactions: 1 });
+    expect((await db.transactions.get(["beta", "agent:buy"]))?.when).toBe("2026-09-21T09:35:00.000Z");
+  });
+});
