@@ -232,8 +232,12 @@ propriété de plage**, règle héritée de la première version et étendue à 
   plage se lit dans les seules données.
 - **Le relevé HTML n'écrit qu'avant** `min(when)` Flex, en jours entiers. Sans ligne Flex,
   il importe tout.
-- **L'agent n'écrit qu'après** le dernier jour Flex, en jours entiers : une réponse Flex
-  court jusqu'à la clôture de la veille, son dernier jour est complet.
+- **L'agent n'écrit qu'après** le dernier **jour de marché** Flex, en jours entiers : une
+  réponse Flex court jusqu'à la clôture de la veille, son dernier jour est complet. Le jour
+  de marché d'une heure d'avant 04:00 est la veille, et celui d'un samedi ou d'un dimanche le
+  vendredi précédent : IB passe les assignations d'une échéance dans la nuit qui la suit,
+  parfois après minuit. Seules les lignes de l'agent sont lues ainsi ; Flex et les relevés
+  gardent leur jour civil.
 - **À chaque synchro Flex**, les lignes HTML et agent tombant dans ses jours sont
   supprimées et remplacées, dans la même écriture IndexedDB.
 
@@ -246,7 +250,10 @@ affiché dans la page Sources de données, et ne se déclenche qu'une fois par n
 l'heure murale de New York stampée UTC. Flex et les relevés la donnent sans fuseau ;
 l'agent rend du vrai UTC, ramené à cette horloge par `toReportTime`
 (`packages/ib-parsers/src/common.ts`). Sans cela, et sans jours entiers, une assignation
-que Flex date 16:20 et que TWS rend à 22:13 heure de New York serait comptée deux fois.
+que Flex date 16:20 et que TWS rend à 22:13 heure de New York serait comptée deux fois. La
+même horloge ne suffit pas : il faut encore que la nuit qui suit une séance lui appartienne
+(sous-projet 24), sinon une assignation passée à 01:02 le samedi échappe au vendredi que Flex
+possède.
 
 ### 6.3 Parseurs (`packages/ib-parsers`)
 
@@ -532,6 +539,11 @@ Chacun a son spec et son plan. Chaque étape livre quelque chose d'utilisable.
    quatrième journal, Others, et trois pages de statistiques
    (`2026-09-07-journaux-design.md`).
 6. **Sauvegarde chiffrée et Paramètres.**
+24. **L'assignation d'après minuit : propriété de plage en jour de marché.** IB traite
+    l'assignation d'une échéance dans la nuit qui la suit, parfois après minuit heure de New
+    York ; la borne haute que l'agent respecte au §6.2 se lit désormais en jour de marché,
+    pour ses seules lignes. **Fait (2026-09-19)**
+    (`2026-09-19-assignation-apres-minuit-design.md`).
 
 ---
 

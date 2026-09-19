@@ -1,6 +1,6 @@
 # Sous-projet 24 — L'assignation d'après minuit
 
-Statut : spécifié (2026-09-19).
+Statut : implémenté (2026-09-19).
 
 Le 2026-09-19, la page Consistance des deux comptes signale des écarts de reconstitution après
 les assignations de l'échéance du vendredi 2026-09-18 : six lignes sur un compte, quatre sur

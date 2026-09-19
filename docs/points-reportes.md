@@ -943,6 +943,18 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Reporté par le sous-projet 24 (l'assignation d'après minuit)
+
+- **Le recouvrement entre relevés HTML et agent, quand un compte n'a aucune ligne Flex, reste
+  ouvert.** `planAgent` ne filtre alors rien (`flexMax === null`) et `planStatement` ne
+  supprime jamais une ligne agent : une exécution que TWS rend après minuit et qu'un relevé
+  importé ensuite couvre aussi ferait le même doublon que celui corrigé ici, sans que rien ne
+  le résorbe à la synchro suivante. Déjà noté hors périmètre au sous-projet 18
+  (`2026-09-16-plage-jours-marche-design.md`), revu et explicitement reporté au sous-projet 24
+  : aucun compte réel n'est dans ce cas.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un

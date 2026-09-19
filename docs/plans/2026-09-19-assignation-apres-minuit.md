@@ -448,7 +448,7 @@ EOF
 
 **Interfaces :** aucune.
 
-- [ ] **Étape 1 : spec fondateur §6.2**
+- [x] **Étape 1 : spec fondateur §6.2**
 
 Dans `docs/specs/2026-09-03-architecture-design.md`, section « 6.2 Propriété de plage » :
 
@@ -463,12 +463,12 @@ Dans `docs/specs/2026-09-03-architecture-design.md`, section « 6.2 Propriété 
   (sous-projet 24) — sinon une assignation passée à 01:02 le samedi échappe au vendredi que Flex
   possède.
 
-- [ ] **Étape 2 : spec fondateur §12**
+- [x] **Étape 2 : spec fondateur §12**
 
 Ajouter la ligne 24 au tableau des sous-projets : « L'assignation d'après minuit : propriété de
 plage en jour de marché » — fait (2026-09-19).
 
-- [ ] **Étape 3 : `CLAUDE.md`**
+- [x] **Étape 3 : `CLAUDE.md`**
 
 - Dans la règle « **Propriété de plage, jamais comparaison de contenu** », après la phrase sur
   `fromDate`, ajouter : la borne haute se lit en **jour de marché** pour les seules lignes de
@@ -480,25 +480,25 @@ plage en jour de marché » — fait (2026-09-19).
   Flex », en gardant l'exemple de 16:20 et en ajoutant celui du samedi 01:02.
 - Ajouter la ligne 24 au tableau des sous-projets, même libellé qu'à l'étape 2.
 
-- [ ] **Étape 4 : `docs/points-reportes.md`**
+- [x] **Étape 4 : `docs/points-reportes.md`**
 
 La ligne du recouvrement relevés + agent **sans aucune ligne Flex** : la garder, et noter qu'elle
 a été revue au sous-projet 24 et reportée délibérément — `planAgent` ne filtre rien quand
 `flexMax === null`, `planStatement` ne supprime jamais une ligne agent, et aucun compte réel
 n'est dans ce cas.
 
-- [ ] **Étape 5 : statut de la spec**
+- [x] **Étape 5 : statut de la spec**
 
 Dans `docs/specs/2026-09-19-assignation-apres-minuit-design.md`, remplacer
 `Statut : spécifié (2026-09-19).` par `Statut : implémenté (2026-09-19).`
 
-- [ ] **Étape 6 : vérification complète**
+- [x] **Étape 6 : vérification complète**
 
 Depuis la racine du worktree : `pnpm check`
 Attendu : SUCCÈS — lint, typage, build, tous les tests. C'est le seul `pnpm check` du
 sous-projet.
 
-- [ ] **Étape 7 : commiter**
+- [x] **Étape 7 : commiter**
 
 ```bash
 git add CLAUDE.md docs/

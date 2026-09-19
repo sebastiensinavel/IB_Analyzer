@@ -50,7 +50,10 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   fenêtre déclarée par la réponse** (`fromDate`) : une ligne Flex datée avant — un ajustement
   tardif qui porte la date de l'opération qu'il corrige — est ignorée, jamais écrite ni
   revendiquée. La revendiquer effacerait des mois de relevé que la réponse ne remplace pas,
-  et l'écrire ferait de ce jour la borne où les relevés cessent d'écrire.
+  et l'écrire ferait de ce jour la borne où les relevés cessent d'écrire. La borne haute se
+  lit en **jour de marché** pour les seules lignes de l'agent — avant 04:00 la veille, un
+  week-end le vendredi —, parce qu'IB passe les assignations d'une échéance dans la nuit qui
+  la suit. `marketDayOf` et `MARKET_DAY_START_HOUR` vivent dans `packages/ledger/src/filter.ts`.
 - **Constantes métier** : `BUYBACK_RATIO` et `MAX_STRUCTURE_LOSS` dans `packages/coverage`,
   `DEFAULT_MULTIPLIER` dans `packages/ledger/src/constants.ts` — le moteur de journaux en a
   besoin et `coverage` dépend de `ledger`, donc l'inverse serait un cycle ; `coverage` la
@@ -147,9 +150,10 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   l'agent converti depuis son vrai UTC. Seuls les instants de l'application
   (`lastAgentSyncAt`, `importedAt`…) restent en vrai UTC, et le badge « En direct » lit
   `lastAgentSyncAt`. **Flex possède ses jours entiers ; l'agent n'écrit qu'après le dernier
-  jour Flex, et ne supprime jamais** : TWS rend une assignation le soir, Flex la date 16:20.
-  Un snapshot `agent` remplace toujours le courant ; un fichier remplace si son `asOf`
-  atteint le jour du courant (`db/snapshot.ts`).
+  jour de marché Flex, et ne supprime jamais** : TWS rend une assignation le soir, Flex la
+  date 16:20, et parfois après minuit — un samedi 01:02 pour un vendredi 16:20. Un snapshot
+  `agent` remplace toujours le courant ; un fichier remplace si son `asOf` atteint le jour du
+  courant (`db/snapshot.ts`).
 - **Aucun `ImportRecord` pour l'agent** : l'état vit sur le compte (`twsPort`,
   `lastAgentSyncAt`, `lastAgentSyncStatus`).
 - **Les valeurs du jour viennent de l'agent seul** : `dailyPnl` est le P&L du jour que
@@ -360,6 +364,7 @@ Ordre des sous-projets et statut (spec §12) :
 | 21 | Recherche, tri et filtres des pages de stratégie, Positions Condors et Autres | fait (2026-09-18) |
 | 22 | La part nue quitte les pages de stratégie | fait (2026-09-18) |
 | 23 | Valeurs du jour : P&L du jour et variation par position | fait (2026-09-19) |
+| 24 | L'assignation d'après minuit : propriété de plage en jour de marché | fait (2026-09-19) |
 
 ## Outillage
 
