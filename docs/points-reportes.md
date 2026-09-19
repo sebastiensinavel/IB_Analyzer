@@ -929,6 +929,17 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   prochain qui change une de ces deux tables doit re-mesurer contre un contenu de cellule
   plausible dans le pire cas, jamais contre les en-têtes seuls ni contre la fixture de démo — la
   leçon que cette entrée retient de la revue.
+- **La colonne `coverage` de la table « Actions assignées » de la Wheel (`WHEEL_SHARE_COLUMNS`)
+  porte le même défaut que celui corrigé ci-dessus, non corrigé ici.** Son besoin n'a jamais été
+  calculé que sur le mot de son en-tête (« Couverture ») ; or cette table affiche toujours, sur
+  chaque ligne, le badge « used x/y » (`riskReport.ts:60`), jamais un simple mot. Mesuré sur des
+  données semées réelles, pas un pire cas construit : le badge fait environ 99 px (texte et
+  remplissage compris) contre environ 74,8 px de boîte de contenu au nouveau plancher de 63rem —
+  un débordement d'environ 16 px. Ce défaut précède le sous-projet 23 : il valait environ 32 px
+  au plancher de 48rem d'avant cette revue, et cette revue l'a réduit sans le causer, en
+  élargissant la colonne au passage sans jamais la mesurer sur son propre contenu. Le corriger
+  demande de donner à `coverage` un besoin calculé sur sa cellule, comme les colonnes numériques
+  l'ont désormais — ce qui relèvera encore le plancher de la table.
 
 ---
 
