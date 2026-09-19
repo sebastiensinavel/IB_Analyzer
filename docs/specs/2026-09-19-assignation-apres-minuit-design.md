@@ -183,9 +183,13 @@ l'Historique en attendant la synchro du lendemain.
   de `dayOf`. Flex et les relevés stampent à `00:00:00` toute ligne sans heure
   (`parseFlexDateTime`, `packages/ib-parsers/src/common.ts`) : une ligne de trésorerie la plus
   ancienne ou la plus récente de la plage reculerait la plage entière d'un jour.
-- **Le plancher reste en jour civil**, pour la même raison en sens inverse : testée en jour de
-  marché, une ligne de relevé stampée `00:00:00` le premier jour de la plage Flex tomberait la
-  veille et passerait à travers la suppression. Un test le fixe (§6).
+- **Le plancher reste en jour civil**, et l'asymétrie qui en résulte avec le plafond — plancher
+  en jour civil, plafond en jour de marché pour les seules lignes de l'agent — est délibérée :
+  testé en jour de marché, `minDay` lui-même reculerait d'un jour dès que la ligne Flex la plus
+  ancienne du lot est une ligne de trésorerie stampée `00:00:00` sans heure. Une ligne **de
+  l'agent** de la veille de ce `minDay` civil, que ce `minDay` reculé engloberait désormais,
+  serait alors supprimée — alors que Flex ne couvre rien à cette date-là, seul un artefact
+  d'horodatage l'y pousse. Un test le fixe (§6).
 - **La borne haute reste déduite des données**, pas du `toDate` déclaré par la réponse (§8).
 - **Les lignes Flex et relevé gardent leur jour civil** des deux côtés de la plage (§4).
 - **`planStatement` ne change pas** (§1, hors périmètre).

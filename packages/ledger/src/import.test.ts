@@ -278,6 +278,21 @@ describe("planImport from the agent", () => {
     const plan = planImport([], { source: "agent", transactions: rows, period: null });
     expect(plan.upsert).not.toBe(rows);
   });
+
+  it("reads Flex's last day in calendar days: a date-only Flex row must not hand its day back", () => {
+    const existing = [flex("cash", "2026-09-18T00:00:00.000Z")]; // Flex stamps midnight with no hour
+    const friday = agent("fill", "2026-09-18T10:00:00.000Z");
+    const plan = planImport(existing, { source: "agent", transactions: [friday], period: null });
+    expect(plan.upsert).toEqual([]);
+    expect(plan.skipped).toBe(1);
+  });
+
+  it("still writes Friday's overnight assignment while Flex is still on Thursday", () => {
+    const existing = [flex("thu", "2026-09-17T16:20:00.000Z")];
+    const overnight = agent("put", "2026-09-19T01:02:45.000Z");
+    const plan = planImport(existing, { source: "agent", transactions: [overnight], period: null });
+    expect(plan.upsert).toEqual([overnight]);
+  });
 });
 
 describe("planImport from Flex, over agent rows", () => {
@@ -317,6 +332,13 @@ describe("planImport from Flex, over agent rows", () => {
     const incoming = [flex("open", "2026-09-01T10:00:00.000Z"), flex("last", "2026-09-18T16:20:00.000Z")];
     const plan = planImport(existing, { source: "flex", transactions: incoming, period: null });
     expect(plan.delete).toEqual(["agent:overnight"]);
+  });
+
+  it("keeps its upper bound in calendar days: a date-only newest row still owns its whole day", () => {
+    const existing = [agent("fill", "2026-09-18T10:00:00.000Z")];
+    const incoming = [flex("open", "2026-09-01T10:00:00.000Z"), flex("cash", "2026-09-18T00:00:00.000Z")];
+    const plan = planImport(existing, { source: "flex", transactions: incoming, period: null });
+    expect(plan.delete).toEqual(["agent:fill"]);
   });
 });
 

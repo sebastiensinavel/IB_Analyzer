@@ -952,6 +952,21 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   le résorbe à la synchro suivante. Déjà noté hors périmètre au sous-projet 18
   (`2026-09-16-plage-jours-marche-design.md`), revu et explicitement reporté au sous-projet 24
   : aucun compte réel n'est dans ce cas.
+- **Le trou du férié en semaine ne se résorbe jamais, contrairement aux autres trous de la
+  règle.** Aucun calendrier de jours fériés — décision assumée (§8 de la spec du sous-projet) —
+  mais un cas récurrent lui échappe : l'échéance du jeudi qui précède le Vendredi saint. Si IB
+  passe l'assignation après 04:00 le vendredi férié, `marketDayOf` la range au vendredi, alors
+  que le `maxDay` de Flex reste au jeudi faute de toute transaction le vendredi (marché fermé) :
+  le doublon ne disparaît jamais, aucune synchro Flex ultérieure ne rattrapant un jour où rien ne
+  se négocie. Contrairement à tous les autres trous de la règle, qui se résorbent dès que Flex
+  rattrape, c'est ce qui justifie de le consigner. Probabilité basse : les trois heures de
+  traitement observées à ce jour (22:13, 01:02, 01:16) sont toutes couvertes par le seuil de
+  04:00.
+- **Renvoi à l'entrée du sous-projet 18** « La propriété de plage entière suppose que le dernier
+  jour d'une réponse Flex est complet » (section « Reporté par le sous-projet 18 » de ce même
+  fichier) : elle reste vraie, mais sa portée s'est étendue par ce sous-projet — une réponse qui
+  s'arrête un vendredi revendique désormais aussi la nuit et le week-end qui suivent, pas
+  seulement la clôture de la veille.
 
 ---
 

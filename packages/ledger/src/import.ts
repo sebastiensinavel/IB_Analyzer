@@ -86,6 +86,14 @@ function countByKind(transactions: readonly Transaction[]): DroppedCount[] {
  * not clamped to `toDate`: a row beyond the declared end has never been observed, while
  * the floor is dragged back by an ordinary late adjustment. Clamping it would also silently
  * hide such a row, where the asymmetry leaves it visible.
+ *
+ * `minDay` and `maxDay` are both read with `dayOf`, never `marketDayOf`, and only the
+ * per-row `upper` below switches to `marketDayOf` for an agent row. Reading `minDay` in
+ * market days would recede it a day whenever Flex's oldest kept row is a no-time,
+ * midnight-stamped cash line, and doom an agent row the day before that Flex never
+ * actually reported. That asymmetry — a civil floor, a market-day ceiling for the agent
+ * alone — is deliberate, the same reason as the ceiling one above: it never claims a day
+ * Flex did not write.
  */
 function planFlex(
   existing: readonly Transaction[],

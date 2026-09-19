@@ -150,9 +150,9 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   l'agent converti depuis son vrai UTC. Seuls les instants de l'application
   (`lastAgentSyncAt`, `importedAt`…) restent en vrai UTC, et le badge « En direct » lit
   `lastAgentSyncAt`. **Flex possède ses jours entiers ; l'agent n'écrit qu'après le dernier
-  jour de marché Flex, et ne supprime jamais** : TWS rend une assignation le soir, Flex la
-  date 16:20, et parfois après minuit — un samedi 01:02 pour un vendredi 16:20. Un snapshot
-  `agent` remplace toujours le courant ; un fichier remplace si son `asOf` atteint le jour du
+  jour de marché Flex, et ne supprime jamais** : TWS rend une assignation le soir, parfois
+  après minuit — un samedi 01:02 pour une échéance du vendredi —, là où Flex la date 16:20.
+  Un snapshot `agent` remplace toujours le courant ; un fichier remplace si son `asOf` atteint le jour du
   courant (`db/snapshot.ts`).
 - **Aucun `ImportRecord` pour l'agent** : l'état vit sur le compte (`twsPort`,
   `lastAgentSyncAt`, `lastAgentSyncStatus`).
@@ -337,7 +337,8 @@ la tâche. Le plan de la branche est l'état d'avancement : une reprise de sessi
 première case non cochée, jamais d'une reconstitution à partir des commits ni d'une
 improvisation — c'est en improvisant qu'on réinvente l'ancienne architecture.
 
-Ordre des sous-projets et statut (spec §12) :
+Ordre des sous-projets et statut — le registre tenu à jour, au-delà de la liste de conception
+d'origine arrêtée au sous-projet 6 (spec §12) :
 
 | # | Sous-projet | Statut |
 |---|---|---|

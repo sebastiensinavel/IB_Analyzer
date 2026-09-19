@@ -13,6 +13,17 @@ const MARKET_DAY_START_HOUR = 4;
  * walks back to the Friday. No holiday calendar: a weekday holiday is not covered, and
  * nothing has ever needed it. No time-zone maths either — every ledger `when` is already New
  * York's wall clock stamped UTC (ib-parsers' `toReportTime`).
+ *
+ * Expects a full ISO instant (`when.slice(11, 13)` reads the hour digits at index 11–12); a
+ * date-only string reads as hour `NaN → 0` there and recedes a day it should not, and an
+ * empty string makes `toISOString()` throw. No caller ever passes either — every agent `when`
+ * comes out of `toReportTime()` — so this is not guarded defensively.
+ *
+ * The arithmetic is deliberately all `UTC*` methods (`setUTCDate`, `getUTCDay`), never their
+ * local-time counterparts: that keeps it indifferent to the machine's own time zone and to
+ * daylight-saving transitions, since a `when` is already New York's wall clock relabelled UTC.
+ * Switching any of these to local methods would read that relabelled UTC instant as if it
+ * were the machine's own zone, breaking the day math on any host not itself set to UTC.
  */
 export function marketDayOf(when: string): string {
   const at = new Date(`${dayOf(when)}T00:00:00.000Z`);
