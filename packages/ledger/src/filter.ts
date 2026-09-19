@@ -15,9 +15,10 @@ const MARKET_DAY_START_HOUR = 4;
  * York's wall clock stamped UTC (ib-parsers' `toReportTime`).
  *
  * Expects a full ISO instant (`when.slice(11, 13)` reads the hour digits at index 11–12); a
- * date-only string reads as hour `NaN → 0` there and recedes a day it should not, and an
- * empty string makes `toISOString()` throw. No caller ever passes either — every agent `when`
- * comes out of `toReportTime()` — so this is not guarded defensively.
+ * date-only string is only 10 characters, so that slice reads past its end and returns `""`,
+ * and `Number("")` is `0` — read as hour zero, it recedes a day it should not. An empty
+ * string makes `toISOString()` throw instead. No caller ever passes either — every agent
+ * `when` comes out of `toReportTime()` — so this is not guarded defensively.
  *
  * The arithmetic is deliberately all `UTC*` methods (`setUTCDate`, `getUTCDay`), never their
  * local-time counterparts: that keeps it indifferent to the machine's own time zone and to

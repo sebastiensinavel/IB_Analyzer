@@ -152,8 +152,8 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `lastAgentSyncAt`. **Flex possède ses jours entiers ; l'agent n'écrit qu'après le dernier
   jour de marché Flex, et ne supprime jamais** : TWS rend une assignation le soir, parfois
   après minuit — un samedi 01:02 pour une échéance du vendredi —, là où Flex la date 16:20.
-  Un snapshot `agent` remplace toujours le courant ; un fichier remplace si son `asOf` atteint le jour du
-  courant (`db/snapshot.ts`).
+  Un snapshot `agent` remplace toujours le courant ; un fichier remplace si son `asOf`
+  atteint le jour du courant (`db/snapshot.ts`).
 - **Aucun `ImportRecord` pour l'agent** : l'état vit sur le compte (`twsPort`,
   `lastAgentSyncAt`, `lastAgentSyncStatus`).
 - **Les valeurs du jour viennent de l'agent seul** : `dailyPnl` est le P&L du jour que
