@@ -406,12 +406,16 @@ Si la tâche 2 est déjà commitée, ce test doit **passer du premier coup** : c
 de non-régression, pas un test rouge. Le vérifier en le lançant sur le commit précédent :
 
 ```bash
-git stash && git checkout HEAD~1 -- packages/ledger/src/import.ts && npx vitest run src/agent/sync.test.ts
+git checkout HEAD~1 -- packages/ledger/src/import.ts   # l'ancienne règle, un instant
+npx vitest run src/agent/sync.test.ts                  # doit ÉCHOUER
+git checkout HEAD -- packages/ledger/src/import.ts     # remettre la nouvelle
 ```
 
 Attendu sur l'ancien `import.ts` : ÉCHEC — `transactions: 2` au lieu de `0`, et
-`reconciliation.differences` non vide. Puis `git checkout HEAD -- packages/ledger/src/import.ts`
-et `git stash pop`.
+`reconciliation.differences` non vide.
+
+**Ne jamais utiliser `git stash` ici** : la pile de stash est partagée avec le checkout
+principal et les autres worktrees. Les trois commandes ci-dessus n'en ont pas besoin.
 
 Si `reconciliation.differences` n'est pas vide **avec** le nouveau `import.ts`, c'est la graine
 du test qui est fausse, pas le moteur : vérifier que le ledger Flex ferme bien le put (−2 puis
