@@ -99,7 +99,7 @@ describe("StrategyPositionsPage — Wheel", () => {
     renderPage("wheel");
     expect(await screen.findByText("Positions Wheel")).toBeInTheDocument();
     const row = await rowIn("Actions assignées", "MQZA");
-    expect(texts(row)).toEqual(["MQZA", "", "200", "17.00", "15.00", "$3,400.00", "18.00", "$200.00", "used 100/200"]);
+    expect(texts(row)).toEqual(["MQZA", "", "200", "17.00", "15.00", "$3,400.00", "18.00", "—", "—", "$200.00", "used 100/200"]);
     expect(cells(row)[4]).toHaveClass("bg-warning/25");
     expect(cells(row)[3]).not.toHaveClass("bg-warning/25");
   });
@@ -138,6 +138,22 @@ describe("StrategyPositionsPage — Wheel", () => {
     // dayChange is POSITION_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
     expect(cells(call)[7]).toHaveTextContent("+5.0%");
     expect(cells(call)[8]).toHaveTextContent("-$20.00");
+  });
+
+  it("prorates the assigned shares' day P&L to the Wheel's share of the position, day change unprorated", async () => {
+    // 200 MQZA shares assigned, 100 of them sold off later: the Wheel still tracks 100, the snapshot
+    // still reports the IB position at 200 — a real, non-null, distinguishable pair (1% / $20, not
+    // $20 twice over): dailyPnl 40 × 100/200 = 20, dayChange 0.01 carried unprorated.
+    await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, MARA_SHARES_SOLD]);
+    await db.snapshots.put({
+      ...SNAPSHOT,
+      positions: SNAPSHOT.positions.map((position) => (position === SNAPSHOT.positions[0] ? { ...position, dailyPnl: 40, dayChange: 0.01 } : position)),
+    });
+    renderPage("wheel");
+    const row = await rowIn("Actions assignées", "MQZA");
+    // dayChange is WHEEL_SHARE_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
+    expect(cells(row)[7]).toHaveTextContent("+1.0%");
+    expect(cells(row)[8]).toHaveTextContent("$20.00");
   });
 });
 
@@ -196,7 +212,7 @@ describe("StrategyPositionsPage — a call that lost its cover", () => {
     const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
     expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "—", "—", "-$30.00", "keep", "stock ×1"]);
     const held = await rowIn("Actions assignées", "MQZA");
-    expect(texts(held)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "$100.00", "used 100/100"]);
+    expect(texts(held)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
   });
 
   it("shows the naked contract on Others, without naming where it comes from", async () => {

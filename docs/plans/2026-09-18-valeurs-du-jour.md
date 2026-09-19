@@ -1155,7 +1155,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   averageAssignmentPrice, averageCallStrike, assignedTotal, lastPrice, dayChange, dailyPnl,
   unrealizedPnl, coverage`.
 
-- [ ] **Étape 1 : écrire les tests qui échouent**
+- [x] **Étape 1 : écrire les tests qui échouent**
 
 ```ts
 it("declares the eleven columns of the Wheel's shares, summing to 100", () => {
@@ -1172,12 +1172,12 @@ Et, dans `StrategyPositionsPage.test.tsx`, le cas rendu : des actions assignées
 du snapshot porte `dailyPnl: 40, dayChange: 0.01` sur 200 titres dont la Wheel en tient 100
 affichent « +1.0% » et « 20.00 ».
 
-- [ ] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Étape 2 : lancer les tests, vérifier qu'ils échouent**
 
 Run : `cd apps/web && npx vitest run src/lib/strategyColumns.test.ts`
 Attendu : ÉCHEC — neuf clés au lieu de onze.
 
-- [ ] **Étape 3 : implémenter**
+- [x] **Étape 3 : implémenter**
 
 Insérer les deux colonnes dans `WHEEL_SHARE_COLUMNS` (largeurs provisoires), les deux specs dans
 `wheelShareColumnSpecs` (mêmes deux lignes que la tâche 6, sur `WheelShareLine`), les deux
@@ -1185,7 +1185,7 @@ cellules dans `WheelShareRow` entre `lastPrice` et `unrealizedPnl`, avec `NUMERI
 importés depuis `PositionRow.tsx` — les exporter là-bas plutôt que de les recopier —, et les
 deux clés i18n dans `strategyPositions.columns`, mêmes libellés qu'à la tâche 6.
 
-- [ ] **Étape 4 : mesurer les onze largeurs**
+- [x] **Étape 4 : mesurer les onze largeurs**
 
 L'instance tourne encore. Même script, sur la page Wheel, en visant la deuxième table :
 
@@ -1198,12 +1198,17 @@ troisième argument et remplacer cette ligne par `document.querySelectorAll("tab
 une modification d'une ligne dans un script jetable, pas un outil à généraliser. Reporter les
 onze pourcentages, somme exactement 100.
 
-- [ ] **Étape 5 : lancer les tests, vérifier qu'ils passent**
+Réalisé avec un script dérivé (`measure-wheel-shares.mjs`, scratchpad de session), qui imprime
+d'abord l'`aria-label` de chaque table : sur la page Wheel, « Actions assignées » est la table
+d'index **0**, « Ventes d'options » l'index 1 — l'inverse de l'hypothèse du plan, vérifié plutôt
+que supposé. Mesures et largeurs finales détaillées dans le rapport de tâche.
+
+- [x] **Étape 5 : lancer les tests, vérifier qu'ils passent**
 
 Run : `pnpm --filter web test`
 Attendu : tout passe.
 
-- [ ] **Étape 6 : commit**
+- [x] **Étape 6 : commit**
 
 ```bash
 git add -A

@@ -68,10 +68,12 @@ describe("strategyColumnSpecs", () => {
 });
 
 describe("wheelShareColumnSpecs", () => {
-  it("types the nine columns of the assigned shares, in their order", () => {
+  it("types the eleven columns of the assigned shares, in their order", () => {
     const specs = wheelShareColumnSpecs(() => null);
     expect(specs.map((spec) => spec.key)).toEqual(WHEEL_SHARE_COLUMNS.map((column) => column.key));
-    expect(specs.map((spec) => spec.type)).toEqual(["text", "enum", "number", "number", "number", "number", "number", "number", "enum"]);
+    expect(specs.map((spec) => spec.type)).toEqual([
+      "text", "enum", "number", "number", "number", "number", "number", "number", "number", "number", "enum",
+    ]);
   });
 
   it("reads the ticker as the position and the cover as used or unused", () => {
@@ -81,5 +83,27 @@ describe("wheelShareColumnSpecs", () => {
     expect(specs.averageCallStrike.value(holding())).toBe(15);
     expect(specs.coverage.value(holding())).toEqual(["used"]);
     expect(specs.coverage.value(holding({ coveredShares: 0 }))).toEqual(["unused"]);
+  });
+
+  it("sorts and filters the day columns as numbers, the move in percent", () => {
+    const specs = wheelShareColumnSpecs(() => null);
+    const byKey = Object.fromEntries(specs.map((s) => [s.key, s]));
+
+    expect(byKey.dailyPnl.type).toBe("number");
+    expect(byKey.dayChange.type).toBe("number");
+    // Stored as a fraction, compared as a percentage: "> 5" has to mean +5 %.
+    expect(byKey.dayChange.value(holding({ dayChange: 0.0215 }))).toBeCloseTo(2.15, 12);
+    expect(byKey.dayChange.value(holding({ dayChange: null }))).toBeNull();
+  });
+});
+
+describe("WHEEL_SHARE_COLUMNS widths", () => {
+  it("declares the eleven columns of the Wheel's shares, summing to 100", () => {
+    expect(WHEEL_SHARE_COLUMNS.map((c) => c.key)).toEqual([
+      "position", "sector", "quantity", "averageAssignmentPrice", "averageCallStrike",
+      "assignedTotal", "lastPrice", "dayChange", "dailyPnl", "unrealizedPnl", "coverage",
+    ]);
+    const total = WHEEL_SHARE_COLUMNS.reduce((n, c) => n + Number.parseFloat(c.width), 0);
+    expect(total).toBeCloseTo(100, 6);
   });
 });

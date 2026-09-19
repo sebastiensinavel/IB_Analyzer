@@ -29,8 +29,8 @@ export function strategyColumnSpecs(sectorOf: SectorOf, strategy: PositionsStrat
 }
 
 /**
- * The same for the nine columns of the Wheel's assigned shares (WHEEL_SHARE_COLUMNS), which do not
- * line up on the shared ten: this table is deliberately its own.
+ * The same for the eleven columns of the Wheel's assigned shares (WHEEL_SHARE_COLUMNS), which do not
+ * line up on the shared twelve: this table is deliberately its own.
  */
 export function wheelShareColumnSpecs(sectorOf: SectorOf): ColumnSpec<WheelShareLine>[] {
   return [
@@ -41,6 +41,9 @@ export function wheelShareColumnSpecs(sectorOf: SectorOf): ColumnSpec<WheelShare
     { key: "averageCallStrike", type: "number", sortable: true, value: (line) => line.averageCallStrike },
     { key: "assignedTotal", type: "number", sortable: true, value: (line) => line.assignedTotal },
     { key: "lastPrice", type: "number", sortable: true, value: (line) => line.lastPrice },
+    // A fraction on the row, a percentage here: a filter typed "> 5" has to mean +5 %.
+    { key: "dayChange", type: "number", sortable: true, value: (line) => (line.dayChange === null ? null : line.dayChange * 100) },
+    { key: "dailyPnl", type: "number", sortable: true, value: (line) => line.dailyPnl },
     { key: "unrealizedPnl", type: "number", sortable: true, value: (line) => line.unrealizedPnl },
     { key: "coverage", type: "enum", sortable: false, value: (line) => [line.coveredShares > 0 ? "used" : "unused"] },
   ];

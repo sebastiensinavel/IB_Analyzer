@@ -16,7 +16,7 @@ import { Card, CardContent } from "@ib/ui/card";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
-import { NUMERIC, PositionRow } from "@/components/PositionRow";
+import { NUMERIC, PositionRow, toneOf } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
 import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
@@ -24,7 +24,7 @@ import type { SnapshotRecord } from "@/db/schema";
 import { useStrategyBoxViews } from "@/hooks/useStrategyBoxViews";
 import { usePageSearch, type TableViewState } from "@/hooks/useTableView";
 import { expiryChoices, reportToday } from "@/lib/expiryFilter";
-import { formatMoney, formatPrice } from "@/lib/format";
+import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
 import { POSITION_COLUMNS, WHEEL_SHARE_COLUMNS } from "@/lib/positionColumns";
 import { strategyCoverageBadges, usedBadge } from "@/lib/riskReport";
 import { STRATEGY_BOXES } from "@/lib/strategyBoxes";
@@ -183,7 +183,7 @@ function SharesBox({
       title={box.title}
       columns={WHEEL_SHARE_COLUMNS}
       labelKey="strategyPositions.columns"
-      minWidth="62rem"
+      minWidth="48rem"
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
@@ -219,7 +219,9 @@ function WheelShareRow({ line, sector }: { line: WheelShareLine; sector: string 
       )}
       <TableCell className={NUMERIC}>{formatMoney(line.assignedTotal)}</TableCell>
       <TableCell className={NUMERIC}>{formatPrice(line.lastPrice)}</TableCell>
-      <TableCell className={cn(NUMERIC, pnl !== null && (pnl >= 0 ? "text-success" : "text-destructive"))}>{formatMoney(pnl)}</TableCell>
+      <TableCell className={cn(NUMERIC, toneOf(line.dayChange))}>{formatDayChange(line.dayChange)}</TableCell>
+      <TableCell className={cn(NUMERIC, toneOf(line.dailyPnl))}>{formatMoney(line.dailyPnl)}</TableCell>
+      <TableCell className={cn(NUMERIC, toneOf(pnl))}>{formatMoney(pnl)}</TableCell>
       <TableCell>
         <Badge variant={covered.variant}>{covered.label}</Badge>
       </TableCell>

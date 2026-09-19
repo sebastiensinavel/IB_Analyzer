@@ -121,6 +121,8 @@
       "averageCallStrike": "Prix moyen des calls",
       "assignedTotal": "Prix total assigné",
       "lastPrice": "Dernier prix",
+      "dayChange": "Var. jour",
+      "dailyPnl": "P&L jour",
       "unrealizedPnl": "P&L latent",
       "coverage": "Couverture"
     },

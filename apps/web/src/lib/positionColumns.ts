@@ -21,9 +21,9 @@ import type { ColumnSpec } from "@/lib/tableView";
  * found by binary search on the live column width against `Range.getClientRects().length`
  * (a cell's own box stretches to its row's height, so measuring the cell's height instead — a
  * mistake caught while re-measuring this file — silently measures the tallest sibling cell, not
- * the label's own line count) — 115 px, well past its 50 px header word. Every other column
- * gets exactly its own measured minimum, rounded up to the nearest 0.25 %; `position` gets
- * whatever is left, which is where its margin above 115 px comes from.
+ * the label's own line count) — 115 px, well past its 58 px header word (72 px with the chevron).
+ * Every other column gets exactly its own measured minimum, rounded up to the nearest 0.25 %;
+ * `position` gets whatever is left, which is where its margin above 115 px comes from.
  *
  * The table sits at its 62rem minimum: the smallest whole-rem width at which every column's
  * rounded share still meets its own measured requirement (60 and 61rem left `position` short of
@@ -74,15 +74,26 @@ export function positionColumnSpecs(sectorOf: (symbol: string) => string | null)
 
 export type PositionColumnKey = (typeof POSITION_COLUMNS)[number]["key"];
 
-/** The nine columns of the Wheel's assigned shares, fixed widths like the Positions page. */
+/**
+ * The eleven columns of the Wheel's assigned shares: its own table, so its own floor, measured on
+ * its own (sub-project 23) rather than assumed from POSITION_COLUMNS' 62rem — eleven columns, not
+ * twelve, none of them the variable-length contract label that drives `position`'s margin above.
+ * Same method: each column's widest unwrappable word plus its sort chevron, a numeric column's
+ * full cell besides (an amount or a percentage never wraps), rounded up to the nearest 0.25 %,
+ * `position` taking whatever is left. The table sits at its 48rem minimum, the smallest whole-rem
+ * width at which every rounded share still meets its own measured requirement (47rem left
+ * `position` 6 px short). They add up to 100.
+ */
 export const WHEEL_SHARE_COLUMNS = [
-  { key: "position", width: "12%", numeric: false },
-  { key: "sector", width: "11%", numeric: false },
-  { key: "quantity", width: "8%", numeric: true },
-  { key: "averageAssignmentPrice", width: "10%", numeric: true },
-  { key: "averageCallStrike", width: "11%", numeric: true },
-  { key: "assignedTotal", width: "12%", numeric: true },
-  { key: "lastPrice", width: "10%", numeric: true },
-  { key: "unrealizedPnl", width: "12%", numeric: true },
-  { key: "coverage", width: "14%", numeric: false },
+  { key: "position", width: "11%", numeric: false },
+  { key: "sector", width: "9.5%", numeric: false },
+  { key: "quantity", width: "10%", numeric: true },
+  { key: "averageAssignmentPrice", width: "8.75%", numeric: true },
+  { key: "averageCallStrike", width: "8.75%", numeric: true },
+  { key: "assignedTotal", width: "14%", numeric: true },
+  { key: "lastPrice", width: "8.75%", numeric: true },
+  { key: "dayChange", width: "5.5%", numeric: true },
+  { key: "dailyPnl", width: "5.75%", numeric: true },
+  { key: "unrealizedPnl", width: "7.25%", numeric: true },
+  { key: "coverage", width: "10.75%", numeric: false },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean }[];
