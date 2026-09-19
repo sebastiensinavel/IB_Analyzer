@@ -225,8 +225,10 @@ TDD, chaque test rouge avant son implémentation.
 - Les vingt-quatre autres tests de `import.test.ts` restent verts sans retouche : ni la borne
   basse ni `planStatement` n'ont bougé.
 - **`apps/web/src/agent/sync.test.ts`** : la chronologie du §2.1 de bout en bout sur
-  `fake-indexeddb`, dans les deux ordres de synchro — une seule assignation en base, une
-  reconstitution sans écart.
+  `fake-indexeddb`, dans l'ordre agent-après-Flex — rien d'écrit, une reconstitution sans écart —
+  et le fill du lundi suivant, lui, écrit. L'ordre inverse se couvre au niveau de `planImport`
+  ci-dessus, comme le fait déjà le sous-projet 18 : `syncAgent` est le seul chemin que ce fichier
+  exerce, et rejouer une réponse Flex complète ici n'ajouterait rien à ce que le plan mesure.
 - `pnpm check` **une seule fois à la fin** ; tests ciblés pendant l'itération.
 
 ---
