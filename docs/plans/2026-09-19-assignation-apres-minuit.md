@@ -512,7 +512,7 @@ EOF
 )"
 ```
 
-- [ ] **Étape 8 : démarrer l'instance de dev du worktree pour la relecture**
+- [x] **Étape 8 : démarrer l'instance de dev du worktree pour la relecture**
 
 Depuis la racine du worktree : `pnpm dev:start`, puis donner à Seb les deux URL (Vite et Django,
 sur les ports du worktree). L'instance **reste démarrée** ; elle ne sera arrêtée qu'au merge, par
