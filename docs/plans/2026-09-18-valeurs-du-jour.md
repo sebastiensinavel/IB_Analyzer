@@ -1228,7 +1228,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   `docs/specs/2026-09-18-valeurs-du-jour-design.md` (statut)
 - Test : `apps/web/src/pages/HelpPage.test.tsx`
 
-- [ ] **Étape 1 : garnir la fixture de l'agent**
+- [x] **Étape 1 : garnir la fixture de l'agent**
 
 Dans `apps/web/src/mocks/agent-snapshot.json`, la position `265598` (AAPL, 200 titres) gagne :
 
@@ -1243,7 +1243,7 @@ démontre le cas du contrat mouvementé sur une capture.
 
 Si la tâche 6 a déjà fait cette étape pour mesurer, la vérifier et passer.
 
-- [ ] **Étape 2 : une phrase sur la page Aide**
+- [x] **Étape 2 : une phrase sur la page Aide**
 
 Dans `HelpPage.tsx`, à l'endroit qui décrit ce que l'agent apporte, une clé i18n neuve :
 
@@ -1254,7 +1254,7 @@ Dans `HelpPage.tsx`, à l'endroit qui décrit ce que l'agent apporte, une clé i
 
 Ajouter l'assertion correspondante dans `HelpPage.test.tsx`, à côté de celles qui existent.
 
-- [ ] **Étape 3 : CLAUDE.md**
+- [x] **Étape 3 : CLAUDE.md**
 
 Ajouter une puce à « Règles qui mordent si on les oublie », après celle qui parle des heures IB :
 
@@ -1273,7 +1273,7 @@ devient « les douze colonnes », « ses neuf colonnes propres » devient « ses
 propres ». Ajouter la ligne 23 au tableau des sous-projets : `| 23 | Valeurs du jour : P&L du
 jour et variation par position | fait (2026-09-18) |`.
 
-- [ ] **Étape 4 : points reportés**
+- [x] **Étape 4 : points reportés**
 
 Ajouter, dans la section de l'agent :
 
@@ -1286,11 +1286,11 @@ Ajouter, dans la section de l'agent :
 > - **Le « jour » est celui du réglage de TWS** (heure de remise à zéro du P&L dans Global
 >   Configuration), pas nécessairement la clôture de New York. L'application ne le lit nulle part.
 
-- [ ] **Étape 5 : passer la spec en implémenté**
+- [x] **Étape 5 : passer la spec en implémenté**
 
 `docs/specs/2026-09-18-valeurs-du-jour-design.md`, ligne 3 : `Statut : implémenté (2026-09-18).`
 
-- [ ] **Étape 6 : vérification complète**
+- [x] **Étape 6 : vérification complète**
 
 ```bash
 pnpm check       # lint, typage, fraîcheur du schéma d'API, build, tous les tests TS
@@ -1299,7 +1299,7 @@ pnpm test:agent  # pytest de l'agent : pnpm check ne lance jamais Python
 
 Attendu : les deux verts. Ne rien déclarer avant d'avoir lu les deux sorties.
 
-- [ ] **Étape 7 : deux captures, vérifiées différentes**
+- [x] **Étape 7 : deux captures, vérifiées différentes**
 
 L'instance de dev tourne toujours. Capturer avec la fixture d'agent :
 
@@ -1312,7 +1312,7 @@ Vérifier que les deux fichiers diffèrent réellement (`cmp` ou leur taille), p
 douze colonnes alignées, aucune en-tête coupée, « +0.8% » sur AAPL, « — » sur le contrat
 mouvementé.
 
-- [ ] **Étape 8 : commit**
+- [x] **Étape 8 : commit**
 
 ```bash
 git add -A
@@ -1321,7 +1321,7 @@ git commit -m "Documenter le sous-projet 23 et garnir la fixture de l'agent
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 ```
 
-- [ ] **Étape 9 : laisser l'instance tournée pour la relecture**
+- [x] **Étape 9 : laisser l'instance tournée pour la relecture**
 
 `pnpm dev:start` si elle a été arrêtée, puis donner à Seb les deux URL (Vite et Django) du
 worktree. **Ne pas merger** : il regarde la branche d'abord. Au merge seulement, `pnpm dev:stop`

@@ -113,13 +113,13 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   (`CashBalancesCard`) montre le dernier point de ce même solde par devise, avec ou sans
   snapshot : « — » seulement quand ni transaction ni Cash Report n'existe.
 - **Les tableaux de la page Positions partagent leurs colonnes** : `POSITION_COLUMNS`
-  (`apps/web/src/lib/positionColumns.ts`) fixe l'ordre et la largeur des dix colonnes, et
+  (`apps/web/src/lib/positionColumns.ts`) fixe l'ordre et la largeur des douze colonnes, et
   `PositionTable` les pose en disposition fixe sur chaque tableau, celui du cash compris, qui
   laisse vides les colonnes autres que Position et Valeur de marché. Une colonne s'ajoute là,
   jamais dans un seul tableau : les colonnes ne seraient plus alignées. Les pages de stratégie
   reprennent `POSITION_COLUMNS` pour leurs tableaux d'options et d'actions LEAPS ; seule la
-  table « Actions assignées » de la Wheel a ses neuf colonnes propres, `WHEEL_SHARE_COLUMNS`
-  (même fichier), délibérément : elle ne s'aligne pas sur les dix colonnes partagées.
+  table « Actions assignées » de la Wheel a ses onze colonnes propres, `WHEEL_SHARE_COLUMNS`
+  (même fichier), délibérément : elle ne s'aligne pas sur les douze colonnes partagées.
 - **L'Historique ne pagine pas** : un seul tableau virtualisé (`components/history/HistoryTable.tsx`)
   défile dans sa carte, en-tête figé, bordé d'une barre temporelle (`TimelineScrubber`). Ses lignes
   ont une hauteur constante, `HISTORY_ROW_HEIGHT` (`lib/historyColumns.ts`), et aucune cellule ne
@@ -152,6 +152,15 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   atteint le jour du courant (`db/snapshot.ts`).
 - **Aucun `ImportRecord` pour l'agent** : l'état vit sur le compte (`twsPort`,
   `lastAgentSyncAt`, `lastAgentSyncStatus`).
+- **Les valeurs du jour viennent de l'agent seul** : `dailyPnl` est le P&L du jour que
+  `reqPnLSingle` rend, sans abonnement ; `dayChange` est déduit dans
+  `packages/ib-parsers/src/agent.ts` par `dailyPnL / (value − dailyPnL)`, **jamais** le
+  *Change %* de TWS, qui suit le dernier échange quand celui-ci suit le prix de marque. Les
+  deux sont `null` pour un relevé et pour Flex, et `dayChange` l'est aussi pour un contrat
+  mouvementé le jour même — le P&L du jour part alors du prix d'exécution. Une page de
+  stratégie proratise `dailyPnl` et reprend `dayChange` tel quel, et abandonne les deux dès que
+  `dayChange` de la position est `null` (`dayShare`, `packages/coverage/src/strategy.ts`).
+  L'étape PnL de l'agent (`collect_pnl`, `PNL_TIMEOUT_S`) ne fait jamais échouer `/snapshot`.
 - **Il n'y a pas de page Aujourd'hui** : Historique, Positions et Dashboard portent les
   données intraday.
 - **Les journaux sont une vue calculée du ledger, jamais stockée** : `buildJournals` dans
@@ -350,6 +359,7 @@ Ordre des sous-projets et statut (spec §12) :
 | 20 | Tri et filtres de colonne de l'Historique et de Positions | fait (2026-09-17) |
 | 21 | Recherche, tri et filtres des pages de stratégie, Positions Condors et Autres | fait (2026-09-18) |
 | 22 | La part nue quitte les pages de stratégie | fait (2026-09-18) |
+| 23 | Valeurs du jour : P&L du jour et variation par position | fait (2026-09-19) |
 
 ## Outillage
 

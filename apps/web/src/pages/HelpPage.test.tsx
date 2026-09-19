@@ -57,4 +57,11 @@ describe("HelpPage", () => {
     expect(screen.getByText(/le jeton Flex ne passe jamais par le serveur/)).toBeInTheDocument();
     expect(screen.getByText(/pas pour relayer Flex Query/)).toBeInTheDocument();
   });
+
+  it("says the day's move and P&L come from the local agent", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/Var\. jour et P&L jour viennent de l'agent local/)).toBeInTheDocument();
+    expect(screen.getByText(/comme un contrat acheté ou vendu le jour même/)).toBeInTheDocument();
+  });
 });

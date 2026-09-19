@@ -1,6 +1,6 @@
 # Sous-projet 23 — Valeurs du jour : P&L du jour et variation par position
 
-Statut : spec à relire (2026-09-18).
+Statut : implémenté (2026-09-18).
 
 TWS affiche pour chaque position, sans aucun abonnement de données de marché, un *Daily P&L*
 et un *Change %*. L'agent local rend aujourd'hui `ib.portfolio()` : dernier prix, valeur de

@@ -48,6 +48,7 @@ export function HelpPage() {
 
       <Section title={t("help.what.title")}>
         <p className="text-muted-foreground">{t("help.what.text")}</p>
+        <p className="text-muted-foreground">{t("help.what.dayValues")}</p>
       </Section>
 
       <Section title={t("help.uv.title")}>

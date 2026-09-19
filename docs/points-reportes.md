@@ -901,6 +901,27 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Reporté par le sous-projet 23 (valeurs du jour)
+
+- **La devise du `dailyPnL` d'une position hors USD n'est pas vérifiée** : la sonde du
+  sous-projet 23 n'a vu qu'un compte et des positions en USD. `dayChange` n'en dépend pas — ses
+  deux termes viennent du même message —, le montant affiché si.
+- **Une position a montré un `dailyPnL` nul en séance** pendant la même sonde, marché ouvert,
+  sur six cents titres. À comparer à ce qu'affiche TWS pour ce titre : si TWS montre zéro
+  aussi, fermer le point.
+- **Le « jour » est celui du réglage de TWS** (heure de remise à zéro du P&L dans Global
+  Configuration), pas nécessairement la clôture de New York. L'application ne le lit nulle part.
+- **Les largeurs mesurées des colonnes partagées ne dégagent qu'une marge sous-pixel.** Aux
+  planchers retenus, `marketValue`, `unrealizedPnl` et `dailyPnl` dégagent leur besoin de moins
+  d'un pixel dans les douze colonnes partagées (62rem), et `lastPrice` et `dayChange` de même
+  dans les onze colonnes de la Wheel (48rem). Conséquence inévitable du choix du plus petit
+  plancher en rem entier qui dégage chaque colonne — pas un défaut —, mais un futur changement
+  de libellé d'en-tête, ou une nouvelle locale, pourrait en faire passer une en négatif sans
+  qu'aucun test ne l'attrape : les largeurs sont mesurées, jamais affirmées. À re-mesurer plutôt
+  qu'à deviner le jour où l'un de ces deux tableaux change.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un
