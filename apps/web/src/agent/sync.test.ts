@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { AgentSnapshotPayload } from "@ib/ib-parsers";
+import type { AgentContract, AgentSnapshotPayload } from "@ib/ib-parsers";
 import { buildJournals, type Transaction } from "@ib/ledger";
 import { db, type AccountRecord } from "@/db/schema";
 import type { AgentFetchResult } from "./client";
@@ -38,6 +38,20 @@ function payload(overrides: Partial<AgentSnapshotPayload> = {}): AgentSnapshotPa
 
 const answer = (result: AgentFetchResult) => ({ db, fetchSnapshot: async () => result, now: () => NOW });
 const ok = (body: AgentSnapshotPayload) => answer({ ok: true, payload: body });
+
+/** A Flex `trade` STK row builder for `ticker`, `beta`'s account, defaults zeroed out. */
+const flexRowFor =
+  (ticker: string) =>
+  (id: string, when: string, fields: Partial<Transaction>): Transaction => ({
+    accountId: "beta", externalId: `flex:trade:${id}`, source: "flex", kind: "trade", symbol: ticker, secType: "STK",
+    right: "", strike: null, expiry: null, quantity: 0, price: 0, amount: 0, commission: 0, currency: "USD", when,
+    description: "", ...fields,
+  });
+
+const execution = (execId: string, contract: AgentContract, shares: number, price: number, time: string) => ({
+  execId, time, acctNumber: "U1234567", side: "BOT", shares, price, cumQty: shares, avgPrice: price, orderRef: "",
+  contract, commission: null, commissionCurrency: null,
+});
 
 beforeEach(async () => {
   await db.open();
@@ -187,11 +201,7 @@ describe("syncAgent over an assignment Flex already reported", () => {
   const put: Pick<Transaction, "symbol" | "secType" | "right" | "strike" | "expiry"> = {
     symbol: "IQZA  260918P00060000", secType: "OPT", right: "P", strike: 60, expiry: "2026-09-18",
   };
-  const flexRow = (id: string, when: string, fields: Partial<Transaction>): Transaction => ({
-    accountId: "beta", externalId: `flex:trade:${id}`, source: "flex", kind: "trade", symbol: "IQZA", secType: "STK",
-    right: "", strike: null, expiry: null, quantity: 0, price: 0, amount: 0, commission: 0, currency: "USD", when,
-    description: "", ...fields,
-  });
+  const flexRow = flexRowFor("IQZA");
   // Flex dates the assignment 16:20 on the expiry day; TWS reports it at 02:13:46 UTC the next
   // morning, 22:13:46 in New York the same evening.
   const flexLedger = [
@@ -199,10 +209,6 @@ describe("syncAgent over an assignment Flex already reported", () => {
     flexRow("put", "2026-09-15T16:20:00.000Z", { ...put, quantity: 1 }),
     flexRow("stk", "2026-09-15T16:20:00.000Z", { quantity: 100, price: 60, amount: -6000 }),
   ];
-  const execution = (execId: string, contract: typeof IQZA, shares: number, price: number, time: string) => ({
-    execId, time, acctNumber: "U1234567", side: "BOT", shares, price, cumQty: shares, avgPrice: price, orderRef: "",
-    contract, commission: null, commissionCurrency: null,
-  });
   const assignmentPass = payload({
     fetchedAt: "2026-09-16T15:04:26.000Z",
     positions: [{ ...IQZA, position: 100, averageCost: 60, marketPrice: 61, marketValue: 6100, unrealizedPNL: 100 }],
@@ -246,15 +252,7 @@ describe("syncAgent over an assignment IB only booked after midnight", () => {
   const put: Pick<Transaction, "symbol" | "secType" | "right" | "strike" | "expiry"> = {
     symbol: "ZKVA  260918P00025000", secType: "OPT", right: "P", strike: 25, expiry: "2026-09-18",
   };
-  const flexRow = (id: string, when: string, fields: Partial<Transaction>): Transaction => ({
-    accountId: "beta", externalId: `flex:trade:${id}`, source: "flex", kind: "trade", symbol: "ZKVA", secType: "STK",
-    right: "", strike: null, expiry: null, quantity: 0, price: 0, amount: 0, commission: 0, currency: "USD", when,
-    description: "", ...fields,
-  });
-  const execution = (execId: string, contract: typeof ZKVA, shares: number, price: number, time: string) => ({
-    execId, time, acctNumber: "U1234567", side: "BOT", shares, price, cumQty: shares, avgPrice: price, orderRef: "",
-    contract, commission: null, commissionCurrency: null,
-  });
+  const flexRow = flexRowFor("ZKVA");
   // Friday's expiry. Flex dates the assignment 16:20 on the 18th; IB only got to booking it at
   // 01:02:45 on the Saturday, New York time — 05:02:45 UTC, the hour TWS reports it at.
   const flexLedger = [
