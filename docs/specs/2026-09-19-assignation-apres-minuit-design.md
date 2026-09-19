@@ -145,12 +145,21 @@ Table de vérité :
 
 `packages/ledger/src/import.ts`, deux lignes.
 
-**`planFlex`** — la ligne testée passe en jour de marché, la borne haute seule :
+**`planFlex`** — seule une ligne de l'**agent** passe en jour de marché, et seulement sur la
+borne haute :
 
 ```ts
 const day = dayOf(tx.when);
-return day >= minDay && marketDayOf(tx.when) <= maxDay;
+const upper = tx.source === "agent" ? marketDayOf(tx.when) : day;
+return day >= minDay && upper <= maxDay;
 ```
+
+La restriction à l'agent n'est pas une précaution, c'est la règle juste : seul TWS stampe
+l'heure à laquelle IB a *traité* l'événement. Flex stampe 16:20, un relevé stampe l'heure de la
+transaction ou minuit quand il n'en donne aucune — jamais une heure de traitement. Appliquée à
+toutes les sources, la bascule supprimerait une ligne de relevé stampée `00:00:00` le lendemain
+du dernier jour Flex, que Flex ne remplacera jamais : perte de données silencieuse. Mesuré le
+2026-09-19 — c'est exactement ce qu'un test existant attrape (§6).
 
 **`planAgent`** — même lecture, contre le dernier jour Flex :
 
@@ -178,6 +187,7 @@ l'Historique en attendant la synchro du lendemain.
   marché, une ligne de relevé stampée `00:00:00` le premier jour de la plage Flex tomberait la
   veille et passerait à travers la suppression. Un test le fixe (§6).
 - **La borne haute reste déduite des données**, pas du `toDate` déclaré par la réponse (§8).
+- **Les lignes Flex et relevé gardent leur jour civil** des deux côtés de la plage (§4).
 - **`planStatement` ne change pas** (§1, hors périmètre).
 - **Aucune conversion d'heure ne change.** `toReportTime` et la convention du sous-projet 18
   sont correctes et vérifiées (§2.4) ; ce sous-projet ne touche pas aux parseurs.
@@ -196,11 +206,24 @@ TDD, chaque test rouge avant son implémentation.
   - Flex après agent : la même ligne agent déjà en base → supprimée par Flex ;
   - une exécution agent du vrai jour suivant (`2026-09-21T09:35:00Z`, lundi) → écrite, et gardée
     par un Flex dont le dernier jour est le vendredi ;
-  - **le garde-fou du plancher** : une ligne de relevé stampée `00:00:00` le premier jour de la
-    plage Flex reste supprimée. C'est ce test qui échoue si quelqu'un passe un jour le plancher
-    en jour de marché « par symétrie ».
-- **Les tests existants de `import.test.ts` restent verts sans retouche** : c'est ce qui prouve
-  que ni la borne basse ni `planStatement` n'ont bougé.
+  - **le garde-fou de source** : une ligne agent et une ligne de relevé au même instant, le
+    lendemain du dernier jour Flex — l'agent est supprimé, le relevé reste.
+- **Deux tests existants changent, et c'est le comportement qui change avec eux** (mesuré sur la
+  branche le 2026-09-19) :
+  - `planImport from the agent > writes only the days after Flex's last day` — ses fixtures
+    tombent un samedi (`2026-09-05`) et un dimanche (`2026-09-06`), donc le même jour de marché.
+    Le bloc passe au mardi (`flexMax = "2026-09-08T20:00:00.000Z"`), la ligne « jour suivant » à
+    `2026-09-09T09:30:00.000Z`, et une ligne d'après minuit `2026-09-09T01:02:45.000Z` s'y ajoute,
+    ignorée. Les quatre autres tests du bloc suivent les mêmes dates, sans quoi ils deviennent
+    vides de sens.
+  - `planImport from Flex, over agent rows > retires agent rows over its whole last day` — mêmes
+    dates de week-end, même déplacement au mardi, plus une ligne d'après minuit désormais
+    supprimée.
+- **`deletes rows of other sources over its whole days, bounds included` ne change pas, et c'est
+  le garde-fou** : sa ligne de relevé du `2026-03-06T00:00:00Z` doit rester en vie. Il échoue si
+  la bascule est étendue aux relevés.
+- Les vingt-quatre autres tests de `import.test.ts` restent verts sans retouche : ni la borne
+  basse ni `planStatement` n'ont bougé.
 - **`apps/web/src/agent/sync.test.ts`** : la chronologie du §2.1 de bout en bout sur
   `fake-indexeddb`, dans les deux ordres de synchro — une seule assignation en base, une
   reconstitution sans écart.
@@ -230,6 +253,7 @@ Après le merge, `pnpm dev:stop && pnpm dev:start` à la racine.
 | Seuil horaire seul, sans repli sur le vendredi | Ne couvre que la moitié de la fenêtre pendant laquelle IB traite une échéance. Un lot posté un samedi matin rejouerait le même bug, avec le même symptôme muet |
 | Un calendrier de jours fériés | Un férié en semaine n'a jamais produit ce symptôme, et il faudrait une source de vérité que le dépôt n'a pas. La règle le laisse non couvert, sciemment |
 | Passer aussi les bornes en jour de marché, par symétrie | Les lignes stampées `00:00:00` par Flex et les relevés décaleraient des plages entières, dans les deux sens (§5) |
+| Appliquer la bascule à toutes les sources et pas à l'agent seul | Supprimerait une ligne de relevé stampée `00:00:00` le lendemain du dernier jour Flex, sans remplacement. Mesuré, pas supposé (§4) |
 | Faire dépendre la règle de la forme de la ligne (prix 0, sans commission) | Complexité inutile ici : l'utilisateur ne passe aucun ordre dans la session overnight d'IB, seule situation où le seuil horaire pourrait mordre à tort. Sans cette contrainte, une règle de temps pure suffit |
 | Convertir dans l'agent Python | Déjà écarté au sous-projet 18, et sans objet : la conversion est correcte (§2.4) |
 
