@@ -118,8 +118,11 @@ describe("parseAgentSnapshot", () => {
   });
 
   it("takes an older agent's payload without a pnl field", () => {
-    // The agent is optional, and so is its version: features missing, never a failed sync.
-    const { positions } = parseAgentSnapshot(payloadWith({}), "alpha");
+    // The agent is optional, and so is its version: features missing, never a failed sync. The
+    // fixture's own stock position now carries an explicit `pnl: null` (sub-project 23's whole-
+    // branch review: the fixture should show both shapes an agent can send), so this case is
+    // built here rather than read off the fixture, to keep the truly-absent-key path covered.
+    const { positions } = parseAgentSnapshot(payloadWith({ pnl: undefined }), "alpha");
 
     expect(positions[0].dailyPnl).toBeNull();
     expect(positions[0].dayChange).toBeNull();

@@ -911,14 +911,24 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   aussi, fermer le point.
 - **Le « jour » est celui du réglage de TWS** (heure de remise à zéro du P&L dans Global
   Configuration), pas nécessairement la clôture de New York. L'application ne le lit nulle part.
-- **Les largeurs mesurées des colonnes partagées ne dégagent qu'une marge sous-pixel.** Aux
-  planchers retenus, `marketValue`, `unrealizedPnl` et `dailyPnl` dégagent leur besoin de moins
-  d'un pixel dans les douze colonnes partagées (62rem), et `lastPrice` et `dayChange` de même
-  dans les onze colonnes de la Wheel (48rem). Conséquence inévitable du choix du plus petit
-  plancher en rem entier qui dégage chaque colonne — pas un défaut —, mais un futur changement
-  de libellé d'en-tête, ou une nouvelle locale, pourrait en faire passer une en négatif sans
-  qu'aucun test ne l'attrape : les largeurs sont mesurées, jamais affirmées. À re-mesurer plutôt
-  qu'à deviner le jour où l'un de ces deux tableaux change.
+- **Les largeurs des colonnes numériques avaient été mesurées contre les en-têtes et contre les
+  valeurs de la fixture de démonstration, jamais contre un contenu de cellule réaliste** — ce
+  n'était pas une marge sous-pixel occasionnelle, c'est ce que la revue de la branche entière du
+  sous-projet 23 a trouvé et corrigé : sur les douze colonnes partagées, chaque colonne numérique
+  dégageait le besoin exact de la fixture, à la fixture près, et sur la table « Actions
+  assignées » de la Wheel, `dayChange` et `dailyPnl` (5,5 % et 5,75 % d'un plancher de 48rem)
+  débordaient déjà sur la propre fixture de démonstration : trois cellules ("+0.8%$120.00$120.00")
+  s'affichaient collées, sans séparation. Corrigé en resserrant le besoin de chaque colonne
+  numérique sur un contenu réaliste choisi et mesuré, jamais deviné : un pourcentage signé à trois
+  chiffres (`-100.0%`), un montant à quatre chiffres et à cents négatif (`-$1 234,56`), une valeur
+  de marché à cinq chiffres et négative, un prix à quatre chiffres avec les quatre décimales du
+  formateur. Le plancher des douze colonnes partagées passe de 62rem à 70rem, celui de la Wheel de
+  48rem à 63rem — et à 1280 px avec le menu ouvert (976 px de carte), le premier laisse 144 px hors
+  écran (la fin de Décision et toute la Couverture), le second 32 px (un tiers de la Couverture) :
+  un compromis assumé, pas une régression à corriger en resserrant une colonne sous son besoin. Le
+  prochain qui change une de ces deux tables doit re-mesurer contre un contenu de cellule
+  plausible dans le pire cas, jamais contre les en-têtes seuls ni contre la fixture de démo — la
+  leçon que cette entrée retient de la revue.
 
 ---
 

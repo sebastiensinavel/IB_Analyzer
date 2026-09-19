@@ -331,7 +331,8 @@ export function parseAgentSnapshot(payload: unknown, accountId: string): AgentSn
   // left alone: readExecution below raises on it, at its own path.
   const tradedToday = new Set<number>(
     rawExecutions.flatMap((e) => {
-      const conId = (e as Obj | null)?.["contract"] && ((e as Obj)["contract"] as Obj)["conId"];
+      const contract = (e as Obj | null)?.["contract"];
+      const conId = contract && typeof contract === "object" ? (contract as Obj)["conId"] : undefined;
       return typeof conId === "number" ? [conId] : [];
     }),
   );
