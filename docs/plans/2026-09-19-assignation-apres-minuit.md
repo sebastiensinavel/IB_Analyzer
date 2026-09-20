@@ -51,7 +51,7 @@ la tâche 1.
   (`src/index.ts` fait déjà `export * from "./filter.ts"` : **ne rien ajouter** à `index.ts`).
   La tâche 2 l'importe par `import { dayOf, marketDayOf } from "./filter.ts";`.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Ajouter à la fin de `packages/ledger/src/filter.test.ts`, et corriger la ligne d'import du haut
 du fichier en `import { dayOf, marketDayOf } from "./filter.ts";` :
@@ -88,12 +88,12 @@ describe("marketDayOf", () => {
 Repères de calendrier, vérifiés : 2026-09-18 vendredi, 09-19 samedi, 09-20 dimanche,
 09-21 lundi, 09-22 mardi, 09-30 mercredi, 2026-10-01 jeudi, 2025-12-31 mercredi.
 
-- [ ] **Étape 2 : lancer le test et vérifier qu'il échoue**
+- [x] **Étape 2 : lancer le test et vérifier qu'il échoue**
 
 Depuis `packages/ledger` : `npx vitest run src/filter.test.ts`
 Attendu : ÉCHEC, `marketDayOf` n'est pas exporté.
 
-- [ ] **Étape 3 : écrire l'implémentation minimale**
+- [x] **Étape 3 : écrire l'implémentation minimale**
 
 Ajouter à `packages/ledger/src/filter.ts`, après `dayOf` :
 
@@ -117,12 +117,12 @@ export function marketDayOf(when: string): string {
 }
 ```
 
-- [ ] **Étape 4 : lancer le test et vérifier qu'il passe**
+- [x] **Étape 4 : lancer le test et vérifier qu'il passe**
 
 Depuis `packages/ledger` : `npx vitest run src/filter.test.ts`
 Attendu : SUCCÈS, 6 tests (le `dayOf` existant compris).
 
-- [ ] **Étape 5 : commiter**
+- [x] **Étape 5 : commiter**
 
 ```bash
 git add packages/ledger/src/filter.ts packages/ledger/src/filter.test.ts docs/plans/2026-09-19-assignation-apres-minuit.md
@@ -152,7 +152,7 @@ Le test `deletes rows of other sources over its whole days, bounds included` a u
 `html("next-day", "2026-03-06T00:00:00.000Z")` qui doit rester en vie. S'il devient rouge, la
 bascule a été appliquée à toutes les sources au lieu de l'agent seul.
 
-- [ ] **Étape 1 : mettre à jour les deux tests existants que le comportement change**
+- [x] **Étape 1 : mettre à jour les deux tests existants que le comportement change**
 
 Dans `packages/ledger/src/import.test.ts`, `describe("planImport from the agent")`, remplacer la
 constante du bloc :
@@ -205,7 +205,7 @@ Dans `describe("planImport from Flex, over agent rows")`, remplacer le corps du 
   });
 ```
 
-- [ ] **Étape 2 : ajouter les quatre tests neufs**
+- [x] **Étape 2 : ajouter les quatre tests neufs**
 
 Dans `describe("planImport from the agent")`, après le test
 `leaves out an assignment Flex already dated at 16:20 that TWS reports in the evening` :
@@ -251,12 +251,12 @@ Dans `describe("planImport from Flex, over agent rows")`, après le test
   });
 ```
 
-- [ ] **Étape 3 : lancer les tests et vérifier qu'ils échouent**
+- [x] **Étape 3 : lancer les tests et vérifier qu'ils échouent**
 
 Depuis `packages/ledger` : `npx vitest run src/import.test.ts`
 Attendu : ÉCHEC sur les six tests touchés ou ajoutés. Les vingt-quatre autres passent déjà.
 
-- [ ] **Étape 4 : écrire l'implémentation minimale**
+- [x] **Étape 4 : écrire l'implémentation minimale**
 
 Dans `packages/ledger/src/import.ts` :
 
@@ -296,14 +296,14 @@ Réécrire aussi les deux commentaires de bloc qui énoncent l'ancienne règle :
   « only the **market** days after Flex's newest day », avec l'exemple de l'assignation d'un
   vendredi passée le samedi à 01:02 à côté de celle de 22:13 qui y est déjà.
 
-- [ ] **Étape 5 : lancer les tests et vérifier qu'ils passent**
+- [x] **Étape 5 : lancer les tests et vérifier qu'ils passent**
 
 Depuis `packages/ledger` : `npx vitest run`
 Attendu : SUCCÈS, tous les fichiers du paquet. En particulier
 `deletes rows of other sources over its whole days, bounds included` doit être **vert sans avoir
 été touché**.
 
-- [ ] **Étape 6 : commiter**
+- [x] **Étape 6 : commiter**
 
 ```bash
 git add packages/ledger/src/import.ts packages/ledger/src/import.test.ts docs/plans/2026-09-19-assignation-apres-minuit.md
@@ -333,7 +333,7 @@ L'ordre inverse (Flex qui arrive après l'agent) est couvert au niveau de `planI
 tâche 2 ; ce bloc couvre l'ordre agent-après-Flex de bout en bout, comme le fait déjà le bloc
 `syncAgent over an assignment Flex already reported` pour le cas de 22:13.
 
-- [ ] **Étape 1 : écrire le test qui échoue**
+- [x] **Étape 1 : écrire le test qui échoue**
 
 Ajouter à la fin de `apps/web/src/agent/sync.test.ts` :
 
@@ -398,7 +398,7 @@ describe("syncAgent over an assignment IB only booked after midnight", () => {
 });
 ```
 
-- [ ] **Étape 2 : lancer le test et vérifier qu'il échoue sur la bonne assertion**
+- [x] **Étape 2 : lancer le test et vérifier qu'il échoue sur la bonne assertion**
 
 Depuis `apps/web` : `npx vitest run src/agent/sync.test.ts`
 
@@ -406,23 +406,27 @@ Si la tâche 2 est déjà commitée, ce test doit **passer du premier coup** : c
 de non-régression, pas un test rouge. Le vérifier en le lançant sur le commit précédent :
 
 ```bash
-git stash && git checkout HEAD~1 -- packages/ledger/src/import.ts && npx vitest run src/agent/sync.test.ts
+git checkout HEAD~1 -- packages/ledger/src/import.ts   # l'ancienne règle, un instant
+npx vitest run src/agent/sync.test.ts                  # doit ÉCHOUER
+git checkout HEAD -- packages/ledger/src/import.ts     # remettre la nouvelle
 ```
 
 Attendu sur l'ancien `import.ts` : ÉCHEC — `transactions: 2` au lieu de `0`, et
-`reconciliation.differences` non vide. Puis `git checkout HEAD -- packages/ledger/src/import.ts`
-et `git stash pop`.
+`reconciliation.differences` non vide.
+
+**Ne jamais utiliser `git stash` ici** : la pile de stash est partagée avec le checkout
+principal et les autres worktrees. Les trois commandes ci-dessus n'en ont pas besoin.
 
 Si `reconciliation.differences` n'est pas vide **avec** le nouveau `import.ts`, c'est la graine
 du test qui est fausse, pas le moteur : vérifier que le ledger Flex ferme bien le put (−2 puis
 +2) et livre 200 actions au strike, et que le snapshot en porte 200.
 
-- [ ] **Étape 3 : lancer la suite du paquet**
+- [x] **Étape 3 : lancer la suite du paquet**
 
 Depuis `apps/web` : `npx vitest run src/agent/`
 Attendu : SUCCÈS, aucun test existant touché.
 
-- [ ] **Étape 4 : commiter**
+- [x] **Étape 4 : commiter**
 
 ```bash
 git add apps/web/src/agent/sync.test.ts docs/plans/2026-09-19-assignation-apres-minuit.md
@@ -444,7 +448,7 @@ EOF
 
 **Interfaces :** aucune.
 
-- [ ] **Étape 1 : spec fondateur §6.2**
+- [x] **Étape 1 : spec fondateur §6.2**
 
 Dans `docs/specs/2026-09-03-architecture-design.md`, section « 6.2 Propriété de plage » :
 
@@ -459,12 +463,14 @@ Dans `docs/specs/2026-09-03-architecture-design.md`, section « 6.2 Propriété 
   (sous-projet 24) — sinon une assignation passée à 01:02 le samedi échappe au vendredi que Flex
   possède.
 
-- [ ] **Étape 2 : spec fondateur §12**
+- [x] **Étape 2 : spec fondateur §12**
 
-Ajouter la ligne 24 au tableau des sous-projets : « L'assignation d'après minuit : propriété de
-plage en jour de marché » — fait (2026-09-19).
+Caduque : le §12 est la liste de conception d'origine, arrêtée à l'entrée 6 parce que les
+sous-projets 7 à 23 n'existaient pas encore quand elle a été écrite ; ce n'est pas le registre
+vivant des sous-projets, qui est le tableau de `CLAUDE.md` (déjà tenu à jour à l'étape 3).
+Aucune entrée 24 n'est ajoutée au §12.
 
-- [ ] **Étape 3 : `CLAUDE.md`**
+- [x] **Étape 3 : `CLAUDE.md`**
 
 - Dans la règle « **Propriété de plage, jamais comparaison de contenu** », après la phrase sur
   `fromDate`, ajouter : la borne haute se lit en **jour de marché** pour les seules lignes de
@@ -476,25 +482,25 @@ plage en jour de marché » — fait (2026-09-19).
   Flex », en gardant l'exemple de 16:20 et en ajoutant celui du samedi 01:02.
 - Ajouter la ligne 24 au tableau des sous-projets, même libellé qu'à l'étape 2.
 
-- [ ] **Étape 4 : `docs/points-reportes.md`**
+- [x] **Étape 4 : `docs/points-reportes.md`**
 
 La ligne du recouvrement relevés + agent **sans aucune ligne Flex** : la garder, et noter qu'elle
 a été revue au sous-projet 24 et reportée délibérément — `planAgent` ne filtre rien quand
 `flexMax === null`, `planStatement` ne supprime jamais une ligne agent, et aucun compte réel
 n'est dans ce cas.
 
-- [ ] **Étape 5 : statut de la spec**
+- [x] **Étape 5 : statut de la spec**
 
 Dans `docs/specs/2026-09-19-assignation-apres-minuit-design.md`, remplacer
 `Statut : spécifié (2026-09-19).` par `Statut : implémenté (2026-09-19).`
 
-- [ ] **Étape 6 : vérification complète**
+- [x] **Étape 6 : vérification complète**
 
 Depuis la racine du worktree : `pnpm check`
 Attendu : SUCCÈS — lint, typage, build, tous les tests. C'est le seul `pnpm check` du
 sous-projet.
 
-- [ ] **Étape 7 : commiter**
+- [x] **Étape 7 : commiter**
 
 ```bash
 git add CLAUDE.md docs/
@@ -506,7 +512,7 @@ EOF
 )"
 ```
 
-- [ ] **Étape 8 : démarrer l'instance de dev du worktree pour la relecture**
+- [x] **Étape 8 : démarrer l'instance de dev du worktree pour la relecture**
 
 Depuis la racine du worktree : `pnpm dev:start`, puis donner à Seb les deux URL (Vite et Django,
 sur les ports du worktree). L'instance **reste démarrée** ; elle ne sera arrêtée qu'au merge, par
