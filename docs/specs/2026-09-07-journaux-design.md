@@ -369,7 +369,8 @@ Un composant, paramétré par la stratégie. De haut en bas :
   |---|---|
   | `shares` avec `assigned = true`, en cours | bleu |
   | `short_call` en cours | orange |
-  | `short_put`, `long_call`, `condor` en cours | vert |
+  | `short_put` en cours et non assigné, `long_call`, `condor` en cours | vert |
+  | `short_put` assigné, encore en cours | aucune (la ligne d'actions porte le bleu) |
   | tout le reste | aucune |
 
   Trois classes utilitaires sur des jetons de `index.css`, pas des couleurs en dur dans le

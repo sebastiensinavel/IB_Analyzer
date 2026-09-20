@@ -16,16 +16,19 @@ function row(overrides: Partial<JournalRow>): JournalRow {
 }
 
 describe("labelTone", () => {
-  it("is blue for delivered shares still held, orange for a short call open, green for a short put, a long call or a condor open", () => {
+  it("is blue for delivered shares still held, orange for a short call open, green for a put still live, a long call or a condor open, nothing for a put already assigned", () => {
     expect(labelTone(row({ kind: "shares", assigned: true }))).toBe("shares");
     expect(labelTone(row({ kind: "short_call" }))).toBe("shortCall");
     expect(labelTone(row({ kind: "short_put" }))).toBe("open");
+    expect(labelTone(row({ kind: "short_put", assigned: true }))).toBeNull();
     expect(labelTone(row({ kind: "long_call" }))).toBe("open");
     expect(labelTone(row({ kind: "condor" }))).toBe("open");
   });
 
   it("is nothing once closed, for shares bought on the market, and for the other kinds", () => {
     expect(labelTone(row({ kind: "short_put", ongoing: false }))).toBeNull();
+    // An assigned put stays `ongoing` while its shares are held; the shares line carries the tone.
+    expect(labelTone(row({ kind: "short_put", assigned: true, ongoing: true }))).toBeNull();
     expect(labelTone(row({ kind: "shares", strategy: "others", assigned: false }))).toBeNull();
     expect(labelTone(row({ kind: "long_put" }))).toBeNull();
     expect(labelTone(row({ kind: "short_shares", assigned: true }))).toBeNull();

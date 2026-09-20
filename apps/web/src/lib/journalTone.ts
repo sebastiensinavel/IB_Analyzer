@@ -9,7 +9,10 @@ export function labelTone(row: JournalRow): LabelTone | null {
   // strategy took it over: `assigned` says how it arrived, not where it is.
   if (row.kind === "shares") return row.assigned || row.strategy === "wheel" ? "shares" : null;
   if (row.kind === "short_call") return "shortCall";
-  if (row.kind === "short_put" || row.kind === "long_call" || row.kind === "condor") return "open";
+  // A put stays `ongoing` after its assignment, until the shares it delivered are sold: the
+  // green would then say what the blue of those shares already says, so it stops at assignment.
+  if (row.kind === "short_put") return row.assigned ? null : "open";
+  if (row.kind === "long_call" || row.kind === "condor") return "open";
   return null;
 }
 
