@@ -1,6 +1,8 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentContract, AgentSnapshotPayload } from "@ib/ib-parsers";
 import { buildJournals, type Transaction } from "@ib/ledger";
+import { createAccount } from "@/db/accounts";
+import { installBackupTrigger } from "@/db/backup/trigger";
 import { db, type AccountRecord } from "@/db/schema";
 import type { AgentFetchResult } from "./client";
 import { syncAgent } from "./sync";
@@ -288,5 +290,38 @@ describe("syncAgent over an assignment IB only booked after midnight", () => {
     const outcome = await syncAgent(ok(monday), ACCOUNT);
     expect(outcome).toMatchObject({ status: "ok", transactions: 1 });
     expect((await db.transactions.get(["beta", "agent:buy"]))?.when).toBe("2026-09-21T09:35:00.000Z");
+  });
+});
+
+// Correction round 1: the plan derived the triggering tables from the backed-up ones minus
+// `snapshots`, on the theory that this followed the source/derived boundary. It does not: the
+// agent also writes `accounts` (lastAgentSyncAt/lastAgentSyncStatus, on every pass, success or
+// failure) and `contracts` (on every pass that reports an identity) — both in TRIGGER_TABLES —
+// so a table-scoped trigger fired on every five-minute poll regardless. Only an integration test
+// that runs a real pass through the real trigger catches this; the unit tests of trigger.test.ts
+// were each correct for what they isolated and could not.
+describe("syncAgent and the backup trigger", () => {
+  it("never fires the backup trigger, however many tables a pass touches", async () => {
+    const onChange = vi.fn();
+    const uninstall = installBackupTrigger(db, onChange);
+    try {
+      await syncAgent(ok(payload()), ACCOUNT);
+      // A second pass, success or not, is exactly the five-minute loop this rule exists to stop.
+      await syncAgent(answer({ ok: false, code: "agent-unreachable" }), ACCOUNT);
+    } finally {
+      uninstall();
+    }
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("still fires on a write that does not rebuild itself: a new account", async () => {
+    const onChange = vi.fn();
+    const uninstall = installBackupTrigger(db, onChange);
+    try {
+      await createAccount(db, { label: "Gamma", ibAccountId: "U7654321" });
+    } finally {
+      uninstall();
+    }
+    expect(onChange).toHaveBeenCalled();
   });
 });
