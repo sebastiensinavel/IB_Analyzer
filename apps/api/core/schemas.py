@@ -17,3 +17,9 @@ class SessionUserOut(Schema):
 class ErrorOut(Schema):
     code: str
     detail: str
+
+
+class BackupStatusOut(Schema):
+    present: bool
+    updatedAt: str | None
+    bytes: int | None

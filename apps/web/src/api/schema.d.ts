@@ -4,6 +4,49 @@
  */
 
 export interface paths {
+    "/api/core/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Backup
+         * @description Returns a plain `HttpResponse`: ninja hands any `HttpResponseBase` back untouched,
+         *     before it ever looks at `response_models` — the same pattern `ib.api._relay` uses.
+         */
+        get: operations["core_api_get_backup"];
+        put?: never;
+        /**
+         * Put Backup
+         * @description The body is raw ciphertext: never parsed, never logged, never inspected.
+         */
+        post: operations["core_api_put_backup"];
+        /** Delete Backup */
+        delete: operations["core_api_delete_backup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/core/backup/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backup Status */
+        get: operations["core_api_backup_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/core/invitations/accept": {
         parameters: {
             query?: never;
@@ -120,6 +163,15 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** BackupStatusOut */
+        BackupStatusOut: {
+            /** Bytes */
+            bytes: number | null;
+            /** Present */
+            present: boolean;
+            /** Updatedat */
+            updatedAt: string | null;
+        };
         /** ErrorOut */
         ErrorOut: {
             /** Code */
@@ -161,6 +213,104 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    core_api_get_backup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    core_api_put_backup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupStatusOut"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    core_api_delete_backup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupStatusOut"];
+                };
+            };
+        };
+    };
+    core_api_backup_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupStatusOut"];
+                };
+            };
+        };
+    };
     core_api_accept_invitation: {
         parameters: {
             query?: never;

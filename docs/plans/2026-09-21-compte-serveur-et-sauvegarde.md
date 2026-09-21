@@ -1143,7 +1143,7 @@ git commit -m "Export et import d'un fichier local, la sauvegarde sans compte"
   `DELETE /api/backup`, `GET /api/backup/status` → `{ present: bool, updatedAt: str | None,
   bytes: int | None }`.
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/api/tests/test_backup_api.py` :
 
@@ -1227,12 +1227,12 @@ def test_anonymous_is_refused(client):
     assert client.get("/api/backup").status_code == 401
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 `pnpm test:api -- apps/api/tests/test_backup_api.py`
 Attendu : ÉCHEC, `ImportError` sur `MAX_BACKUP_BYTES`.
 
-- [ ] **Step 3: Écrire le modèle**
+- [x] **Step 3: Écrire le modèle**
 
 À la fin de `apps/api/core/models.py` :
 
@@ -1263,7 +1263,7 @@ class Backup(models.Model):
 
 Puis : `uv run --project apps/api python apps/api/manage.py makemigrations core --name backup`
 
-- [ ] **Step 4: Écrire les routes**
+- [x] **Step 4: Écrire les routes**
 
 Dans `apps/api/core/schemas.py` :
 
@@ -1324,20 +1324,20 @@ def backup_status(request):
     return Status(200, {"present": True, "updatedAt": backup.updated_at.isoformat(), "bytes": backup.bytes})
 ```
 
-- [ ] **Step 5: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5: Lancer les tests, vérifier qu'ils passent**
 
 `pnpm test:api -- apps/api/tests/test_backup_api.py`
 Attendu : sept tests PASS. Si `response={200: bytes}` fait tousser ninja, déclarer `200: str`
 comme le fait `ib/api.py` : la réponse réelle reste l'`HttpResponse` binaire.
 
-- [ ] **Step 6: Régénérer le schéma**
+- [x] **Step 6: Régénérer le schéma**
 
 ```bash
 uv run --project apps/api python apps/api/manage.py export_openapi_schema --api config.api.api --output apps/api/openapi.json
 pnpm gen:api
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
