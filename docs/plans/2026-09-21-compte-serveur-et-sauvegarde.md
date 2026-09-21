@@ -1045,7 +1045,7 @@ git commit -m "La clé de sauvegarde vit en IndexedDB, hors du paquet qu'elle ch
   - `exportToBlob(db): Promise<Blob>`
   - `importFromFile(db, file: File): Promise<void>`
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/db/backup/file.test.ts` :
 
@@ -1082,12 +1082,12 @@ describe("exportToBlob", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/file.test.ts`
 Attendu : ÉCHEC, le module n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/web/src/db/backup/file.ts`**
+- [x] **Step 3: Écrire `apps/web/src/db/backup/file.ts`**
 
 ```ts
 import type { AppDatabase } from "../schema";
@@ -1115,12 +1115,12 @@ export async function importFromFile(db: AppDatabase, file: File): Promise<void>
 }
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/file.test.ts`
 Attendu : deux tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
