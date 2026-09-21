@@ -99,13 +99,4 @@ describe("the chart row of the Positions page", () => {
     const cell = (await screen.findByTestId("position-chart-row")).querySelector("td");
     expect(cell).toHaveAttribute("colspan", "12");
   });
-
-  it("says so when the bars are a stand-in, TWS being out of reach", async () => {
-    const user = userEvent.setup();
-    renderPositions();
-    await user.click(await rowFor("XOM Mar20'26 100 Put"));
-
-    expect(await screen.findByText("Données de démonstration")).toBeInTheDocument();
-    expect(screen.getByTestId("price-chart")).toBeInTheDocument();
-  });
 });

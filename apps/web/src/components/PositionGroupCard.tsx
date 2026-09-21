@@ -9,6 +9,8 @@ import { POSITION_COLUMNS } from "@/lib/positionColumns";
 import { coverageBadges } from "@/lib/riskReport";
 import type { ColumnSpec } from "@/lib/tableView";
 
+const ALL_STRATEGIES = ["wheel", "leaps", "condors", "others"] as const;
+
 export interface PositionGroupCardProps {
   title: string;
   /** The group's positions in the snapshot, before search and filters: what the facets count. */
@@ -67,7 +69,9 @@ export function PositionGroupCard({
             coverage: coverageBadges(position),
           }}
         />
-        {openKey === position.description && <PositionChartRow columnCount={POSITION_COLUMNS.length} />}
+        {openKey === position.description && (
+          <PositionChartRow ticker={position.symbol} strategies={ALL_STRATEGIES} columnCount={POSITION_COLUMNS.length} />
+        )}
         </Fragment>
       )}
     />

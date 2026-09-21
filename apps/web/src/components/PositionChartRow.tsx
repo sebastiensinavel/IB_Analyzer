@@ -1,65 +1,90 @@
 /**
- * The row injected under a clicked position: one chart, full width, several rows tall.
+ * La ligne injectée sous une position cliquée : le graphe du sous-jacent, avec les niveaux de
+ * la stratégie de la page.
  *
- * Prototype (branche `prototype-graphes`) : the chart is always BTDR with the two annotations
- * of `lib/chartPrototype.ts`, whatever line was clicked. Bars come from TWS through the local
- * agent; when it cannot answer, a stand-in series is drawn and said to be one.
+ * L'agent local est optionnel (spec §2) : son absence n'est jamais une erreur, seulement un
+ * message qui dit quoi installer. La ligne s'ouvre toujours, tout de suite : un clic fait
+ * toujours quelque chose.
  */
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
-import { Badge } from "@ib/ui/badge";
+import { useTranslation } from "react-i18next";
+import { Link, useParams } from "react-router";
+import type { Strategy } from "@ib/ledger";
+import { strategyLevels } from "@ib/ledger";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { fetchBars, type PriceBar } from "@/agent/client";
 import { PriceChart } from "@/components/PriceChart";
+import { useAccountJournals } from "@/db/AccountDataProvider";
 import { useAccount } from "@/db/hooks";
 import { useTheme } from "@/hooks/useTheme";
-import { demoBars, PROTOTYPE_EVENT_DATE, PROTOTYPE_LEVEL, PROTOTYPE_SYMBOL } from "@/lib/chartPrototype";
 
-type Source = "loading" | "tws" | "demo";
+export interface PositionChartRowProps {
+  ticker: string;
+  strategies: readonly Strategy[];
+  columnCount: number;
+}
 
-export function PositionChartRow({ columnCount }: { columnCount: number }) {
+type State =
+  | { status: "loading" }
+  | { status: "bars"; bars: PriceBar[] }
+  | { status: "no-agent" }
+  | { status: "tws-down"; port: number }
+  | { status: "no-bars" };
+
+export function PositionChartRow({ ticker, strategies, columnCount }: PositionChartRowProps) {
+  const { t } = useTranslation();
   const { accountId = "" } = useParams<{ accountId: string }>();
   const account = useAccount(accountId);
+  // `useAccountJournals` rend une union discriminée : `{ status: "loading" }` ou
+  // `{ status: "ready", report, identityIssues }` (apps/web/src/db/hooks.ts).
+  const journals = useAccountJournals();
   const { isDark } = useTheme();
-  const [bars, setBars] = useState<readonly PriceBar[]>([]);
-  const [source, setSource] = useState<Source>("loading");
+  const [state, setState] = useState<State>({ status: "loading" });
 
   useEffect(() => {
     if (account === undefined) return;
-    let cancelled = false;
     const port = account?.twsPort;
-    const load = async () => {
-      const result = port === undefined ? null : await fetchBars(port, PROTOTYPE_SYMBOL);
+    if (port === undefined) {
+      setState({ status: "no-agent" });
+      return;
+    }
+    let cancelled = false;
+    // Aucun cache : chaque ouverture interroge TWS, barre du jour comprise.
+    void fetchBars(port, ticker).then((result) => {
       if (cancelled) return;
-      if (result?.ok && result.payload.bars.length > 0) {
-        setBars(result.payload.bars);
-        setSource("tws");
+      if (!result.ok) {
+        setState(result.code === "tws-unreachable" ? { status: "tws-down", port } : { status: "no-agent" });
         return;
       }
-      // The agent is optional (spec §2): no TWS is never an error, only a chart with nothing
-      // real in it - and the badge says so.
-      setBars(demoBars());
-      setSource("demo");
-    };
-    void load();
+      setState(result.payload.bars.length === 0 ? { status: "no-bars" } : { status: "bars", bars: result.payload.bars });
+    });
     return () => {
       cancelled = true;
     };
-  }, [account]);
+  }, [account, ticker]);
+
+  const levels = journals.status === "ready" ? strategyLevels(journals.report.rows, ticker, strategies) : [];
 
   return (
     <TableRow data-testid="position-chart-row" className="hover:bg-transparent">
       <TableCell colSpan={columnCount} className="bg-muted/30 p-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{PROTOTYPE_SYMBOL}</span>
-            <Badge variant="outline">{PROTOTYPE_LEVEL}</Badge>
-            <Badge variant="outline">{PROTOTYPE_EVENT_DATE}</Badge>
-            {source === "demo" && <Badge variant="destructive">Données de démonstration</Badge>}
-            {source === "loading" && <span className="text-xs text-muted-foreground">…</span>}
+        {state.status === "bars" ? (
+          <PriceChart bars={state.bars} levels={levels} isDark={isDark} />
+        ) : (
+          <div className="flex h-24 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+            {state.status === "loading" && <span>{t("charts.loading")}</span>}
+            {state.status === "no-agent" && (
+              <>
+                <span>{t("charts.noAgent")}</span>
+                <Link to="/help" className="underline">
+                  {t("charts.noAgentLink")}
+                </Link>
+              </>
+            )}
+            {state.status === "tws-down" && <span>{t("charts.twsDown", { port: state.port })}</span>}
+            {state.status === "no-bars" && <span>{t("charts.noBars", { ticker })}</span>}
           </div>
-          {source !== "loading" && <PriceChart bars={bars} levels={[]} isDark={isDark} />}
-        </div>
+        )}
       </TableCell>
     </TableRow>
   );

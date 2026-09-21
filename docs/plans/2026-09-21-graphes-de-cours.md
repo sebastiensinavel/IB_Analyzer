@@ -1242,12 +1242,12 @@ describe("PositionChartRow", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `cd apps/web && npx vitest run src/components/PositionChartRow.test.tsx`
 Expected: FAIL — le composant porte encore les props du prototype et la série inventée.
 
-- [ ] **Step 3: Réécrire `PositionChartRow.tsx`**
+- [x] **Step 3: Réécrire `PositionChartRow.tsx`**
 
 ```tsx
 /**
@@ -1349,7 +1349,7 @@ Puis supprimer le prototype :
 git rm apps/web/src/lib/chartPrototype.ts
 ```
 
-- [ ] **Step 4: Adapter l'appelant existant**
+- [x] **Step 4: Adapter l'appelant existant**
 
 `apps/web/src/components/PositionGroupCard.tsx` passe encore `columnCount` seul. Lui donner le ticker et la portée :
 
@@ -1365,12 +1365,12 @@ avec, en tête de fichier :
 const ALL_STRATEGIES = ["wheel", "leaps", "condors", "others"] as const;
 ```
 
-- [ ] **Step 5: Lancer les tests pour les voir passer**
+- [x] **Step 5: Lancer les tests pour les voir passer**
 
 Run: `cd apps/web && npx vitest run src/components/PositionChartRow.test.tsx src/pages/PositionsChart.test.tsx`
 Expected: PASS — 5 tests neufs, et les 4 du prototype toujours verts, sauf celui qui attendait « Données de démonstration », à supprimer de `PositionsChart.test.tsx` dans ce même commit.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A apps/web/src
