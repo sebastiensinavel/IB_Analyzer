@@ -135,9 +135,23 @@ describe("backup client", () => {
       expect(await fetchBackupStatus()).toEqual({ ok: false, kind: "unreachable" });
     });
 
+    // django-ninja's SessionAuth raises 401 when `request.user.is_authenticated` is false
+    // (ninja/operation.py's `AuthenticationError`, status 401) — this is the actual "not
+    // signed in" case.
     it("une session anonyme se distingue d'un échec quelconque", async () => {
-      vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 403 }));
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 401 }));
       expect(await fetchBackupStatus()).toEqual({ ok: false, kind: "anonymous" });
+    });
+
+    // Ronde de correction 1 (Ruling U) : 403 n'est jamais "anonyme" côté Django — c'est ce que
+    // `APIKeyCookie._get_key` (ninja/security/apikey.py) répond à un CSRF refusé, quel que
+    // soit l'état de la session. Un utilisateur bel et bien connecté, mais dont le jeton CSRF a
+    // expiré, verrait alors "Connectez-vous" alors qu'il l'est déjà : recharger la page est le
+    // geste qui répare, pas se reconnecter. Ce test échoue tant que 403 reste rangé sous
+    // "anonymous" avec 401.
+    it("un jeton CSRF refusé se distingue d'une session anonyme", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 403 }));
+      expect(await fetchBackupStatus()).toEqual({ ok: false, kind: "csrf" });
     });
 
     // Ronde de correction 1 (critique) : même garde qu'ailleurs, sur la route de statut.

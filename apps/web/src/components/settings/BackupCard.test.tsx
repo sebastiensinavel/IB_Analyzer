@@ -7,11 +7,11 @@ import { useSession } from "@/api/session";
 import { createAccount } from "@/db/accounts";
 import { AppDatabase, db } from "@/db/schema";
 import { DbProvider } from "@/db/DbProvider";
-import { enableBackup, readBackupState } from "@/db/backup/state";
+import { enableBackup, readBackupState, recordBackup } from "@/db/backup/state";
 import { pushBackup } from "@/db/backup/sync";
 import { encodePayload, encryptBlob, generateBackupKey, gzip, toRecoveryCode } from "@/db/backup/crypto";
 import { buildPayload } from "@/db/backup/payload";
-import { formatDateTime } from "@/lib/format";
+import { formatBytes, formatDateTime } from "@/lib/format";
 import { bytesOf } from "@/test/bytes";
 import { BackupCard } from "./BackupCard";
 
@@ -44,6 +44,11 @@ beforeEach(async () => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  // `vi.restoreAllMocks()` does not touch `vi.stubGlobal` — a test that stubs `URL` (to spy
+  // on `createObjectURL`) left a plain object standing in place of the real `URL` class for
+  // every test after it, which broke jsdom's own cookie handling (`new URL(...)` inside
+  // tough-cookie) the moment a later test's `deleteBackup()` read `document.cookie`.
+  vi.unstubAllGlobals();
 });
 
 describe("BackupCard", () => {
@@ -203,5 +208,65 @@ describe("BackupCard", () => {
     const [blob] = createObjectURL.mock.calls[0] as [Blob];
     expect(blob).toBeInstanceOf(Blob);
     expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it("exporter affiche un message si la construction du blob échoue, plutôt qu'un rejet non géré", async () => {
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL: () => {
+        throw new Error("boom");
+      },
+      revokeObjectURL: vi.fn(),
+    });
+    renderCard();
+
+    await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupExport") }));
+
+    expect(await screen.findByText(i18n.t("settings.actionFailed"))).toBeInTheDocument();
+  });
+
+  // Ronde de correction 1 (important), point 1 : deux bugs distincts derrière ce bouton.
+  it("supprimer du serveur demande confirmation — sans date à nommer — et n'efface rien si l'utilisateur refuse", async () => {
+    await enableBackup(db);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    renderCard();
+
+    await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupDelete") }));
+
+    expect(confirmSpy).toHaveBeenCalledWith(i18n.t("settings.backupDeleteConfirm"));
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("supprimer du serveur réussi efface aussi le dernier dépôt connu de ce navigateur", async () => {
+    await enableBackup(db);
+    await recordBackup(db, "2026-09-21T10:00:00.000Z", 4096);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+      const method = (init as RequestInit | undefined)?.method;
+      if (method === "DELETE") return new Response(null, { status: 200 });
+      return new Response(JSON.stringify({ present: false, updatedAt: null, bytes: null }), { status: 200 });
+    });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderCard();
+
+    expect(
+      await screen.findByText(i18n.t("settings.backupLast", { date: formatDateTime("2026-09-21T10:00:00.000Z"), size: formatBytes(4096) })),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupDelete") }));
+
+    await waitFor(async () => expect((await readBackupState(db))?.lastBackupAt).toBeNull());
+    expect(await screen.findByText(i18n.t("settings.backupNever"))).toBeInTheDocument();
+  });
+
+  // Ronde de correction 1 (important), point 2 : c'était le seul appel réseau de la carte dont
+  // un échec ne montrait jamais rien — la date retombait à "—" en silence.
+  it("restaurer affiche un message si le statut serveur est injoignable, jamais un silence", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("offline"));
+    renderCard();
+
+    await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupRestore") }));
+
+    expect(await screen.findByText(i18n.t("auth.serverUnreachable"))).toBeInTheDocument();
   });
 });

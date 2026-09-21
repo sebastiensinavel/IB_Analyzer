@@ -11,7 +11,7 @@ import { csrfToken } from "./csrf";
 
 const BASE = `${window.location.origin}/api/core/backup`;
 
-export type BackupFailure = "unreachable" | "anonymous" | "too-large" | "missing" | "failed";
+export type BackupFailure = "unreachable" | "anonymous" | "csrf" | "too-large" | "missing" | "failed";
 export type BackupResult<T> = { ok: true; value: T } | { ok: false; kind: BackupFailure };
 
 export interface BackupStatus {
@@ -20,8 +20,16 @@ export interface BackupStatus {
   bytes: number | null;
 }
 
+// django-ninja's `SessionAuth` (ninja/security/session.py) raises 401 when
+// `request.user.is_authenticated` is false — genuinely no session. `APIKeyCookie._get_key`
+// (ninja/security/apikey.py), which every cookie-based authenticator including `SessionAuth`
+// inherits from, raises 403 on its own for a failed CSRF check, *before* authentication even
+// runs — so 403 can hit a signed-in user just as easily as an anonymous one, e.g. a stale
+// token after a long tab. Folding it into "anonymous" would tell that signed-in user to sign
+// in again, which they already are; the fix for 403 is reloading the page, not the account.
 function failureFor(status: number): BackupFailure {
-  if (status === 401 || status === 403) return "anonymous";
+  if (status === 401) return "anonymous";
+  if (status === 403) return "csrf";
   if (status === 413) return "too-large";
   if (status === 404) return "missing";
   return "failed";

@@ -47,3 +47,14 @@ export async function recordBackup(db: AppDatabase, at: string, bytes: number): 
   const existing = await readBackupState(db);
   if (existing) await db.backup.put({ ...existing, lastBackupAt: at, lastBackupBytes: bytes });
 }
+
+/**
+ * After the server-side blob is deleted: this browser's own "last deposit" record now names
+ * a backup that no longer exists, so it goes back to `null`, the same value a device that has
+ * never deposited shows. `enabled` and `key` are untouched — deleting from the server does
+ * not turn backup off, it only means the next deposit starts from nothing.
+ */
+export async function clearBackupRecord(db: AppDatabase): Promise<void> {
+  const existing = await readBackupState(db);
+  if (existing) await db.backup.put({ ...existing, lastBackupAt: null, lastBackupBytes: null });
+}

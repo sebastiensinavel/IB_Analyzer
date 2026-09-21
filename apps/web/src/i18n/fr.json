@@ -522,7 +522,9 @@
     "backupFileHint": "Le fichier contient tout, y compris votre jeton Flex. Gardez-le comme un mot de passe.",
     "backupTooLarge": "La sauvegarde dépasse la limite de 20 Mo autorisée par le serveur.",
     "backupMissing": "Aucune sauvegarde n'est déposée sur le serveur.",
-    "backupInvalidCode": "Code de récupération invalide."
+    "backupInvalidCode": "Code de récupération invalide.",
+    "backupCsrfExpired": "Jeton de sécurité expiré. Rechargez la page et réessayez.",
+    "backupDeleteConfirm": "Supprimer la sauvegarde déposée sur le serveur ? Il n'y a ni version ni corbeille."
   },
   "help": {
     "title": "Aide",

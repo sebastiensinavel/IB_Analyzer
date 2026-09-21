@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { AppDatabase } from "@/db/schema";
 import { bytesOf } from "@/test/bytes";
 import { generateBackupKey } from "./crypto";
-import { adoptBackupKey, disableBackup, enableBackup, readBackupState, recordBackup } from "./state";
+import { adoptBackupKey, clearBackupRecord, disableBackup, enableBackup, readBackupState, recordBackup } from "./state";
 
 let db: AppDatabase;
 
@@ -35,6 +35,27 @@ describe("recordBackup", () => {
       lastBackupAt: "2026-09-21T10:00:00.000Z",
       lastBackupBytes: 4096,
     });
+  });
+});
+
+describe("clearBackupRecord", () => {
+  // Correction round 1 (task 11): a server-side deletion left `lastBackupAt`/`lastBackupBytes`
+  // untouched, so the Settings card kept showing "Dernier dépôt le …" for a backup that no
+  // longer exists, until the next deposit happened to overwrite it.
+  it("efface le dernier dépôt connu, sans désactiver ni changer la clé", async () => {
+    const enabled = await enableBackup(db);
+    await recordBackup(db, "2026-09-21T10:00:00.000Z", 4096);
+
+    await clearBackupRecord(db);
+
+    const state = await readBackupState(db);
+    expect(state).toMatchObject({ enabled: true, lastBackupAt: null, lastBackupBytes: null });
+    expect(bytesOf(state!.key)).toEqual(bytesOf(enabled.key));
+  });
+
+  it("ne fait rien quand ce navigateur n'a jamais activé la sauvegarde", async () => {
+    await clearBackupRecord(db);
+    expect(await readBackupState(db)).toBeNull();
   });
 });
 

@@ -7,7 +7,7 @@ import { Separator } from "@ib/ui/separator";
 import { useSession } from "@/api/session";
 import { deleteBackup, fetchBackupStatus, type BackupFailure } from "@/api/backup";
 import { useDb } from "@/db/DbProvider";
-import { adoptBackupKey, disableBackup, enableBackup, readBackupState } from "@/db/backup/state";
+import { adoptBackupKey, clearBackupRecord, disableBackup, enableBackup, readBackupState } from "@/db/backup/state";
 import { pullBackup, pushBackup } from "@/db/backup/sync";
 import { backupFileName, exportToBlob, importFromFile } from "@/db/backup/file";
 import { BackupKeyError, decodePayload, fromRecoveryCode, gunzip, toRecoveryCode } from "@/db/backup/crypto";
@@ -28,7 +28,10 @@ export function BackupCard() {
   const enabled = state?.enabled === true;
 
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  // Always a failure: no code path ever set a success message, so there was nothing left to
+  // distinguish with `{ ok }` (correction round 1, point 3). Success shows in the state line
+  // itself (the new "Dernier dépôt", the code disappearing, …), never here.
+  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const downloadAnchor = useRef<HTMLAnchorElement>(null);
@@ -39,6 +42,8 @@ export function BackupCard() {
         return t("auth.serverUnreachable");
       case "anonymous":
         return t("settings.backupSignedOutHint");
+      case "csrf":
+        return t("settings.backupCsrfExpired");
       case "too-large":
         return t("settings.backupTooLarge");
       case "missing":
@@ -50,12 +55,14 @@ export function BackupCard() {
 
   async function handleEnable() {
     setBusy(true);
-    setMessage(null);
+    setError(null);
     try {
       const row = await enableBackup(db);
       // Shown once, kept only in this component's own state: a reload or a navigation away
       // loses it for good, exactly as the warning below says it will.
       setRecoveryCode(toRecoveryCode(row.key));
+    } catch {
+      setError(t("settings.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -63,9 +70,11 @@ export function BackupCard() {
 
   async function handleDisable() {
     setBusy(true);
-    setMessage(null);
+    setError(null);
     try {
       await disableBackup(db);
+    } catch {
+      setError(t("settings.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -73,10 +82,10 @@ export function BackupCard() {
 
   async function handleBackupNow() {
     setBusy(true);
-    setMessage(null);
+    setError(null);
     try {
       const result = await pushBackup(db);
-      if (result && !result.ok) setMessage({ ok: false, text: failureMessage(result.kind) });
+      if (result && !result.ok) setError(failureMessage(result.kind));
     } finally {
       setBusy(false);
     }
@@ -88,13 +97,23 @@ export function BackupCard() {
    * known deposit, which a brand new device — the very case a recovery code exists for —
    * has none of. On the usual device the key is already on hand and nothing is prompted; on
    * a new one, once only, and kept from then on (spec §7).
+   *
+   * A failed status probe reports through `failureMessage` and stops there (correction round
+   * 1, point 2): it used to fall back to "—" and carry on to the confirmation in silence, the
+   * only one of the card's four network calls that could fail without telling the user
+   * anything. Continuing anyway would also be pointless — `pullBackup` needs the same route
+   * `fetchBackupStatus` just failed on, and would fail the same way.
    */
   async function handleRestore() {
     setBusy(true);
-    setMessage(null);
+    setError(null);
     try {
       const status = await fetchBackupStatus();
-      const date = status.ok && status.value.updatedAt ? formatDateTime(status.value.updatedAt) : "—";
+      if (!status.ok) {
+        setError(failureMessage(status.kind));
+        return;
+      }
+      const date = status.value.updatedAt ? formatDateTime(status.value.updatedAt) : "—";
       if (!window.confirm(t("settings.backupRestoreConfirm", { date }))) return;
 
       const current = await readBackupState(db);
@@ -107,20 +126,37 @@ export function BackupCard() {
       }
 
       const result = await pullBackup(db, key);
-      if (!result.ok) setMessage({ ok: false, text: failureMessage(result.kind) });
+      if (!result.ok) setError(failureMessage(result.kind));
     } catch (error) {
-      setMessage({ ok: false, text: error instanceof BackupKeyError ? t("settings.backupInvalidCode") : t("settings.actionFailed") });
+      setError(error instanceof BackupKeyError ? t("settings.backupInvalidCode") : t("settings.actionFailed"));
     } finally {
       setBusy(false);
     }
   }
 
+  /**
+   * Restoring and importing overwrite this browser's own copy, recomposable from the
+   * statements and a resync; a confirmation names the date of what replaces it (spec §7).
+   * Deleting destroys the server's only copy — no version, no trash — so it gets the same
+   * friction, without a date: there is nothing on this device precise enough to name, only
+   * the fact that a deposit exists (correction round 1, point 1).
+   */
   async function handleDelete() {
     setBusy(true);
-    setMessage(null);
+    setError(null);
     try {
+      if (!window.confirm(t("settings.backupDeleteConfirm"))) return;
       const result = await deleteBackup();
-      if (!result.ok) setMessage({ ok: false, text: failureMessage(result.kind) });
+      if (!result.ok) {
+        setError(failureMessage(result.kind));
+        return;
+      }
+      // The blob this browser last recorded a deposit of no longer exists: showing "Dernier
+      // dépôt le …" for it past this point would be showing a date for nothing (correction
+      // round 1, point 1 — the bug the review caught).
+      await clearBackupRecord(db);
+    } catch {
+      setError(t("settings.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -128,6 +164,7 @@ export function BackupCard() {
 
   async function handleExport() {
     setBusy(true);
+    setError(null);
     try {
       const blob = await exportToBlob(db);
       const url = URL.createObjectURL(blob);
@@ -138,6 +175,8 @@ export function BackupCard() {
         anchor.click();
       }
       URL.revokeObjectURL(url);
+    } catch {
+      setError(t("settings.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -153,14 +192,14 @@ export function BackupCard() {
     event.target.value = "";
     if (!file) return;
     setBusy(true);
-    setMessage(null);
+    setError(null);
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const payload = decodePayload(await gunzip(bytes));
       if (!window.confirm(t("settings.backupRestoreConfirm", { date: formatDateTime(payload.createdAt) }))) return;
       await importFromFile(db, file);
     } catch {
-      setMessage({ ok: false, text: t("settings.actionFailed") });
+      setError(t("settings.actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -218,9 +257,9 @@ export function BackupCard() {
           </div>
         )}
 
-        {message && (
-          <p role={message.ok ? undefined : "alert"} className={message.ok ? "text-sm text-success" : "text-sm text-destructive"}>
-            {message.text}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
           </p>
         )}
 

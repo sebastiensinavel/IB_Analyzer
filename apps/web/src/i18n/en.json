@@ -522,7 +522,9 @@
     "backupFileHint": "The file contains everything, including your Flex token. Keep it like a password.",
     "backupTooLarge": "The backup exceeds the server's 20 MB limit.",
     "backupMissing": "No backup is deposited on the server.",
-    "backupInvalidCode": "Invalid recovery code."
+    "backupInvalidCode": "Invalid recovery code.",
+    "backupCsrfExpired": "Security token expired. Reload the page and try again.",
+    "backupDeleteConfirm": "Delete the backup deposited on the server? There is no version history and no trash."
   },
   "help": {
     "title": "Help",
