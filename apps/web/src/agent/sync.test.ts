@@ -324,4 +324,32 @@ describe("syncAgent and the backup trigger", () => {
     }
     expect(onChange).toHaveBeenCalled();
   });
+
+  // Correction round 1 (task 11): the muted region used to wrap the whole pass, including
+  // `await deps.fetchSnapshot(port)` — a round trip to the local agent, itself possibly
+  // waiting on TWS. That could hold the mute for seconds, not microtasks, and the mute is a
+  // module-level counter, not scoped to this account: an unrelated write landing in that
+  // window — another account's Flex sync, say — would have its deposit swallowed too. Only
+  // the writes (`fail()`'s `accounts.update`, and the closing transaction) may stay muted.
+  it("ne bâillonne pas le dépôt d'un autre compte pendant l'attente réseau de l'agent", async () => {
+    const onChange = vi.fn();
+    const uninstall = installBackupTrigger(db, onChange);
+    let resolveFetch!: (result: AgentFetchResult) => void;
+    const pending = new Promise<AgentFetchResult>((resolve) => {
+      resolveFetch = resolve;
+    });
+    try {
+      const syncPromise = syncAgent({ db, now: () => NOW, fetchSnapshot: () => pending }, ACCOUNT);
+
+      // The agent's own round trip is still pending: a write on an unrelated account, in
+      // practice a concurrent Flex sync or import, must reach the trigger normally.
+      await createAccount(db, { label: "Gamma", ibAccountId: "U7654321" });
+      expect(onChange).toHaveBeenCalled();
+
+      resolveFetch({ ok: true, payload: payload() });
+      await syncPromise;
+    } finally {
+      uninstall();
+    }
+  });
 });

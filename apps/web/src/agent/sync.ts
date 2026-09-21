@@ -42,29 +42,35 @@ export async function syncAgent(deps: AgentSyncDeps, account: AccountRecord): Pr
   // transactions are not lost for that: they still leave at the next triggered deposit — an
   // import, a Flex sync, a sector edit, or the manual button. The trigger decides *when*, never
   // *what*.
-  return suppressBackupTrigger(async () => {
-    const fetched = await deps.fetchSnapshot(port);
-    if (!fetched.ok) return fail(deps, account.id, fetched.code);
+  //
+  // Only the writes are muted (correction round 1 on task 11): `deps.fetchSnapshot(port)` is a
+  // round trip to the local agent, itself possibly waiting on TWS — seconds, not microtasks —
+  // and `suppressBackupTrigger`'s counter is module-level, not scoped to this account. Muting
+  // across that wait would also swallow an unrelated deposit — another account's Flex sync,
+  // say — landing in the same window. Every write below, success or failure, stays wrapped.
+  const fetched = await deps.fetchSnapshot(port);
+  if (!fetched.ok) return suppressBackupTrigger(() => fail(deps, account.id, fetched.code));
 
-    let parsed: AgentSnapshot;
-    try {
-      parsed = parseAgentSnapshot(fetched.payload, account.id);
-    } catch (e) {
-      if (e instanceof NormalizationError) return fail(deps, account.id, "parse-error");
-      throw e;
-    }
-    // Exact match, not membership: ib_async's portfolio(""), accountValues("") and fills() merge
-    // *every* managed account of a multi-account TWS, and extract_usd_cash sums across them too.
-    // `includes` would pass precisely when that merge happens, silently combining two accounts'
-    // data - the one thing "Comptes jamais combinés" forbids. Failing honestly on a TWS that
-    // manages more than this one account beats writing a merged snapshot.
-    if (parsed.accounts.length !== 1 || parsed.accounts[0] !== account.ibAccountId) {
-      return fail(deps, account.id, "account-mismatch");
-    }
+  let parsed: AgentSnapshot;
+  try {
+    parsed = parseAgentSnapshot(fetched.payload, account.id);
+  } catch (e) {
+    if (e instanceof NormalizationError) return suppressBackupTrigger(() => fail(deps, account.id, "parse-error"));
+    throw e;
+  }
+  // Exact match, not membership: ib_async's portfolio(""), accountValues("") and fills() merge
+  // *every* managed account of a multi-account TWS, and extract_usd_cash sums across them too.
+  // `includes` would pass precisely when that merge happens, silently combining two accounts'
+  // data - the one thing "Comptes jamais combinés" forbids. Failing honestly on a TWS that
+  // manages more than this one account beats writing a merged snapshot.
+  if (parsed.accounts.length !== 1 || parsed.accounts[0] !== account.ibAccountId) {
+    return suppressBackupTrigger(() => fail(deps, account.id, "account-mismatch"));
+  }
 
-    const at = deps.now().toISOString();
-    let plan!: ImportPlan;
-    await withImportLock(account.id, () =>
+  const at = deps.now().toISOString();
+  let plan!: ImportPlan;
+  await suppressBackupTrigger(() =>
+    withImportLock(account.id, () =>
       deps.db.transaction(
         "rw",
         [deps.db.transactions, deps.db.snapshots, deps.db.accounts, deps.db.contracts, deps.db.sectors],
@@ -92,7 +98,7 @@ export async function syncAgent(deps: AgentSyncDeps, account: AccountRecord): Pr
         await deps.db.accounts.update(account.id, { lastAgentSyncAt: at, lastAgentSyncStatus: { at, ok: true } });
         },
       ),
-    );
-    return { status: "ok", transactions: plan.upsert.length, positions: parsed.positions.length };
-  });
+    ),
+  );
+  return { status: "ok", transactions: plan.upsert.length, positions: parsed.positions.length };
 }
