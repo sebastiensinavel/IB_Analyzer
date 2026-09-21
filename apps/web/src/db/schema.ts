@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
 import type { DroppedCount, Position, Transaction, TransactionKind, TransactionSource } from "@ib/ledger";
 import { toReportTime, type ParseIssue } from "@ib/ib-parsers";
+import type { BackupFailure } from "@/api/backup";
 import type { FlexRelay, FlexRelayMode } from "@/flex/relay";
 import type { ContractRecord } from "./contracts";
 
@@ -112,6 +113,36 @@ export interface SectorRecord {
   updatedAt: string;
 }
 
+/**
+ * The backup's own state, deliberately outside `BACKUP_TABLES`: it holds the key that
+ * encrypts the payload. A key saved inside what it encrypts saves nothing, and a restore
+ * must never overwrite the key the device is currently using.
+ */
+export interface BackupStateRecord {
+  /** One row per browser. */
+  id: "local";
+  enabled: boolean;
+  /**
+   * Raw AES-GCM 256 bytes; shown once as a recovery code, never sent to the server.
+   *
+   * `Uint8Array<ArrayBuffer>`, not the default `Uint8Array<ArrayBufferLike>`: WebCrypto's
+   * `BufferSource` excludes a `SharedArrayBuffer`-backed view, so the wider type would need a
+   * cast at every call into `crypto.subtle`. The bytes come from `crypto.getRandomValues` or
+   * from a decoded recovery code, both of which really are `ArrayBuffer`-backed.
+   */
+  key: Uint8Array<ArrayBuffer>;
+  lastBackupAt: string | null;
+  lastBackupBytes: number | null;
+  /**
+   * Why the last deposit failed, `null` once one succeeds. Automatic deposits fire from a
+   * timer with nobody watching: without this, a deposit failing for weeks — quota, expired
+   * session, server down — would leave the card showing an old "Dernier dépôt" date and say
+   * nothing, the one thing a feature whose whole point is trust must never do. Same rule as
+   * `lastFlexSyncStatus` and `lastAgentSyncStatus`.
+   */
+  lastBackupError: BackupFailure | null;
+}
+
 export class AppDatabase extends Dexie {
   accounts!: EntityTable<AccountRecord, "id">;
   transactions!: Table<Transaction, [string, string]>;
@@ -121,6 +152,7 @@ export class AppDatabase extends Dexie {
   statements!: EntityTable<StatementRecord, "id">;
   contracts!: Table<ContractRecord, [string, string]>;
   cashPoints!: Table<CashPointRecord, [string, string, string]>;
+  backup!: EntityTable<BackupStateRecord, "id">;
 
   constructor(name = "ib-analyzer") {
     super(name);
@@ -210,6 +242,10 @@ export class AppDatabase extends Dexie {
             }
           }),
       );
+    // Additive: adds the `backup` table and rewrites no existing row.
+    this.version(10).stores({
+      backup: "id",
+    });
   }
 }
 

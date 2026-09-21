@@ -1,6 +1,9 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentContract, AgentSnapshotPayload } from "@ib/ib-parsers";
 import { buildJournals, type Transaction } from "@ib/ledger";
+import { createAccount } from "@/db/accounts";
+import { installBackupTrigger } from "@/db/backup/trigger";
+import { withImportLock } from "@/db/importLock";
 import { db, type AccountRecord } from "@/db/schema";
 import type { AgentFetchResult } from "./client";
 import { syncAgent } from "./sync";
@@ -288,5 +291,105 @@ describe("syncAgent over an assignment IB only booked after midnight", () => {
     const outcome = await syncAgent(ok(monday), ACCOUNT);
     expect(outcome).toMatchObject({ status: "ok", transactions: 1 });
     expect((await db.transactions.get(["beta", "agent:buy"]))?.when).toBe("2026-09-21T09:35:00.000Z");
+  });
+});
+
+// Correction round 1: the plan derived the triggering tables from the backed-up ones minus
+// `snapshots`, on the theory that this followed the source/derived boundary. It does not: the
+// agent also writes `accounts` (lastAgentSyncAt/lastAgentSyncStatus, on every pass, success or
+// failure) and `contracts` (on every pass that reports an identity) — both in TRIGGER_TABLES —
+// so a table-scoped trigger fired on every five-minute poll regardless. Only an integration test
+// that runs a real pass through the real trigger catches this; the unit tests of trigger.test.ts
+// were each correct for what they isolated and could not.
+describe("syncAgent and the backup trigger", () => {
+  it("never fires the backup trigger, however many tables a pass touches", async () => {
+    const onChange = vi.fn();
+    const uninstall = installBackupTrigger(db, onChange);
+    try {
+      await syncAgent(ok(payload()), ACCOUNT);
+      // A second pass, success or not, is exactly the five-minute loop this rule exists to stop.
+      await syncAgent(answer({ ok: false, code: "agent-unreachable" }), ACCOUNT);
+      // `fail()` is called from three separate sites in `syncAgent` (the fetch itself, a
+      // payload `parseAgentSnapshot` rejects, and an account mismatch); each one calls
+      // `deps.db.accounts.update`, so each is its own opportunity to leak past the mute if a
+      // future edit moved one of them outside `suppressBackupTrigger`. All three must be
+      // exercised here, not just the fetch failure above.
+      await syncAgent(answer({ ok: true, payload: { nope: 1 } }), ACCOUNT); // parse-error
+      await syncAgent(ok(payload({ accounts: ["U7654321"] })), ACCOUNT); // account-mismatch
+    } finally {
+      uninstall();
+    }
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("still fires on a write that does not rebuild itself: a new account", async () => {
+    const onChange = vi.fn();
+    const uninstall = installBackupTrigger(db, onChange);
+    try {
+      await createAccount(db, { label: "Gamma", ibAccountId: "U7654321" });
+    } finally {
+      uninstall();
+    }
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  // Correction round 1 (task 11): the muted region used to wrap the whole pass, including
+  // `await deps.fetchSnapshot(port)` — a round trip to the local agent, itself possibly
+  // waiting on TWS. That could hold the mute for seconds, not microtasks, and the mute is a
+  // module-level counter, not scoped to this account: an unrelated write landing in that
+  // window — another account's Flex sync, say — would have its deposit swallowed too. Only
+  // the writes (`fail()`'s `accounts.update`, and the closing transaction) may stay muted.
+  it("ne bâillonne pas le dépôt d'un autre compte pendant l'attente réseau de l'agent", async () => {
+    const onChange = vi.fn();
+    const uninstall = installBackupTrigger(db, onChange);
+    let resolveFetch!: (result: AgentFetchResult) => void;
+    const pending = new Promise<AgentFetchResult>((resolve) => {
+      resolveFetch = resolve;
+    });
+    try {
+      const syncPromise = syncAgent({ db, now: () => NOW, fetchSnapshot: () => pending }, ACCOUNT);
+
+      // The agent's own round trip is still pending: a write on an unrelated account, in
+      // practice a concurrent Flex sync or import, must reach the trigger normally.
+      await createAccount(db, { label: "Gamma", ibAccountId: "U7654321" });
+      expect(onChange).toHaveBeenCalled();
+
+      resolveFetch({ ok: true, payload: payload() });
+      await syncPromise;
+    } finally {
+      uninstall();
+    }
+  });
+
+  // Same reasoning one step further in: the mute used to wrap `withImportLock`, so the wait in
+  // the lock's own queue was muted too. Waiting one's turn behind another writer is a wait of
+  // the same kind as the round trip above — an import of a year of statements holds that lane
+  // for seconds — and the mute is a module-level counter. Only the writes may be muted.
+  it("ne bâillonne pas le dépôt de celui qui tient le verrou pendant que l'agent attend son tour", async () => {
+    const onChange = vi.fn();
+    const uninstall = installBackupTrigger(db, onChange);
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    try {
+      const holder = withImportLock(ACCOUNT.id, async () => {
+        await held;
+        // The write of whoever holds the lock: a sector edit, a statement import. It earns a
+        // deposit, and the agent queued behind it has no say in that.
+        await db.sectors.put({ ticker: "ZXAG", name: "Zxag", category: "Tech", score: 4, status: "", updatedAt: "2026-09-06T13:00:00.000Z" });
+      });
+      const syncPromise = syncAgent(ok(payload()), ACCOUNT);
+      // Long enough for the pass to fetch, parse and reach the lock's queue.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(onChange).not.toHaveBeenCalled();
+
+      release();
+      await holder;
+      expect(onChange).toHaveBeenCalled();
+      await syncPromise;
+    } finally {
+      uninstall();
+    }
   });
 });

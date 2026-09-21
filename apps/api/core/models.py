@@ -67,3 +67,27 @@ class Invitation(models.Model):
 
     def link(self, base_url):
         return f"{base_url.rstrip('/')}/invitation/{self.token}"
+
+
+# Architecture spec §7.5. The browser compresses before encrypting, so this is a ceiling
+# no honest payload approaches, not a budget.
+MAX_BACKUP_BYTES = 20 * 1024 * 1024
+
+
+class Backup(models.Model):
+    """One opaque blob per user, replaced on every deposit.
+
+    This is not the forbidden table. The stop signal in CLAUDE.md is about a model holding
+    transactions, positions or sectors — portfolio data the server could read. This holds
+    bytes the server cannot decrypt and whose structure it does not know; §7.1 of the
+    architecture spec has provided for it since the beginning: "users, and for those who
+    enabled it, an opaque encrypted blob. Nothing else."
+    """
+
+    user = models.OneToOneField("core.User", on_delete=models.CASCADE, related_name="backup")
+    blob = models.BinaryField()
+    bytes = models.PositiveIntegerField()
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"backup of {self.user_id} ({self.bytes} bytes)"

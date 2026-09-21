@@ -1,72 +1,72 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
+import { act } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionProvider } from "@/api/session";
 import { DbProvider, useDb } from "./DbProvider";
 import { db } from "./schema";
 
-vi.mock("./profile", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./profile")>();
-  return {
-    ...actual,
-    adoptDefaultProfile: vi.fn(async (userId: string) => {
-      if (userId === "boom") throw new Error("boom");
-      return actual.adoptDefaultProfile(userId);
-    }),
-  };
-});
+/**
+ * Runs enough real event-loop turns for any effect chain triggered by the session settling to
+ * finish, including IndexedDB round-trips: fake-indexeddb schedules its own continuations with
+ * `setImmediate` (see useAgentSync.test.tsx), a real macrotask, not a microtask a bare `await
+ * Promise.resolve()` would flush. This is a fixed number of *turns*, not a wall-clock delay: on
+ * a slow CI each turn just takes as long as it takes, so unlike a `setTimeout(…, 50)` sleep it
+ * cannot pass by running out of clock before the chain is done.
+ */
+async function flushEventLoop(turns = 20) {
+  for (let i = 0; i < turns; i += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
+}
 
-function Probe() {
+function Probe({ observed }: { observed: string[] }) {
   const database = useDb();
+  // Record every render's database name, not just the last one: a future regression
+  // could flicker through a wrong database before settling back on the right one, which
+  // a single end-of-test check would miss.
+  observed.push(database.name);
   return <div data-testid="db-name">{database.name}</div>;
 }
 
-function renderWithSession(fetchImpl: typeof fetch) {
+function renderWith(fetchImpl: typeof fetch, observed: string[]) {
   vi.spyOn(globalThis, "fetch").mockImplementation(fetchImpl);
   return render(
     <SessionProvider>
       <DbProvider>
-        <Probe />
+        <Probe observed={observed} />
       </DbProvider>
     </SessionProvider>,
   );
 }
 
-function sessionResponseFor(userId: string) {
-  return async () => new Response(JSON.stringify({ data: { user: { id: userId, email: "a@example.com" } } }), { status: 200 });
-}
-
 describe("DbProvider", () => {
   beforeEach(() => vi.restoreAllMocks());
 
-  it("serves the default profile while there is no session", async () => {
-    renderWithSession(async () => new Response("{}", { status: 401 }));
-    await waitFor(() => expect(screen.getByTestId("db-name")).toHaveTextContent(db.name));
-  });
-
-  it("falls back to the default profile, without an unhandled rejection, when opening the session's profile fails", async () => {
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const rejections: unknown[] = [];
-    const onRejection = (event: PromiseRejectionEvent) => rejections.push(event.reason);
-    window.addEventListener("unhandledrejection", onRejection);
-
-    renderWithSession(sessionResponseFor("boom"));
-
-    // The failure is logged, not swallowed and not left as an unhandled
-    // rejection for the console to report on its own.
-    await waitFor(() =>
-      expect(errorSpy).toHaveBeenCalledWith(
-        "Failed to open the IndexedDB profile for the current session",
-        expect.any(Error),
-      ),
-    );
-    // Never stuck on nothing, and never silently left on a stale previous
-    // profile: the fallback lands on the always-safe default database.
-    expect(screen.getByTestId("db-name")).toHaveTextContent(db.name);
-
-    // Give any late microtask a chance to surface as an unhandled rejection
-    // before asserting there was none.
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    window.removeEventListener("unhandledrejection", onRejection);
-    expect(rejections).toHaveLength(0);
+  // Le bug du 2026-09-21 : la base suivait la session, donc toute coupure
+  // affichait un portefeuille vide. Ce test est ce qui échouerait si on la
+  // rebranchait.
+  it.each([
+    ["authentifiée", async () => new Response(JSON.stringify({ data: { user: { id: "9", email: "a@b.c" } } }), { status: 200 })],
+    ["anonyme", async () => new Response("{}", { status: 401 })],
+    ["serveur injoignable", async () => { throw new Error("offline"); }],
+  ])("sert toujours la même base — session %s", async (_label, fetchImpl) => {
+    const observed: string[] = [];
+    renderWith(fetchImpl as typeof fetch, observed);
+    // The initial render already shows `db` (the provider's default state), so an eager
+    // assertion right after mount would pass trivially even under a session-dependent
+    // provider — it would only swap databases once its effect resolves, a tick later.
+    // `fetch` having been called proves the session resolution this test watches has
+    // actually happened, so the assertion below never concludes before that event.
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+    await flushEventLoop();
+    // The point isn't "50ms later it's still the right base" (arbitrary, and silently
+    // blind to any effect slower than that guess) but "no render, ever, showed a
+    // different one": every value `useDb()` produced across every render collapses to
+    // the single database the app is allowed to use.
+    expect(new Set(observed)).toEqual(new Set([db.name]));
+    expect(db.name).toBe("ib-analyzer");
   });
 });

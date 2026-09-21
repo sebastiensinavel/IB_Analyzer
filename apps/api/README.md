@@ -19,7 +19,6 @@ Serveur Django du sous-projet 3. Deux apps : `core` (socle réutilisable) et `ib
 
 `pnpm dev:api` (`tools/dev-env/api.mjs`) est l'équivalent de la séquence manuelle :
 
-    export DJANGO_SECRET_KEY=dev-local-not-for-production
     uv run --project apps/api python apps/api/manage.py migrate
     uv run --project apps/api python apps/api/manage.py collectstatic --noinput
     uv run --project apps/api python apps/api/manage.py runserver 127.0.0.1:8000
@@ -38,13 +37,19 @@ Vite du même checkout vise ce port, et `pnpm test:api` passe par la même déri
 checkouts avec des migrations différentes ne partagent jamais une base. `DATABASE_URL`
 et `API_PORT` posés dans l'environnement priment.
 
-`config/settings.py` refuse de démarrer hors `DJANGO_DEBUG=1` sur la clé de développement
-committée : une variable oubliée dans le `.env` du VPS ferait tourner la production sur une
-clé publiquement connue, donc des cookies de session et des jetons CSRF forgeables. En
+`config/settings.py` refuse de démarrer hors `DJANGO_DEBUG=1` sur une clé de développement
+codée en dur : une variable oubliée dans le `.env` du VPS ferait tourner la production sur
+une clé publiquement connue, donc des cookies de session et des jetons CSRF forgeables. En
 local on tourne comme la production (`DJANGO_DEBUG` à 0, cookies `Secure` — que le
-navigateur accepte sur `127.0.0.1` même en clair), d'où l'`export` ci-dessus. La suite
-pytest n'en a pas besoin : `pytest.ini` pointe sur `config/test_settings.py`, qui pose sa
-propre clé avant de réimporter les vrais réglages tels quels.
+navigateur accepte sur `127.0.0.1` même en clair) ; aucune manipulation n'est requise pour
+autant : `config/devkey.py` engendre une clé au premier lancement et l'écrit dans le dossier
+git du checkout (`.git/dev-secret-key`, ou `.git/worktrees/<nom>/dev-secret-key` dans un
+worktree), jamais versionnée, retrouvée telle quelle aux lancements suivants et supprimée
+avec le checkout. `pnpm dev:api` et Django la lisent ou la créent au même endroit, donc une
+session ouverte sous l'un reste valide sous l'autre. `DJANGO_SECRET_KEY` posée dans
+l'environnement prime toujours sur cette clé engendrée. La suite pytest n'en a pas besoin :
+`pytest.ini` pointe sur `config/test_settings.py`, qui pose sa propre clé avant de réimporter
+les vrais réglages tels quels.
 
 ## `openapi.json`
 

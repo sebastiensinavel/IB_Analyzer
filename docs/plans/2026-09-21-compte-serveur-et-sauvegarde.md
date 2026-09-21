@@ -76,7 +76,7 @@ première tâche. Le plan argumente depuis la spec ; les deux voyagent ensemble.
 - Produces: `useDb(): AppDatabase` inchangé de signature, mais toujours `db`. `useDbError`
   n'existe plus.
 
-- [ ] **Step 1: Écrire le test de non-régression**
+- [x] **Step 1: Écrire le test de non-régression**
 
 Remplacer entièrement `apps/web/src/db/DbProvider.test.tsx` par :
 
@@ -121,12 +121,12 @@ describe("DbProvider", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/DbProvider.test.tsx`
 Attendu : ÉCHEC sur le cas « authentifiée » — la base rendue est `ib-analyzer-9`.
 
-- [ ] **Step 3: Réduire `DbProvider` à une constante**
+- [x] **Step 3: Réduire `DbProvider` à une constante**
 
 `apps/web/src/db/DbProvider.tsx` en entier :
 
@@ -155,7 +155,7 @@ export function DbProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Step 4: Supprimer le profil et ses traces**
+- [x] **Step 4: Supprimer le profil et ses traces**
 
 ```bash
 git rm apps/web/src/db/profile.ts apps/web/src/db/profile.test.ts
@@ -180,13 +180,13 @@ Dans `apps/api/core/schemas.py`, remplacer la docstring de `SessionUserOut` par 
     IndexedDB database belongs to the browser, not to the account."""
 ```
 
-- [ ] **Step 5: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5: Lancer les tests, vérifier qu'ils passent**
 
 Depuis `apps/web` : `npx vitest run src/db src/pages/SettingsPage`
 Attendu : tout passe, aucune référence résiduelle à `profile`.
 Puis `grep -rn "profileDb\|useDbError\|profileError" apps/web/src` : aucune sortie.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -212,7 +212,7 @@ vide. Le test couvre les trois états de session."
 - Produces: `config.devkey.read_or_create_dev_secret(repo_root: Path) -> str`, et le fichier
   `<git dir du checkout>/dev-secret-key`.
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/api/tests/test_devkey.py` :
 
@@ -248,12 +248,12 @@ def test_falls_back_to_a_writable_path_when_there_is_no_git_directory(tmp_path):
     assert read_or_create_dev_secret(tmp_path) == key
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 `pnpm test:api -- apps/api/tests/test_devkey.py`
 Attendu : ÉCHEC, `ModuleNotFoundError: No module named 'config.devkey'`.
 
-- [ ] **Step 3: Écrire `apps/api/config/devkey.py`**
+- [x] **Step 3: Écrire `apps/api/config/devkey.py`**
 
 ```python
 """The development secret key, one per checkout, never committed.
@@ -303,7 +303,7 @@ def read_or_create_dev_secret(root: Path) -> str:
     return key
 ```
 
-- [ ] **Step 4: Brancher `settings.py`**
+- [x] **Step 4: Brancher `settings.py`**
 
 Remplacer les lignes 10 à 19 de `apps/api/config/settings.py` par :
 
@@ -333,7 +333,7 @@ Ajouter en tête du fichier, après les imports existants :
 from config.devkey import read_or_create_dev_secret
 ```
 
-- [ ] **Step 5: Brancher `tools/dev-env/api.mjs`**
+- [x] **Step 5: Brancher `tools/dev-env/api.mjs`**
 
 Dans `ports.mjs`, ajouter après `worktreeSlot` :
 
@@ -377,14 +377,14 @@ const env = {
 
 Ajouter `dev-secret-key` à `.gitignore`.
 
-- [ ] **Step 6: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 6: Lancer les tests, vérifier qu'ils passent**
 
 `pnpm test:api -- apps/api/tests/test_devkey.py`
 Attendu : trois tests PASS.
 Puis `node -e "import('./tools/dev-env/ports.mjs').then(m=>console.log(m.devSecretKey().length))"` :
 un nombre, et le fichier créé n'apparaît pas dans `git status`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -407,7 +407,7 @@ dossier git du checkout, lue par settings.py comme par dev-env."
 - Produces: `SESSION_COOKIE_AGE = 30 * 24 * 3600`, `SESSION_SAVE_EVERY_REQUEST = True`,
   `DATA_UPLOAD_MAX_MEMORY_SIZE` au-dessus du plafond du blob.
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/api/tests/test_session_settings.py` :
 
@@ -444,13 +444,13 @@ def test_the_body_limit_leaves_room_for_a_twenty_megabyte_blob():
     assert settings.DATA_UPLOAD_MAX_MEMORY_SIZE > 20 * 1024 * 1024
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 `pnpm test:api -- apps/api/tests/test_session_settings.py`
 Attendu : ÉCHEC — `SESSION_SAVE_EVERY_REQUEST` n'est pas défini, et
 `DATA_UPLOAD_MAX_MEMORY_SIZE` vaut le défaut de Django, 2 621 440.
 
-- [ ] **Step 3: Poser les réglages**
+- [x] **Step 3: Poser les réglages**
 
 Après le bloc `SESSION_COOKIE_SAMESITE` de `apps/api/config/settings.py` :
 
@@ -468,12 +468,12 @@ SESSION_SAVE_EVERY_REQUEST = True
 DATA_UPLOAD_MAX_MEMORY_SIZE = 21 * 1024 * 1024
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 `pnpm test:api -- apps/api/tests/test_session_settings.py`
 Attendu : trois tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -497,7 +497,7 @@ git commit -m "Session glissante de trente jours, et de la place pour le blob"
   - `restorePayload(db: AppDatabase, payload: BackupPayload): Promise<void>`
   - `class BackupFormatError extends Error`
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/db/backup/payload.test.ts` :
 
@@ -570,12 +570,12 @@ describe("restorePayload", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/payload.test.ts`
 Attendu : ÉCHEC, le module n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/web/src/db/backup/payload.ts`**
+- [x] **Step 3: Écrire `apps/web/src/db/backup/payload.ts`**
 
 ```ts
 import type { AppDatabase } from "../schema";
@@ -643,12 +643,12 @@ export async function restorePayload(db: AppDatabase, payload: BackupPayload): P
 }
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/payload.test.ts`
 Attendu : quatre tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -673,7 +673,7 @@ git commit -m "Le paquet de sauvegarde : la base entière, relevés HTML compris
   - `toRecoveryCode(key: Uint8Array): string` / `fromRecoveryCode(code: string): Uint8Array`
   - `class BackupKeyError extends Error`
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/db/backup/crypto.test.ts` :
 
@@ -740,12 +740,12 @@ describe("toRecoveryCode", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/crypto.test.ts`
 Attendu : ÉCHEC, le module n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/web/src/db/backup/crypto.ts`**
+- [x] **Step 3: Écrire `apps/web/src/db/backup/crypto.ts`**
 
 ```ts
 import type { BackupPayload } from "./payload";
@@ -838,14 +838,14 @@ export function fromRecoveryCode(code: string): Uint8Array {
 }
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/crypto.test.ts`
 Attendu : six tests PASS. Si `CompressionStream` manque dans l'environnement jsdom, le
 corriger dans `apps/web/vitest.setup.ts` en réexportant celui de `node:stream/web`, jamais en
 affaiblissant le test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -870,7 +870,7 @@ git commit -m "Compression gzip, chiffrement AES-GCM et code de récupération"
   - `adoptBackupKey(db, key: Uint8Array): Promise<BackupStateRecord>` — restauration sur un nouvel appareil
   - `recordBackup(db, at: string, bytes: number): Promise<void>`
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/db/backup/state.test.ts` :
 
@@ -924,12 +924,12 @@ describe("adoptBackupKey", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/state.test.ts`
 Attendu : ÉCHEC, le module et la table n'existent pas.
 
-- [ ] **Step 3: Ajouter la version 10 du schéma**
+- [x] **Step 3: Ajouter la version 10 du schéma**
 
 Dans `apps/web/src/db/schema.ts`, après l'interface `SectorRecord` :
 
@@ -965,7 +965,7 @@ et, après la version 9 :
     });
 ```
 
-- [ ] **Step 4: Écrire `apps/web/src/db/backup/state.ts`**
+- [x] **Step 4: Écrire `apps/web/src/db/backup/state.ts`**
 
 ```ts
 import type { AppDatabase, BackupStateRecord } from "../schema";
@@ -1019,12 +1019,12 @@ export async function recordBackup(db: AppDatabase, at: string, bytes: number): 
 }
 ```
 
-- [ ] **Step 5: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5: Lancer les tests, vérifier qu'ils passent**
 
 Depuis `apps/web` : `npx vitest run src/db/backup src/db/schema.test.ts`
 Attendu : tout PASS, la version 10 n'abîme aucune base existante.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -1045,7 +1045,7 @@ git commit -m "La clé de sauvegarde vit en IndexedDB, hors du paquet qu'elle ch
   - `exportToBlob(db): Promise<Blob>`
   - `importFromFile(db, file: File): Promise<void>`
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/db/backup/file.test.ts` :
 
@@ -1082,12 +1082,12 @@ describe("exportToBlob", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/file.test.ts`
 Attendu : ÉCHEC, le module n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/web/src/db/backup/file.ts`**
+- [x] **Step 3: Écrire `apps/web/src/db/backup/file.ts`**
 
 ```ts
 import type { AppDatabase } from "../schema";
@@ -1115,12 +1115,12 @@ export async function importFromFile(db: AppDatabase, file: File): Promise<void>
 }
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/file.test.ts`
 Attendu : deux tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -1143,7 +1143,7 @@ git commit -m "Export et import d'un fichier local, la sauvegarde sans compte"
   `DELETE /api/backup`, `GET /api/backup/status` → `{ present: bool, updatedAt: str | None,
   bytes: int | None }`.
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/api/tests/test_backup_api.py` :
 
@@ -1227,12 +1227,12 @@ def test_anonymous_is_refused(client):
     assert client.get("/api/backup").status_code == 401
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 `pnpm test:api -- apps/api/tests/test_backup_api.py`
 Attendu : ÉCHEC, `ImportError` sur `MAX_BACKUP_BYTES`.
 
-- [ ] **Step 3: Écrire le modèle**
+- [x] **Step 3: Écrire le modèle**
 
 À la fin de `apps/api/core/models.py` :
 
@@ -1263,7 +1263,7 @@ class Backup(models.Model):
 
 Puis : `uv run --project apps/api python apps/api/manage.py makemigrations core --name backup`
 
-- [ ] **Step 4: Écrire les routes**
+- [x] **Step 4: Écrire les routes**
 
 Dans `apps/api/core/schemas.py` :
 
@@ -1324,20 +1324,20 @@ def backup_status(request):
     return Status(200, {"present": True, "updatedAt": backup.updated_at.isoformat(), "bytes": backup.bytes})
 ```
 
-- [ ] **Step 5: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5: Lancer les tests, vérifier qu'ils passent**
 
 `pnpm test:api -- apps/api/tests/test_backup_api.py`
 Attendu : sept tests PASS. Si `response={200: bytes}` fait tousser ninja, déclarer `200: str`
 comme le fait `ib/api.py` : la réponse réelle reste l'`HttpResponse` binaire.
 
-- [ ] **Step 6: Régénérer le schéma**
+- [x] **Step 6: Régénérer le schéma**
 
 ```bash
 uv run --project apps/api python apps/api/manage.py export_openapi_schema --api config.api.api --output apps/api/openapi.json
 pnpm gen:api
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -1360,7 +1360,7 @@ git commit -m "Trois routes pour un blob opaque, plafonné à 20 Mo et isolé pa
   - `getBackup(): Promise<BackupResult<Uint8Array>>`
   - `deleteBackup(): Promise<BackupResult<void>>`
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/api/backup.test.ts` :
 
@@ -1405,12 +1405,12 @@ describe("getBackup", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/api/backup.test.ts`
 Attendu : ÉCHEC, le module n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/web/src/api/backup.ts`**
+- [x] **Step 3: Écrire `apps/web/src/api/backup.ts`**
 
 ```ts
 /**
@@ -1487,12 +1487,12 @@ export async function deleteBackup(): Promise<BackupResult<void>> {
 }
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 Depuis `apps/web` : `npx vitest run src/api/backup.test.ts`
 Attendu : cinq tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -1519,7 +1519,7 @@ git commit -m "Le client des trois routes de sauvegarde"
   - `pullBackup(db: AppDatabase, key: Uint8Array): Promise<BackupResult<void>>`
   - `BACKUP_DEBOUNCE_MS = 30_000`
 
-- [ ] **Step 1: Écrire le test du déclencheur**
+- [x] **Step 1: Écrire le test du déclencheur**
 
 `apps/web/src/db/backup/trigger.test.ts` :
 
@@ -1585,12 +1585,12 @@ describe("installBackupTrigger", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/trigger.test.ts`
 Attendu : ÉCHEC, le module n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/web/src/db/backup/trigger.ts`**
+- [x] **Step 3: Écrire `apps/web/src/db/backup/trigger.ts`**
 
 ```ts
 import type { AppDatabase } from "../schema";
@@ -1639,12 +1639,12 @@ export function installBackupTrigger(db: AppDatabase, onChange: () => void): () 
 }
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/trigger.test.ts`
 Attendu : quatre tests PASS.
 
-- [ ] **Step 5: Écrire l'orchestration et son test**
+- [x] **Step 5: Écrire l'orchestration et son test**
 
 `apps/web/src/db/backup/sync.ts` :
 
@@ -1737,7 +1737,7 @@ describe("pullBackup", () => {
 });
 ```
 
-- [ ] **Step 6: Brancher le déclencheur dans l'application**
+- [x] **Step 6: Brancher le déclencheur dans l'application**
 
 `apps/web/src/db/backup/BackupSync.tsx` :
 
@@ -1777,12 +1777,12 @@ Dans `apps/web/src/App.tsx`, à l'intérieur de `<DbProvider>` :
         </DbProvider>
 ```
 
-- [ ] **Step 7: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 7: Lancer les tests, vérifier qu'ils passent**
 
 Depuis `apps/web` : `npx vitest run src/db/backup`
 Attendu : tout PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -1804,7 +1804,7 @@ git commit -m "Le dépôt suit les écritures qui comptent, jamais les snapshots
   `pushBackup`, `pullBackup`, `deleteBackup`, `exportToBlob`, `importFromFile`,
   `toRecoveryCode`, `fromRecoveryCode`, `useSession`.
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/components/settings/BackupCard.test.tsx` :
 
@@ -1861,12 +1861,12 @@ describe("BackupCard", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/components/settings/BackupCard.test.tsx`
 Attendu : ÉCHEC, le composant n'existe pas.
 
-- [ ] **Step 3: Ajouter les clés i18n**
+- [x] **Step 3: Ajouter les clés i18n**
 
 Dans `apps/web/src/i18n/fr.json`, sous `settings` :
 
@@ -1891,7 +1891,7 @@ Dans `apps/web/src/i18n/fr.json`, sous `settings` :
 
 et l'équivalent anglais dans `en.json` (mêmes clés, mêmes interpolations).
 
-- [ ] **Step 4: Écrire `BackupCard.tsx`**
+- [x] **Step 4: Écrire `BackupCard.tsx`**
 
 Le composant rend une `Card` avec, dans l'ordre : l'état (activée / désactivée, dernier
 dépôt), les boutons serveur — `backupEnable` / `backupDisable`, `backupNow`, `backupRestore`,
@@ -1912,12 +1912,12 @@ Règles de rendu :
 
 Dans `SettingsPage.tsx`, monter `<BackupCard />` juste après la carte `settings.account`.
 
-- [ ] **Step 5: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5: Lancer les tests, vérifier qu'ils passent**
 
 Depuis `apps/web` : `npx vitest run src/components/settings src/pages/SettingsPage`
 Attendu : tout PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -1932,7 +1932,7 @@ git commit -m "La carte Sauvegarde : serveur chiffré, et fichier local sans com
 - Modify: `CLAUDE.md`, `docs/points-reportes.md`, `apps/api/README.md`
 - Modify: `docs/specs/2026-09-21-compte-serveur-et-sauvegarde-design.md` (statut)
 
-- [ ] **Step 1: Mettre à jour `CLAUDE.md`**
+- [x] **Step 1: Mettre à jour `CLAUDE.md`**
 
 Dans le registre des sous-projets : la ligne 6 devient
 `| 6 | Sauvegarde chiffrée et page Paramètres | fondu dans le 25 |`, et une ligne 25 est
@@ -1953,7 +1953,7 @@ Dans les règles, remplacer toute mention d'un profil par utilisateur par :
   comptent — `TRIGGER_TABLES`, toutes sauf `snapshots` — jamais les snapshots de l'agent.
 ```
 
-- [ ] **Step 2: Mettre à jour `docs/points-reportes.md`**
+- [x] **Step 2: Mettre à jour `docs/points-reportes.md`**
 
 Barrer le point ouvert et le dater :
 
@@ -1967,17 +1967,17 @@ Barrer le point ouvert et le dater :
 Ajouter une section `## Reporté par le sous-projet 25` avec, au minimum, la ligne
 « et tout ce que la revue de branche aura relevé ».
 
-- [ ] **Step 3: Mettre à jour `apps/api/README.md`**
+- [x] **Step 3: Mettre à jour `apps/api/README.md`**
 
 Le paragraphe qui demande d'exporter `DJANGO_SECRET_KEY` à la main est remplacé : la clé est
 désormais engendrée par checkout dans son dossier git (`config/devkey.py`), et aucune
 manipulation n'est requise en développement.
 
-- [ ] **Step 4: Passer le statut de la spec à « implémenté »**
+- [x] **Step 4: Passer le statut de la spec à « implémenté »**
 
 `Statut : implémenté (2026-09-__).` en tête du fichier de spec.
 
-- [ ] **Step 5: Vérification complète**
+- [x] **Step 5: Vérification complète**
 
 ```bash
 pnpm check
@@ -1987,7 +1987,7 @@ pnpm test:api
 Attendu : les deux vertes. C'est la seule exécution complète du plan — les tâches
 précédentes n'ont lancé que des tests ciblés.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A

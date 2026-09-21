@@ -42,14 +42,19 @@ fixes, et le Cash Report de chaque relevé est recalculé depuis ses transaction
 - **`SourcesPage.handleFile` attrape désormais les rejets**, mais le seul chemin réellement
   possible aujourd'hui est un échec Dexie. L'agent n'emprunte pas ce chemin : la troisième
   source n'a rien changé ici. À revoir si une quatrième source existe un jour.
-- **`db/profile.ts` : le cache `opened` n'est jamais purgé** des profils qui ne sont plus
+- ~~**`db/profile.ts` : le cache `opened` n'est jamais purgé** des profils qui ne sont plus
   utilisés dans l'onglet (changement d'utilisateur répété, ou un perdant de la course
   d'adoption qui referme sa propre instance sans jamais la mettre en cache). Accumulation de
-  connexions Dexie ouvertes, jamais de fuite de données.
-- **`DbProvider` ne retente pas automatiquement** après un échec d'ouverture ou d'adoption : le
+  connexions Dexie ouvertes, jamais de fuite de données.~~ — **sans objet depuis le
+  sous-projet 25** (2026-09-21) : `apps/web/src/db/profile.ts` est supprimé, la base locale
+  appartient au navigateur et non à un compte — une seule base `ib-analyzer` par origine,
+  connectée ou non. Ni profil par utilisateur, ni adoption, ni cache à purger.
+- ~~**`DbProvider` ne retente pas automatiquement** après un échec d'ouverture ou d'adoption : le
   repli sur le profil par défaut (`apps/web/src/db/DbProvider.tsx`) est sûr et visible, mais
-  définitif jusqu'au prochain changement de session (connexion, déconnexion).
-- **Deux utilisateurs *différents* adoptant le profil anonyme en même temps obtiennent chacun
+  définitif jusqu'au prochain changement de session (connexion, déconnexion).~~ — **sans objet
+  depuis le sous-projet 25** (2026-09-21) : `DbProvider` ne lit plus la session et n'ouvre plus
+  rien ; il sert la base unique du navigateur, donc il n'y a plus d'échec à retenter.
+- ~~**Deux utilisateurs *différents* adoptant le profil anonyme en même temps obtiennent chacun
   une copie complète** (`apps/web/src/db/profile.ts`, `adoptDefaultProfile`) : le verrou posé
   à la tâche 13 ferme la course entre deux appels qui visent la **même** base cible (deux
   onglets, même utilisateur), mais `targetName` est dérivé de `userId` — deux comptes
@@ -59,13 +64,21 @@ fixes, et le Cash Report de chaque relevé est recalculé depuis ses transaction
   de perte : chacun repart avec sa propre copie de ce qui existait avant que quiconque ne se
   connecte. Mordra le jour où deux personnes se créent effectivement un compte à quelques
   secondes d'intervalle sur un poste partagé — comportement préexistant à la tâche 13, mais
-  devenu atteignable seulement avec le multi-utilisateur du sous-projet 3.
-- **Fenêtre résiduelle à la première connexion seulement** (`apps/web/src/flex/useFlexAutoSync.ts`) :
+  devenu atteignable seulement avec le multi-utilisateur du sous-projet 3.~~ — **sans objet depuis le
+  sous-projet 25** (2026-09-21) : `apps/web/src/db/profile.ts` est supprimé, la base locale
+  appartient au navigateur et non à un compte — une seule base `ib-analyzer` par origine,
+  connectée ou non. Ni profil par utilisateur, ni adoption, ni cache à purger.
+- ~~**Fenêtre résiduelle à la première connexion seulement** (`apps/web/src/flex/useFlexAutoSync.ts`) :
   entre la fermeture de la base par défaut par `adoptDefaultProfile` et le
   moment où `useDb()` cesse de la rendre, un déclenchement automatique de synchro tombant
   exactement là écrit dans une base sur le point de disparaître ; le `void (async () => …)()`
   qui lance la synchro n'a pas de `.catch`. Se rattrape au montage suivant (le profil adopté
-  n'a pas de `lastFlexSyncAt`, la synchro repart), mais silencieusement.
+  n'a pas de `lastFlexSyncAt`, la synchro repart), mais silencieusement.~~ — **sans objet depuis le
+  sous-projet 25** (2026-09-21) : `apps/web/src/db/profile.ts` est supprimé, la base locale
+  appartient au navigateur et non à un compte — une seule base `ib-analyzer` par origine,
+  connectée ou non. Ni profil par utilisateur, ni adoption, ni cache à purger.
+  Le `void (async () => …)()` sans `.catch` de `useFlexAutoSync`, lui, reste tel quel : c'est
+  la même classe de dette que celle de l'agent, juste en dessous.
 - **Même classe de dette côté agent** (sous-projet 4) : `apps/web/src/agent/useAgentSync.ts`
   lance `syncAgent` depuis `tick()` via `void tick()`, sans `.catch` ; un échec Dexie
   imprévu (pas un des codes `AgentSyncCode` normaux, qui sont déjà couverts) devient un
@@ -257,10 +270,10 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ## Reporté par les relevés conservés
 
-- **La sauvegarde chiffrée du sous-projet 6 doit décider du sort de `db.statements`.** Un
-  relevé d'un an pèse quelques centaines de kilo-octets ; les inclure rend la sauvegarde
-  autoportante (l'historique se reconstruit du fichier, pas seulement des lignes déjà
-  lues), les exclure la garde légère. Rien n'est tranché.
+- ~~**La sauvegarde chiffrée du sous-projet 6 doit décider du sort de `db.statements`.**~~ —
+  **fermé par le sous-projet 25** (2026-09-21) : les relevés sont dans le paquet, qui est
+  compressé en gzip avant chiffrement. Une sauvegarde sans eux rendrait une base non
+  reconstructible.
 - **Les relevés importés avant la version 4 du schéma ne sont pas récupérables** : le store
   démarre vide sur une base existante et se remplit au prochain import. Leurs lignes vivent
   donc dans le ledger sans fichier pour les réécrire ; une reconstruction les perdrait, ce
@@ -967,6 +980,35 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   fichier) : elle reste vraie, mais sa portée s'est étendue par ce sous-projet — une réponse qui
   s'arrête un vendredi revendique désormais aussi la nuit et le week-end qui suivent, pas
   seulement la clôture de la veille.
+
+---
+
+## Reporté par le sous-projet 25
+
+- **Les sept assertions `expect(upgraded.verno).toBe(LATEST_VERSION)` de
+  `apps/web/src/db/schema.test.ts` sont cérémonielles.** Démontré pendant ce sous-projet :
+  `verno` est posé par le constructeur de Dexie, avant tout `.open()`, donc ces lignes
+  constatent ce que le code déclare et jamais ce qu'une migration fait. Vérifié par
+  l'expérience : en supprimant une déclaration de version, ce fichier reste entièrement vert.
+  Un commentaire le dit déjà sur place ; elles ont été conservées plutôt que supprimées pour
+  ne pas retoucher une deuxième fois un fichier hors périmètre.
+- **`apps/web/src/api/allauth.ts` porte un ordre d'étalement fautif** :
+  `{ credentials, headers: {...}, ...init }` écrase l'objet d'en-têtes fusionné si un
+  appelant passe ses propres en-têtes. Latent aujourd'hui — aucun appelant ne le fait — mais
+  c'est exactement le défaut qui faisait disparaître le jeton CSRF dans `api/backup.ts`,
+  corrigé là-bas.
+- **Le compteur de sourdine du déclencheur est global au module**, pas lié à une instance de
+  base (`apps/web/src/db/backup/trigger.ts`). Sans effet aujourd'hui, un seul singleton
+  existant. Conséquence résiduelle acceptée : si une passe d'agent recouvrait les écritures
+  d'un import lancé au même moment, le dépôt de cet import serait sauté — fenêtre resserrée à
+  ses seules écritures, rattrapée par le déclencheur suivant ou le bouton « Sauvegarder
+  maintenant ».
+- **`handleEnable` et `handleDisable` n'ont pas de test dédié pour leur `catch`**,
+  contrairement à `handleExport`.
+- **La suite Playwright (`apps/web/e2e/`) n'a pas été exécutée** de tout le sous-projet : elle
+  demande un Django et un PostgreSQL réellement démarrés, et ne tourne ni dans `pnpm check` ni
+  dans `pnpm test:api`. Les commentaires d'`auth.spec.ts` ont été corrigés par lecture seule.
+- Et tout ce que la revue de branche aura relevé.
 
 ---
 

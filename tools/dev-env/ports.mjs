@@ -17,6 +17,7 @@
  * .claude/skills/run-frontend/driver.mjs, tools/dev-env/run.mjs, api.mjs and instance.mjs.
  * `WEB_PORT`, `API_PORT` and `DATABASE_URL` in the environment override the derivation.
  */
+import { randomBytes } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -56,7 +57,16 @@ export function worktreeName(root) {
  */
 export function checkoutGitDir(root) {
   const dotGit = resolve(root, ".git");
-  if (worktreeName(root) === null) return dotGit;
+  let stat;
+  try {
+    stat = statSync(dotGit);
+  } catch {
+    // No git directory at all (a source tarball, a container): the checkout root itself is
+    // writable and per-checkout, which is all this needs — mirrors config/devkey.py's own
+    // checkout_git_dir (apps/api), which devSecretKey shares a file with.
+    return root;
+  }
+  if (stat.isDirectory()) return dotGit;
   const match = /^gitdir:\s*(.+)$/m.exec(readFileSync(dotGit, "utf8"));
   if (!match) throw new Error(`${dotGit} does not name a git directory`);
   return resolve(root, match[1].trim());
@@ -100,6 +110,26 @@ export function worktreeSlot(root) {
   while (taken.has(slot)) slot++;
   writeFileSync(join(gitDir, SLOT_FILE), `${slot}\n`);
   return slot;
+}
+
+/**
+ * The checkout's development secret key, shared with Django's own config/devkey.py: one
+ * file, so a server started here and one started by hand never invalidate each other's
+ * sessions. Never versioned, removed with the worktree.
+ *
+ * @param {string} root directory of the checkout
+ */
+export function devSecretKey(root = REPO_ROOT) {
+  const path = join(checkoutGitDir(root), "dev-secret-key");
+  try {
+    const existing = readFileSync(path, "utf8").trim();
+    if (existing) return existing;
+  } catch {
+    // Not created yet: fall through and claim it.
+  }
+  const key = randomBytes(48).toString("base64url");
+  writeFileSync(path, `${key}\n`);
+  return key;
 }
 
 function portFrom(env, key, fallback) {

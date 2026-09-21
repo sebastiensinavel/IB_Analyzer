@@ -15,7 +15,7 @@ import {
   type TotpStatus,
 } from "@/api/allauth";
 import { useSession, useSessionActions } from "@/api/session";
-import { useDbError } from "@/db/DbProvider";
+import { BackupCard } from "@/components/settings/BackupCard";
 
 /**
  * The server is optional (spec §2): every card below except "Compte" only makes sense once
@@ -27,7 +27,6 @@ export function SettingsPage() {
   const { t } = useTranslation();
   const session = useSession();
   const { logout } = useSessionActions();
-  const dbError = useDbError();
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
@@ -58,9 +57,10 @@ export function SettingsPage() {
           {session.status === "unreachable" && (
             <p className="text-xs text-muted-foreground">{t("settings.unreachableHint")}</p>
           )}
-          {dbError && <p className="text-xs text-muted-foreground">{t("settings.profileError")}</p>}
         </CardContent>
       </Card>
+
+      <BackupCard />
 
       {session.status === "authenticated" && (
         <>

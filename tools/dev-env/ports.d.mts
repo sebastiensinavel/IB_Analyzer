@@ -20,6 +20,7 @@ export const AGENT_PORT: 8100;
 export function worktreeName(root: string): string | null;
 export function checkoutGitDir(root: string): string;
 export function worktreeSlot(root: string): number;
+export function devSecretKey(root?: string): string;
 export function portsFor(worktree: string | null, slot: number, env: NodeJS.ProcessEnv): DevPorts;
 export function devPorts(root?: string, env?: NodeJS.ProcessEnv): DevPorts;
 export function describePorts(p: DevPorts): string;

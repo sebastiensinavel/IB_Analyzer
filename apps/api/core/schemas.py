@@ -7,7 +7,8 @@ class AcceptInvitationIn(Schema):
 
 
 class SessionUserOut(Schema):
-    """The browser keys its local profile on `id`: it must be stable and opaque."""
+    """Opaque and stable. The browser keys nothing local on it: since sub-project 25 the
+    IndexedDB database belongs to the browser, not to the account."""
 
     id: str
     email: str
@@ -16,3 +17,9 @@ class SessionUserOut(Schema):
 class ErrorOut(Schema):
     code: str
     detail: str
+
+
+class BackupStatusOut(Schema):
+    present: bool
+    updatedAt: str | None
+    bytes: int | None

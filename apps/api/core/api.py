@@ -3,13 +3,15 @@ from django.contrib.auth import get_user_model, login
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
+from django.http import HttpResponse
 from django.utils import timezone
 from ninja import Router, Status
 from ninja.errors import HttpError
+from ninja.security import django_auth
 from ninja.utils import check_csrf
 
-from core.models import Invitation
-from core.schemas import AcceptInvitationIn, ErrorOut, SessionUserOut
+from core.models import MAX_BACKUP_BYTES, Backup, Invitation
+from core.schemas import AcceptInvitationIn, BackupStatusOut, ErrorOut, SessionUserOut
 
 router = Router(tags=["core"])
 
@@ -64,3 +66,44 @@ def accept_invitation(request, payload: AcceptInvitationIn):
     # normal login, so recording it is honest, not a workaround.
     record_authentication(request, user, method="password")
     return Status(200, {"id": str(user.pk), "email": user.email})
+
+
+TOO_LARGE = {"code": "backup-too-large", "detail": "This backup is larger than the 20 MB limit."}
+NO_BACKUP = {"code": "backup-missing", "detail": "No backup has been deposited yet."}
+
+
+@router.post("/backup", auth=django_auth, response={200: BackupStatusOut, 413: ErrorOut})
+def put_backup(request):
+    """The body is raw ciphertext: never parsed, never logged, never inspected."""
+    blob = request.body
+    if len(blob) > MAX_BACKUP_BYTES:
+        return Status(413, TOO_LARGE)
+    now = timezone.now()
+    Backup.objects.update_or_create(
+        user=request.user, defaults={"blob": blob, "bytes": len(blob), "updated_at": now}
+    )
+    return Status(200, {"present": True, "updatedAt": now.isoformat(), "bytes": len(blob)})
+
+
+@router.get("/backup", auth=django_auth, response={200: bytes, 404: ErrorOut})
+def get_backup(request):
+    """Returns a plain `HttpResponse`: ninja hands any `HttpResponseBase` back untouched,
+    before it ever looks at `response_models` — the same pattern `ib.api._relay` uses."""
+    backup = Backup.objects.filter(user=request.user).first()
+    if backup is None:
+        return Status(404, NO_BACKUP)
+    return HttpResponse(bytes(backup.blob), status=200, content_type="application/octet-stream")
+
+
+@router.delete("/backup", auth=django_auth, response={200: BackupStatusOut})
+def delete_backup(request):
+    Backup.objects.filter(user=request.user).delete()
+    return Status(200, {"present": False, "updatedAt": None, "bytes": None})
+
+
+@router.get("/backup/status", auth=django_auth, response={200: BackupStatusOut})
+def backup_status(request):
+    backup = Backup.objects.filter(user=request.user).first()
+    if backup is None:
+        return Status(200, {"present": False, "updatedAt": None, "bytes": None})
+    return Status(200, {"present": True, "updatedAt": backup.updated_at.isoformat(), "bytes": backup.bytes})

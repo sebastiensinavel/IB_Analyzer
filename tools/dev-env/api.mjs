@@ -11,7 +11,7 @@
  * `docker compose -f docker-compose.dev.yml up -d db` must have been run first.
  */
 import { spawnSync } from "node:child_process";
-import { describePorts, devPorts, REPO_ROOT } from "./ports.mjs";
+import { describePorts, devPorts, devSecretKey, REPO_ROOT } from "./ports.mjs";
 
 const ports = devPorts();
 console.error(describePorts(ports));
@@ -19,9 +19,9 @@ console.error(describePorts(ports));
 const env = {
   ...process.env,
   DATABASE_URL: ports.databaseUrl,
-  // apps/api/README.md has the human export this same value; settings.py refuses to boot
-  // on the committed key outside DEBUG, and this script only ever runs a dev server.
-  DJANGO_SECRET_KEY: process.env.DJANGO_SECRET_KEY || "dev-local-not-for-production",
+  // One key per checkout, the same file Django's config/devkey.py reads: a server started
+  // here and one started by hand share a key, so neither invalidates the other's sessions.
+  DJANGO_SECRET_KEY: process.env.DJANGO_SECRET_KEY || devSecretKey(),
 };
 const run = (cmd, args, opts = {}) =>
   spawnSync(cmd, args, { cwd: REPO_ROOT, stdio: "inherit", env, ...opts });

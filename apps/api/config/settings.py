@@ -5,18 +5,26 @@ from pathlib import Path
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
+from config.devkey import read_or_create_dev_secret
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEV_SECRET_KEY = "dev-only-not-for-production"
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", DEV_SECRET_KEY)
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
+REPO_ROOT = BASE_DIR.parent.parent
 
 # A forgotten DJANGO_SECRET_KEY in the VPS .env would otherwise start production on a key
 # that is committed in this repository, and therefore public: session cookies and CSRF
 # tokens forgeable by anyone who can read the code. Refusing to boot is the only safe
 # failure here — a silent fallback is exactly what makes this class of bug survive.
-if not DEBUG and SECRET_KEY == DEV_SECRET_KEY:
-    raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set outside DEBUG")
+#
+# In DEBUG the key comes from the checkout's own git directory instead (config/devkey.py),
+# so that every way of starting a dev server — `pnpm dev:api`, `pnpm dev:start`, a bare
+# `manage.py runserver` — agrees on one key and stops invalidating each other's sessions.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set outside DEBUG")
+    SECRET_KEY = read_or_create_dev_secret(REPO_ROOT)
 
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
@@ -139,6 +147,18 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Measured on the dev database the 2026-09-21: fourteen logins in sixteen days, none of
+# them expired before the next one. Django's default expiry is fixed at login and never
+# pushed back, so a daily user is still logged out every fortnight for no reason. Rolling
+# it on every request is what makes "stay signed in while you use it" true.
+SESSION_COOKIE_AGE = 30 * 24 * 3600
+SESSION_SAVE_EVERY_REQUEST = True
+
+# The encrypted backup blob is capped at 20 MB (architecture spec §7.5). Django's own
+# default body limit is 2.5 MB, which would reject a legitimate deposit with
+# RequestDataTooBig long before the endpoint's own check ever ran.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 21 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
