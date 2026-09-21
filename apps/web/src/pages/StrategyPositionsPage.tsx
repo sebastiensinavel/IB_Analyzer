@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { Fragment, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import {
@@ -16,11 +16,13 @@ import { Card, CardContent } from "@ib/ui/card";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
+import { PositionChartRow } from "@/components/PositionChartRow";
 import { NUMERIC, PositionRow, toneOf } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
 import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
 import type { SnapshotRecord } from "@/db/schema";
+import { useOpenChart, type OpenChart } from "@/hooks/useOpenChart";
 import { useStrategyBoxViews } from "@/hooks/useStrategyBoxViews";
 import { usePageSearch, type TableViewState } from "@/hooks/useTableView";
 import { expiryChoices, reportToday } from "@/lib/expiryFilter";
@@ -58,6 +60,10 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   const shareSpecs = useMemo(() => wheelShareColumnSpecs(sectorOf), [sectorOf]);
   const search = usePageSearch(pageSearchKey(accountId, `positions:${strategy}`));
   const views = useStrategyBoxViews(accountId, strategy, lineSpecs, shareSpecs);
+  const chart = useOpenChart();
+  // A stable array, never a literal recreated on each render: PositionChartRow memoizes its
+  // levels on `strategies.join(",")`, and never wants an empty scope.
+  const scope = useMemo(() => [strategy], [strategy]);
   const defs = STRATEGY_BOXES[strategy];
   const ready = journals.status === "ready" && snapshot !== undefined && report !== undefined;
   const rows = journals.status === "ready" ? journals.report.rows : NO_ROWS;
@@ -112,9 +118,23 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
 
       {defs.map((def) => {
         const holdings = shares.get(def.id);
-        if (holdings) return <SharesBox key={def.id} box={holdings} specs={shareSpecs} table={views[def.id]} sectorOf={sectorOf} />;
+        if (holdings) {
+          return <SharesBox key={def.id} box={holdings} specs={shareSpecs} table={views[def.id]} sectorOf={sectorOf} chart={chart} boxId={def.id} />;
+        }
         const box = lines.get(def.id);
-        return box ? <LinesBox key={def.id} box={box} specs={lineSpecs} table={views[def.id]} strategy={strategy} sectorOf={sectorOf} /> : null;
+        return box ? (
+          <LinesBox
+            key={def.id}
+            box={box}
+            specs={lineSpecs}
+            table={views[def.id]}
+            strategy={strategy}
+            scope={scope}
+            sectorOf={sectorOf}
+            chart={chart}
+            boxId={def.id}
+          />
+        ) : null;
       })}
     </div>
   );
@@ -125,13 +145,19 @@ function LinesBox({
   specs,
   table,
   strategy,
+  scope,
   sectorOf,
+  chart,
+  boxId,
 }: {
   box: PreparedBox<StrategyLine>;
   specs: ReturnType<typeof strategyColumnSpecs>;
   table: TableViewState;
   strategy: PositionsStrategy;
+  scope: readonly PositionsStrategy[];
   sectorOf: SectorOf;
+  chart: OpenChart;
+  boxId: string;
 }) {
   return (
     <FilteredTableBox
@@ -145,38 +171,56 @@ function LinesBox({
       table={table}
       emptyKey="positions.noResults"
       rowKey={(line) => contractId(line.contract)}
-      renderRow={(line) => (
-        <PositionRow
-          values={{
-            contract: formatContractLabel(line.contract),
-            label: line.label,
-            sector: sectorOf(line.contract.ticker),
-            marketValue: line.marketValue,
-            quantity: line.quantity,
-            avgPrice: line.avgPrice,
-            lastPrice: line.lastPrice,
-            dayChange: line.dayChange,
-            dailyPnl: line.dailyPnl,
-            unrealizedPnl: line.unrealizedPnl,
-            decision: line.decision,
-            coverage: strategyCoverageBadges(line, strategy),
-          }}
-        />
-      )}
+      renderRow={(line) => {
+        const key = `${boxId}|${contractId(line.contract)}`;
+        return (
+          <Fragment>
+            <PositionRow
+              onClick={() => chart.toggle(key)}
+              expanded={chart.isOpen(key)}
+              values={{
+                contract: formatContractLabel(line.contract),
+                label: line.label,
+                sector: sectorOf(line.contract.ticker),
+                marketValue: line.marketValue,
+                quantity: line.quantity,
+                avgPrice: line.avgPrice,
+                lastPrice: line.lastPrice,
+                dayChange: line.dayChange,
+                dailyPnl: line.dailyPnl,
+                unrealizedPnl: line.unrealizedPnl,
+                decision: line.decision,
+                coverage: strategyCoverageBadges(line, strategy),
+              }}
+            />
+            {chart.isOpen(key) && (
+              <PositionChartRow ticker={line.contract.ticker} strategies={scope} columnCount={POSITION_COLUMNS.length} />
+            )}
+          </Fragment>
+        );
+      }}
     />
   );
 }
+
+/** The Wheel's assigned shares only ever carry the Wheel's own levels: a stable array, never a
+ * literal recreated on each render (PositionChartRow memoizes its levels on `strategies.join(",")`). */
+const WHEEL_SCOPE: readonly PositionsStrategy[] = ["wheel"];
 
 function SharesBox({
   box,
   specs,
   table,
   sectorOf,
+  chart,
+  boxId,
 }: {
   box: PreparedBox<WheelShareLine>;
   specs: ReturnType<typeof wheelShareColumnSpecs>;
   table: TableViewState;
   sectorOf: SectorOf;
+  chart: OpenChart;
+  boxId: string;
 }) {
   return (
     <FilteredTableBox
@@ -190,19 +234,38 @@ function SharesBox({
       table={table}
       emptyKey="positions.noResults"
       rowKey={(line) => `${line.ticker}|${line.currency}`}
-      renderRow={(line) => <WheelShareRow line={line} sector={sectorOf(line.ticker)} />}
+      renderRow={(line) => {
+        const key = `${boxId}|${line.ticker}|${line.currency}`;
+        return (
+          <Fragment>
+            <WheelShareRow line={line} sector={sectorOf(line.ticker)} onClick={() => chart.toggle(key)} expanded={chart.isOpen(key)} />
+            {chart.isOpen(key) && <PositionChartRow ticker={line.ticker} strategies={WHEEL_SCOPE} columnCount={WHEEL_SHARE_COLUMNS.length} />}
+          </Fragment>
+        );
+      }}
     />
   );
 }
 
-function WheelShareRow({ line, sector }: { line: WheelShareLine; sector: string | null }) {
+function WheelShareRow({
+  line,
+  sector,
+  onClick,
+  expanded = false,
+}: {
+  line: WheelShareLine;
+  sector: string | null;
+  /** The line whose chart is open: kept highlighted while its row hangs below it. */
+  onClick?: () => void;
+  expanded?: boolean;
+}) {
   const { t } = useTranslation();
   const pnl = line.unrealizedPnl;
   const callPrice = formatPrice(line.averageCallStrike);
   // The same badge as the Positions page gives a long stock position, on the Wheel's own shares.
   const covered = usedBadge(line.coveredShares, line.quantity);
   return (
-    <TableRow>
+    <TableRow onClick={onClick} data-state={expanded ? "selected" : undefined} className={cn(onClick && "cursor-pointer")}>
       <TableCell className="font-medium">{line.ticker}</TableCell>
       <TableCell>{sector && <Badge variant="outline">{sector}</Badge>}</TableCell>
       <TableCell className={NUMERIC}>{line.quantity}</TableCell>

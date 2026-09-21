@@ -1450,12 +1450,12 @@ Et dans `apps/web/src/components/PositionSuggestionsCard.test.tsx` (à créer si
   });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `cd apps/web && npx vitest run src/pages/StrategyPositionsChart.test.tsx src/components/PositionSuggestionsCard.test.tsx`
 Expected: FAIL — aucune ligne de graphe n'apparaît.
 
-- [ ] **Step 3: Écrire `useOpenChart`**
+- [x] **Step 3: Écrire `useOpenChart`**
 
 ```ts
 /**
@@ -1481,7 +1481,7 @@ export function useOpenChart(): OpenChart {
 
 `PositionsPage.tsx` remplace son `useState` local par `useOpenChart()` et passe `chart={chart}` à chaque `PositionGroupCard` ; `PositionGroupCard` prend `chart: OpenChart` et `boxId: string` au lieu de `openKey`/`onToggle`, et compose sa clé `` `${boxId}|${position.description}` ``.
 
-- [ ] **Step 4: Brancher les deux encarts des pages de stratégie**
+- [x] **Step 4: Brancher les deux encarts des pages de stratégie**
 
 Dans `apps/web/src/pages/StrategyPositionsPage.tsx`, la page appelle `useOpenChart()` une fois et le passe à `LinesBox` et `SharesBox`. Dans `LinesBox`, le `renderRow` devient :
 
@@ -1501,7 +1501,7 @@ Dans `apps/web/src/pages/StrategyPositionsPage.tsx`, la page appelle `useOpenCha
 
 Dans `SharesBox`, la même chose avec `line.ticker`, `strategies={["wheel"]}` et `WHEEL_SHARE_COLUMNS.length`, en passant `onClick` et `expanded` à `WheelShareRow`, qui les accepte comme `PositionRow` (mêmes deux props, même `data-state`).
 
-- [ ] **Step 5: Brancher la carte Suggestion de position**
+- [x] **Step 5: Brancher la carte Suggestion de position**
 
 `apps/web/src/components/PositionSuggestionsCard.tsx` a sa table à lui : l'injection y est écrite à la main, dans le `map` des lignes.
 
@@ -1523,12 +1523,12 @@ Dans `SharesBox`, la même chose avec `line.ticker`, `strategies={["wheel"]}` et
 
 avec `const chart = useOpenChart();` dans le composant.
 
-- [ ] **Step 6: Lancer les tests pour les voir passer**
+- [x] **Step 6: Lancer les tests pour les voir passer**
 
 Run: `cd apps/web && npx vitest run src/pages/PositionsChart.test.tsx src/pages/StrategyPositionsChart.test.tsx src/components/PositionSuggestionsCard.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A apps/web/src

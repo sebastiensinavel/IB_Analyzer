@@ -3,6 +3,7 @@ import type { AnalyzedPosition } from "@ib/coverage";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { PositionRow } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
+import type { OpenChart } from "@/hooks/useOpenChart";
 import type { TableViewState } from "@/hooks/useTableView";
 import { formatContract } from "@/lib/format";
 import { POSITION_COLUMNS } from "@/lib/positionColumns";
@@ -21,9 +22,10 @@ export interface PositionGroupCardProps {
   table: TableViewState;
   specs: readonly ColumnSpec<AnalyzedPosition>[];
   sectorOf: (symbol: string) => string | null;
-  /** Prototype (graphes) : the one line of the whole page whose chart is open, if it is in this group. */
-  openKey: string | null;
-  onToggle: (key: string) => void;
+  /** The one chart of the whole page: shared so opening one card's line closes another's. */
+  chart: OpenChart;
+  /** This card's own identifier, prefixing its rows' keys: two cards can hold the same contract. */
+  boxId: string;
 }
 
 /** One group of the Positions page: the shared twelve columns over a whole IB position. */
@@ -34,8 +36,8 @@ export function PositionGroupCard({
   table,
   specs,
   sectorOf,
-  openKey,
-  onToggle,
+  chart,
+  boxId,
 }: PositionGroupCardProps) {
   return (
     <FilteredTableBox
@@ -49,31 +51,34 @@ export function PositionGroupCard({
       table={table}
       emptyKey="positions.noResults"
       rowKey={(position) => position.description}
-      renderRow={(position) => (
-        <Fragment>
-        <PositionRow
-          onClick={() => onToggle(position.description)}
-          expanded={openKey === position.description}
-          values={{
-            contract: formatContract(position),
-            label: position.label,
-            sector: sectorOf(position.symbol),
-            marketValue: position.marketValue,
-            quantity: position.quantity,
-            avgPrice: position.avgPrice,
-            lastPrice: position.lastPrice,
-            dayChange: position.dayChange,
-            dailyPnl: position.dailyPnl,
-            unrealizedPnl: position.unrealizedPnl,
-            decision: position.decision,
-            coverage: coverageBadges(position),
-          }}
-        />
-        {openKey === position.description && (
-          <PositionChartRow ticker={position.symbol} strategies={ALL_STRATEGIES} columnCount={POSITION_COLUMNS.length} />
-        )}
-        </Fragment>
-      )}
+      renderRow={(position) => {
+        const key = `${boxId}|${position.description}`;
+        return (
+          <Fragment>
+            <PositionRow
+              onClick={() => chart.toggle(key)}
+              expanded={chart.isOpen(key)}
+              values={{
+                contract: formatContract(position),
+                label: position.label,
+                sector: sectorOf(position.symbol),
+                marketValue: position.marketValue,
+                quantity: position.quantity,
+                avgPrice: position.avgPrice,
+                lastPrice: position.lastPrice,
+                dayChange: position.dayChange,
+                dailyPnl: position.dailyPnl,
+                unrealizedPnl: position.unrealizedPnl,
+                decision: position.decision,
+                coverage: coverageBadges(position),
+              }}
+            />
+            {chart.isOpen(key) && (
+              <PositionChartRow ticker={position.symbol} strategies={ALL_STRATEGIES} columnCount={POSITION_COLUMNS.length} />
+            )}
+          </Fragment>
+        );
+      }}
     />
   );
 }

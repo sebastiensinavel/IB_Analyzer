@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 import { DETAIL_GROUPS, groupedPositions, type AnalyzedPosition, type DetailGroupId } from "@ib/coverage";
@@ -11,6 +11,7 @@ import { PositionGroupCard } from "@/components/PositionGroupCard";
 import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountRiskReport } from "@/db/AccountDataProvider";
 import { useCashPoints, useLedger } from "@/db/hooks";
+import { useOpenChart } from "@/hooks/useOpenChart";
 import { usePositionGroupViews } from "@/hooks/usePositionGroupViews";
 import { usePageSearch } from "@/hooks/useTableView";
 import { BALANCE_CURRENCIES } from "@/lib/currencies";
@@ -31,9 +32,8 @@ export function PositionsPage() {
     (label: string | null) => DETAIL_GROUPS.forEach((group) => views[group.id].setCriterion("position", label)),
     [views],
   );
-  // Prototype (graphes) : one chart at a time for the whole page, whichever group holds the line.
-  const [openChart, setOpenChart] = useState<string | null>(null);
-  const toggleChart = useCallback((key: string) => setOpenChart((current) => (current === key ? null : key)), []);
+  // One chart at a time for the whole page, whichever group holds the line.
+  const chart = useOpenChart();
   const ledger = useLedger(accountId);
   const points = useCashPoints(accountId);
   // The cash comes from the ledger, not the snapshot: shown with or without positions.
@@ -104,8 +104,8 @@ export function PositionsPage() {
           table={views[box.id as DetailGroupId]}
           specs={specs}
           sectorOf={sectorOf}
-          openKey={openChart}
-          onToggle={toggleChart}
+          chart={chart}
+          boxId={box.id}
         />
       ))}
 
