@@ -579,6 +579,19 @@
   "theme": {
     "toggle": "Toggle theme"
   },
+  "charts": {
+    "levels": {
+      "shares": "Long",
+      "shortPut": "Put",
+      "shortCall": "Call",
+      "leapsBuy": "LEAPS"
+    },
+    "noAgent": "This chart needs the local agent",
+    "noAgentLink": "How to install it",
+    "twsDown": "TWS is not answering on port {{port}}",
+    "noBars": "Interactive Brokers returns no history for {{ticker}}",
+    "loading": "Loading the chart…"
+  },
   "tableFilter": {
     "panel": "Column {{column}} options",
     "sortAsc": "Ascending",

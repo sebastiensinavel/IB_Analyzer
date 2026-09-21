@@ -558,12 +558,12 @@ describe("chartLevels", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `cd apps/web && npx vitest run src/lib/chartLevels.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 3: Écrire `chartLevels.ts`**
+- [x] **Step 3: Écrire `chartLevels.ts`**
 
 ```ts
 /**
@@ -612,7 +612,7 @@ export function levelLabel(level: ChartLevel, price: number, kindWord: string, l
 }
 ```
 
-- [ ] **Step 4: Ajouter les mots dans les deux i18n**
+- [x] **Step 4: Ajouter les mots dans les deux i18n**
 
 Dans `apps/web/src/i18n/fr.json`, à la racine de l'objet, un bloc `charts` (ou le compléter s'il existe) :
 
@@ -650,12 +650,12 @@ Le même bloc dans `apps/web/src/i18n/en.json` :
   },
 ```
 
-- [ ] **Step 5: Lancer les tests pour les voir passer**
+- [x] **Step 5: Lancer les tests pour les voir passer**
 
 Run: `cd apps/web && npx vitest run src/lib/chartLevels.test.ts`
 Expected: PASS, 6 tests.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/web/src/lib/chartLevels.ts apps/web/src/lib/chartLevels.test.ts apps/web/src/i18n/fr.json apps/web/src/i18n/en.json
