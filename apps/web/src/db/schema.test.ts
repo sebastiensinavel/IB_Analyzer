@@ -7,6 +7,15 @@ import type { ContractRecord } from "./contracts";
 // before `.open()` is even called — no IndexedDB access needed. Reading it here, rather than
 // hardcoding the current latest version number in every migration test below, keeps those
 // tests from going stale (and misleadingly red) the day a later sub-project adds a version.
+//
+// This constant, and every `expect(upgraded.verno).toBe(LATEST_VERSION)` below, is
+// ceremonial: `verno` is set by Dexie's constructor from the `.version()` calls the source
+// declares, synchronously, before any `.open()` — it states what the code declares, never
+// what a migration did. It would read `LATEST_VERSION` even if `.upgrade()` had run a no-op,
+// thrown away every row, or never run at all. What actually proves a migration worked is the
+// content assertions that follow each of these checks, plus the fact that `.open()` above
+// did not reject. Do not "strengthen" this line thinking it guards a migration, and do not
+// copy it elsewhere as if it were evidence of one.
 const LATEST_VERSION = new AppDatabase(`schema-test-probe-${crypto.randomUUID()}`).verno;
 
 /**
