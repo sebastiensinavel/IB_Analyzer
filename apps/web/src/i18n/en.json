@@ -513,6 +513,7 @@
     "backupDelete": "Delete from server",
     "backupLast": "Last deposit on {{date}} ({{size}}).",
     "backupNever": "No deposit yet.",
+    "backupLastError": "The last automatic deposit failed: {{reason}}",
     "backupRecoveryHint": "Write down this recovery code: it will not be shown again. Without it, the backup is unreadable, even for us.",
     "backupRecoveryPrompt": "Recovery code",
     "backupRestoreConfirm": "Restoring replaces every piece of data in this browser with the backup from {{date}}. Continue?",

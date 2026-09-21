@@ -513,6 +513,7 @@
     "backupDelete": "Supprimer du serveur",
     "backupLast": "Dernier dépôt le {{date}} ({{size}}).",
     "backupNever": "Aucun dépôt pour l'instant.",
+    "backupLastError": "Le dernier dépôt automatique a échoué : {{reason}}",
     "backupRecoveryHint": "Notez ce code de récupération : il ne s'affichera plus. Sans lui, la sauvegarde est illisible, y compris pour nous.",
     "backupRecoveryPrompt": "Code de récupération",
     "backupRestoreConfirm": "Restaurer remplace toutes les données de ce navigateur par la sauvegarde du {{date}}. Continuer ?",

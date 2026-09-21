@@ -235,6 +235,15 @@ export function BackupCard() {
                 })}
           </p>
         )}
+        {/* An automatic deposit fires from a timer with nobody watching it: its failure has to
+            be told here, or the line above would keep naming an old deposit as if it were the
+            current one. Kept out of the `error` alert below, which belongs to the button the
+            user has just pressed; this one outlives the render that produced it. */}
+        {enabled && state?.lastBackupError != null && (
+          <p className="text-sm text-destructive">
+            {t("settings.backupLastError", { reason: failureMessage(state.lastBackupError) })}
+          </p>
+        )}
         {!authenticated && <p className="text-xs text-muted-foreground">{t("settings.backupSignedOutHint")}</p>}
 
         <div className="flex flex-wrap items-center gap-2">

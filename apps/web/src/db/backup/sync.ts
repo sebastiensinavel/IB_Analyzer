@@ -2,7 +2,7 @@ import { getBackup, putBackup, type BackupResult } from "@/api/backup";
 import type { AppDatabase } from "../schema";
 import { BackupKeyError, decodePayload, decryptBlob, encodePayload, encryptBlob, gunzip, gzip } from "./crypto";
 import { buildPayload, restorePayload } from "./payload";
-import { readBackupState, recordBackup } from "./state";
+import { readBackupState, recordBackup, recordBackupFailure } from "./state";
 import { suppressBackupTrigger } from "./trigger";
 
 /**
@@ -23,8 +23,12 @@ export async function pushBackup(
     const blob = await encryptBlob(state.key, await gzip(encodePayload(await buildPayload(db))));
     const result = await putBackup(blob);
     if (result.ok) await recordBackup(db, result.value.updatedAt, result.value.bytes);
+    else await recordBackupFailure(db, result.kind);
     return result;
   } catch {
+    // The pipeline itself broke (IndexedDB, gzip, WebCrypto). Writing that down must not throw
+    // in turn, or the silence this guard exists to break would simply come back one level up.
+    await recordBackupFailure(db, "failed").catch(() => undefined);
     return { ok: false, kind: "failed" };
   }
 }

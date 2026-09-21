@@ -48,6 +48,35 @@ describe("pushBackup", () => {
     await expect(pushBackup(db)).resolves.toEqual({ ok: false, kind: "failed" });
     expect(fetchSpy).not.toHaveBeenCalled();
   });
+
+  // An automatic deposit fires from a timer with nobody watching. Before this, a failure was
+  // thrown away by `BackupSync`'s `void pushBackup(db)` and nothing was written anywhere: a
+  // deposit failing for weeks left the card showing the last date that did work, and said
+  // nothing. The failure is now part of the row, and a deposit that lands clears it.
+  it("retient l'échec d'un dépôt, et l'efface au dépôt suivant qui réussit", async () => {
+    await enableBackup(db);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 413 }));
+
+    expect(await pushBackup(db)).toEqual({ ok: false, kind: "too-large" });
+    expect(await readBackupState(db)).toMatchObject({ lastBackupError: "too-large", lastBackupAt: null });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ present: true, updatedAt: "2026-09-21T11:00:00Z", bytes: 12 }), { status: 200 }),
+    );
+    await pushBackup(db);
+
+    expect(await readBackupState(db)).toMatchObject({ lastBackupError: null, lastBackupAt: "2026-09-21T11:00:00Z" });
+  });
+
+  it("retient aussi l'échec quand c'est son propre pipeline qui casse", async () => {
+    await enableBackup(db);
+    const state = await readBackupState(db);
+    await db.backup.put({ ...state!, key: new Uint8Array(4) });
+
+    await pushBackup(db);
+
+    expect(await readBackupState(db)).toMatchObject({ lastBackupError: "failed" });
+  });
 });
 
 describe("pullBackup", () => {

@@ -1,3 +1,4 @@
+import type { BackupFailure } from "@/api/backup";
 import type { AppDatabase, BackupStateRecord } from "../schema";
 import { generateBackupKey } from "./crypto";
 
@@ -18,7 +19,14 @@ export async function enableBackup(db: AppDatabase): Promise<BackupStateRecord> 
   const existing = await readBackupState(db);
   const row: BackupStateRecord = existing
     ? { ...existing, enabled: true }
-    : { id: ROW_ID, enabled: true, key: generateBackupKey(), lastBackupAt: null, lastBackupBytes: null };
+    : {
+        id: ROW_ID,
+        enabled: true,
+        key: generateBackupKey(),
+        lastBackupAt: null,
+        lastBackupBytes: null,
+        lastBackupError: null,
+      };
   await db.backup.put(row);
   return row;
 }
@@ -38,14 +46,28 @@ export async function adoptBackupKey(db: AppDatabase, key: Uint8Array): Promise<
     key,
     lastBackupAt: existing?.lastBackupAt ?? null,
     lastBackupBytes: existing?.lastBackupBytes ?? null,
+    lastBackupError: existing?.lastBackupError ?? null,
   };
   await db.backup.put(row);
   return row;
 }
 
+/** A deposit that lands clears the last failure: the card must not warn about a state fixed. */
 export async function recordBackup(db: AppDatabase, at: string, bytes: number): Promise<void> {
   const existing = await readBackupState(db);
-  if (existing) await db.backup.put({ ...existing, lastBackupAt: at, lastBackupBytes: bytes });
+  if (existing) {
+    await db.backup.put({ ...existing, lastBackupAt: at, lastBackupBytes: bytes, lastBackupError: null });
+  }
+}
+
+/**
+ * A deposit that fails leaves the previous date and size standing — they still name a backup
+ * that really is on the server — and records why the newer one never got there. The card shows
+ * both, so "Dernier dépôt le <vieille date>" is never read as "tout va bien" on its own.
+ */
+export async function recordBackupFailure(db: AppDatabase, kind: BackupFailure): Promise<void> {
+  const existing = await readBackupState(db);
+  if (existing) await db.backup.put({ ...existing, lastBackupError: kind });
 }
 
 /**

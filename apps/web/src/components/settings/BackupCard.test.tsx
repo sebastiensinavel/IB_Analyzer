@@ -300,6 +300,26 @@ describe("BackupCard", () => {
     expect(await screen.findByText(i18n.t("settings.backupNever"))).toBeInTheDocument();
   });
 
+  // "Dernier dépôt le <date>" on its own reads as "tout va bien". An automatic deposit that
+  // has been failing since fires from a timer nobody watches, so the card is the only place
+  // that can say so — and it must, beside the date rather than instead of it.
+  it("dit qu'un dépôt a échoué, sans effacer la date du dernier qui a réussi", async () => {
+    await enableBackup(db);
+    await recordBackup(db, "2026-09-21T10:00:00.000Z", 4096);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 413 }));
+    await pushBackup(db);
+    renderCard();
+
+    expect(
+      await screen.findByText(i18n.t("settings.backupLastError", { reason: i18n.t("settings.backupTooLarge") })),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        i18n.t("settings.backupLast", { date: formatDateTime("2026-09-21T10:00:00.000Z"), size: formatBytes(4096) }),
+      ),
+    ).toBeInTheDocument();
+  });
+
   // Of the card's four network calls, this was the only one whose failure showed nothing:
   // the date silently fell back to "—" and the confirmation carried on as if nothing had
   // gone wrong. A failed status probe must report like every other failure here.

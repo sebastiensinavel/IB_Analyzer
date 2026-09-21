@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
 import type { DroppedCount, Position, Transaction, TransactionKind, TransactionSource } from "@ib/ledger";
 import { toReportTime, type ParseIssue } from "@ib/ib-parsers";
+import type { BackupFailure } from "@/api/backup";
 import type { FlexRelay, FlexRelayMode } from "@/flex/relay";
 import type { ContractRecord } from "./contracts";
 
@@ -125,6 +126,14 @@ export interface BackupStateRecord {
   key: Uint8Array;
   lastBackupAt: string | null;
   lastBackupBytes: number | null;
+  /**
+   * Why the last deposit failed, `null` once one succeeds. Automatic deposits fire from a
+   * timer with nobody watching: without this, a deposit failing for weeks — quota, expired
+   * session, server down — would leave the card showing an old "Dernier dépôt" date and say
+   * nothing, the one thing a feature whose whole point is trust must never do. Same rule as
+   * `lastFlexSyncStatus` and `lastAgentSyncStatus`.
+   */
+  lastBackupError: BackupFailure | null;
 }
 
 export class AppDatabase extends Dexie {
