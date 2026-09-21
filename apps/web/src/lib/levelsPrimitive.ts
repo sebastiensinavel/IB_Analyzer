@@ -54,6 +54,9 @@ export function timeExtent(bars: readonly PriceBar[], levels: readonly ChartLeve
     if (weekday === 0 || weekday === 6) continue;
     days.push(day.toISOString().slice(0, 10));
   }
+  // La date la plus lointaine doit toujours avoir une coordonnée, même un week-end : sinon
+  // rien ne peut la placer. Les jours intermédiaires restent des jours ouvrés.
+  if (days[days.length - 1] !== furthest) days.push(furthest);
   return days;
 }
 
@@ -199,14 +202,20 @@ export class LevelsPrimitive {
     return this.drawn.flatMap((drawn) =>
       datesOf(drawn.level)
         .filter(() => drawn.level.kind !== "condor")
-        .map((day) => ({
-          coordinate: () => (this.chart ? ((this.chart.timeScale().timeToCoordinate(day as Time) as number | null) ?? -100) : -100),
-          text: () => day.slice(5),
-          textColor: () => "#ffffff",
-          backColor: () => drawn.color,
-          visible: () => true,
-          tickVisible: () => true,
-        })),
+        .map((day) => {
+          const at = () => (this.chart ? (this.chart.timeScale().timeToCoordinate(day as Time) as number | null) : null);
+          return {
+            coordinate: () => at() ?? 0,
+            // Une date hors de la fenêtre chargée n'a pas de coordonnée : l'étiquette ne
+            // s'affiche pas du tout. `coordinate` n'étant pas nullable, la bibliothèque
+            // replacerait sinon l'étiquette au bord, et une date absente s'afficherait.
+            visible: () => at() !== null,
+            text: () => day.slice(5),
+            textColor: () => "#ffffff",
+            backColor: () => drawn.color,
+            tickVisible: () => true,
+          };
+        }),
     );
   }
 }

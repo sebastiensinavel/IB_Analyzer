@@ -35,4 +35,14 @@ describe("timeExtent", () => {
 
     expect(timeExtent([], levels)).toEqual([]);
   });
+
+  it("place la date la plus lointaine même si elle tombe un week-end", () => {
+    const levels: ChartLevel[] = [
+      { kind: "shortPut", price: 17.5, quantity: -4, expiries: ["2026-09-26"] },
+    ];
+
+    // 2026-09-26 est un samedi : les jours intermédiaires restent ouvrés, mais la date
+    // demandée doit exister, sinon rien ne peut la placer.
+    expect(timeExtent([bar("2026-09-22")], levels)).toEqual(["2026-09-23", "2026-09-24", "2026-09-25", "2026-09-26"]);
+  });
 });
