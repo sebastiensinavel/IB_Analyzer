@@ -53,9 +53,9 @@ describe("backup client", () => {
       });
     });
 
-    // Ronde de correction 1 (critique) : un intermédiaire — proxy, portail captif, page
-    // d'erreur d'infrastructure — peut répondre 200 avec un corps qui n'est pas du JSON.
-    // `answer.json()` rejette alors ; cette exception ne doit jamais sortir de `putBackup`.
+    // An intermediary — a proxy, a captive portal, an infrastructure error page — can answer
+    // 200 with a body that isn't JSON. `answer.json()` then rejects; that exception must never
+    // escape `putBackup`.
     it("un corps illisible sur un 200 ne sort jamais en exception", async () => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(
         new Response("<!doctype html><html></html>", { status: 200, headers: { "content-type": "text/html" } }),
@@ -63,10 +63,9 @@ describe("backup client", () => {
       await expect(putBackup(new Uint8Array([1]))).resolves.toEqual({ ok: false, kind: "failed" });
     });
 
-    // Ronde de correction 1 (important) : un 200 sans les champs attendus n'est pas une
-    // confirmation à demi — `updatedAt`/`bytes` ne doivent jamais être fabriqués depuis le
-    // blob local (une date vide, une taille devinée). Django rend toujours ces champs
-    // aujourd'hui ; le code doit dire la vérité si cela changeait.
+    // A 200 without the expected fields is not a half-confirmation — `updatedAt`/`bytes` must
+    // never be fabricated from the local blob (an empty date, a guessed size). Django always
+    // renders these fields today; the code must tell the truth if that ever changed.
     it("ne fabrique jamais updatedAt ni bytes quand le corps ne les porte pas", async () => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(
         new Response(JSON.stringify({ present: true }), { status: 200 }),
@@ -88,11 +87,10 @@ describe("backup client", () => {
       expect(await getBackup()).toEqual({ ok: false, kind: "missing" });
     });
 
-    // Ronde de correction 1 (critique) : une connexion coupée pendant le téléchargement d'une
-    // sauvegarde de plusieurs mégaoctets fait rejeter `arrayBuffer()`. Cette exception ne doit
-    // jamais sortir de `getBackup` — le serveur est optionnel, son indisponibilité sous toutes
-    // ses formes (corps illisible compris) est un état que le client rend, jamais une exception
-    // qui traverse l'application.
+    // A connection dropped mid-download of a multi-megabyte backup makes `arrayBuffer()`
+    // reject. That exception must never escape `getBackup` — the server is optional, and its
+    // unavailability in any form (an unreadable body included) is a state the client renders,
+    // never an exception that crosses the application.
     it("un flux binaire interrompu ne sort jamais en exception", async () => {
       const brokenResponse = {
         ok: true,
@@ -153,7 +151,7 @@ describe("backup client", () => {
       expect(await fetchBackupStatus()).toEqual({ ok: false, kind: "csrf" });
     });
 
-    // Ronde de correction 1 (critique) : même garde qu'ailleurs, sur la route de statut.
+    // Same guard as the other routes, applied here to the status route.
     it("un corps illisible sur un 200 ne sort jamais en exception", async () => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(
         new Response("<!doctype html><html></html>", { status: 200, headers: { "content-type": "text/html" } }),

@@ -108,7 +108,9 @@ describe("invariants", () => {
   it("BACKUP_TABLES exclut les tables que la sauvegarde ne doit jamais porter", async () => {
     // Read all table names from the actual database schema
     const allTableNames = new Set(db.tables.map((t) => t.name));
-    const backupTableNames = new Set(BACKUP_TABLES);
+    // Widened to `string`: `db.tables[].name` is a plain string, and this set is compared
+    // against it below, not just against BACKUP_TABLES's own literal members.
+    const backupTableNames = new Set<string>(BACKUP_TABLES);
     const neverBackedUpNames = new Set(NEVER_BACKED_UP);
 
     // Every existing table must either be in BACKUP_TABLES or explicitly in NEVER_BACKED_UP.

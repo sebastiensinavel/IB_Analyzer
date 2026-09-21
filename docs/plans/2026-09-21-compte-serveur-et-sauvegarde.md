@@ -1932,7 +1932,7 @@ git commit -m "La carte Sauvegarde : serveur chiffré, et fichier local sans com
 - Modify: `CLAUDE.md`, `docs/points-reportes.md`, `apps/api/README.md`
 - Modify: `docs/specs/2026-09-21-compte-serveur-et-sauvegarde-design.md` (statut)
 
-- [ ] **Step 1: Mettre à jour `CLAUDE.md`**
+- [x] **Step 1: Mettre à jour `CLAUDE.md`**
 
 Dans le registre des sous-projets : la ligne 6 devient
 `| 6 | Sauvegarde chiffrée et page Paramètres | fondu dans le 25 |`, et une ligne 25 est
@@ -1953,7 +1953,7 @@ Dans les règles, remplacer toute mention d'un profil par utilisateur par :
   comptent — `TRIGGER_TABLES`, toutes sauf `snapshots` — jamais les snapshots de l'agent.
 ```
 
-- [ ] **Step 2: Mettre à jour `docs/points-reportes.md`**
+- [x] **Step 2: Mettre à jour `docs/points-reportes.md`**
 
 Barrer le point ouvert et le dater :
 
@@ -1967,17 +1967,17 @@ Barrer le point ouvert et le dater :
 Ajouter une section `## Reporté par le sous-projet 25` avec, au minimum, la ligne
 « et tout ce que la revue de branche aura relevé ».
 
-- [ ] **Step 3: Mettre à jour `apps/api/README.md`**
+- [x] **Step 3: Mettre à jour `apps/api/README.md`**
 
 Le paragraphe qui demande d'exporter `DJANGO_SECRET_KEY` à la main est remplacé : la clé est
 désormais engendrée par checkout dans son dossier git (`config/devkey.py`), et aucune
 manipulation n'est requise en développement.
 
-- [ ] **Step 4: Passer le statut de la spec à « implémenté »**
+- [x] **Step 4: Passer le statut de la spec à « implémenté »**
 
 `Statut : implémenté (2026-09-__).` en tête du fichier de spec.
 
-- [ ] **Step 5: Vérification complète**
+- [x] **Step 5: Vérification complète**
 
 ```bash
 pnpm check

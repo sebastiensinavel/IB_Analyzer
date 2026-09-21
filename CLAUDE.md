@@ -44,6 +44,16 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   --origin`, la page Aide le lit dans `window.location.origin`, jamais dans le code.
 - **Comptes jamais combinés** : chaque vue est scopée `/accounts/:accountId/...`. Les comptes
   vivent en IndexedDB, rien n'est codé en dur.
+- **La base locale appartient au navigateur, jamais à un compte** : une seule base
+  `ib-analyzer` par origine, connecté ou non. Le compte Django n'ouvre que deux portes, le
+  proxy Flex et la sauvegarde chiffrée, et ne touche jamais aux données. Un `DbProvider` qui
+  relirait la session ferait réapparaître le bug du 2026-09-21 : session expirée, serveur
+  éteint ou simplement lent affichaient un portefeuille vide.
+- **La sauvegarde est un blob opaque, opt-in** : `core.Backup` ne stocke que des octets
+  chiffrés par le navigateur (AES-GCM 256, clé en IndexedDB hors du paquet, montrée une fois
+  comme code de récupération), leur taille et leur date, plafonnés à 20 Mo. Le paquet emporte
+  toutes les tables sauf `backup`, `statements` compris. Le dépôt suit les écritures qui
+  comptent — `TRIGGER_TABLES`, toutes sauf `snapshots` — jamais les snapshots de l'agent.
 - **Propriété de plage, jamais comparaison de contenu** (spec §6.2) : Flex est propriétaire
   de ses jours réels, le relevé HTML n'écrit qu'avant, l'agent n'écrit qu'après. Deux
   transactions jumelles le même jour sont légitimes. **Cette plage ne descend jamais sous la
@@ -347,7 +357,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 3 | Serveur Django : invitations, 2FA, proxy Flex, déploiement VPS | livré (2026-09-04), sauf la mise en ligne réelle sur le VPS, en attente de l'utilisateur |
 | 4 | Agent local, positions intraday, exécutions du jour | fait (2026-09-06) |
 | 5 | Journaux Wheel, LEAPS, Condors | fait (2026-09-07) |
-| 6 | Sauvegarde chiffrée et page Paramètres | à faire |
+| 6 | Sauvegarde chiffrée et page Paramètres | fondu dans le 25 |
 | 7 | Opérations sur titres et identité de contrat | fait (2026-09-09) |
 | 8 | Le journal Wheel prend les actions qu'il couvre | fait (2026-09-09) |
 | 9 | Application complète avec un seul fichier : positions du relevé, solde calé | fait (2026-09-11) |
@@ -366,6 +376,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 22 | La part nue quitte les pages de stratégie | fait (2026-09-18) |
 | 23 | Valeurs du jour : P&L du jour et variation par position | fait (2026-09-19) |
 | 24 | L'assignation d'après minuit : propriété de plage en jour de marché | fait (2026-09-19) |
+| 25 | Le compte serveur : ce qu'il ouvre, ce qu'il sauvegarde | fait (2026-09-21) |
 
 ## Outillage
 

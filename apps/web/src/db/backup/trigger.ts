@@ -33,8 +33,13 @@ export function installBackupTrigger(db: AppDatabase, onChange: () => void): () 
   const unsubscribes: (() => void)[] = [];
   for (const name of TRIGGER_TABLES) {
     const table = db.table(name);
+    // Dexie's `hook` is overloaded per event name with a distinct subscriber signature for
+    // each; a union-typed `event` cannot select one, so each event is registered by its own
+    // literal call rather than looped over.
+    table.hook("creating", fire);
+    table.hook("updating", fire);
+    table.hook("deleting", fire);
     for (const event of ["creating", "updating", "deleting"] as const) {
-      table.hook(event, fire);
       unsubscribes.push(() => table.hook(event).unsubscribe(fire));
     }
   }

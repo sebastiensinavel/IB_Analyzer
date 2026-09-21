@@ -28,9 +28,9 @@ export function BackupCard() {
   const enabled = state?.enabled === true;
 
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
-  // Always a failure: no code path ever set a success message, so there was nothing left to
-  // distinguish with `{ ok }` (correction round 1, point 3). Success shows in the state line
-  // itself (the new "Dernier dépôt", the code disappearing, …), never here.
+  // Always a failure: no code path ever sets a success message, so there is nothing left to
+  // distinguish with `{ ok }`. Success shows in the state line itself (the new "Dernier
+  // dépôt", the code disappearing, …), never here.
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -98,11 +98,11 @@ export function BackupCard() {
    * has none of. On the usual device the key is already on hand and nothing is prompted; on
    * a new one, once only, and kept from then on (spec §7).
    *
-   * A failed status probe reports through `failureMessage` and stops there (correction round
-   * 1, point 2): it used to fall back to "—" and carry on to the confirmation in silence, the
-   * only one of the card's four network calls that could fail without telling the user
-   * anything. Continuing anyway would also be pointless — `pullBackup` needs the same route
-   * `fetchBackupStatus` just failed on, and would fail the same way.
+   * A failed status probe reports through `failureMessage` and stops there: falling back to
+   * "—" and carrying on to the confirmation in silence would make this the only one of the
+   * card's four network calls that could fail without telling the user anything. Continuing
+   * anyway would also be pointless — `pullBackup` needs the same route `fetchBackupStatus`
+   * just failed on, and would fail the same way.
    */
   async function handleRestore() {
     setBusy(true);
@@ -139,7 +139,7 @@ export function BackupCard() {
    * statements and a resync; a confirmation names the date of what replaces it (spec §7).
    * Deleting destroys the server's only copy — no version, no trash — so it gets the same
    * friction, without a date: there is nothing on this device precise enough to name, only
-   * the fact that a deposit exists (correction round 1, point 1).
+   * the fact that a deposit exists.
    */
   async function handleDelete() {
     setBusy(true);

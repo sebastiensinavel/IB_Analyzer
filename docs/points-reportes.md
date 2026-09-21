@@ -257,10 +257,10 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ## Reporté par les relevés conservés
 
-- **La sauvegarde chiffrée du sous-projet 6 doit décider du sort de `db.statements`.** Un
-  relevé d'un an pèse quelques centaines de kilo-octets ; les inclure rend la sauvegarde
-  autoportante (l'historique se reconstruit du fichier, pas seulement des lignes déjà
-  lues), les exclure la garde légère. Rien n'est tranché.
+- ~~**La sauvegarde chiffrée du sous-projet 6 doit décider du sort de `db.statements`.**~~ —
+  **fermé par le sous-projet 25** (2026-09-21) : les relevés sont dans le paquet, qui est
+  compressé en gzip avant chiffrement. Une sauvegarde sans eux rendrait une base non
+  reconstructible.
 - **Les relevés importés avant la version 4 du schéma ne sont pas récupérables** : le store
   démarre vide sur une base existante et se remplit au prochain import. Leurs lignes vivent
   donc dans le ledger sans fichier pour les réécrire ; une reconstruction les perdrait, ce
@@ -967,6 +967,35 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   fichier) : elle reste vraie, mais sa portée s'est étendue par ce sous-projet — une réponse qui
   s'arrête un vendredi revendique désormais aussi la nuit et le week-end qui suivent, pas
   seulement la clôture de la veille.
+
+---
+
+## Reporté par le sous-projet 25
+
+- **Les sept assertions `expect(upgraded.verno).toBe(LATEST_VERSION)` de
+  `apps/web/src/db/schema.test.ts` sont cérémonielles.** Démontré pendant ce sous-projet :
+  `verno` est posé par le constructeur de Dexie, avant tout `.open()`, donc ces lignes
+  constatent ce que le code déclare et jamais ce qu'une migration fait. Vérifié par
+  l'expérience : en supprimant une déclaration de version, ce fichier reste entièrement vert.
+  Un commentaire le dit déjà sur place ; elles ont été conservées plutôt que supprimées pour
+  ne pas retoucher une deuxième fois un fichier hors périmètre.
+- **`apps/web/src/api/allauth.ts` porte un ordre d'étalement fautif** :
+  `{ credentials, headers: {...}, ...init }` écrase l'objet d'en-têtes fusionné si un
+  appelant passe ses propres en-têtes. Latent aujourd'hui — aucun appelant ne le fait — mais
+  c'est exactement le défaut qui faisait disparaître le jeton CSRF dans `api/backup.ts`,
+  corrigé là-bas.
+- **Le compteur de sourdine du déclencheur est global au module**, pas lié à une instance de
+  base (`apps/web/src/db/backup/trigger.ts`). Sans effet aujourd'hui, un seul singleton
+  existant. Conséquence résiduelle acceptée : si une passe d'agent recouvrait les écritures
+  d'un import lancé au même moment, le dépôt de cet import serait sauté — fenêtre resserrée à
+  ses seules écritures, rattrapée par le déclencheur suivant ou le bouton « Sauvegarder
+  maintenant ».
+- **`handleEnable` et `handleDisable` n'ont pas de test dédié pour leur `catch`**,
+  contrairement à `handleExport`.
+- **La suite Playwright (`apps/web/e2e/`) n'a pas été exécutée** de tout le sous-projet : elle
+  demande un Django et un PostgreSQL réellement démarrés, et ne tourne ni dans `pnpm check` ni
+  dans `pnpm test:api`. Les commentaires d'`auth.spec.ts` ont été corrigés par lecture seule.
+- Et tout ce que la revue de branche aura relevé.
 
 ---
 

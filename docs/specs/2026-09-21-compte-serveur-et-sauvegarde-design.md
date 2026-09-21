@@ -1,6 +1,6 @@
 # Sous-projet 25 — Le compte serveur : ce qu'il ouvre, ce qu'il sauvegarde
 
-Statut : conçu (2026-09-21), non implémenté.
+Statut : implémenté (2026-09-21).
 
 Le 2026-09-21, l'utilisateur signale que l'application revient parfois d'elle-même sur la page
 de sélection de compte, avec une liste vide, alors que deux comptes existent ; se reconnecter

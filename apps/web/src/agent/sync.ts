@@ -34,20 +34,19 @@ export async function syncAgent(deps: AgentSyncDeps, account: AccountRecord): Pr
   const port = account.twsPort;
   if (port === undefined) return { status: "skipped", code: "no-port" };
 
-  // A pass never triggers a deposit, whichever tables it ends up touching (correction round 1
-  // on sub-project 25's task 10): the agent polls every five minutes, writing `accounts` on
-  // every attempt and `contracts` on every one that sees an identity — both are in
-  // TRIGGER_TABLES, so a table-scoped trigger alone would push the whole database every five
-  // minutes for the length of the session, the exact loop this rule exists to stop. Its
-  // transactions are not lost for that: they still leave at the next triggered deposit — an
-  // import, a Flex sync, a sector edit, or the manual button. The trigger decides *when*, never
-  // *what*.
+  // A pass never triggers a deposit, whichever tables it ends up touching: the agent polls
+  // every five minutes, writing `accounts` on every attempt and `contracts` on every one that
+  // sees an identity — both are in TRIGGER_TABLES, so a table-scoped trigger alone would push
+  // the whole database every five minutes for the length of the session, the exact loop this
+  // rule exists to stop. Its transactions are not lost for that: they still leave at the next
+  // triggered deposit — an import, a Flex sync, a sector edit, or the manual button. The
+  // trigger decides *when*, never *what*.
   //
-  // Only the writes are muted (correction round 1 on task 11): `deps.fetchSnapshot(port)` is a
-  // round trip to the local agent, itself possibly waiting on TWS — seconds, not microtasks —
-  // and `suppressBackupTrigger`'s counter is module-level, not scoped to this account. Muting
-  // across that wait would also swallow an unrelated deposit — another account's Flex sync,
-  // say — landing in the same window. Every write below, success or failure, stays wrapped.
+  // Only the writes are muted: `deps.fetchSnapshot(port)` is a round trip to the local agent,
+  // itself possibly waiting on TWS — seconds, not microtasks — and `suppressBackupTrigger`'s
+  // counter is module-level, not scoped to this account. Muting across that wait would also
+  // swallow an unrelated deposit — another account's Flex sync, say — landing in the same
+  // window. Every write below, success or failure, stays wrapped.
   const fetched = await deps.fetchSnapshot(port);
   if (!fetched.ok) return suppressBackupTrigger(() => fail(deps, account.id, fetched.code));
 

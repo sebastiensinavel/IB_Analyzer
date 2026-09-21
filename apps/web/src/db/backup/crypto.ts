@@ -28,12 +28,16 @@ async function through(bytes: Uint8Array, stream: ReadableWritablePair<Uint8Arra
   return new Uint8Array(await new Response(source).arrayBuffer());
 }
 
+// lib.dom.d.ts types CompressionStream/DecompressionStream's `writable` as
+// WritableStream<BufferSource>, wider than the Uint8Array `pipeThrough` above expects; a
+// Uint8Array is a valid BufferSource at runtime, so this is a type-only mismatch, not a real
+// one, and the cast reflects that rather than papering over an actual chunk mismatch.
 export function gzip(bytes: Uint8Array): Promise<Uint8Array> {
-  return through(bytes, new CompressionStream("gzip"));
+  return through(bytes, new CompressionStream("gzip") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>);
 }
 
 export function gunzip(bytes: Uint8Array): Promise<Uint8Array> {
-  return through(bytes, new DecompressionStream("gzip"));
+  return through(bytes, new DecompressionStream("gzip") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>);
 }
 
 export function encodePayload(payload: BackupPayload): Uint8Array {
@@ -69,7 +73,7 @@ export async function decryptBlob(key: Uint8Array, blob: Uint8Array): Promise<Ui
   if (blob.byteLength <= IV_BYTES) throw new BackupKeyError("Backup blob too short to carry an IV");
   const iv = blob.subarray(0, IV_BYTES);
   const plain = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
+    { name: "AES-GCM", iv: iv as BufferSource },
     await importKey(key),
     blob.subarray(IV_BYTES) as BufferSource,
   );
