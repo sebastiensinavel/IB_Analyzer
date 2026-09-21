@@ -182,8 +182,7 @@ export function BackupCard() {
         return;
       }
       // The blob this browser last recorded a deposit of no longer exists: showing "Dernier
-      // dépôt le …" for it past this point would be showing a date for nothing (correction
-      // round 1, point 1 — the bug the review caught).
+      // dépôt le …" for it past this point would be showing a date for nothing.
       await clearBackupRecord(db);
     } catch {
       setError(t("settings.actionFailed"));

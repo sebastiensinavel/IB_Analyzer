@@ -33,10 +33,9 @@ describe("pushBackup", () => {
     expect(await readBackupState(db)).toMatchObject({ lastBackupAt: "2026-09-21T10:00:00Z" });
   });
 
-  // Correction round 1: BackupSync fires pushBackup from a bare `setTimeout` with no `.catch`
-  // (BackupSync.tsx). Its own pipeline — IndexedDB, gzip, WebCrypto — was unguarded, so a
-  // failure there became an unhandled promise rejection. A deposit that fails is harmless: the
-  // next write retriggers the whole pipeline. It must never throw.
+  // BackupSync runs pushBackup from a bare `setTimeout` with no `.catch`. Its own pipeline
+  // — IndexedDB, gzip, WebCrypto — must never throw: any failure is harmless because the
+  // next write retriggers the whole pipeline anyway.
   it("ne remonte jamais une exception quand son propre pipeline échoue", async () => {
     await enableBackup(db);
     // A key of the wrong length: crypto.subtle.importKey inside encryptBlob throws before any

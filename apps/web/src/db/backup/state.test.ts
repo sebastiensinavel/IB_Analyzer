@@ -39,9 +39,9 @@ describe("recordBackup", () => {
 });
 
 describe("clearBackupRecord", () => {
-  // Correction round 1 (task 11): a server-side deletion left `lastBackupAt`/`lastBackupBytes`
-  // untouched, so the Settings card kept showing "Dernier dépôt le …" for a backup that no
-  // longer exists, until the next deposit happened to overwrite it.
+  // A server-side deletion of the backup should also clear the recorded date and size,
+  // otherwise the Settings card would keep showing "Dernier dépôt le …" for a backup that
+  // no longer exists until the next deposit overwrites it.
   it("efface le dernier dépôt connu, sans désactiver ni changer la clé", async () => {
     const enabled = await enableBackup(db);
     await recordBackup(db, "2026-09-21T10:00:00.000Z", 4096);
