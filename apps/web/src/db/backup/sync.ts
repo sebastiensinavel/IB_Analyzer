@@ -17,10 +17,9 @@ import { suppressBackupTrigger } from "./trigger";
 export async function pushBackup(
   db: AppDatabase,
 ): Promise<BackupResult<{ updatedAt: string; bytes: number }> | null> {
-  const state = await readBackupState(db);
-  if (!state?.enabled) return null;
-
   try {
+    const state = await readBackupState(db);
+    if (!state?.enabled) return null;
     const blob = await encryptBlob(state.key, await gzip(encodePayload(await buildPayload(db))));
     const result = await putBackup(blob);
     if (result.ok) await recordBackup(db, result.value.updatedAt, result.value.bytes);

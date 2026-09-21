@@ -17,7 +17,7 @@ describe("backupFileName", () => {
 });
 
 describe("exportToBlob", () => {
-  // Le chemin de sauvegarde de qui n'a pas de compte Django : il doit suffire à lui seul.
+  // The backup path for whoever has no Django account: it must be enough on its own.
   it("fait l'aller-retour par un fichier, sans serveur ni compte", async () => {
     const blob = await exportToBlob(db);
     const file = new File([blob], backupFileName(new Date()));
@@ -28,8 +28,8 @@ describe("exportToBlob", () => {
     expect((await other.accounts.toArray()).map((a) => a.id)).toEqual(["beta"]);
   });
 
-  // La propriété la plus précieuse du fichier local : une restauration rend une base
-  // encore reconstructible, HTML de relevé compris, pas seulement ses lignes dérivées.
+  // The local file's most valuable property: a restore hands back a database that is still
+  // reconstructible, statement HTML included, not just its derived rows.
   it("fait l'aller-retour d'un relevé HTML, texte compris", async () => {
     const statementText = "<html>relevé bêta</html>";
     await db.statements.put({
