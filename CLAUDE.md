@@ -381,6 +381,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 23 | Valeurs du jour : P&L du jour et variation par position | fait (2026-09-19) |
 | 24 | L'assignation d'après minuit : propriété de plage en jour de marché | fait (2026-09-19) |
 | 25 | Le compte serveur : ce qu'il ouvre, ce qu'il sauvegarde | fait (2026-09-21) |
+| 26 | La sauvegarde sans rien à conserver : clé enveloppée par un mot de passe | à ouvrir (`docs/points-reportes.md`) |
 
 ## Outillage
 

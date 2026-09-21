@@ -1012,6 +1012,49 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Sous-projet 26 à ouvrir : la sauvegarde sans rien à conserver
+
+Noté le 2026-09-21, à instruire au brainstorming du sous-projet ; rien n'est décidé ici.
+
+**Ce qui coûte aujourd'hui** : la clé AES-GCM 256 est tirée au hasard dans le navigateur,
+vit en IndexedDB et n'est montrée qu'une fois, comme code de récupération. Restaurer sur un
+navigateur neuf exige ce code, donc l'utilisateur a un objet à garder en lieu sûr pour la
+seule fois où il en aura besoin — perdu, la sauvegarde est un blob illisible.
+
+**La question posée** : peut-on remplacer ce code par un mot de passe, éventuellement celui
+du compte Django, sans jamais transmettre ce mot de passe en clair au serveur ?
+
+Pistes à évaluer, dans cet ordre de vraisemblance :
+
+- **Envelopper la clé plutôt que la dériver.** La clé aléatoire reste ce qui chiffre le
+  paquet ; un mot de passe dérive une clé d'enveloppe (Argon2id, ou PBKDF2 si l'on s'en tient
+  à WebCrypto) avec un sel, et seule la clé enveloppée accompagne la sauvegarde. Un
+  changement de mot de passe ne réenveloppe qu'une clé, il ne rechiffre pas 20 Mo, et le
+  navigateur neuf n'a plus qu'un mot de passe à taper. Le serveur détiendrait alors la clé
+  enveloppée à côté du blob : des octets de plus, aucune donnée de portefeuille, mais une
+  ligne supplémentaire de `core.Backup` à peser.
+- **Partager le mot de passe avec Django est la partie dure.** django-allauth reçoit le mot
+  de passe en clair au formulaire de connexion (il n'en stocke qu'un hachage) : le même
+  secret servirait donc à la fois à la connexion — transmis — et à l'enveloppe. Trois sorties
+  à comparer : une phrase de passe de sauvegarde distincte du mot de passe du compte ; un
+  pré-hachage côté navigateur, où Django n'authentifie plus que `KDF(mot de passe, sel)` et
+  la clé d'enveloppe vient d'une dérivation à domaine séparé du même secret ; ou une
+  authentification à divulgation nulle (OPAQUE, SRP), qui ferme la question mais remplace
+  tout le chemin de connexion d'allauth.
+- **Ce qu'il faudra trancher explicitement** : un mot de passe oublié rend la sauvegarde
+  illisible exactement comme un code perdu — le gain n'est pas la récupérabilité mais le
+  confort ; un mot de passe faible expose le blob à une attaque hors ligne là où une clé de
+  256 bits tirée au hasard ne l'exposait pas, d'où le paramétrage du KDF ; et le code de
+  récupération doit probablement survivre en option pour qui ne veut pas de compte serveur,
+  puisque la sauvegarde chiffrée est déjà la seule porte qui exige un compte.
+
+**Invariants que la solution ne doit pas entamer** : le serveur ne voit ni le mot de passe en
+clair ni la clé, le paquet reste un blob opaque, la clé ne quitte le navigateur qu'enveloppée,
+et Paramètres reste atteignable sans compte — c'est le chemin de restauration d'un navigateur
+neuf.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un
