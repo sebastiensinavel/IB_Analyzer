@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useDb } from "@/db/DbProvider";
 import { fetchSnapshot, probeAgent } from "./client";
@@ -47,11 +47,6 @@ export function useAgentPresence(): AgentPresence {
 
 export function useAgentSync(accountId: string) {
   const db = useDb();
-  // Read through a ref: see useFlexAutoSync for why `useDb()` may change under a running hook.
-  const dbRef = useRef(db);
-  useEffect(() => {
-    dbRef.current = db;
-  }, [db]);
   const running = useSyncExternalStore(subscribe, () => runningAccounts.has(accountId));
   const agentPresence = useAgentPresence();
 
@@ -62,14 +57,16 @@ export function useAgentSync(accountId: string) {
     lastRunAt.set(accountId, Date.now());
     notify();
     try {
-      const account = await dbRef.current.accounts.get(accountId);
+      const account = await db.accounts.get(accountId);
       if (!account) return;
-      await syncAgent({ db: dbRef.current, fetchSnapshot, now: () => new Date() }, account);
+      await syncAgent({ db, fetchSnapshot, now: () => new Date() }, account);
     } finally {
       runningAccounts.delete(accountId);
       notify();
     }
-  }, [accountId]);
+    // `db` is the module singleton `useDb()` always returns: listing it here is exhaustive-deps
+    // correctness, not a real dependency — it never changes, so it never re-creates `run`.
+  }, [accountId, db]);
 
   return { presence: agentPresence, state: running ? ("running" as const) : ("idle" as const), run };
 }
