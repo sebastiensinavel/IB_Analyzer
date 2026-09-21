@@ -138,16 +138,12 @@ test("invitation, password, login, 2FA, logout", async ({ page }) => {
   // SettingsPage's own copy, the one this test is actually exercising.
   await page.getByRole("main").getByRole("button", { name: fr.auth.signOut }).click();
 
-  // Not "expect a sign-in link back on this page": db/profile.ts's adoptDefaultProfile
-  // absorbs the anonymous IndexedDB profile into a first-time user's own on login and never
-  // gives it back, so DbProvider's async swap back to the (now empty) anonymous profile on
-  // logout can make AppLayout redirect /settings straight to /accounts — which has no
-  // sign-in/sign-out UI of its own at all — before or after this assertion gets to run. Which
-  // page the SPA happens to land on is a race against that unrelated IndexedDB swap, not
-  // something a test for the auth flow should depend on (constaté: an intermittent failure
-  // here across repeated campaign runs while verifying this very test's reliability). What
-  // this step actually needs to prove — the server session is really gone — doesn't depend on
-  // it: ask the server directly.
+  // Not "expect a sign-in link back on this page": signing out is a server-only action, the
+  // IndexedDB database belongs to the browser and never moves (sub-project 25), so the
+  // "Bout en bout" account created above stays right where it is and AppLayout has no reason
+  // to leave /settings at all. What this step actually needs to prove — the server session is
+  // really gone — doesn't depend on which page the SPA happens to be showing: ask the server
+  // directly.
   const session = await page.request.get("/_allauth/browser/v1/auth/session");
   expect(session.status()).toBe(401);
 });

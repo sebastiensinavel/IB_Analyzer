@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AGENT_URL } from "@/agent/client";
 import { refreshPresence, resetAgentState } from "@/agent/useAgentSync";
 import { SessionProvider } from "@/api/session";
-import { AppDatabase, db, type AccountRecord } from "@/db/schema";
+import { db, type AccountRecord } from "@/db/schema";
 import { FLEX_SYNC_STALE_MS } from "./stale";
 import { resetFlexAutoSyncState, useFlexAutoSync } from "./useFlexAutoSync";
 import { syncAccount } from "./sync";
@@ -15,36 +15,6 @@ vi.mock("./sync", () => ({
     return { status: "ok", report: {} };
   }),
 }));
-
-// A controllable stand-in for `useDb()`'s context value, used by exactly one test below (the
-// one reproducing `DbProvider`'s post-login profile switch — see db/DbProvider.tsx and
-// db/profile.ts). `vi.hoisted` so the plain store is available inside the (hoisted) `vi.mock`
-// factory; every other test calls `testDb.set(db)` via `seed()` so it behaves exactly like the
-// real, provider-less default context for them.
-const testDb = vi.hoisted(() => {
-  let current: unknown = null;
-  const listeners = new Set<() => void>();
-  return {
-    get: () => current,
-    set: (next: unknown) => {
-      current = next;
-      for (const listener of listeners) listener();
-    },
-    subscribe: (listener: () => void) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-  };
-});
-
-vi.mock("@/db/DbProvider", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/db/DbProvider")>();
-  const { useSyncExternalStore } = await import("react");
-  return {
-    ...actual,
-    useDb: () => useSyncExternalStore(testDb.subscribe, testDb.get) as ReturnType<typeof actual.useDb>,
-  };
-});
 
 const NOW = Date.now();
 const BASE: AccountRecord = {
@@ -92,16 +62,11 @@ async function seed(overrides: Partial<AccountRecord>) {
   await db.open();
   await Promise.all(db.tables.map((table) => table.clear()));
   await db.accounts.put({ ...BASE, ...overrides });
-  testDb.set(db);
 }
 
-// No real <DbProvider> here on purpose: it would exercise its own profile-adoption dance
-// (db/profile.ts) once `session` turns "authenticated" — an async database switch that is
-// this hook's concern to *react to* (whatever `useDb()` returns), not to *drive*, and that
-// dance already has its own dedicated coverage in DbProvider.test.tsx. `useDb()` is mocked
-// above to read `testDb` instead, which every test but the last one points at the same `db`
-// singleton `seed()` writes to (via `testDb.set(db)` inside `seed()`) — so, for them, it
-// behaves exactly like the real provider-less default context.
+// No <DbProvider> here: `useDb()`'s context default is the `db` singleton `DbProvider` always
+// renders too (DbProvider.tsx), so `Probe` sees the same database `seed()` writes to whether or
+// not a provider is mounted.
 function renderProbe() {
   render(
     <SessionProvider>
@@ -177,36 +142,6 @@ describe("useFlexAutoSync", () => {
     );
 
     await waitFor(() => expect(syncAccount).toHaveBeenCalledTimes(1));
-  });
-
-  it("auto-triggers at most once per account even when useDb()'s instance identity changes afterwards", async () => {
-    // Reproduces DbProvider's real post-login sequence (db/DbProvider.tsx, db/profile.ts):
-    // once a session turns "authenticated", DbProvider adopts the default profile and later
-    // swaps `useDb()`'s return value from the default `db` singleton to a fresh per-user
-    // `AppDatabase` instance — same account data, different object identity. That swap alone,
-    // with nothing about the account or the twelve-hour staleness actually changing, must
-    // never be read as "the user entered a different account" and cause a second automatic
-    // attempt: each one burns a real Flex `send-request` round trip against IB's own quota
-    // (stale.ts's whole reason to exist).
-    await seed({ lastFlexSyncAt: new Date(NOW - FLEX_SYNC_STALE_MS - 1000).toISOString(), flexRelay: "agent-and-server" });
-    mockWorld({ loggedIn: true, agent: false });
-    renderProbe();
-
-    await waitFor(() => expect(syncAccount).toHaveBeenCalledTimes(1));
-
-    const migrated = await db.accounts.get("beta");
-    if (!migrated) throw new Error("expected the seeded account to still be there");
-    const secondProfile = new AppDatabase("useFlexAutoSync-test-second-profile");
-    await secondProfile.open();
-    await secondProfile.accounts.put(migrated);
-    testDb.set(secondProfile);
-
-    // Give a wrongly-retriggered effect real time to fire and call the (instantly-resolving)
-    // mock a second time before asserting it never did.
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(syncAccount).toHaveBeenCalledTimes(1);
-
-    await secondProfile.delete();
   });
 
   it("relays through the agent with no session at all, in the default mode, and never calls the server", async () => {

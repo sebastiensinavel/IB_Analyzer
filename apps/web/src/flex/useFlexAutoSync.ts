@@ -60,26 +60,12 @@ export function useFlexAutoSync(accountId: string) {
   const session = useSession();
   const running = useSyncExternalStore(subscribe, () => runningAccounts.has(accountId));
 
-  // Read through a ref, not as a `useCallback`/`useEffect` dependency: `useDb()` can return a
-  // *different* `AppDatabase` instance later in the very same visit to an account —
-  // `DbProvider` swaps from the default profile to the signed-in user's own database once its
-  // one-time adoption (db/profile.ts) finishes opening, shortly after `session` turns
-  // "authenticated". If that swap changed `run`'s or the auto-trigger effect's identity, the
-  // effect below would re-run and could judge the account stale and sync it a second time in
-  // the same visit — a real, if narrow, race on first login with a stale account, and each
-  // extra attempt burns a real Flex `send-request` round trip against IB's own quota (the
-  // whole reason `stale.ts`'s twelve-hour floor exists). Reading `dbRef.current` instead keeps
-  // `run` and the effect stable across that swap while still using whichever `AppDatabase` is
-  // actually current at the moment they run.
-  const dbRef = useRef(db);
-  useEffect(() => {
-    dbRef.current = db;
-  }, [db]);
-
   const agentStatus = useAgentPresence().status;
-  // Read at run time through a ref, like `db`: the session settling must re-evaluate the
-  // auto-trigger (it is an effect dependency below), never change `run`'s identity. This
-  // effect is declared before the auto-trigger one, so the ref is current when it runs.
+  // Read at run time through a ref: the session settling must re-evaluate the auto-trigger (it
+  // is an effect dependency below), never change `run`'s identity — `session.status` in
+  // `attempt`'s own deps would recreate `run` on every session transition and re-trigger every
+  // effect that depends on it. This effect is declared before the auto-trigger one, so the ref
+  // is current when it runs.
   const sessionRef = useRef(session.status);
   useEffect(() => {
     sessionRef.current = session.status;
@@ -93,8 +79,7 @@ export function useFlexAutoSync(accountId: string) {
     runningAccounts.add(accountId);
     notify();
     try {
-      const runDb = dbRef.current;
-      const account = await runDb.accounts.get(accountId);
+      const account = await db.accounts.get(accountId);
       if (!account?.flexToken || !account.flexQueryId) return;
       // A fresh ping on every sync: agent first, and the server only if the account allows it.
       const presence = await refreshPresence();
@@ -109,7 +94,7 @@ export function useFlexAutoSync(accountId: string) {
       if (mounted.has(accountId)) attempts.set(accountId, key);
       await syncAccount(
         {
-          db: runDb,
+          db,
           relay: via,
           sendRequest: (input) => sendRequest(via, input),
           getStatement: (input) => getStatement(via, input),
@@ -122,7 +107,9 @@ export function useFlexAutoSync(accountId: string) {
       runningAccounts.delete(accountId);
       notify();
     }
-  }, [accountId]);
+    // `db` is the module singleton `useDb()` always returns: listing it here is exhaustive-deps
+    // correctness, not a real dependency — it never changes, so it never re-creates `attempt`.
+  }, [accountId, db]);
 
   const run = useCallback(() => attempt(false), [attempt]);
 
@@ -140,15 +127,16 @@ export function useFlexAutoSync(accountId: string) {
   }, [accountId]);
 
   useEffect(() => {
-    // Never without credentials, never when fresh. No session required any more: the agent
+    // Never without credentials, never when fresh. No session required at all: the agent
     // relays without one, and `run` decides whether any relay is available. But never while
-    // the session is still loading either: `DbProvider` may yet swap to the signed-in user's
-    // database, and `dbRef` would still point at the default profile. The session settling
-    // re-runs this effect; a manual `run` is not held back.
+    // the session is still loading either: `pickFlexRelay` already answers "loading" with no
+    // relay when the agent is absent, so evaluating this effect any earlier could only spend an
+    // agent presence probe and an account read on a result it would throw away. The session
+    // settling re-runs this effect; a manual `run` is not held back.
     if (session.status === "loading") return;
     let cancelled = false;
     void (async () => {
-      const account = await dbRef.current.accounts.get(accountId);
+      const account = await db.accounts.get(accountId);
       if (cancelled || !account?.flexToken || !account.flexQueryId) return;
       if (!isFlexSyncStale(account.lastFlexSyncAt, Date.now())) return;
       await attempt(true);
@@ -156,9 +144,10 @@ export function useFlexAutoSync(accountId: string) {
     return () => {
       cancelled = true;
     };
-    // `db` deliberately excluded: see the `dbRef` comment above. Entering an account, the
-    // session settling, or the agent appearing or vanishing re-evaluates whether to auto-sync.
-  }, [accountId, attempt, session.status, agentStatus]);
+    // Entering an account, the session settling, or the agent appearing or vanishing
+    // re-evaluates whether to auto-sync; `db` is the stable singleton `attempt` also closes
+    // over, listed here only for exhaustive-deps.
+  }, [accountId, attempt, session.status, agentStatus, db]);
 
   return { state: running ? ("running" as const) : ("idle" as const), run };
 }
