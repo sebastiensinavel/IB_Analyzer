@@ -1055,6 +1055,24 @@ neuf.
 
 ---
 
+## Sous-projet 27
+
+- **Aucun test ne couvre une portée qui exclut `wheel` alors que des actions Wheel existent.**
+- **Un même ticker détenu en deux devises produirait deux niveaux d'actions, jamais exercé.**
+- **`formatLevelValue` laisse `Intl` rendre le signe négatif** : un ICU qui rendrait U+2212
+  changerait l'apparence sans casser un test.
+- **La couleur d'un condor n'est vérifiée par aucun test, seulement à l'œil.**
+- **`LevelsPrimitive.attached` n'accepte pas `requestUpdate`** : sans effet tant que la
+  primitive est recréée à chaque changement de niveaux.
+- **`agent-error` (agent présent, réponse invalide) affiche le même message que « agent
+  absent ».**
+- **`strategies.join(",").split(",")` rendrait `[""]` pour une portée vide** ; aucun appelant
+  ne le fait.
+- **`apps/web/src/i18n/index.test.ts` ne vérifie pas la parité des clés entre `fr.json` et
+  `en.json`** — dette antérieure à ce sous-projet.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un

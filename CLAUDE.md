@@ -321,6 +321,14 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   du compte affiché, par ticker et par secteur de la table sectorielle, et porte
   `select_put_sell_candidates` de l'outil Python d'origine. `MIN_SUGGESTION_SCORE`, `MAX_SUGGESTIONS` et
   `MAX_SUGGESTION_TICKER_SHARE` vivent une seule fois dans `packages/coverage/src/constants.ts`.
+- **Les graphes de cours viennent de TWS par l'agent, jamais d'un fournisseur tiers ni du
+  serveur** : `/bars` (`apps/tws-agent`), deux ans de journalier `TRADES`, sans cache. Les
+  niveaux dessinés sont une vue calculée des journaux (`strategyLevels`,
+  `packages/ledger/src/journals/levels.ts`), sans couleur ni texte : `apps/web/src/lib/chartLevels.ts`
+  donne la teinte de la palette et l'étiquette traduite. Une page de stratégie ne dessine que
+  la sienne ; Positions et Suggestion de position dessinent les quatre. Les barres `TRADES`
+  d'IB sont ajustées des splits et les options n'ont pas d'historique de fin de journée : les
+  graphes ne montrent que des sous-jacents, splits non traités (spec §3).
 
 ## Workflow
 
@@ -382,6 +390,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 24 | L'assignation d'après minuit : propriété de plage en jour de marché | fait (2026-09-19) |
 | 25 | Le compte serveur : ce qu'il ouvre, ce qu'il sauvegarde | fait (2026-09-21) |
 | 26 | La sauvegarde sans rien à conserver : clé enveloppée par un mot de passe | à ouvrir (`docs/points-reportes.md`) |
+| 27 | Les graphes de cours dans les tableaux de positions | fait (2026-09-21) |
 
 ## Outillage
 

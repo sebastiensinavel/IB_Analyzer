@@ -1547,23 +1547,23 @@ git commit -m "feat(web): le graphe s'ouvre dans les quatre tableaux"
 - Consumes: tout ce qui précède
 - Produces: une branche prête à être relue
 
-- [ ] **Step 1: Vérification visuelle**
+- [x] **Step 1: Vérification visuelle**
 
 Lancer le driver sur la page Positions et sur Positions Wheel, en clair et en sombre, puis **ouvrir chaque PNG avec l'outil Read** — une capture blanche ne se voit pas autrement. Le clic sur une ligne demande un script Playwright court, le driver ne cliquant pas : reprendre celui du prototype (`/tmp/claude-1001/.../scratchpad/click-chart.mjs`), copié à la racine du worktree le temps du run.
 
 Attendu : la ligne s'ouvre sous celle cliquée, les horizontales portent leur étiquette à gauche, les verticales leur date sous l'axe, le logo TradingView est visible.
 
-- [ ] **Step 2: `pnpm check`**
+- [x] **Step 2: `pnpm check`**
 
 Run: `pnpm check`
 Expected: lint, typage, build et tous les tests verts.
 
-- [ ] **Step 3: Les tests de l'agent**
+- [x] **Step 3: Les tests de l'agent**
 
 Run: `pnpm test:agent`
 Expected: PASS — `/bars` n'a pas bougé, c'est une non-régression.
 
-- [ ] **Step 4: Mettre à jour `CLAUDE.md`**
+- [x] **Step 4: Mettre à jour `CLAUDE.md`**
 
 Ajouter la ligne du sous-projet au tableau :
 
@@ -1584,11 +1584,11 @@ Et une règle dans « Règles qui mordent si on les oublie » :
   graphes ne montrent que des sous-jacents, splits non traités (spec §3).
 ```
 
-- [ ] **Step 5: Noter ce qui est reporté**
+- [x] **Step 5: Noter ce qui est reporté**
 
 Dans `docs/points-reportes.md`, sous un titre `## Sous-projet 27`, ce qui a été vu et laissé : l'ajustement des splits, le cache de barres, et tout ce que la relecture aura soulevé sans le corriger.
 
-- [ ] **Step 6: Commit et instance de dev**
+- [x] **Step 6: Commit et instance de dev**
 
 ```bash
 git add CLAUDE.md docs/points-reportes.md
