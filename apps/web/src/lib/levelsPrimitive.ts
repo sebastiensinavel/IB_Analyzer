@@ -60,7 +60,7 @@ export function timeExtent(bars: readonly PriceBar[], levels: readonly ChartLeve
   return days;
 }
 
-interface Scope {
+export interface Scope {
   context: CanvasRenderingContext2D;
   bitmapSize: { width: number; height: number };
   horizontalPixelRatio: number;

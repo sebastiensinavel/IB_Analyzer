@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ChartLevel } from "@ib/ledger";
-import { LevelsPrimitive, LevelsRenderer, timeExtent, type DrawnLevel, type Placed } from "@/lib/levelsPrimitive";
+import { LevelsPrimitive, LevelsRenderer, timeExtent, type DrawnLevel, type Placed, type Scope } from "@/lib/levelsPrimitive";
 
 const bar = (date: string) => ({ date, open: 1, high: 1, low: 1, close: 1, volume: 1 });
 
@@ -24,8 +24,13 @@ function fakeTarget() {
     textBaseline: "alphabetic" as CanvasTextBaseline,
   };
   const target = {
-    useBitmapCoordinateSpace: (cb: (scope: unknown) => void) =>
-      cb({ context: ctx, bitmapSize: { width: 200, height: 100 }, horizontalPixelRatio: 1, verticalPixelRatio: 1 }),
+    useBitmapCoordinateSpace: (cb: (scope: Scope) => void) =>
+      cb({
+        context: ctx as unknown as CanvasRenderingContext2D,
+        bitmapSize: { width: 200, height: 100 },
+        horizontalPixelRatio: 1,
+        verticalPixelRatio: 1,
+      }),
   };
   return { ctx, target };
 }
