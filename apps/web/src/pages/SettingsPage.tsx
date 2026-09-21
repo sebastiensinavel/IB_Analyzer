@@ -15,6 +15,7 @@ import {
   type TotpStatus,
 } from "@/api/allauth";
 import { useSession, useSessionActions } from "@/api/session";
+import { BackupCard } from "@/components/settings/BackupCard";
 
 /**
  * The server is optional (spec §2): every card below except "Compte" only makes sense once
@@ -58,6 +59,8 @@ export function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      <BackupCard />
 
       {session.status === "authenticated" && (
         <>

@@ -1804,7 +1804,7 @@ git commit -m "Le dépôt suit les écritures qui comptent, jamais les snapshots
   `pushBackup`, `pullBackup`, `deleteBackup`, `exportToBlob`, `importFromFile`,
   `toRecoveryCode`, `fromRecoveryCode`, `useSession`.
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/components/settings/BackupCard.test.tsx` :
 
@@ -1861,12 +1861,12 @@ describe("BackupCard", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/components/settings/BackupCard.test.tsx`
 Attendu : ÉCHEC, le composant n'existe pas.
 
-- [ ] **Step 3: Ajouter les clés i18n**
+- [x] **Step 3: Ajouter les clés i18n**
 
 Dans `apps/web/src/i18n/fr.json`, sous `settings` :
 
@@ -1891,7 +1891,7 @@ Dans `apps/web/src/i18n/fr.json`, sous `settings` :
 
 et l'équivalent anglais dans `en.json` (mêmes clés, mêmes interpolations).
 
-- [ ] **Step 4: Écrire `BackupCard.tsx`**
+- [x] **Step 4: Écrire `BackupCard.tsx`**
 
 Le composant rend une `Card` avec, dans l'ordre : l'état (activée / désactivée, dernier
 dépôt), les boutons serveur — `backupEnable` / `backupDisable`, `backupNow`, `backupRestore`,
@@ -1912,12 +1912,12 @@ Règles de rendu :
 
 Dans `SettingsPage.tsx`, monter `<BackupCard />` juste après la carte `settings.account`.
 
-- [ ] **Step 5: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5: Lancer les tests, vérifier qu'ils passent**
 
 Depuis `apps/web` : `npx vitest run src/components/settings src/pages/SettingsPage`
 Attendu : tout PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
