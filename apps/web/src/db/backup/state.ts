@@ -38,7 +38,10 @@ export async function disableBackup(db: AppDatabase): Promise<void> {
 }
 
 /** Restoring on a new device: the recovery code's key replaces this browser's. */
-export async function adoptBackupKey(db: AppDatabase, key: Uint8Array): Promise<BackupStateRecord> {
+export async function adoptBackupKey(
+  db: AppDatabase,
+  key: Uint8Array<ArrayBuffer>,
+): Promise<BackupStateRecord> {
   const existing = await readBackupState(db);
   const row: BackupStateRecord = {
     id: ROW_ID,

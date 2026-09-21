@@ -122,8 +122,15 @@ export interface BackupStateRecord {
   /** One row per browser. */
   id: "local";
   enabled: boolean;
-  /** Raw AES-GCM 256 bytes; shown once as a recovery code, never sent to the server. */
-  key: Uint8Array;
+  /**
+   * Raw AES-GCM 256 bytes; shown once as a recovery code, never sent to the server.
+   *
+   * `Uint8Array<ArrayBuffer>`, not the default `Uint8Array<ArrayBufferLike>`: WebCrypto's
+   * `BufferSource` excludes a `SharedArrayBuffer`-backed view, so the wider type would need a
+   * cast at every call into `crypto.subtle`. The bytes come from `crypto.getRandomValues` or
+   * from a decoded recovery code, both of which really are `ArrayBuffer`-backed.
+   */
+  key: Uint8Array<ArrayBuffer>;
   lastBackupAt: string | null;
   lastBackupBytes: number | null;
   /**

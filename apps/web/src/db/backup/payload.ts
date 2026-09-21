@@ -55,10 +55,7 @@ export class BackupFormatError extends Error {
 }
 
 export class BackupSchemaError extends Error {
-  constructor(
-    readonly payloadVersion: number,
-    readonly localVersion: number,
-  ) {
+  constructor(payloadVersion: number, localVersion: number) {
     super(`Backup written on Dexie schema ${payloadVersion}, newer than this browser's ${localVersion}`);
     this.name = "BackupSchemaError";
   }

@@ -40,10 +40,10 @@ export async function pushBackup(
  * one the blob was written with. The caller has to be able to tell that apart from a network
  * failure, because it is what decides whether a freshly typed recovery code may be kept.
  */
-export async function pullBackup(db: AppDatabase, key: Uint8Array): Promise<BackupResult<void>> {
+export async function pullBackup(db: AppDatabase, key: Uint8Array<ArrayBuffer>): Promise<BackupResult<void>> {
   const blob = await getBackup();
   if (!blob.ok) return blob;
-  let plain: Uint8Array;
+  let plain: Uint8Array<ArrayBuffer>;
   try {
     plain = await decryptBlob(key, blob.value);
   } catch (error) {

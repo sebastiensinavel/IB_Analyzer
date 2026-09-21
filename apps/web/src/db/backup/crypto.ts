@@ -23,7 +23,10 @@ function toReadableStream(bytes: Uint8Array): ReadableStream<Uint8Array> {
   });
 }
 
-async function through(bytes: Uint8Array, stream: ReadableWritablePair<Uint8Array, Uint8Array>): Promise<Uint8Array> {
+async function through(
+  bytes: Uint8Array,
+  stream: ReadableWritablePair<Uint8Array, Uint8Array>,
+): Promise<Uint8Array<ArrayBuffer>> {
   const source = toReadableStream(bytes).pipeThrough(stream);
   return new Uint8Array(await new Response(source).arrayBuffer());
 }
@@ -32,15 +35,15 @@ async function through(bytes: Uint8Array, stream: ReadableWritablePair<Uint8Arra
 // WritableStream<BufferSource>, wider than the Uint8Array `pipeThrough` above expects; a
 // Uint8Array is a valid BufferSource at runtime, so this is a type-only mismatch, not a real
 // one, and the cast reflects that rather than papering over an actual chunk mismatch.
-export function gzip(bytes: Uint8Array): Promise<Uint8Array> {
+export function gzip(bytes: Uint8Array): Promise<Uint8Array<ArrayBuffer>> {
   return through(bytes, new CompressionStream("gzip") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>);
 }
 
-export function gunzip(bytes: Uint8Array): Promise<Uint8Array> {
+export function gunzip(bytes: Uint8Array): Promise<Uint8Array<ArrayBuffer>> {
   return through(bytes, new DecompressionStream("gzip") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>);
 }
 
-export function encodePayload(payload: BackupPayload): Uint8Array {
+export function encodePayload(payload: BackupPayload): Uint8Array<ArrayBuffer> {
   return new TextEncoder().encode(JSON.stringify(payload));
 }
 
@@ -50,33 +53,42 @@ export function decodePayload(bytes: Uint8Array): BackupPayload {
 
 /** Raw bytes, not a `CryptoKey`: a key is re-imported at each use, and raw bytes survive
  *  IndexedDB and `fake-indexeddb` alike, where a non-extractable `CryptoKey` does not. */
-export function generateBackupKey(): Uint8Array {
+export function generateBackupKey(): Uint8Array<ArrayBuffer> {
   return crypto.getRandomValues(new Uint8Array(KEY_BYTES));
 }
 
-function importKey(key: Uint8Array): Promise<CryptoKey> {
+/**
+ * Every byte array that reaches `crypto.subtle` is typed `Uint8Array<ArrayBuffer>`, not the
+ * default `Uint8Array<ArrayBufferLike>`: WebCrypto's `BufferSource` excludes a view backed by a
+ * `SharedArrayBuffer`, so the wider type would need a cast at each of the four call sites below.
+ * Nothing here is ever shared-backed — the bytes come from `getRandomValues`, from a decoded
+ * recovery code or from a `Response`'s own buffer — so narrowing states the truth instead.
+ */
+function importKey(key: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   if (key.byteLength !== KEY_BYTES) throw new BackupKeyError(`A backup key is ${KEY_BYTES} bytes`);
-  return crypto.subtle.importKey("raw", key as BufferSource, "AES-GCM", false, ["encrypt", "decrypt"]);
+  return crypto.subtle.importKey("raw", key, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
 /** `iv ‖ ciphertext`. A fresh IV per deposit: AES-GCM forgives nothing here. */
-export async function encryptBlob(key: Uint8Array, plain: Uint8Array): Promise<Uint8Array> {
+export async function encryptBlob(
+  key: Uint8Array<ArrayBuffer>,
+  plain: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array<ArrayBuffer>> {
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-  const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await importKey(key), plain as BufferSource);
+  const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await importKey(key), plain);
   const out = new Uint8Array(IV_BYTES + cipher.byteLength);
   out.set(iv, 0);
   out.set(new Uint8Array(cipher), IV_BYTES);
   return out;
 }
 
-export async function decryptBlob(key: Uint8Array, blob: Uint8Array): Promise<Uint8Array> {
+export async function decryptBlob(
+  key: Uint8Array<ArrayBuffer>,
+  blob: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array<ArrayBuffer>> {
   if (blob.byteLength <= IV_BYTES) throw new BackupKeyError("Backup blob too short to carry an IV");
   const iv = blob.subarray(0, IV_BYTES);
-  const plain = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: iv as BufferSource },
-    await importKey(key),
-    blob.subarray(IV_BYTES) as BufferSource,
-  );
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, await importKey(key), blob.subarray(IV_BYTES));
   return new Uint8Array(plain);
 }
 
@@ -98,7 +110,7 @@ export function toRecoveryCode(key: Uint8Array): string {
   return (base64url(key).match(new RegExp(`.{1,${GROUP}}`, "g")) ?? []).join(".");
 }
 
-export function fromRecoveryCode(code: string): Uint8Array {
+export function fromRecoveryCode(code: string): Uint8Array<ArrayBuffer> {
   const normalized = code.trim().replace(/[.\s]/g, "");
   let binary: string;
   try {

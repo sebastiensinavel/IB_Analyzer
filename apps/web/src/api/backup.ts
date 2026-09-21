@@ -105,7 +105,7 @@ export async function putBackup(blob: Uint8Array): Promise<BackupResult<{ update
   return { ok: true, value: { updatedAt: status.updatedAt, bytes: status.bytes } };
 }
 
-export async function getBackup(): Promise<BackupResult<Uint8Array>> {
+export async function getBackup(): Promise<BackupResult<Uint8Array<ArrayBuffer>>> {
   const answer = await call("");
   if (answer === null) return { ok: false, kind: "unreachable" };
   if (!answer.ok) return { ok: false, kind: failureFor(answer.status) };

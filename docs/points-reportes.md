@@ -42,14 +42,19 @@ fixes, et le Cash Report de chaque relevé est recalculé depuis ses transaction
 - **`SourcesPage.handleFile` attrape désormais les rejets**, mais le seul chemin réellement
   possible aujourd'hui est un échec Dexie. L'agent n'emprunte pas ce chemin : la troisième
   source n'a rien changé ici. À revoir si une quatrième source existe un jour.
-- **`db/profile.ts` : le cache `opened` n'est jamais purgé** des profils qui ne sont plus
+- ~~**`db/profile.ts` : le cache `opened` n'est jamais purgé** des profils qui ne sont plus
   utilisés dans l'onglet (changement d'utilisateur répété, ou un perdant de la course
   d'adoption qui referme sa propre instance sans jamais la mettre en cache). Accumulation de
-  connexions Dexie ouvertes, jamais de fuite de données.
-- **`DbProvider` ne retente pas automatiquement** après un échec d'ouverture ou d'adoption : le
+  connexions Dexie ouvertes, jamais de fuite de données.~~ — **sans objet depuis le
+  sous-projet 25** (2026-09-21) : `apps/web/src/db/profile.ts` est supprimé, la base locale
+  appartient au navigateur et non à un compte — une seule base `ib-analyzer` par origine,
+  connectée ou non. Ni profil par utilisateur, ni adoption, ni cache à purger.
+- ~~**`DbProvider` ne retente pas automatiquement** après un échec d'ouverture ou d'adoption : le
   repli sur le profil par défaut (`apps/web/src/db/DbProvider.tsx`) est sûr et visible, mais
-  définitif jusqu'au prochain changement de session (connexion, déconnexion).
-- **Deux utilisateurs *différents* adoptant le profil anonyme en même temps obtiennent chacun
+  définitif jusqu'au prochain changement de session (connexion, déconnexion).~~ — **sans objet
+  depuis le sous-projet 25** (2026-09-21) : `DbProvider` ne lit plus la session et n'ouvre plus
+  rien ; il sert la base unique du navigateur, donc il n'y a plus d'échec à retenter.
+- ~~**Deux utilisateurs *différents* adoptant le profil anonyme en même temps obtiennent chacun
   une copie complète** (`apps/web/src/db/profile.ts`, `adoptDefaultProfile`) : le verrou posé
   à la tâche 13 ferme la course entre deux appels qui visent la **même** base cible (deux
   onglets, même utilisateur), mais `targetName` est dérivé de `userId` — deux comptes
@@ -59,13 +64,21 @@ fixes, et le Cash Report de chaque relevé est recalculé depuis ses transaction
   de perte : chacun repart avec sa propre copie de ce qui existait avant que quiconque ne se
   connecte. Mordra le jour où deux personnes se créent effectivement un compte à quelques
   secondes d'intervalle sur un poste partagé — comportement préexistant à la tâche 13, mais
-  devenu atteignable seulement avec le multi-utilisateur du sous-projet 3.
-- **Fenêtre résiduelle à la première connexion seulement** (`apps/web/src/flex/useFlexAutoSync.ts`) :
+  devenu atteignable seulement avec le multi-utilisateur du sous-projet 3.~~ — **sans objet depuis le
+  sous-projet 25** (2026-09-21) : `apps/web/src/db/profile.ts` est supprimé, la base locale
+  appartient au navigateur et non à un compte — une seule base `ib-analyzer` par origine,
+  connectée ou non. Ni profil par utilisateur, ni adoption, ni cache à purger.
+- ~~**Fenêtre résiduelle à la première connexion seulement** (`apps/web/src/flex/useFlexAutoSync.ts`) :
   entre la fermeture de la base par défaut par `adoptDefaultProfile` et le
   moment où `useDb()` cesse de la rendre, un déclenchement automatique de synchro tombant
   exactement là écrit dans une base sur le point de disparaître ; le `void (async () => …)()`
   qui lance la synchro n'a pas de `.catch`. Se rattrape au montage suivant (le profil adopté
-  n'a pas de `lastFlexSyncAt`, la synchro repart), mais silencieusement.
+  n'a pas de `lastFlexSyncAt`, la synchro repart), mais silencieusement.~~ — **sans objet depuis le
+  sous-projet 25** (2026-09-21) : `apps/web/src/db/profile.ts` est supprimé, la base locale
+  appartient au navigateur et non à un compte — une seule base `ib-analyzer` par origine,
+  connectée ou non. Ni profil par utilisateur, ni adoption, ni cache à purger.
+  Le `void (async () => …)()` sans `.catch` de `useFlexAutoSync`, lui, reste tel quel : c'est
+  la même classe de dette que celle de l'agent, juste en dessous.
 - **Même classe de dette côté agent** (sous-projet 4) : `apps/web/src/agent/useAgentSync.ts`
   lance `syncAgent` depuis `tick()` via `void tick()`, sans `.catch` ; un échec Dexie
   imprévu (pas un des codes `AgentSyncCode` normaux, qui sont déjà couverts) devient un
