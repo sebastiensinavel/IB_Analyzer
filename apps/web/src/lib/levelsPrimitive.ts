@@ -67,7 +67,7 @@ interface Scope {
   verticalPixelRatio: number;
 }
 
-interface Placed {
+export interface Placed {
   drawn: DrawnLevel;
   y: number | null;
   /** Coordonnées des dates du niveau, dans l'ordre de `datesOf`. */
@@ -79,7 +79,7 @@ interface Placed {
 const LABEL_PADDING = 4;
 const LABEL_HEIGHT = 16;
 
-class LevelsRenderer {
+export class LevelsRenderer {
   private readonly placed: readonly Placed[];
 
   constructor(placed: readonly Placed[]) {
