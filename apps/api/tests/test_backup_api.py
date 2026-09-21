@@ -70,6 +70,21 @@ def test_over_the_cap_is_refused_cleanly(django_user_model):
     assert client.get("/api/core/backup").status_code == 404
 
 
+def test_over_the_cap_leaves_the_existing_backup_intact(django_user_model):
+    client = signed_in(django_user_model, "a@b.c")
+    original = bytes(range(256)) * 3
+    client.post("/api/core/backup", data=original, content_type="application/octet-stream")
+
+    answer = client.post(
+        "/api/core/backup", data=b"x" * (MAX_BACKUP_BYTES + 1), content_type="application/octet-stream"
+    )
+
+    assert answer.status_code == 413
+    kept = client.get("/api/core/backup")
+    assert kept.status_code == 200
+    assert kept.content == original
+
+
 def test_one_user_never_reads_or_replaces_another(django_user_model):
     mine = signed_in(django_user_model, "a@b.c")
     theirs = signed_in(django_user_model, "d@e.f")
