@@ -6,7 +6,7 @@
  * message qui dit quoi installer. La ligne s'ouvre toujours, tout de suite : un clic fait
  * toujours quelque chose.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 import type { Strategy } from "@ib/ledger";
@@ -63,7 +63,14 @@ export function PositionChartRow({ ticker, strategies, columnCount }: PositionCh
     };
   }, [account, ticker]);
 
-  const levels = journals.status === "ready" ? strategyLevels(journals.report.rows, ticker, strategies) : [];
+  // `strategies` arrive souvent en tableau littéral : c'est son contenu qui identifie la
+  // portée, pas sa référence. Sans cette mémoïsation, chaque rendu de la page rendrait un
+  // tableau neuf, et l'effet de dessin détacherait puis rattacherait la primitive pour rien.
+  const scope = strategies.join(",");
+  const levels = useMemo(
+    () => (journals.status === "ready" ? strategyLevels(journals.report.rows, ticker, scope.split(",") as Strategy[]) : []),
+    [journals, ticker, scope],
+  );
 
   return (
     <TableRow data-testid="position-chart-row" className="hover:bg-transparent">
