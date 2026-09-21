@@ -2,7 +2,7 @@ import { Fragment, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { MAX_SUGGESTIONS, MAX_SUGGESTION_TICKER_SHARE, MIN_SUGGESTION_SCORE, positionSuggestions, type RiskReport } from "@ib/coverage";
-import type { Strategy } from "@ib/ledger";
+import { STRATEGIES } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@ib/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
@@ -11,9 +11,6 @@ import { useSectors } from "@/db/hooks";
 import { useOpenChart } from "@/hooks/useOpenChart";
 import { formatPercent, formatRate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-/** Every strategy: this card ranks tickers across the whole portfolio, not one strategy's part of it. */
-const ALL_STRATEGIES: readonly Strategy[] = ["wheel", "leaps", "condors", "others"];
 
 const COLUMNS = [
   { key: "rank", numeric: true },
@@ -77,7 +74,7 @@ export function PositionSuggestionsCard({ accountId, report }: { accountId: stri
                       <TableCell className={NUMERIC}>{formatRate(suggestion.tickerShare)}</TableCell>
                     </TableRow>
                     {chart.isOpen(key) && (
-                      <PositionChartRow ticker={suggestion.ticker} strategies={ALL_STRATEGIES} columnCount={COLUMNS.length} />
+                      <PositionChartRow ticker={suggestion.ticker} strategies={STRATEGIES} columnCount={COLUMNS.length} />
                     )}
                   </Fragment>
                 );

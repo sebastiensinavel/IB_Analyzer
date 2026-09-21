@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import type { AnalyzedPosition } from "@ib/coverage";
+import { STRATEGIES } from "@ib/ledger";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { PositionRow } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
@@ -9,8 +10,6 @@ import { formatContract } from "@/lib/format";
 import { POSITION_COLUMNS } from "@/lib/positionColumns";
 import { coverageBadges } from "@/lib/riskReport";
 import type { ColumnSpec } from "@/lib/tableView";
-
-const ALL_STRATEGIES = ["wheel", "leaps", "condors", "others"] as const;
 
 export interface PositionGroupCardProps {
   title: string;
@@ -74,7 +73,12 @@ export function PositionGroupCard({
               }}
             />
             {chart.isOpen(key) && (
-              <PositionChartRow ticker={position.symbol} strategies={ALL_STRATEGIES} columnCount={POSITION_COLUMNS.length} />
+              <PositionChartRow
+                ticker={position.symbol}
+                strategies={STRATEGIES}
+                columnCount={POSITION_COLUMNS.length}
+                currency={position.currency}
+              />
             )}
           </Fragment>
         );

@@ -62,7 +62,7 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   const views = useStrategyBoxViews(accountId, strategy, lineSpecs, shareSpecs);
   const chart = useOpenChart();
   // A stable array, never a literal recreated on each render: PositionChartRow memoizes its
-  // levels on `strategies.join(",")`, and never wants an empty scope.
+  // levels directly on `strategies`, never wants a new reference for the same scope.
   const scope = useMemo(() => [strategy], [strategy]);
   const defs = STRATEGY_BOXES[strategy];
   const ready = journals.status === "ready" && snapshot !== undefined && report !== undefined;
@@ -194,7 +194,12 @@ function LinesBox({
               }}
             />
             {chart.isOpen(key) && (
-              <PositionChartRow ticker={line.contract.ticker} strategies={scope} columnCount={POSITION_COLUMNS.length} />
+              <PositionChartRow
+                ticker={line.contract.ticker}
+                strategies={scope}
+                columnCount={POSITION_COLUMNS.length}
+                currency={line.contract.currency}
+              />
             )}
           </Fragment>
         );
@@ -204,7 +209,7 @@ function LinesBox({
 }
 
 /** The Wheel's assigned shares only ever carry the Wheel's own levels: a stable array, never a
- * literal recreated on each render (PositionChartRow memoizes its levels on `strategies.join(",")`). */
+ * literal recreated on each render (PositionChartRow memoizes its levels directly on `strategies`). */
 const WHEEL_SCOPE: readonly PositionsStrategy[] = ["wheel"];
 
 function SharesBox({
@@ -239,7 +244,14 @@ function SharesBox({
         return (
           <Fragment>
             <WheelShareRow line={line} sector={sectorOf(line.ticker)} onClick={() => chart.toggle(key)} expanded={chart.isOpen(key)} />
-            {chart.isOpen(key) && <PositionChartRow ticker={line.ticker} strategies={WHEEL_SCOPE} columnCount={WHEEL_SHARE_COLUMNS.length} />}
+            {chart.isOpen(key) && (
+              <PositionChartRow
+                ticker={line.ticker}
+                strategies={WHEEL_SCOPE}
+                columnCount={WHEEL_SHARE_COLUMNS.length}
+                currency={line.currency}
+              />
+            )}
           </Fragment>
         );
       }}

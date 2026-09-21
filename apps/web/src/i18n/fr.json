@@ -588,6 +588,7 @@
     },
     "noAgent": "Ce graphe demande l'agent local",
     "noAgentLink": "Comment l'installer",
+    "agentError": "L'agent local a répondu une erreur",
     "twsDown": "TWS ne répond pas sur le port {{port}}",
     "noBars": "Interactive Brokers ne rend aucun historique pour {{ticker}}",
     "loading": "Chargement du graphe…"

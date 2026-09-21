@@ -22,16 +22,19 @@ export interface PositionChartRowProps {
   ticker: string;
   strategies: readonly Strategy[];
   columnCount: number;
+  /** Inconnue de la carte Suggestion de position : la valeur par défaut de `fetchBars` s'applique. */
+  currency?: string;
 }
 
 type State =
   | { status: "loading" }
   | { status: "bars"; bars: PriceBar[] }
   | { status: "no-agent" }
+  | { status: "agent-error" }
   | { status: "tws-down"; port: number }
   | { status: "no-bars" };
 
-export function PositionChartRow({ ticker, strategies, columnCount }: PositionChartRowProps) {
+export function PositionChartRow({ ticker, strategies, columnCount, currency }: PositionChartRowProps) {
   const { t } = useTranslation();
   const { accountId = "" } = useParams<{ accountId: string }>();
   const account = useAccount(accountId);
@@ -41,19 +44,27 @@ export function PositionChartRow({ ticker, strategies, columnCount }: PositionCh
   const { isDark } = useTheme();
   const [state, setState] = useState<State>({ status: "loading" });
 
+  // La fiche entière change de référence à chaque écriture dans `db.accounts`, y compris une
+  // synchro qui ne note que sa date : ne dépendre que du port et du fait que la fiche soit
+  // chargée évite de redemander deux ans de barres pour rien, tout en gardant la distinction
+  // entre « fiche en cours de chargement » (`accountLoaded` faux) et « pas de port ».
+  const accountLoaded = account !== undefined;
+  const port = account?.twsPort;
+
   useEffect(() => {
-    if (account === undefined) return;
-    const port = account?.twsPort;
+    if (!accountLoaded) return;
     if (port === undefined) {
       setState({ status: "no-agent" });
       return;
     }
     let cancelled = false;
     // Aucun cache : chaque ouverture interroge TWS, barre du jour comprise.
-    void fetchBars(port, ticker).then((result) => {
+    void fetchBars(port, ticker, currency).then((result) => {
       if (cancelled) return;
       if (!result.ok) {
-        setState(result.code === "tws-unreachable" ? { status: "tws-down", port } : { status: "no-agent" });
+        if (result.code === "tws-unreachable") setState({ status: "tws-down", port });
+        else if (result.code === "agent-error") setState({ status: "agent-error" });
+        else setState({ status: "no-agent" });
         return;
       }
       setState(result.payload.bars.length === 0 ? { status: "no-bars" } : { status: "bars", bars: result.payload.bars });
@@ -61,15 +72,11 @@ export function PositionChartRow({ ticker, strategies, columnCount }: PositionCh
     return () => {
       cancelled = true;
     };
-  }, [account, ticker]);
+  }, [accountLoaded, port, ticker, currency]);
 
-  // `strategies` arrive souvent en tableau littéral : c'est son contenu qui identifie la
-  // portée, pas sa référence. Sans cette mémoïsation, chaque rendu de la page rendrait un
-  // tableau neuf, et l'effet de dessin détacherait puis rattacherait la primitive pour rien.
-  const scope = strategies.join(",");
   const levels = useMemo(
-    () => (journals.status === "ready" ? strategyLevels(journals.report.rows, ticker, scope.split(",") as Strategy[]) : []),
-    [journals, ticker, scope],
+    () => (journals.status === "ready" ? strategyLevels(journals.report.rows, ticker, strategies) : []),
+    [journals, ticker, strategies],
   );
 
   return (
@@ -88,6 +95,7 @@ export function PositionChartRow({ ticker, strategies, columnCount }: PositionCh
                 </Link>
               </>
             )}
+            {state.status === "agent-error" && <span>{t("charts.agentError")}</span>}
             {state.status === "tws-down" && <span>{t("charts.twsDown", { port: state.port })}</span>}
             {state.status === "no-bars" && <span>{t("charts.noBars", { ticker })}</span>}
           </div>

@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
+import { createChart } from "lightweight-charts";
+import type { ChartLevel, Strategy } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
 import * as agent from "@/agent/client";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { WithAccountData } from "@/test/WithAccountData";
+import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 
 vi.mock("lightweight-charts", () => {
   const series = {
@@ -25,10 +28,19 @@ vi.mock("lightweight-charts", () => {
   };
 });
 
-function renderRow() {
+function renderRow(
+  overrides: {
+    accountId?: string;
+    ticker?: string;
+    strategies?: readonly Strategy[];
+    columnCount?: number;
+    currency?: string;
+  } = {},
+) {
+  const { accountId = "alpha", ticker = "BTDR", strategies = ["wheel"], columnCount = 12, currency } = overrides;
   return render(
     <I18nextProvider i18n={i18n}>
-      <MemoryRouter initialEntries={["/accounts/alpha/positions"]}>
+      <MemoryRouter initialEntries={[`/accounts/${accountId}/positions`]}>
         <Routes>
           <Route
             path="/accounts/:accountId/positions"
@@ -36,7 +48,7 @@ function renderRow() {
               <WithAccountData>
                 <table>
                   <tbody>
-                    <PositionChartRow ticker="BTDR" strategies={["wheel"]} columnCount={12} />
+                    <PositionChartRow ticker={ticker} strategies={strategies} columnCount={columnCount} currency={currency} />
                   </tbody>
                 </table>
               </WithAccountData>
@@ -50,8 +62,18 @@ function renderRow() {
 
 const BARS = [{ date: "2026-09-21", open: 13, high: 14, low: 12, close: 13.5, volume: 1 }];
 
+/** Les niveaux passés à la dernière primitive attachée : ce que `PriceChart` a reçu à dessiner. */
+async function lastDrawnLevels(): Promise<ChartLevel[]> {
+  await screen.findByTestId("price-chart");
+  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+  const series = chart.addSeries.mock.results.at(-1)!.value;
+  const primitive = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { level: ChartLevel }[] };
+  return primitive.drawn.map((d) => d.level);
+}
+
 beforeEach(async () => {
   vi.restoreAllMocks();
+  await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.contracts.clear()]);
   await db.accounts.put({
     id: "alpha",
     label: "alpha",
@@ -108,5 +130,72 @@ describe("PositionChartRow", () => {
 
     const cell = (await screen.findByTestId("position-chart-row")).querySelector("td");
     expect(cell).toHaveAttribute("colspan", "12");
+  });
+
+  it("dit que l'agent a répondu une erreur, sans renvoyer vers la page Aide", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({ ok: false, code: "agent-error" });
+
+    renderRow();
+
+    expect(await screen.findByText("L'agent local a répondu une erreur")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Comment l'installer" })).not.toBeInTheDocument();
+  });
+
+  it("transmet le port, le ticker et la devise à fetchBars", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    const fetchBars = vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "SAP", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow({ ticker: "SAP", currency: "EUR" });
+
+    await screen.findByTestId("price-chart");
+    expect(fetchBars).toHaveBeenCalledWith(7501, "SAP", "EUR");
+  });
+
+  it("ouvre avec les niveaux de sa portée, jamais ceux d'une autre stratégie", async () => {
+    // ZZZ porte un achat LEAPS et un call vendu dessus (stratégie leaps), rien pour la Wheel.
+    await db.accounts.put({
+      id: "beta",
+      label: "beta",
+      ibAccountId: "U0000002",
+      createdAt: "",
+      warnedDroppedKinds: [],
+      twsPort: 7501,
+    });
+    await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
+    await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "ZZZ", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow({ accountId: "beta", ticker: "ZZZ", strategies: ["wheel"] });
+
+    expect(await lastDrawnLevels()).toEqual([]);
+  });
+
+  it("porte bien les niveaux de la stratégie demandée quand elle en a", async () => {
+    await db.accounts.put({
+      id: "beta",
+      label: "beta",
+      ibAccountId: "U0000002",
+      createdAt: "",
+      warnedDroppedKinds: [],
+      twsPort: 7501,
+    });
+    await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
+    await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "ZZZ", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow({ accountId: "beta", ticker: "ZZZ", strategies: ["leaps"] });
+
+    const kinds = (await lastDrawnLevels()).map((level) => level.kind).sort();
+    expect(kinds).toEqual(["leapsBuy", "shortCall"]);
   });
 });
