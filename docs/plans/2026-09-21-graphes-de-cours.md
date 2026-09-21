@@ -982,7 +982,7 @@ git commit -m "feat(web): la primitive qui dessine niveaux, verticales et condor
   export function drawnLevels(levels: readonly ChartLevel[], bars: readonly PriceBar[], isDark: boolean, word: (kind: ChartLevelKind) => string, locale: string): DrawnLevel[]
   ```
 
-- [ ] **Step 1: Écrire le test qui échoue**
+- [x] **Step 1: Écrire le test qui échoue**
 
 `drawnLevels` est la couture testable : elle assemble couleur, prix et étiquette. Créer `apps/web/src/components/PriceChart.test.tsx` :
 
@@ -1033,12 +1033,12 @@ describe("drawnLevels", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test pour le voir échouer**
+- [x] **Step 2: Lancer le test pour le voir échouer**
 
 Run: `cd apps/web && npx vitest run src/components/PriceChart.test.tsx`
 Expected: FAIL, `drawnLevels` n'est pas exporté.
 
-- [ ] **Step 3: Réécrire `PriceChart.tsx`**
+- [x] **Step 3: Réécrire `PriceChart.tsx`**
 
 Remplacer les props `level`/`eventDate` et la classe `VerticalLine` du prototype par les niveaux et la primitive. Le corps du composant :
 
@@ -1100,12 +1100,12 @@ export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: Pric
 }
 ```
 
-- [ ] **Step 4: Lancer le test pour le voir passer**
+- [x] **Step 4: Lancer le test pour le voir passer**
 
 Run: `cd apps/web && npx vitest run src/components/PriceChart.test.tsx`
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/components/PriceChart.tsx apps/web/src/components/PriceChart.test.tsx

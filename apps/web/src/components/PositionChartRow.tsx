@@ -58,9 +58,7 @@ export function PositionChartRow({ columnCount }: { columnCount: number }) {
             {source === "demo" && <Badge variant="destructive">Données de démonstration</Badge>}
             {source === "loading" && <span className="text-xs text-muted-foreground">…</span>}
           </div>
-          {source !== "loading" && (
-            <PriceChart bars={bars} level={PROTOTYPE_LEVEL} eventDate={PROTOTYPE_EVENT_DATE} isDark={isDark} />
-          )}
+          {source !== "loading" && <PriceChart bars={bars} levels={[]} isDark={isDark} />}
         </div>
       </TableCell>
     </TableRow>

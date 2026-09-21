@@ -1,10 +1,8 @@
 /**
- * One candlestick chart (Lightweight Charts v5), with the two annotations the prototype has to
- * prove: a horizontal level on the price scale, and a vertical mark on a date.
- *
- * The vertical line is a series primitive: v5 draws horizontal price lines itself
- * (`createPriceLine`) but has nothing for a date, so the line is painted on the pane canvas at
- * the coordinate the time scale gives for that day, and repainted on every zoom and scroll.
+ * One candlestick chart (Lightweight Charts v5), the levels of a strategy painted on top of it:
+ * horizontal lines, verticals on their dates, and the rectangles of a condor. All of that is
+ * `LevelsPrimitive` (`lib/levelsPrimitive.ts`); this file only assembles a `DrawnLevel` per
+ * level (`drawnLevels`) and wires the primitive into the chart's lifecycle.
  */
 import { useEffect, useRef } from "react";
 import {
@@ -14,90 +12,45 @@ import {
   type ISeriesApi,
   type Time,
 } from "lightweight-charts";
+import { useTranslation } from "react-i18next";
+import type { ChartLevel, ChartLevelKind } from "@ib/ledger";
 import type { PriceBar } from "@/agent/client";
+import { levelColor, levelLabel, levelPrice } from "@/lib/chartLevels";
+import { LevelsPrimitive, timeExtent, type DrawnLevel } from "@/lib/levelsPrimitive";
 
 export interface PriceChartProps {
   bars: readonly PriceBar[];
-  /** Horizontal green line: an entry, a strike. */
-  level?: number | null;
-  /** Vertical dashed line: the day something happened. */
-  eventDate?: string | null;
+  levels: readonly ChartLevel[];
   isDark: boolean;
   height?: number;
 }
 
 /** Several table rows tall: the chart is what the injected row is for. */
 export const CHART_HEIGHT = 650;
-const GREEN = "#16a34a";
 const UP = "#26a69a";
 const DOWN = "#ef5350";
 
-interface Scope {
-  context: CanvasRenderingContext2D;
-  bitmapSize: { width: number; height: number };
-  horizontalPixelRatio: number;
-  verticalPixelRatio: number;
+/** Assemble couleur, prix et étiquette de chaque niveau : la couture testable de ce fichier. */
+export function drawnLevels(
+  levels: readonly ChartLevel[],
+  bars: readonly PriceBar[],
+  isDark: boolean,
+  word: (kind: ChartLevelKind) => string,
+  locale: string,
+): DrawnLevel[] {
+  return levels.map((level) => {
+    const price = levelPrice(level, bars);
+    return {
+      level,
+      color: levelColor(level.kind, isDark),
+      price,
+      label: price === null || level.kind === "condor" ? null : levelLabel(level, price, word(level.kind), locale),
+    };
+  });
 }
 
-/** Paints one dashed vertical line at `x`, in bitmap space so it stays crisp on any screen. */
-class VerticalLineRenderer {
-  private readonly x: number | null;
-  private readonly color: string;
-
-  constructor(x: number | null, color: string) {
-    this.x = x;
-    this.color = color;
-  }
-
-  draw(target: { useBitmapCoordinateSpace: (cb: (scope: Scope) => void) => void }) {
-    if (this.x === null) return;
-    target.useBitmapCoordinateSpace((scope) => {
-      const ctx = scope.context;
-      const x = Math.round(this.x! * scope.horizontalPixelRatio) + 0.5;
-      ctx.save();
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = Math.max(1, Math.floor(scope.horizontalPixelRatio));
-      ctx.setLineDash([6 * scope.verticalPixelRatio, 4 * scope.verticalPixelRatio]);
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, scope.bitmapSize.height);
-      ctx.stroke();
-      ctx.restore();
-    });
-  }
-}
-
-class VerticalLine {
-  private chart: IChartApi | null = null;
-  private x: number | null = null;
-  private readonly time: Time;
-  private readonly color: string;
-
-  constructor(time: Time, color: string) {
-    this.time = time;
-    this.color = color;
-  }
-
-  attached(param: { chart: IChartApi }) {
-    this.chart = param.chart;
-  }
-
-  detached() {
-    this.chart = null;
-  }
-
-  updateAllViews() {
-    this.x = this.chart ? this.chart.timeScale().timeToCoordinate(this.time) : null;
-  }
-
-  paneViews() {
-    const x = this.x;
-    const color = this.color;
-    return [{ renderer: () => new VerticalLineRenderer(x, color), zOrder: () => "top" as const }];
-  }
-}
-
-export function PriceChart({ bars, level = null, eventDate = null, isDark, height = CHART_HEIGHT }: PriceChartProps) {
+export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: PriceChartProps) {
+  const { t, i18n } = useTranslation();
   const holder = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -142,27 +95,26 @@ export function PriceChart({ bars, level = null, eventDate = null, isDark, heigh
     const chart = chartRef.current;
     const series = seriesRef.current;
     if (!chart || !series) return;
-    series.setData(
-      bars.map((bar) => ({
-        time: bar.date as Time,
-        open: bar.open,
-        high: bar.high,
-        low: bar.low,
-        close: bar.close,
-      })),
+    const candles = bars.map((bar) => ({
+      time: bar.date as Time,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+    }));
+    // Les jours vides prolongent l'échelle du temps jusqu'à l'échéance la plus lointaine :
+    // sans eux, une date future n'a pas de coordonnée et sa verticale n'est pas tracée.
+    const empty = timeExtent(bars, levels).map((day) => ({ time: day as Time }));
+    series.setData([...candles, ...empty]);
+    const primitive = new LevelsPrimitive(
+      drawnLevels(levels, bars, isDark, (kind) => t(`charts.levels.${kind}`), i18n.language),
     );
-    const priceLine =
-      level === null
-        ? null
-        : series.createPriceLine({ price: level, color: GREEN, lineWidth: 2, title: level.toString() });
-    const vertical = eventDate === null ? null : new VerticalLine(eventDate as Time, GREEN);
-    if (vertical) series.attachPrimitive(vertical);
+    series.attachPrimitive(primitive as never);
     chart.timeScale().fitContent();
     return () => {
-      if (priceLine) series.removePriceLine(priceLine);
-      if (vertical) series.detachPrimitive(vertical);
+      series.detachPrimitive(primitive as never);
     };
-  }, [bars, level, eventDate]);
+  }, [bars, levels, isDark, t, i18n.language]);
 
   return <div ref={holder} className="w-full" style={{ height }} data-testid="price-chart" />;
 }
