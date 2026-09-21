@@ -33,7 +33,7 @@
 - Consumes: la branche `prototype-graphes` du worktree `.claude/worktrees/graphes` (trois commits : `/bars` dans l'agent, l'injection prototype, la hauteur du graphe)
 - Produces: la branche `graphes-de-cours` dans le même worktree, à jour de `main`, `docs/specs/2026-09-21-graphes-de-cours-design.md` présent
 
-- [ ] **Step 1: Renommer la branche et rapatrier `main`**
+- [x] **Step 1: Renommer la branche et rapatrier `main`**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/.claude/worktrees/graphes
@@ -41,12 +41,12 @@ git branch -m prototype-graphes graphes-de-cours
 git merge main -m "Rapatrier la spec du sous-projet 27"
 ```
 
-- [ ] **Step 2: Vérifier que la spec et le plan sont là**
+- [x] **Step 2: Vérifier que la spec et le plan sont là**
 
 Run: `ls docs/specs/2026-09-21-graphes-de-cours-design.md docs/plans/2026-09-21-graphes-de-cours.md`
 Expected: les deux chemins existent.
 
-- [ ] **Step 3: Vérifier que le socle du prototype est présent**
+- [x] **Step 3: Vérifier que le socle du prototype est présent**
 
 Run: `grep -c "/bars" apps/tws-agent/ib_tws_agent/main.py && node -e "console.log(require('./apps/web/package.json').dependencies['lightweight-charts'])"`
 Expected: un compte non nul, et une version `^5.x`.
