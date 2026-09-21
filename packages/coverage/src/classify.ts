@@ -70,6 +70,7 @@ export function analyze(pos: Position): AnalyzedPosition {
     decision,
     symbol: pos.symbol,
     secType: pos.secType,
+    currency: pos.currency,
     right: pos.right.toUpperCase().slice(0, 1),
     strike: pos.strike ?? 0,
     expiry: pos.expiry ?? "",

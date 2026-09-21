@@ -9,7 +9,7 @@ function analyzedPosition(overrides: Partial<AnalyzedPosition> = {}): AnalyzedPo
   return {
     description: "TEST", kind: "long_put", label: "buy of put", marketValue: 0, quantity: 1,
     avgPrice: 1, lastPrice: 1, dailyPnl: null, dayChange: null, unrealizedPnl: 0, action: "to evaluate", decision: null,
-    symbol: "XOM", secType: "OPT", right: "P", strike: 100, expiry: "2026-03-20", multiplier: 100,
+    symbol: "XOM", secType: "OPT", currency: "USD", right: "P", strike: 100, expiry: "2026-03-20", multiplier: 100,
     allocations: [], uncoveredQuantity: 0, usedQuantity: 0, requiredCash: 0, riskNotes: [], ...overrides,
   };
 }

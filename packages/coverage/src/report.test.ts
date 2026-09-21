@@ -121,6 +121,7 @@ function position(description: string, kind: PositionKind, overrides: Partial<An
     decision: "buy back",
     symbol: description.split(" ")[0],
     secType: "OPT",
+    currency: "USD",
     right: "C",
     strike: 150,
     expiry: "2026-01-16",

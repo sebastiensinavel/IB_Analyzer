@@ -65,12 +65,13 @@ export interface BarsResponse {
 
 export type BarsResult = { ok: true; payload: BarsResponse } | { ok: false; code: AgentFetchCode };
 
-export async function fetchBars(port: number, symbol: string): Promise<BarsResult> {
+export async function fetchBars(port: number, symbol: string, currency = "USD"): Promise<BarsResult> {
   let response: Response;
   try {
-    response = await fetch(`${AGENT_URL}/bars?port=${port}&symbol=${encodeURIComponent(symbol)}`, {
-      signal: AbortSignal.timeout(AGENT_FETCH_TIMEOUT_MS),
-    });
+    response = await fetch(
+      `${AGENT_URL}/bars?port=${port}&symbol=${encodeURIComponent(symbol)}&currency=${encodeURIComponent(currency)}`,
+      { signal: AbortSignal.timeout(AGENT_FETCH_TIMEOUT_MS) },
+    );
   } catch {
     return { ok: false, code: "agent-unreachable" };
   }

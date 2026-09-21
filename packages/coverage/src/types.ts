@@ -28,6 +28,7 @@ export interface AnalyzedPosition {
   decision: "buy back" | "keep" | null;
   symbol: string;
   secType: string;
+  currency: string;
   /** "C", "P" or "". */
   right: string;
   /** 0 when the contract has none. */

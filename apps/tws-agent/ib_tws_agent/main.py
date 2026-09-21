@@ -300,6 +300,7 @@ def create_app(config: Config) -> FastAPI:
         symbol: Annotated[str, Query(min_length=1, max_length=24)],
         duration: Annotated[str, Query(max_length=16)] = BARS_DURATION,
         barSize: Annotated[str, Query(max_length=16)] = BARS_SIZE,
+        currency: Annotated[str, Query(min_length=1, max_length=8)] = "USD",
         ib_factory: Callable[[], IB] = Depends(get_ib_factory),
     ):
         """Historical bars of one underlying. Options are out of scope on purpose: IB keeps no
@@ -315,7 +316,7 @@ def create_app(config: Config) -> FastAPI:
             )
         try:
             rows = await ib.reqHistoricalDataAsync(
-                Stock(symbol.upper(), "SMART", "USD"),
+                Stock(symbol.upper(), "SMART", currency.upper()),
                 endDateTime="",
                 durationStr=duration,
                 barSizeSetting=barSize,

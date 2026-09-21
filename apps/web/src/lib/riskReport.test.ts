@@ -29,6 +29,7 @@ function position(overrides: Partial<AnalyzedPosition>): AnalyzedPosition {
     decision: "keep",
     symbol: "TEST",
     secType: "OPT",
+    currency: "USD",
     right: "P",
     strike: 100,
     expiry: "2026-01-01",

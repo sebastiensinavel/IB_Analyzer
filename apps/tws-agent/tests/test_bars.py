@@ -65,6 +65,26 @@ def test_bars_takes_the_window_from_the_query(make_client):
     assert kwargs["barSizeSetting"] == "1 hour"
 
 
+def test_bars_defaults_the_contract_currency_to_usd(make_client):
+    ib = FakeIB(bars=[])
+    client = make_client(ib)
+
+    client.get("/bars?port=7496&symbol=BTDR", headers={"Origin": ORIGIN})
+
+    contract, _ = ib.historical_requests[0]
+    assert contract.currency == "USD"
+
+
+def test_bars_passes_a_foreign_currency_to_the_contract(make_client):
+    ib = FakeIB(bars=[])
+    client = make_client(ib)
+
+    client.get("/bars?port=7496&symbol=SAP&currency=EUR", headers={"Origin": ORIGIN})
+
+    contract, _ = ib.historical_requests[0]
+    assert (contract.symbol, contract.currency) == ("SAP", "EUR")
+
+
 def test_bars_answers_503_when_tws_is_unreachable(make_client):
     ib = FakeIB(connect_error=ConnectionRefusedError("no TWS here"), bars=[])
     client = make_client(ib)
