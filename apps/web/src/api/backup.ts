@@ -46,11 +46,24 @@ async function call(path: string, init: RequestInit = {}): Promise<Response | nu
   }
 }
 
+/**
+ * A 200 is not proof of a readable body: a captive portal, a misconfigured proxy or an
+ * infrastructure error page can all answer 200 with HTML. `Response.json()` throws on that,
+ * and the exception must never cross into the caller — same rule as `allauth.ts:61`'s
+ * `response.json().catch(() => null)`. `null` here means "the body did not parse", read by
+ * every caller as `kind: "failed"`.
+ */
+async function readJson(answer: Response): Promise<unknown> {
+  return answer.json().catch(() => null);
+}
+
 export async function fetchBackupStatus(): Promise<BackupResult<BackupStatus>> {
   const answer = await call("/status");
   if (answer === null) return { ok: false, kind: "unreachable" };
   if (!answer.ok) return { ok: false, kind: failureFor(answer.status) };
-  return { ok: true, value: (await answer.json()) as BackupStatus };
+  const body = await readJson(answer);
+  if (body === null) return { ok: false, kind: "failed" };
+  return { ok: true, value: body as BackupStatus };
 }
 
 export async function putBackup(blob: Uint8Array): Promise<BackupResult<{ updatedAt: string; bytes: number }>> {
@@ -61,15 +74,29 @@ export async function putBackup(blob: Uint8Array): Promise<BackupResult<{ update
   });
   if (answer === null) return { ok: false, kind: "unreachable" };
   if (!answer.ok) return { ok: false, kind: failureFor(answer.status) };
-  const body = (await answer.json()) as BackupStatus;
-  return { ok: true, value: { updatedAt: body.updatedAt ?? "", bytes: body.bytes ?? blob.byteLength } };
+  const body = await readJson(answer);
+  // A value absent from a confirmed deposit stays absent, never fabricated from the local
+  // blob (a guessed size, an empty date): a 200 that does not carry both fields is not a
+  // confirmation, it is a malformed answer — report it as such rather than invent what the
+  // server never said.
+  const status = body as Partial<BackupStatus> | null;
+  if (status === null || typeof status.updatedAt !== "string" || typeof status.bytes !== "number") {
+    return { ok: false, kind: "failed" };
+  }
+  return { ok: true, value: { updatedAt: status.updatedAt, bytes: status.bytes } };
 }
 
 export async function getBackup(): Promise<BackupResult<Uint8Array>> {
   const answer = await call("");
   if (answer === null) return { ok: false, kind: "unreachable" };
   if (!answer.ok) return { ok: false, kind: failureFor(answer.status) };
-  return { ok: true, value: new Uint8Array(await answer.arrayBuffer()) };
+  try {
+    return { ok: true, value: new Uint8Array(await answer.arrayBuffer()) };
+  } catch {
+    // A connection dropped mid-download rejects `arrayBuffer()`; the server being optional
+    // means that failure is a state the client renders, never an exception that escapes here.
+    return { ok: false, kind: "failed" };
+  }
 }
 
 export async function deleteBackup(): Promise<BackupResult<void>> {

@@ -52,6 +52,27 @@ describe("backup client", () => {
         "X-CSRFToken": "abc123",
       });
     });
+
+    // Ronde de correction 1 (critique) : un intermédiaire — proxy, portail captif, page
+    // d'erreur d'infrastructure — peut répondre 200 avec un corps qui n'est pas du JSON.
+    // `answer.json()` rejette alors ; cette exception ne doit jamais sortir de `putBackup`.
+    it("un corps illisible sur un 200 ne sort jamais en exception", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("<!doctype html><html></html>", { status: 200, headers: { "content-type": "text/html" } }),
+      );
+      await expect(putBackup(new Uint8Array([1]))).resolves.toEqual({ ok: false, kind: "failed" });
+    });
+
+    // Ronde de correction 1 (important) : un 200 sans les champs attendus n'est pas une
+    // confirmation à demi — `updatedAt`/`bytes` ne doivent jamais être fabriqués depuis le
+    // blob local (une date vide, une taille devinée). Django rend toujours ces champs
+    // aujourd'hui ; le code doit dire la vérité si cela changeait.
+    it("ne fabrique jamais updatedAt ni bytes quand le corps ne les porte pas", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ present: true }), { status: 200 }),
+      );
+      expect(await putBackup(new Uint8Array([1, 2, 3]))).toEqual({ ok: false, kind: "failed" });
+    });
   });
 
   describe("getBackup", () => {
@@ -65,6 +86,21 @@ describe("backup client", () => {
     it("une sauvegarde absente n'est pas un échec", async () => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 404 }));
       expect(await getBackup()).toEqual({ ok: false, kind: "missing" });
+    });
+
+    // Ronde de correction 1 (critique) : une connexion coupée pendant le téléchargement d'une
+    // sauvegarde de plusieurs mégaoctets fait rejeter `arrayBuffer()`. Cette exception ne doit
+    // jamais sortir de `getBackup` — le serveur est optionnel, son indisponibilité sous toutes
+    // ses formes (corps illisible compris) est un état que le client rend, jamais une exception
+    // qui traverse l'application.
+    it("un flux binaire interrompu ne sort jamais en exception", async () => {
+      const brokenResponse = {
+        ok: true,
+        status: 200,
+        arrayBuffer: () => Promise.reject(new Error("stream aborted")),
+      } as unknown as Response;
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(brokenResponse);
+      await expect(getBackup()).resolves.toEqual({ ok: false, kind: "failed" });
     });
   });
 
@@ -102,6 +138,14 @@ describe("backup client", () => {
     it("une session anonyme se distingue d'un échec quelconque", async () => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 403 }));
       expect(await fetchBackupStatus()).toEqual({ ok: false, kind: "anonymous" });
+    });
+
+    // Ronde de correction 1 (critique) : même garde qu'ailleurs, sur la route de statut.
+    it("un corps illisible sur un 200 ne sort jamais en exception", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("<!doctype html><html></html>", { status: 200, headers: { "content-type": "text/html" } }),
+      );
+      await expect(fetchBackupStatus()).resolves.toEqual({ ok: false, kind: "failed" });
     });
   });
 });
