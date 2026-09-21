@@ -524,6 +524,7 @@
     "backupTooLarge": "La sauvegarde dépasse la limite de 20 Mo autorisée par le serveur.",
     "backupMissing": "Aucune sauvegarde n'est déposée sur le serveur.",
     "backupInvalidCode": "Code de récupération invalide.",
+    "backupTooNew": "Cette sauvegarde vient d'une version plus récente de l'application. Mettez la page à jour avant de la restaurer.",
     "backupCsrfExpired": "Jeton de sécurité expiré. Rechargez la page et réessayez.",
     "backupDeleteConfirm": "Supprimer la sauvegarde déposée sur le serveur ? Il n'y a ni version ni corbeille."
   },

@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createAccount } from "@/db/accounts";
 import { AppDatabase } from "@/db/schema";
-import { BACKUP_FORMAT, BACKUP_TABLES, BackupFormatError, buildPayload, restorePayload, NEVER_BACKED_UP } from "./payload";
+import {
+  BACKUP_FORMAT,
+  BACKUP_TABLES,
+  BackupFormatError,
+  BackupSchemaError,
+  buildPayload,
+  restorePayload,
+  NEVER_BACKED_UP,
+} from "./payload";
 
 let db: AppDatabase;
 
@@ -101,6 +109,35 @@ describe("restorePayload", () => {
     expect(accountIds, "Gamma survived: clear() of accounts was rolled back").toContain("gamma");
     expect(accountIds, "Beta also survived").toContain("beta");
     expect(await db.accounts.count(), "Both accounts still in database").toBe(2);
+  });
+});
+
+describe("version du schéma Dexie", () => {
+  it("le paquet porte la version du schéma dont il sort", async () => {
+    expect((await buildPayload(db)).dexie).toBe(db.verno);
+  });
+
+  // `BACKUP_FORMAT` versions the envelope, not the rows. A package taken on a newer schema
+  // would land its rows past every migration between the two versions, exactly the hole
+  // version 9 had to go back and fill for `dailyPnl`/`dayChange`.
+  it("refuse un paquet venu d'un schéma plus récent, sans rien écrire", async () => {
+    const payload = { ...(await buildPayload(db)), dexie: db.verno + 1 };
+    payload.tables.accounts = [];
+
+    await expect(restorePayload(db, payload)).rejects.toBeInstanceOf(BackupSchemaError);
+    expect((await db.accounts.toArray()).map((a) => a.id)).toEqual(["beta"]);
+  });
+
+  it("accepte un paquet plus ancien, et un paquet qui ne porte pas le champ", async () => {
+    const seed = new AppDatabase(`test-${crypto.randomUUID()}`);
+    await createAccount(seed, { label: "Gamma", ibAccountId: "U7654321" });
+    const older = { ...(await buildPayload(seed)), dexie: db.verno - 1 };
+
+    await restorePayload(db, older);
+    expect((await db.accounts.toArray()).map((a) => a.id)).toEqual(["gamma"]);
+
+    const { dexie: _dexie, ...withoutField } = await buildPayload(seed);
+    await expect(restorePayload(db, withoutField)).resolves.toBeUndefined();
   });
 });
 

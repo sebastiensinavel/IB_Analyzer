@@ -11,6 +11,7 @@ import { adoptBackupKey, clearBackupRecord, disableBackup, enableBackup, readBac
 import { pullBackup, pushBackup } from "@/db/backup/sync";
 import { backupFileName, exportToBlob, importFromFile } from "@/db/backup/file";
 import { BackupKeyError, decodePayload, fromRecoveryCode, gunzip, toRecoveryCode } from "@/db/backup/crypto";
+import { BackupSchemaError } from "@/db/backup/payload";
 import { formatBytes, formatDateTime } from "@/lib/format";
 
 /**
@@ -51,6 +52,17 @@ export function BackupCard() {
       case "failed":
         return t("settings.actionFailed");
     }
+  }
+
+  /**
+   * The two ways of overwriting this browser — the server restore and the local file — fail on
+   * the same three things, so they read the same exception. A wrong key and a package from a
+   * newer schema each have a cause the user can act on; anything else does not.
+   */
+  function restoreFailureMessage(error: unknown): string {
+    if (error instanceof BackupKeyError) return t("settings.backupInvalidCode");
+    if (error instanceof BackupSchemaError) return t("settings.backupTooNew");
+    return t("settings.actionFailed");
   }
 
   async function handleEnable() {
@@ -139,7 +151,7 @@ export function BackupCard() {
       }
       if (adopt) await adoptBackupKey(db, key);
     } catch (error) {
-      setError(error instanceof BackupKeyError ? t("settings.backupInvalidCode") : t("settings.actionFailed"));
+      setError(restoreFailureMessage(error));
     } finally {
       setBusy(false);
     }
@@ -209,8 +221,8 @@ export function BackupCard() {
       const payload = decodePayload(await gunzip(bytes));
       if (!window.confirm(t("settings.backupRestoreConfirm", { date: formatDateTime(payload.createdAt) }))) return;
       await importFromFile(db, file);
-    } catch {
-      setError(t("settings.actionFailed"));
+    } catch (error) {
+      setError(restoreFailureMessage(error));
     } finally {
       setBusy(false);
     }

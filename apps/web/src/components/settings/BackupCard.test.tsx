@@ -230,6 +230,24 @@ describe("BackupCard", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  // A package from a newer schema would write rows past every migration between the two
+  // versions. It is refused by name rather than by the catch-all, because the user can act on
+  // it: updating the page is what makes the package readable.
+  it("refuse un fichier venu d'un schéma plus récent et le dit, sans toucher à la base", async () => {
+    const seed = new AppDatabase(`test-${crypto.randomUUID()}`);
+    await createAccount(seed, { label: "FromTheFuture", ibAccountId: "U2223334" });
+    const payload = { ...(await buildPayload(seed)), dexie: db.verno + 1 };
+    const file = new File([(await gzip(encodePayload(payload))) as BlobPart], "backup.json.gz");
+    await createAccount(db, { label: "Untouched", ibAccountId: "U3334445" });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderCard();
+
+    await userEvent.upload(screen.getByLabelText(i18n.t("settings.backupImport")), file);
+
+    expect(await screen.findByText(i18n.t("settings.backupTooNew"))).toBeInTheDocument();
+    expect((await db.accounts.toArray()).map((a) => a.id)).toEqual(["untouched"]);
+  });
+
   it("exporter construit un blob téléchargeable, même sans compte", async () => {
     vi.mocked(useSession).mockReturnValue({ status: "anonymous" });
     await createAccount(db, { label: "ForExport", ibAccountId: "U6667778" });

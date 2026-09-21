@@ -524,6 +524,7 @@
     "backupTooLarge": "The backup exceeds the server's 20 MB limit.",
     "backupMissing": "No backup is deposited on the server.",
     "backupInvalidCode": "Invalid recovery code.",
+    "backupTooNew": "This backup comes from a newer version of the application. Update the page before restoring it.",
     "backupCsrfExpired": "Security token expired. Reload the page and try again.",
     "backupDeleteConfirm": "Delete the backup deposited on the server? There is no version history and no trash."
   },
