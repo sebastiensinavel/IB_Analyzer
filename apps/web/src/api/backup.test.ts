@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deleteBackup, fetchBackupStatus, getBackup, putBackup } from "./backup";
+import { deleteBackup, fetchBackupStatus, getBackup, MAX_BACKUP_BYTES, putBackup } from "./backup";
 import { bytesOf } from "../test/bytes";
 
 describe("backup client", () => {
@@ -24,6 +24,17 @@ describe("backup client", () => {
     it("distingue le plafond dépassé d'un échec quelconque", async () => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 413 }));
       expect(await putBackup(new Uint8Array([1]))).toEqual({ ok: false, kind: "too-large" });
+    });
+
+    // Django reads `request.body` under `DATA_UPLOAD_MAX_MEMORY_SIZE` and raises
+    // `RequestDataTooBig` — a bare 400 — before the view's own ceiling check can answer 413.
+    // Past that margin the server can no longer name the cause, so the client names it, and
+    // twenty megabytes never leave the browser to be thrown away.
+    it("refuse un paquet au-dessus du plafond sans rien envoyer", async () => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+      expect(await putBackup(new Uint8Array(MAX_BACKUP_BYTES + 1))).toEqual({ ok: false, kind: "too-large" });
+      expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("un serveur injoignable n'est jamais une exception", async () => {

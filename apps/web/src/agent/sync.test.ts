@@ -3,6 +3,7 @@ import type { AgentContract, AgentSnapshotPayload } from "@ib/ib-parsers";
 import { buildJournals, type Transaction } from "@ib/ledger";
 import { createAccount } from "@/db/accounts";
 import { installBackupTrigger } from "@/db/backup/trigger";
+import { withImportLock } from "@/db/importLock";
 import { db, type AccountRecord } from "@/db/schema";
 import type { AgentFetchResult } from "./client";
 import { syncAgent } from "./sync";
@@ -354,6 +355,38 @@ describe("syncAgent and the backup trigger", () => {
       expect(onChange).toHaveBeenCalled();
 
       resolveFetch({ ok: true, payload: payload() });
+      await syncPromise;
+    } finally {
+      uninstall();
+    }
+  });
+
+  // Same reasoning one step further in: the mute used to wrap `withImportLock`, so the wait in
+  // the lock's own queue was muted too. Waiting one's turn behind another writer is a wait of
+  // the same kind as the round trip above — an import of a year of statements holds that lane
+  // for seconds — and the mute is a module-level counter. Only the writes may be muted.
+  it("ne bâillonne pas le dépôt de celui qui tient le verrou pendant que l'agent attend son tour", async () => {
+    const onChange = vi.fn();
+    const uninstall = installBackupTrigger(db, onChange);
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    try {
+      const holder = withImportLock(ACCOUNT.id, async () => {
+        await held;
+        // The write of whoever holds the lock: a sector edit, a statement import. It earns a
+        // deposit, and the agent queued behind it has no say in that.
+        await db.sectors.put({ ticker: "ZXAG", name: "Zxag", category: "Tech", score: 4, status: "", updatedAt: "2026-09-06T13:00:00.000Z" });
+      });
+      const syncPromise = syncAgent(ok(payload()), ACCOUNT);
+      // Long enough for the pass to fetch, parse and reach the lock's queue.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(onChange).not.toHaveBeenCalled();
+
+      release();
+      await holder;
+      expect(onChange).toHaveBeenCalled();
       await syncPromise;
     } finally {
       uninstall();

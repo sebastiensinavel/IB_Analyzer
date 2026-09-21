@@ -68,8 +68,12 @@ export async function syncAgent(deps: AgentSyncDeps, account: AccountRecord): Pr
 
   const at = deps.now().toISOString();
   let plan!: ImportPlan;
-  await suppressBackupTrigger(() =>
-    withImportLock(account.id, () =>
+  // The lock is taken outside the mute, never inside it: waiting one's turn behind another
+  // writer is a wait of the same kind as the round trip above — seconds, not microtasks — and
+  // the mute counter is module-level. Muting the wait would swallow a deposit triggered by
+  // whoever holds the lock, which is precisely the write that deserved one.
+  await withImportLock(account.id, () =>
+    suppressBackupTrigger(() =>
       deps.db.transaction(
         "rw",
         [deps.db.transactions, deps.db.snapshots, deps.db.accounts, deps.db.contracts, deps.db.sectors],

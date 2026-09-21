@@ -11,6 +11,16 @@ import { csrfToken } from "./csrf";
 
 const BASE = `${window.location.origin}/api/core/backup`;
 
+/**
+ * The server's own ceiling, mirrored from `core.models.MAX_BACKUP_BYTES`, and checked here
+ * before the POST rather than only after it. Django reads `request.body` under
+ * `DATA_UPLOAD_MAX_MEMORY_SIZE` and raises `RequestDataTooBig` — a bare 400 — before the view
+ * can answer 413, so past that one-megabyte margin the server is no longer able to name the
+ * cause and the user reads "L'opération a échoué" for what is simply the ceiling. Refusing
+ * here names it, and spares twenty megabytes an upload that would be thrown away.
+ */
+export const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
+
 export type BackupFailure = "unreachable" | "anonymous" | "csrf" | "too-large" | "missing" | "failed";
 export type BackupResult<T> = { ok: true; value: T } | { ok: false; kind: BackupFailure };
 
@@ -75,6 +85,7 @@ export async function fetchBackupStatus(): Promise<BackupResult<BackupStatus>> {
 }
 
 export async function putBackup(blob: Uint8Array): Promise<BackupResult<{ updatedAt: string; bytes: number }>> {
+  if (blob.byteLength > MAX_BACKUP_BYTES) return { ok: false, kind: "too-large" };
   const answer = await call("", {
     method: "POST",
     headers: { "content-type": "application/octet-stream" },
