@@ -29,10 +29,22 @@ export interface PositionRowValues {
   coverage: readonly CoverageBadge[];
 }
 
-export function PositionRow({ values }: { values: PositionRowValues }) {
+export interface PositionRowProps {
+  values: PositionRowValues;
+  /** Prototype (graphes) : set on a table whose lines open a chart. */
+  onClick?: () => void;
+  /** The line whose chart is open: kept highlighted while its row hangs below it. */
+  expanded?: boolean;
+}
+
+export function PositionRow({ values, onClick, expanded = false }: PositionRowProps) {
   const decision = decisionBadge(values.decision);
   return (
-    <TableRow>
+    <TableRow
+      onClick={onClick}
+      data-state={expanded ? "selected" : undefined}
+      className={cn(onClick && "cursor-pointer")}
+    >
       <TableCell className="font-medium">{values.contract}</TableCell>
       <TableCell className="text-muted-foreground">{values.label}</TableCell>
       <TableCell>{values.sector && <Badge variant="outline">{values.sector}</Badge>}</TableCell>

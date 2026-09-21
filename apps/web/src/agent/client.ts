@@ -46,3 +46,41 @@ export async function fetchSnapshot(port: number): Promise<AgentFetchResult> {
     return { ok: false, code: "agent-error" };
   }
 }
+
+/** Prototype (graphes) : daily bars of one underlying, straight from TWS. */
+export interface PriceBar {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export interface BarsResponse {
+  symbol: string;
+  fetchedAt: string;
+  bars: PriceBar[];
+}
+
+export type BarsResult = { ok: true; payload: BarsResponse } | { ok: false; code: AgentFetchCode };
+
+export async function fetchBars(port: number, symbol: string): Promise<BarsResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${AGENT_URL}/bars?port=${port}&symbol=${encodeURIComponent(symbol)}`, {
+      signal: AbortSignal.timeout(AGENT_FETCH_TIMEOUT_MS),
+    });
+  } catch {
+    return { ok: false, code: "agent-unreachable" };
+  }
+  if (response.status === 503) return { ok: false, code: "tws-unreachable" };
+  if (!response.ok) return { ok: false, code: "agent-error" };
+  try {
+    const payload = (await response.json()) as BarsResponse;
+    if (!Array.isArray(payload?.bars)) return { ok: false, code: "agent-error" };
+    return { ok: true, payload };
+  } catch {
+    return { ok: false, code: "agent-error" };
+  }
+}

@@ -1,4 +1,6 @@
+import { Fragment } from "react";
 import type { AnalyzedPosition } from "@ib/coverage";
+import { PositionChartRow } from "@/components/PositionChartRow";
 import { PositionRow } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
 import type { TableViewState } from "@/hooks/useTableView";
@@ -17,10 +19,22 @@ export interface PositionGroupCardProps {
   table: TableViewState;
   specs: readonly ColumnSpec<AnalyzedPosition>[];
   sectorOf: (symbol: string) => string | null;
+  /** Prototype (graphes) : the one line of the whole page whose chart is open, if it is in this group. */
+  openKey: string | null;
+  onToggle: (key: string) => void;
 }
 
 /** One group of the Positions page: the shared twelve columns over a whole IB position. */
-export function PositionGroupCard({ title, positions, rows, table, specs, sectorOf }: PositionGroupCardProps) {
+export function PositionGroupCard({
+  title,
+  positions,
+  rows,
+  table,
+  specs,
+  sectorOf,
+  openKey,
+  onToggle,
+}: PositionGroupCardProps) {
   return (
     <FilteredTableBox
       title={title}
@@ -34,7 +48,10 @@ export function PositionGroupCard({ title, positions, rows, table, specs, sector
       emptyKey="positions.noResults"
       rowKey={(position) => position.description}
       renderRow={(position) => (
+        <Fragment>
         <PositionRow
+          onClick={() => onToggle(position.description)}
+          expanded={openKey === position.description}
           values={{
             contract: formatContract(position),
             label: position.label,
@@ -50,6 +67,8 @@ export function PositionGroupCard({ title, positions, rows, table, specs, sector
             coverage: coverageBadges(position),
           }}
         />
+        {openKey === position.description && <PositionChartRow columnCount={POSITION_COLUMNS.length} />}
+        </Fragment>
       )}
     />
   );

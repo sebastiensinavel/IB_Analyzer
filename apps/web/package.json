@@ -28,6 +28,7 @@
     "echarts": "^6.1.0",
     "echarts-for-react": "^3.0.6",
     "i18next": "^23.16.8",
+    "lightweight-charts": "^5.2.1",
     "lucide-react": "^1.35.0",
     "openapi-fetch": "^0.17.0",
     "react": "^19.2.8",

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 import { DETAIL_GROUPS, groupedPositions, type AnalyzedPosition, type DetailGroupId } from "@ib/coverage";
@@ -31,6 +31,9 @@ export function PositionsPage() {
     (label: string | null) => DETAIL_GROUPS.forEach((group) => views[group.id].setCriterion("position", label)),
     [views],
   );
+  // Prototype (graphes) : one chart at a time for the whole page, whichever group holds the line.
+  const [openChart, setOpenChart] = useState<string | null>(null);
+  const toggleChart = useCallback((key: string) => setOpenChart((current) => (current === key ? null : key)), []);
   const ledger = useLedger(accountId);
   const points = useCashPoints(accountId);
   // The cash comes from the ledger, not the snapshot: shown with or without positions.
@@ -101,6 +104,8 @@ export function PositionsPage() {
           table={views[box.id as DetailGroupId]}
           specs={specs}
           sectorOf={sectorOf}
+          openKey={openChart}
+          onToggle={toggleChart}
         />
       ))}
 
