@@ -49,8 +49,6 @@ export interface CondorLevel {
 
 export type ChartLevel = SharesLevel | OptionLevel | LeapsBuyLevel | CondorLevel;
 
-const dayOf = (when: string) => when.slice(0, 10);
-
 /** Une vente d'options par strike : deux échéances au même strike ne font qu'une ligne. */
 function optionLevels(rows: readonly JournalRow[], kind: "short_put" | "short_call"): OptionLevel[] {
   const byStrike = new Map<number, OptionLevel>();
