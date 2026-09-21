@@ -73,7 +73,7 @@ Expected: un compte non nul, et une version `^5.x`.
   export function strategyLevels(rows: readonly JournalRow[], ticker: string, strategies: readonly Strategy[]): ChartLevel[]
   ```
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Créer `packages/ledger/tests/levels.test.ts`. Le helper `row` fabrique une `JournalRow` minimale ; les champs absents ne servent à rien ici.
 
@@ -207,12 +207,12 @@ describe("strategyLevels", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `cd packages/ledger && npx vitest run tests/levels.test.ts`
 Expected: FAIL, `Failed to resolve import "../src/journals/levels.ts"`.
 
-- [ ] **Step 3: Écrire `levels.ts`**
+- [x] **Step 3: Écrire `levels.ts`**
 
 ```ts
 /**
@@ -320,12 +320,12 @@ Puis ajouter l'export dans `packages/ledger/src/journals/index.ts` :
 export * from "./levels.ts";
 ```
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `cd packages/ledger && npx vitest run tests/levels.test.ts`
 Expected: PASS, 6 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ledger/src/journals/levels.ts packages/ledger/src/journals/index.ts packages/ledger/tests/levels.test.ts docs/plans/2026-09-21-graphes-de-cours.md
