@@ -124,4 +124,76 @@ describe("strategyLevels", () => {
 
     expect(find(strategyLevels(rows, "BTDR", ALL), "shortPut")).toEqual([]);
   });
+
+  it("rend un achat de call LEAPS au jour de l'achat, sans prix", () => {
+    const rows = [
+      row({
+        kind: "long_call",
+        strategy: "leaps",
+        strike: 12,
+        quantity: 2,
+        openPrice: 4.2,
+        startWhen: "2026-03-17T15:02:00.000Z",
+        contract: { expiry: "2027-01-15" } as never,
+      }),
+    ];
+
+    expect(find(strategyLevels(rows, "BTDR", ALL), "leapsBuy")).toEqual([
+      { kind: "leapsBuy", when: "2026-03-17", quantity: 2 },
+    ]);
+  });
+
+  it("ne rend pas un call acheté hors LEAPS", () => {
+    const rows = [
+      row({ kind: "long_call", strategy: "others", strike: 12, quantity: 1, contract: { expiry: "2026-10-16" } as never }),
+    ];
+
+    expect(find(strategyLevels(rows, "BTDR", ALL), "leapsBuy")).toEqual([]);
+  });
+
+  it("rend un condor de son ouverture à son échéance, strikes croissants", () => {
+    const legs = [
+      row({ id: "lp", kind: "long_put", strategy: "condors", strike: 8, quantity: 1 }),
+      row({ id: "sp", kind: "short_put", strategy: "condors", strike: 10, quantity: -1 }),
+      row({ id: "sc", kind: "short_call", strategy: "condors", strike: 16, quantity: -1 }),
+      row({ id: "lc", kind: "long_call", strategy: "condors", strike: 18, quantity: 1 }),
+    ];
+    const rows = [
+      row({
+        id: "ic",
+        kind: "condor",
+        strategy: "condors",
+        quantity: -1,
+        startWhen: "2026-04-02T13:45:00.000Z",
+        contract: { expiry: "2026-06-19" } as never,
+        legs,
+      }),
+      ...legs,
+    ];
+
+    expect(find(strategyLevels(rows, "BTDR", ALL), "condor")).toEqual([
+      {
+        kind: "condor",
+        from: "2026-04-02",
+        to: "2026-06-19",
+        putStrikes: [8, 10],
+        callStrikes: [16, 18],
+        quantity: -1,
+      },
+    ]);
+  });
+
+  it("ignore un condor dont une jambe n'a pas de strike", () => {
+    const legs = [
+      row({ id: "lp", kind: "long_put", strategy: "condors", strike: null, quantity: 1 }),
+      row({ id: "sp", kind: "short_put", strategy: "condors", strike: 10, quantity: -1 }),
+      row({ id: "sc", kind: "short_call", strategy: "condors", strike: 16, quantity: -1 }),
+      row({ id: "lc", kind: "long_call", strategy: "condors", strike: 18, quantity: 1 }),
+    ];
+    const rows = [
+      row({ id: "ic", kind: "condor", strategy: "condors", quantity: -1, contract: { expiry: "2026-06-19" } as never, legs }),
+    ];
+
+    expect(find(strategyLevels(rows, "BTDR", ALL), "condor")).toEqual([]);
+  });
 });

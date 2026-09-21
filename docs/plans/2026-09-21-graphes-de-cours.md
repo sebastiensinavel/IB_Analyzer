@@ -344,7 +344,7 @@ git commit -m "feat(ledger): les niveaux d'actions assignées et d'options vendu
 - Consumes: `strategyLevels`, `LeapsBuyLevel`, `CondorLevel` (tâche 1)
 - Produces: `strategyLevels` rend désormais aussi les formes `leapsBuy` et `condor`
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Ajouter au `describe` de `packages/ledger/tests/levels.test.ts` :
 
@@ -422,12 +422,12 @@ Ajouter au `describe` de `packages/ledger/tests/levels.test.ts` :
   });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `cd packages/ledger && npx vitest run tests/levels.test.ts`
 Expected: FAIL sur les quatre nouveaux tests (tableaux vides).
 
-- [ ] **Step 3: Compléter `levels.ts`**
+- [x] **Step 3: Compléter `levels.ts`**
 
 Ajouter les deux fonctions et leurs appels :
 
@@ -475,12 +475,12 @@ Et dans `strategyLevels`, après les ventes d'options :
   levels.push(...condorLevels(scoped));
 ```
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `cd packages/ledger && npx vitest run tests/levels.test.ts`
 Expected: PASS, 10 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ledger/src/journals/levels.ts packages/ledger/tests/levels.test.ts
@@ -506,7 +506,7 @@ git commit -m "feat(ledger): les niveaux des achats LEAPS et des condors"
   export function levelLabel(level: ChartLevel, price: number, kindWord: string, locale: string): string
   ```
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Créer `apps/web/src/lib/chartLevels.test.ts` :
 
@@ -1129,7 +1129,7 @@ git commit -m "feat(web): le graphe porte les niveaux et prolonge son axe"
   export function PositionChartRow(props: PositionChartRowProps): JSX.Element
   ```
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Créer `apps/web/src/components/PositionChartRow.test.tsx`. Lightweight Charts est bouchonné (jsdom n'a pas de canevas) ; `fetchBars` est joint par `vi.spyOn` sur le module de l'agent, qui est la frontière réseau, jamais un hook.
 
@@ -1397,7 +1397,7 @@ git commit -m "feat(web): la ligne du graphe, ses trois états sans données"
   export function useOpenChart(): OpenChart
   ```
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Créer `apps/web/src/pages/StrategyPositionsChart.test.tsx`, sur le même patron que `PositionsChart.test.tsx` (bouchon de `lightweight-charts`, ledger semé, rendu de `StrategyPositionsPage strategy="wheel"`), avec :
 

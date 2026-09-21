@@ -10,6 +10,9 @@ import type { JournalRow, Strategy } from "./types.ts";
 
 export type ChartLevelKind = "shares" | "shortPut" | "shortCall" | "leapsBuy" | "condor";
 
+/** Extrait la date au format YYYY-MM-DD d'un timestamp ISO. */
+const dayOf = (when: string) => when.slice(0, 10);
+
 /** Les actions Wheel détenues, à leur prix moyen d'assignation. */
 export interface SharesLevel {
   kind: "shares";
@@ -71,6 +74,41 @@ function optionLevels(rows: readonly JournalRow[], kind: "short_put" | "short_ca
     .sort((a, b) => a.price - b.price);
 }
 
+/** Les achats de calls LEAPS ouverts : un niveau par ligne, le prix viendra de la barre du jour. */
+function leapsBuyLevels(rows: readonly JournalRow[]): LeapsBuyLevel[] {
+  return rows
+    .filter((row) => row.strategy === "leaps" && row.kind === "long_call" && row.quantity !== null)
+    .map((row) => ({ kind: "leapsBuy" as const, when: dayOf(row.startWhen), quantity: row.quantity as number }))
+    .sort((a, b) => a.when.localeCompare(b.when));
+}
+
+/**
+ * Les condors en cours, de leur ouverture à leur échéance - la fenêtre de risque, pas la
+ * fenêtre vécue. Les quatre jambes sont dans l'ordre garanti par `condor.ts` : long put,
+ * short put, short call, long call, strikes croissants.
+ */
+function condorLevels(rows: readonly JournalRow[]): CondorLevel[] {
+  const levels: CondorLevel[] = [];
+  for (const row of rows) {
+    if (row.kind !== "condor" || row.quantity === null) continue;
+    const expiry = row.contract.expiry;
+    const legs = row.legs;
+    if (expiry === null || legs === undefined || legs.length !== 4) continue;
+    const strikes = legs.map((leg) => leg.strike);
+    if (strikes.some((strike) => strike === null)) continue;
+    const [longPut, shortPut, shortCall, longCall] = strikes as number[];
+    levels.push({
+      kind: "condor",
+      from: dayOf(row.startWhen),
+      to: expiry,
+      putStrikes: [longPut, shortPut],
+      callStrikes: [shortCall, longCall],
+      quantity: row.quantity,
+    });
+  }
+  return levels;
+}
+
 export function strategyLevels(
   rows: readonly JournalRow[],
   ticker: string,
@@ -91,5 +129,7 @@ export function strategyLevels(
 
   levels.push(...optionLevels(scoped, "short_put"));
   levels.push(...optionLevels(scoped, "short_call"));
+  levels.push(...leapsBuyLevels(scoped));
+  levels.push(...condorLevels(scoped));
   return levels;
 }
