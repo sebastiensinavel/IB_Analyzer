@@ -36,3 +36,21 @@ if (typeof window !== "undefined" && !window.matchMedia) {
 // jsdom has none and logs a warning on every call, so this stub gives back jsdom's own `null`
 // silently — behaviour is unchanged, only the noise is gone.
 HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
+
+// jsdom's window carries its own Uint8Array/ArrayBuffer, a realm distinct from the one
+// Node's native TextEncoder/TextDecoder, fetch's Response, WebCrypto and
+// CompressionStream/DecompressionStream build their results with — those bypass jsdom
+// entirely and stay bound to the outer Node process's intrinsics. Left alone, application
+// code that writes the bare `new Uint8Array(...)` (the sub-project 6 backup's gzip/AES-GCM
+// round trip in db/backup/crypto.ts, for one) gets jsdom's copy back, and a test comparing
+// it against a TextEncoder-produced array (`toEqual`) fails on prototype identity despite
+// byte-identical content — the failure shows "no visual difference" because the bytes truly
+// do match. Re-pointing the global at Node's own intrinsic, reached through Buffer (a global
+// jsdom never touches), removes the split for the whole suite instead of coping with it in
+// every test that happens to mix the two.
+{
+  const nodeUint8Array = Object.getPrototypeOf(Buffer.prototype).constructor as typeof Uint8Array;
+  if (globalThis.Uint8Array !== nodeUint8Array) {
+    globalThis.Uint8Array = nodeUint8Array;
+  }
+}
