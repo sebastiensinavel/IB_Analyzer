@@ -26,4 +26,5 @@ def test_follows_a_worktree_to_its_own_git_directory(tmp_path):
 
 def test_falls_back_to_a_writable_path_when_there_is_no_git_directory(tmp_path):
     key = read_or_create_dev_secret(tmp_path)
+    assert (tmp_path / "dev-secret-key").read_text().strip() == key
     assert read_or_create_dev_secret(tmp_path) == key

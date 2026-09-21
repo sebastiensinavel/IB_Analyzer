@@ -1,9 +1,9 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AGENT_PORT, portsFor, worktreeName, worktreeSlot } from "../../tools/dev-env/ports.mjs";
+import { AGENT_PORT, checkoutGitDir, devSecretKey, portsFor, worktreeName, worktreeSlot } from "../../tools/dev-env/ports.mjs";
 
 describe("portsFor", () => {
   it("keeps the historical ports at the repository root", () => {
@@ -64,6 +64,30 @@ describe("worktreeName", () => {
     mkdirSync(root);
     writeFileSync(join(root, ".git"), "gitdir: /somewhere/.git/worktrees/dev-ports\n");
     expect(worktreeName(root)).toBe("dev-ports");
+  });
+});
+
+describe("checkoutGitDir", () => {
+  let dir: string;
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  // Mirrors config/devkey.py's checkout_git_dir: a source tarball or a container has no
+  // `.git` at all, and devSecretKey needs a writable, per-checkout path even then.
+  it("falls back to the checkout root when there is no git directory at all", () => {
+    dir = mkdtempSync(join(tmpdir(), "no-git-"));
+    expect(checkoutGitDir(dir)).toBe(dir);
+  });
+});
+
+describe("devSecretKey", () => {
+  let dir: string;
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it("writes the key straight to the checkout root when there is no git directory", () => {
+    dir = mkdtempSync(join(tmpdir(), "no-git-key-"));
+    const key = devSecretKey(dir);
+    expect(readFileSync(join(dir, "dev-secret-key"), "utf8").trim()).toBe(key);
+    expect(devSecretKey(dir)).toBe(key);
   });
 });
 

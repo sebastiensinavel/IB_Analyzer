@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 
-from config.devkey import read_or_create_dev_secret
+from config.devkey import checkout_git_dir
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 COMPOSE = (REPO_ROOT / "docker-compose.yml").read_text()
@@ -81,13 +81,16 @@ def test_a_key_from_the_environment_is_all_it_takes(monkeypatch):
 def test_debug_still_boots_without_a_key(monkeypatch):
     """Local development keeps its convenience: the guard only bites outside DEBUG.
 
-    The fallback is this checkout's own stable dev key (config/devkey.py), not a
-    value committed in the repository — see test_devkey.py for that module's own
-    behaviour.
+    Checked against the `dev-secret-key` file on disk, not against
+    `read_or_create_dev_secret`'s own return value (that function's behaviour is
+    test_devkey.py's job): this way the assertion would still catch settings.py
+    falling back to a value it invents or hardcodes instead of the one this checkout
+    already has on disk.
     """
     monkeypatch.delenv("DJANGO_SECRET_KEY", raising=False)
     monkeypatch.setenv("DJANGO_DEBUG", "1")
-    assert load_settings_module().SECRET_KEY == read_or_create_dev_secret(REPO_ROOT)
+    key_file = checkout_git_dir(REPO_ROOT) / "dev-secret-key"
+    assert load_settings_module().SECRET_KEY == key_file.read_text().strip()
 
 
 def test_the_image_build_supplies_its_own_key():

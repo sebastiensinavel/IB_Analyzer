@@ -57,7 +57,16 @@ export function worktreeName(root) {
  */
 export function checkoutGitDir(root) {
   const dotGit = resolve(root, ".git");
-  if (worktreeName(root) === null) return dotGit;
+  let stat;
+  try {
+    stat = statSync(dotGit);
+  } catch {
+    // No git directory at all (a source tarball, a container): the checkout root itself is
+    // writable and per-checkout, which is all this needs — mirrors config/devkey.py's own
+    // checkout_git_dir (apps/api), which devSecretKey shares a file with.
+    return root;
+  }
+  if (stat.isDirectory()) return dotGit;
   const match = /^gitdir:\s*(.+)$/m.exec(readFileSync(dotGit, "utf8"));
   if (!match) throw new Error(`${dotGit} does not name a git directory`);
   return resolve(root, match[1].trim());

@@ -9,7 +9,6 @@ from config.devkey import read_or_create_dev_secret
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEV_SECRET_KEY = "dev-only-not-for-production"
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
 REPO_ROOT = BASE_DIR.parent.parent
 
