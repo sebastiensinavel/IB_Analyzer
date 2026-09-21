@@ -112,6 +112,21 @@ export interface SectorRecord {
   updatedAt: string;
 }
 
+/**
+ * The backup's own state, deliberately outside `BACKUP_TABLES`: it holds the key that
+ * encrypts the payload. A key saved inside what it encrypts saves nothing, and a restore
+ * must never overwrite the key the device is currently using.
+ */
+export interface BackupStateRecord {
+  /** One row per browser. */
+  id: "local";
+  enabled: boolean;
+  /** Raw AES-GCM 256 bytes; shown once as a recovery code, never sent to the server. */
+  key: Uint8Array;
+  lastBackupAt: string | null;
+  lastBackupBytes: number | null;
+}
+
 export class AppDatabase extends Dexie {
   accounts!: EntityTable<AccountRecord, "id">;
   transactions!: Table<Transaction, [string, string]>;
@@ -121,6 +136,7 @@ export class AppDatabase extends Dexie {
   statements!: EntityTable<StatementRecord, "id">;
   contracts!: Table<ContractRecord, [string, string]>;
   cashPoints!: Table<CashPointRecord, [string, string, string]>;
+  backup!: EntityTable<BackupStateRecord, "id">;
 
   constructor(name = "ib-analyzer") {
     super(name);
@@ -210,6 +226,10 @@ export class AppDatabase extends Dexie {
             }
           }),
       );
+    // Additive: adds the `backup` table and rewrites no existing row.
+    this.version(10).stores({
+      backup: "id",
+    });
   }
 }
 

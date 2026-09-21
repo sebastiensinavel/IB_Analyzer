@@ -3,6 +3,12 @@ import { describe, expect, it } from "vitest";
 import { AppDatabase, statementId, type StatementRecord } from "./schema";
 import type { ContractRecord } from "./contracts";
 
+// `Dexie.verno` reflects the highest declared version as soon as the class is constructed,
+// before `.open()` is even called — no IndexedDB access needed. Reading it here, rather than
+// hardcoding the current latest version number in every migration test below, keeps those
+// tests from going stale (and misleadingly red) the day a later sub-project adds a version.
+const LATEST_VERSION = new AppDatabase(`schema-test-probe-${crypto.randomUUID()}`).verno;
+
 /**
  * Replays the schema as it stood before version 4, to prove that an existing database —
  * one real users already have open in their browser — upgrades without losing what it
@@ -45,7 +51,7 @@ describe("AppDatabase upgrades", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(9);
+      expect(upgraded.verno).toBe(LATEST_VERSION);
       const account = await upgraded.accounts.get("beta");
       expect(account).toMatchObject({
         id: "beta",
@@ -149,7 +155,7 @@ describe("AppDatabase version 6", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(9);
+      expect(upgraded.verno).toBe(LATEST_VERSION);
       expect(await upgraded.accounts.get("beta")).toEqual(account);
       expect(await upgraded.statements.get(statement.id)).toEqual(statement);
       expect(await upgraded.contracts.get(["beta", "123"])).toEqual(contract);
@@ -216,7 +222,7 @@ describe("AppDatabase version 7", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(9);
+      expect(upgraded.verno).toBe(LATEST_VERSION);
       const rows = await upgraded.sectors.toArray();
       expect(rows).toEqual([
         { ticker: "AAPL", name: "Apple Inc.", category: "Tech", score: 7.5, status: "on", updatedAt: "2026-09-03T08:00:00.000Z" },
@@ -267,7 +273,7 @@ describe("AppDatabase version 8", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(9);
+      expect(upgraded.verno).toBe(LATEST_VERSION);
       expect((await upgraded.transactions.get(["beta", "agent:e1"]))?.when).toBe("2026-09-15T22:13:46.000Z");
       expect((await upgraded.transactions.get(["beta", "flex:trade:1"]))?.when).toBe("2026-09-15T16:20:00.000Z");
       // The compound index follows the rewrite: the row is found by its new time.
@@ -303,7 +309,7 @@ describe("AppDatabase version 8", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(9);
+      expect(upgraded.verno).toBe(LATEST_VERSION);
       expect((await upgraded.transactions.get(["beta", "agent:bad"]))?.when).toBe("not a date");
       expect((await upgraded.transactions.get(["beta", "agent:good"]))?.when).toBe("2026-09-15T22:13:46.000Z");
       expect((await upgraded.snapshots.get("alpha"))?.asOf).toBe("not a date");
@@ -345,7 +351,7 @@ describe("AppDatabase version 9", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(9);
+      expect(upgraded.verno).toBe(LATEST_VERSION);
       const snapshot = await upgraded.snapshots.get("alpha");
       expect(snapshot?.positions[0]).toMatchObject({ dailyPnl: null, dayChange: null });
     } finally {
@@ -383,7 +389,7 @@ describe("AppDatabase version 9", () => {
     const upgraded = new AppDatabase(name);
     await upgraded.open();
     try {
-      expect(upgraded.verno).toBe(9);
+      expect(upgraded.verno).toBe(LATEST_VERSION);
       const beta = await upgraded.snapshots.get("beta");
       expect(beta?.positions[0]).toMatchObject({ dailyPnl: 0, dayChange: -0.1 });
       expect(beta?.positions[1]).toMatchObject({ dailyPnl: null, dayChange: null });

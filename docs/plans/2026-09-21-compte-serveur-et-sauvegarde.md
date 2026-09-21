@@ -870,7 +870,7 @@ git commit -m "Compression gzip, chiffrement AES-GCM et code de récupération"
   - `adoptBackupKey(db, key: Uint8Array): Promise<BackupStateRecord>` — restauration sur un nouvel appareil
   - `recordBackup(db, at: string, bytes: number): Promise<void>`
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/db/backup/state.test.ts` :
 
@@ -924,12 +924,12 @@ describe("adoptBackupKey", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/state.test.ts`
 Attendu : ÉCHEC, le module et la table n'existent pas.
 
-- [ ] **Step 3: Ajouter la version 10 du schéma**
+- [x] **Step 3: Ajouter la version 10 du schéma**
 
 Dans `apps/web/src/db/schema.ts`, après l'interface `SectorRecord` :
 
@@ -965,7 +965,7 @@ et, après la version 9 :
     });
 ```
 
-- [ ] **Step 4: Écrire `apps/web/src/db/backup/state.ts`**
+- [x] **Step 4: Écrire `apps/web/src/db/backup/state.ts`**
 
 ```ts
 import type { AppDatabase, BackupStateRecord } from "../schema";
@@ -1019,12 +1019,12 @@ export async function recordBackup(db: AppDatabase, at: string, bytes: number): 
 }
 ```
 
-- [ ] **Step 5: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5: Lancer les tests, vérifier qu'ils passent**
 
 Depuis `apps/web` : `npx vitest run src/db/backup src/db/schema.test.ts`
 Attendu : tout PASS, la version 10 n'abîme aucune base existante.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
