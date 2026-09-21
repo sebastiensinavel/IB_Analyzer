@@ -148,6 +148,18 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# Measured on the dev database the 2026-09-21: fourteen logins in sixteen days, none of
+# them expired before the next one. Django's default expiry is fixed at login and never
+# pushed back, so a daily user is still logged out every fortnight for no reason. Rolling
+# it on every request is what makes "stay signed in while you use it" true.
+SESSION_COOKIE_AGE = 30 * 24 * 3600
+SESSION_SAVE_EVERY_REQUEST = True
+
+# The encrypted backup blob is capped at 20 MB (architecture spec §7.5). Django's own
+# default body limit is 2.5 MB, which would reject a legitimate deposit with
+# RequestDataTooBig long before the endpoint's own check ever ran.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 21 * 1024 * 1024
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Request and response bodies are never logged: the Flex token travels in them.

@@ -407,7 +407,7 @@ dossier git du checkout, lue par settings.py comme par dev-env."
 - Produces: `SESSION_COOKIE_AGE = 30 * 24 * 3600`, `SESSION_SAVE_EVERY_REQUEST = True`,
   `DATA_UPLOAD_MAX_MEMORY_SIZE` au-dessus du plafond du blob.
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/api/tests/test_session_settings.py` :
 
@@ -444,13 +444,13 @@ def test_the_body_limit_leaves_room_for_a_twenty_megabyte_blob():
     assert settings.DATA_UPLOAD_MAX_MEMORY_SIZE > 20 * 1024 * 1024
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 `pnpm test:api -- apps/api/tests/test_session_settings.py`
 Attendu : ÉCHEC — `SESSION_SAVE_EVERY_REQUEST` n'est pas défini, et
 `DATA_UPLOAD_MAX_MEMORY_SIZE` vaut le défaut de Django, 2 621 440.
 
-- [ ] **Step 3: Poser les réglages**
+- [x] **Step 3: Poser les réglages**
 
 Après le bloc `SESSION_COOKIE_SAMESITE` de `apps/api/config/settings.py` :
 
@@ -468,12 +468,12 @@ SESSION_SAVE_EVERY_REQUEST = True
 DATA_UPLOAD_MAX_MEMORY_SIZE = 21 * 1024 * 1024
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 `pnpm test:api -- apps/api/tests/test_session_settings.py`
 Attendu : trois tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
