@@ -212,7 +212,7 @@ vide. Le test couvre les trois états de session."
 - Produces: `config.devkey.read_or_create_dev_secret(repo_root: Path) -> str`, et le fichier
   `<git dir du checkout>/dev-secret-key`.
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/api/tests/test_devkey.py` :
 
@@ -248,12 +248,12 @@ def test_falls_back_to_a_writable_path_when_there_is_no_git_directory(tmp_path):
     assert read_or_create_dev_secret(tmp_path) == key
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 `pnpm test:api -- apps/api/tests/test_devkey.py`
 Attendu : ÉCHEC, `ModuleNotFoundError: No module named 'config.devkey'`.
 
-- [ ] **Step 3: Écrire `apps/api/config/devkey.py`**
+- [x] **Step 3: Écrire `apps/api/config/devkey.py`**
 
 ```python
 """The development secret key, one per checkout, never committed.
@@ -303,7 +303,7 @@ def read_or_create_dev_secret(root: Path) -> str:
     return key
 ```
 
-- [ ] **Step 4: Brancher `settings.py`**
+- [x] **Step 4: Brancher `settings.py`**
 
 Remplacer les lignes 10 à 19 de `apps/api/config/settings.py` par :
 
@@ -333,7 +333,7 @@ Ajouter en tête du fichier, après les imports existants :
 from config.devkey import read_or_create_dev_secret
 ```
 
-- [ ] **Step 5: Brancher `tools/dev-env/api.mjs`**
+- [x] **Step 5: Brancher `tools/dev-env/api.mjs`**
 
 Dans `ports.mjs`, ajouter après `worktreeSlot` :
 
@@ -377,14 +377,14 @@ const env = {
 
 Ajouter `dev-secret-key` à `.gitignore`.
 
-- [ ] **Step 6: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 6: Lancer les tests, vérifier qu'ils passent**
 
 `pnpm test:api -- apps/api/tests/test_devkey.py`
 Attendu : trois tests PASS.
 Puis `node -e "import('./tools/dev-env/ports.mjs').then(m=>console.log(m.devSecretKey().length))"` :
 un nombre, et le fichier créé n'apparaît pas dans `git status`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A

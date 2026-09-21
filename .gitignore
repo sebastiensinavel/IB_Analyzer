@@ -29,6 +29,8 @@ apps/web/public/agent/
 .run/
 .claude/worktrees/
 *.swp
+# Clé secrète Django de développement, une par checkout (config/devkey.py, tools/dev-env/ports.mjs)
+dev-secret-key
 
 # Playwright (apps/web/e2e)
 apps/web/test-results/

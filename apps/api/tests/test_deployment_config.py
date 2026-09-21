@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 
+from config.devkey import read_or_create_dev_secret
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 COMPOSE = (REPO_ROOT / "docker-compose.yml").read_text()
 ENV_EXAMPLE = (REPO_ROOT / ".env.example").read_text()
@@ -77,10 +79,15 @@ def test_a_key_from_the_environment_is_all_it_takes(monkeypatch):
 
 
 def test_debug_still_boots_without_a_key(monkeypatch):
-    """Local development keeps its convenience: the guard only bites outside DEBUG."""
+    """Local development keeps its convenience: the guard only bites outside DEBUG.
+
+    The fallback is this checkout's own stable dev key (config/devkey.py), not a
+    value committed in the repository — see test_devkey.py for that module's own
+    behaviour.
+    """
     monkeypatch.delenv("DJANGO_SECRET_KEY", raising=False)
     monkeypatch.setenv("DJANGO_DEBUG", "1")
-    assert load_settings_module().SECRET_KEY == "dev-only-not-for-production"
+    assert load_settings_module().SECRET_KEY == read_or_create_dev_secret(REPO_ROOT)
 
 
 def test_the_image_build_supplies_its_own_key():

@@ -5,18 +5,27 @@ from pathlib import Path
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
+from config.devkey import read_or_create_dev_secret
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEV_SECRET_KEY = "dev-only-not-for-production"
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", DEV_SECRET_KEY)
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
+REPO_ROOT = BASE_DIR.parent.parent
 
 # A forgotten DJANGO_SECRET_KEY in the VPS .env would otherwise start production on a key
 # that is committed in this repository, and therefore public: session cookies and CSRF
 # tokens forgeable by anyone who can read the code. Refusing to boot is the only safe
 # failure here — a silent fallback is exactly what makes this class of bug survive.
-if not DEBUG and SECRET_KEY == DEV_SECRET_KEY:
-    raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set outside DEBUG")
+#
+# In DEBUG the key comes from the checkout's own git directory instead (config/devkey.py),
+# so that every way of starting a dev server — `pnpm dev:api`, `pnpm dev:start`, a bare
+# `manage.py runserver` — agrees on one key and stops invalidating each other's sessions.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set outside DEBUG")
+    SECRET_KEY = read_or_create_dev_secret(REPO_ROOT)
 
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
