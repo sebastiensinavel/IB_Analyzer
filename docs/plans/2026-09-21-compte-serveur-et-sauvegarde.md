@@ -1360,7 +1360,7 @@ git commit -m "Trois routes pour un blob opaque, plafonné à 20 Mo et isolé pa
   - `getBackup(): Promise<BackupResult<Uint8Array>>`
   - `deleteBackup(): Promise<BackupResult<void>>`
 
-- [ ] **Step 1: Écrire le test**
+- [x] **Step 1: Écrire le test**
 
 `apps/web/src/api/backup.test.ts` :
 
@@ -1405,12 +1405,12 @@ describe("getBackup", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/api/backup.test.ts`
 Attendu : ÉCHEC, le module n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/web/src/api/backup.ts`**
+- [x] **Step 3: Écrire `apps/web/src/api/backup.ts`**
 
 ```ts
 /**
@@ -1487,12 +1487,12 @@ export async function deleteBackup(): Promise<BackupResult<void>> {
 }
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 Depuis `apps/web` : `npx vitest run src/api/backup.test.ts`
 Attendu : cinq tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
