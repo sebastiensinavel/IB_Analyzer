@@ -1,6 +1,6 @@
 import { getBackup, putBackup, type BackupResult } from "@/api/backup";
 import type { AppDatabase } from "../schema";
-import { decodePayload, decryptBlob, encodePayload, encryptBlob, gunzip, gzip } from "./crypto";
+import { BackupKeyError, decodePayload, decryptBlob, encodePayload, encryptBlob, gunzip, gzip } from "./crypto";
 import { buildPayload, restorePayload } from "./payload";
 import { readBackupState, recordBackup } from "./state";
 import { suppressBackupTrigger } from "./trigger";
@@ -29,10 +29,23 @@ export async function pushBackup(
   }
 }
 
+/**
+ * A key that does not open the blob is reported as a `BackupKeyError`, never as a generic
+ * failure. AES-GCM authenticates its own ciphertext, so `crypto.subtle.decrypt` rejecting —
+ * with an `OperationError` carrying no detail — means exactly one thing: this key is not the
+ * one the blob was written with. The caller has to be able to tell that apart from a network
+ * failure, because it is what decides whether a freshly typed recovery code may be kept.
+ */
 export async function pullBackup(db: AppDatabase, key: Uint8Array): Promise<BackupResult<void>> {
   const blob = await getBackup();
   if (!blob.ok) return blob;
-  const payload = decodePayload(await gunzip(await decryptBlob(key, blob.value)));
+  let plain: Uint8Array;
+  try {
+    plain = await decryptBlob(key, blob.value);
+  } catch (error) {
+    throw error instanceof BackupKeyError ? error : new BackupKeyError("This key does not open the backup");
+  }
+  const payload = decodePayload(await gunzip(plain));
   await suppressBackupTrigger(() => restorePayload(db, payload));
   return { ok: true, value: undefined };
 }

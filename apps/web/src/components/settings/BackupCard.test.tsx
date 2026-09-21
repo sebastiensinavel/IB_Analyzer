@@ -170,6 +170,41 @@ describe("BackupCard", () => {
     expect(bytesOf((await readBackupState(db))!.key)).toEqual(bytesOf(foreignKey));
   });
 
+  // A recovery code mistyped inside base64url's own alphabet still decodes to 32 valid bytes,
+  // so a length check accepts almost every typo. Adopting that key before proving it opens the
+  // blob arms this browser with a key that is not the backup's: the next triggering write would
+  // re-encrypt the whole database under it and overwrite the server's only copy, leaving it
+  // unreadable by anyone, recovery code included. A failed attempt must therefore leave the key
+  // in the database exactly as it was — here, still absent.
+  it("un code de récupération erroné ne remplace jamais la clé en base", async () => {
+    const goodKey = generateBackupKey();
+    const seed = new AppDatabase(`test-${crypto.randomUUID()}`);
+    await createAccount(seed, { label: "OnServer", ibAccountId: "U4445556" });
+    const blob = await encryptBlob(goodKey, await gzip(encodePayload(await buildPayload(seed))));
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.endsWith("/status")) {
+        return new Response(JSON.stringify({ present: true, updatedAt: "2026-09-21T09:00:00Z", bytes: blob.byteLength }), {
+          status: 200,
+        });
+      }
+      return new Response(blob as BodyInit, { status: 200 });
+    });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    // One character of the real code shifted to its neighbour in the same alphabet: the typo a
+    // human actually makes, and the one a length check cannot see.
+    const typo = toRecoveryCode(goodKey).replace(/[A-Y]/, (letter) => String.fromCharCode(letter.charCodeAt(0) + 1));
+    vi.spyOn(window, "prompt").mockReturnValue(typo);
+    await createAccount(db, { label: "LocalOnly", ibAccountId: "U9998887" });
+    renderCard();
+
+    await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupRestore") }));
+
+    expect(await screen.findByText(i18n.t("settings.backupInvalidCode"))).toBeInTheDocument();
+    expect(await readBackupState(db)).toBeNull();
+    expect((await db.accounts.toArray()).map((a) => a.id)).toEqual(["localonly"]);
+  });
+
   it("importer un fichier local nomme sa date, remplace la base et ne parle jamais au serveur", async () => {
     const seed = new AppDatabase(`test-${crypto.randomUUID()}`);
     await createAccount(seed, { label: "FromFile", ibAccountId: "U2223334" });

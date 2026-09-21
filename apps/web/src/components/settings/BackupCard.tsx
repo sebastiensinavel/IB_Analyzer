@@ -118,15 +118,26 @@ export function BackupCard() {
 
       const current = await readBackupState(db);
       let key = current?.key ?? null;
+      // A key typed from a recovery code is adopted only once the pull has proved it opens the
+      // server's blob. Writing it first would arm this browser with a key that may be a typo
+      // away from the real one — a typo inside base64url's own alphabet still decodes to 32
+      // valid bytes, so length alone lets nearly all of them through — and the next triggering
+      // write would then re-encrypt the whole database under it and replace the server's only
+      // copy of the backup, leaving it unreadable by anyone, recovery code included.
+      let adopt = false;
       if (!key) {
         const code = window.prompt(t("settings.backupRecoveryPrompt"));
         if (!code) return;
         key = fromRecoveryCode(code);
-        await adoptBackupKey(db, key);
+        adopt = true;
       }
 
       const result = await pullBackup(db, key);
-      if (!result.ok) setError(failureMessage(result.kind));
+      if (!result.ok) {
+        setError(failureMessage(result.kind));
+        return;
+      }
+      if (adopt) await adoptBackupKey(db, key);
     } catch (error) {
       setError(error instanceof BackupKeyError ? t("settings.backupInvalidCode") : t("settings.actionFailed"));
     } finally {
