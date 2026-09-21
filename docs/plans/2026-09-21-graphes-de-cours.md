@@ -686,7 +686,7 @@ git commit -m "feat(web): couleurs, étiquettes et prix des niveaux"
   }
   ```
 
-- [ ] **Step 1: Écrire le test qui échoue**
+- [x] **Step 1: Écrire le test qui échoue**
 
 `timeExtent` est la seule partie calculable sans canevas : elle rend les jours vides à ajouter après la dernière barre pour que chaque date dessinée ait une coordonnée. Créer `apps/web/src/lib/levelsPrimitive.test.ts` :
 
@@ -731,12 +731,12 @@ describe("timeExtent", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test pour le voir échouer**
+- [x] **Step 2: Lancer le test pour le voir échouer**
 
 Run: `cd apps/web && npx vitest run src/lib/levelsPrimitive.test.ts`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 3: Écrire `levelsPrimitive.ts`**
+- [x] **Step 3: Écrire `levelsPrimitive.ts`**
 
 ```ts
 /**
@@ -953,12 +953,12 @@ export class LevelsPrimitive {
 }
 ```
 
-- [ ] **Step 4: Lancer le test pour le voir passer**
+- [x] **Step 4: Lancer le test pour le voir passer**
 
 Run: `cd apps/web && npx vitest run src/lib/levelsPrimitive.test.ts`
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/levelsPrimitive.ts apps/web/src/lib/levelsPrimitive.test.ts
