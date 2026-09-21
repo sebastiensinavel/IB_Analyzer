@@ -1987,7 +1987,7 @@ pnpm test:api
 Attendu : les deux vertes. C'est la seule exécution complète du plan — les tâches
 précédentes n'ont lancé que des tests ciblés.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
