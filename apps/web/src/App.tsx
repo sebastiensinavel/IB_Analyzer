@@ -9,8 +9,8 @@ export default function App() {
   return (
     <I18nextProvider i18n={i18n}>
       {/* SessionProvider only informs on the server's reachability and the user's login
-          state; it never blocks a route — the server is optional (spec §2). DbProvider reads
-          that session to pick the IndexedDB profile, so it mounts inside it. */}
+          state; it never blocks a route — the server is optional (spec §2). DbProvider does
+          not read it: the database belongs to the browser (sub-project 25). */}
       <SessionProvider>
         <DbProvider>
           <RouterProvider router={router} />

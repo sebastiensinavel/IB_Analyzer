@@ -489,7 +489,6 @@
     "signedInAs": "Connecté en tant que {{email}}",
     "signedOut": "Non connecté.",
     "unreachableHint": "Serveur injoignable : les réglages de compte sont indisponibles pour l'instant.",
-    "profileError": "Le profil local n'a pas pu être ouvert ; les données affichées peuvent être vides.",
     "changePassword": "Changer le mot de passe",
     "currentPassword": "Mot de passe actuel",
     "newPassword": "Nouveau mot de passe",

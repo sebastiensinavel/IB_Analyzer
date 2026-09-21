@@ -143,7 +143,8 @@ export interface components {
         };
         /**
          * SessionUserOut
-         * @description The browser keys its local profile on `id`: it must be stable and opaque.
+         * @description Opaque and stable. The browser keys nothing local on it: since sub-project 25 the
+         *     IndexedDB database belongs to the browser, not to the account.
          */
         SessionUserOut: {
             /** Email */

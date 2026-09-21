@@ -76,7 +76,7 @@ première tâche. Le plan argumente depuis la spec ; les deux voyagent ensemble.
 - Produces: `useDb(): AppDatabase` inchangé de signature, mais toujours `db`. `useDbError`
   n'existe plus.
 
-- [ ] **Step 1: Écrire le test de non-régression**
+- [x] **Step 1: Écrire le test de non-régression**
 
 Remplacer entièrement `apps/web/src/db/DbProvider.test.tsx` par :
 
@@ -121,12 +121,12 @@ describe("DbProvider", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/DbProvider.test.tsx`
 Attendu : ÉCHEC sur le cas « authentifiée » — la base rendue est `ib-analyzer-9`.
 
-- [ ] **Step 3: Réduire `DbProvider` à une constante**
+- [x] **Step 3: Réduire `DbProvider` à une constante**
 
 `apps/web/src/db/DbProvider.tsx` en entier :
 
@@ -155,7 +155,7 @@ export function DbProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Step 4: Supprimer le profil et ses traces**
+- [x] **Step 4: Supprimer le profil et ses traces**
 
 ```bash
 git rm apps/web/src/db/profile.ts apps/web/src/db/profile.test.ts
@@ -180,13 +180,13 @@ Dans `apps/api/core/schemas.py`, remplacer la docstring de `SessionUserOut` par 
     IndexedDB database belongs to the browser, not to the account."""
 ```
 
-- [ ] **Step 5: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5: Lancer les tests, vérifier qu'ils passent**
 
 Depuis `apps/web` : `npx vitest run src/db src/pages/SettingsPage`
 Attendu : tout passe, aucune référence résiduelle à `profile`.
 Puis `grep -rn "profileDb\|useDbError\|profileError" apps/web/src` : aucune sortie.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A

@@ -489,7 +489,6 @@
     "signedInAs": "Signed in as {{email}}",
     "signedOut": "Not signed in.",
     "unreachableHint": "Server unreachable: account settings are unavailable for now.",
-    "profileError": "The local profile could not be opened; the data shown may be empty.",
     "changePassword": "Change password",
     "currentPassword": "Current password",
     "newPassword": "New password",
