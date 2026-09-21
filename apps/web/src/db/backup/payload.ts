@@ -2,7 +2,13 @@ import type { AppDatabase } from "../schema";
 
 export const BACKUP_FORMAT = 1;
 
-/** Tables a backup must never carry. `backup` holds the key that encrypts the payload. */
+/**
+ * Tables a backup must never carry. `backup` holds the key that encrypts the payload.
+ *
+ * When a new table is added, fix the resulting test failure by deciding where it lives:
+ * in BACKUP_TABLES (if it should be backed up) or added here (if not). Never silence the
+ * test by hardcoding a list — the test is the guard against accidents.
+ */
 export const NEVER_BACKED_UP: readonly string[] = ["backup"];
 
 /**

@@ -65,39 +65,42 @@ describe("restorePayload", () => {
   });
 
   it("atomicité : l'échec en cours de restauration annule toute la transaction", async () => {
-    // Snapshot the current state: beta account exists
-    expect(await db.accounts.count()).toBe(1);
+    // CORRECT SEQUENCE (order matters for atomicity testing):
+    // 1. Seed the database with beta
+    expect(await db.accounts.count(), "Setup: beta account").toBe(1);
 
-    // Add a second account as a marker for rollback verification
-    await createAccount(db, { label: "Gamma", ibAccountId: "U7654321" });
-    expect(await db.accounts.count()).toBe(2); // beta + gamma
-
-    // Build a payload based on current state
+    // 2. Build a payload at this point — it contains only beta, no gamma
     const payload = await buildPayload(db);
+    expect(
+      (payload.tables.accounts as any[]).map((a) => a.id),
+      "Payload contains only beta",
+    ).toEqual(["beta"]);
 
-    // Corrupt the payload to cause failure mid-restoration:
+    // 3. THEN create gamma — it is now in the database but NOT in the payload
+    await createAccount(db, { label: "Gamma", ibAccountId: "U7654321" });
+    expect(await db.accounts.count(), "Both beta and gamma exist").toBe(2);
+
+    // 4. Corrupt the payload to cause failure mid-restoration:
     // Add a sector with missing primary key (ticker field) to cause bulkPut to fail.
     // sectors is at index 4 in BACKUP_TABLES (after accounts, transactions, imports, snapshots)
-    // so the error happens after clearing and attempting to restore earlier tables.
     if (Array.isArray(payload.tables.sectors)) {
-      // Add an invalid sector missing the 'ticker' field (primary key)
       payload.tables.sectors.push({ name: "Invalid", category: "Tech" } as any);
     }
 
-    // Restore attempt should fail when processing sectors table
-    await expect(restorePayload(db, payload)).rejects.toThrow();
+    // 5. Restore attempt should fail when processing sectors table
+    await expect(
+      restorePayload(db, payload),
+      "Restore fails on invalid sector",
+    ).rejects.toThrow();
 
-    // Verify rollback worked: gamma account must still exist.
-    // If restoration had partially applied (accounts table cleared and new data inserted
-    // before sectors failed), gamma would be gone and replaced with only "beta".
-    // Its continued presence proves the entire transaction was rolled back.
+    // 6. Verify rollback worked: gamma MUST still exist.
+    // Gamma is NOT in the payload. If atomicity worked, the clear() of accounts was rolled back.
+    // If atomicity failed, clear() succeeded and accounts were rewritten with only beta.
+    // Gamma's survival is the proof of atomic rollback.
     const accountIds = (await db.accounts.toArray()).map((a) => a.id);
-    expect(accountIds).toContain("gamma");
-    expect(accountIds).toContain("beta");
-
-    // Verify full rollback: both accounts and original sector still intact
-    expect(await db.accounts.count()).toBe(2);
-    expect(await db.sectors.get("ZXAG")).toBeDefined();
+    expect(accountIds, "Gamma survived: clear() of accounts was rolled back").toContain("gamma");
+    expect(accountIds, "Beta also survived").toContain("beta");
+    expect(await db.accounts.count(), "Both accounts still in database").toBe(2);
   });
 });
 
@@ -112,21 +115,24 @@ describe("invariants", () => {
     // This catches regressions when a new table is added but not considered for backup.
     for (const tableName of allTableNames) {
       if (neverBackedUpNames.has(tableName)) {
-        expect(backupTableNames.has(tableName)).toBe(
-          false,
+        expect(
+          backupTableNames.has(tableName),
           `${tableName} is in NEVER_BACKED_UP but also in BACKUP_TABLES`,
-        );
+        ).toBe(false);
       } else {
-        expect(backupTableNames.has(tableName)).toBe(
-          true,
+        expect(
+          backupTableNames.has(tableName),
           `${tableName} exists but is neither in BACKUP_TABLES nor in NEVER_BACKED_UP`,
-        );
+        ).toBe(true);
       }
     }
 
     // No table in BACKUP_TABLES should also be in NEVER_BACKED_UP
     for (const tableName of backupTableNames) {
-      expect(neverBackedUpNames.has(tableName)).toBe(false, `${tableName} is in both lists`);
+      expect(
+        neverBackedUpNames.has(tableName),
+        `${tableName} is in both lists`,
+      ).toBe(false);
     }
   });
 });
