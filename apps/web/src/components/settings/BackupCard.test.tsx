@@ -91,6 +91,10 @@ describe("BackupCard", () => {
 
     expect(await screen.findByRole("button", { name: i18n.t("settings.backupEnable") })).toBeDisabled();
     expect(screen.getByRole("button", { name: i18n.t("settings.backupExport") })).toBeEnabled();
+    // Greying the buttons was all this test asserted; the sentence beside them told an
+    // unreachable server's user to sign in, which is precisely what they cannot do.
+    expect(screen.getByText(i18n.t("auth.serverUnreachable"))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t("settings.backupSignedOutHint"))).not.toBeInTheDocument();
   });
 
   it("restaurer nomme la date de ce qui va être écrasé, et remplace au lieu de fusionner", async () => {
@@ -131,6 +135,11 @@ describe("BackupCard", () => {
   });
 
   it("restaurer n'écrit rien si l'utilisateur refuse la confirmation", async () => {
+    // A backup really is deposited: without that, the card stops at "aucune sauvegarde" and
+    // never reaches the confirmation this test is about.
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ present: true, updatedAt: "2026-09-21T10:00:00Z", bytes: 128 }), { status: 200 }),
+    );
     vi.spyOn(window, "confirm").mockReturnValue(false);
     await createAccount(db, { label: "Untouched", ibAccountId: "U5556667" });
     renderCard();
@@ -138,6 +147,20 @@ describe("BackupCard", () => {
     await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupRestore") }));
 
     await waitFor(() => expect(window.confirm).toHaveBeenCalled());
+    expect((await db.accounts.toArray()).map((a) => a.id)).toEqual(["untouched"]);
+  });
+
+  // `present: false` is the state of an account that has never deposited. Offering to replace
+  // this browser "par la sauvegarde du —" proposes an overwrite by nothing at all.
+  it("ne propose pas de restaurer quand le serveur ne porte aucune sauvegarde", async () => {
+    await createAccount(db, { label: "Untouched", ibAccountId: "U5556667" });
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderCard();
+
+    await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupRestore") }));
+
+    expect(await screen.findByText(i18n.t("settings.backupMissing"))).toBeInTheDocument();
+    expect(confirmSpy).not.toHaveBeenCalled();
     expect((await db.accounts.toArray()).map((a) => a.id)).toEqual(["untouched"]);
   });
 
@@ -252,7 +275,8 @@ describe("BackupCard", () => {
     vi.mocked(useSession).mockReturnValue({ status: "anonymous" });
     await createAccount(db, { label: "ForExport", ibAccountId: "U6667778" });
     const createObjectURL = vi.fn((_blob: Blob) => "blob:mock-url");
-    vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL: vi.fn() });
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL });
     renderCard();
 
     await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupExport") }));
@@ -261,6 +285,10 @@ describe("BackupCard", () => {
     const [blob] = createObjectURL.mock.calls[0] as [Blob];
     expect(blob).toBeInstanceOf(Blob);
     expect(blob.size).toBeGreaterThan(0);
+    // Firefox cancels a download whose object URL is revoked in the task that clicked the
+    // anchor, so the revocation waits for a later one. The task boundary itself is not what
+    // jsdom lets a test see; that the URL is eventually released is.
+    await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-url"));
   });
 
   it("exporter affiche un message si la construction du blob échoue, plutôt qu'un rejet non géré", async () => {

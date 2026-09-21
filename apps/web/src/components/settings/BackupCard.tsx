@@ -125,6 +125,13 @@ export function BackupCard() {
         setError(failureMessage(status.kind));
         return;
       }
+      // Nothing deposited: the confirmation would offer to replace this browser with a backup
+      // that does not exist, naming its date as "—". There is nothing to restore, and saying so
+      // is the whole answer.
+      if (!status.value.present) {
+        setError(failureMessage("missing"));
+        return;
+      }
       const date = status.value.updatedAt ? formatDateTime(status.value.updatedAt) : "—";
       if (!window.confirm(t("settings.backupRestoreConfirm", { date }))) return;
 
@@ -197,7 +204,10 @@ export function BackupCard() {
         anchor.download = backupFileName(new Date());
         anchor.click();
       }
-      URL.revokeObjectURL(url);
+      // Revoked in a later task, never in the one that clicked: Firefox cancels a download
+      // whose object URL is revoked in the same task, and this is the only way to back up for
+      // whoever never creates a server account.
+      setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch {
       setError(t("settings.actionFailed"));
     } finally {
@@ -256,7 +266,14 @@ export function BackupCard() {
             {t("settings.backupLastError", { reason: failureMessage(state.lastBackupError) })}
           </p>
         )}
-        {!authenticated && <p className="text-xs text-muted-foreground">{t("settings.backupSignedOutHint")}</p>}
+        {/* "Connectez-vous" is an instruction; it is only true of someone who could. A server
+            that does not answer leaves nobody to sign in to, so `unreachable` says that instead
+            — the same distinction `failureMessage` already makes for a failed call. */}
+        {!authenticated && (
+          <p className="text-xs text-muted-foreground">
+            {session.status === "unreachable" ? t("auth.serverUnreachable") : t("settings.backupSignedOutHint")}
+          </p>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           {!enabled ? (
