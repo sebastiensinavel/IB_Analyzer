@@ -26,6 +26,8 @@ export interface PriceChartProps {
   height?: number;
 }
 
+/** Several table rows tall: the chart is what the injected row is for. */
+export const CHART_HEIGHT = 650;
 const GREEN = "#16a34a";
 const UP = "#26a69a";
 const DOWN = "#ef5350";
@@ -95,7 +97,7 @@ class VerticalLine {
   }
 }
 
-export function PriceChart({ bars, level = null, eventDate = null, isDark, height = 260 }: PriceChartProps) {
+export function PriceChart({ bars, level = null, eventDate = null, isDark, height = CHART_HEIGHT }: PriceChartProps) {
   const holder = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
