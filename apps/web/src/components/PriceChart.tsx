@@ -10,6 +10,7 @@ import {
   createChart,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesPrimitive,
   type Time,
 } from "lightweight-charts";
 import { useTranslation } from "react-i18next";
@@ -109,10 +110,16 @@ export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: Pric
     const primitive = new LevelsPrimitive(
       drawnLevels(levels, bars, isDark, (kind) => t(`charts.levels.${kind}`), i18n.language),
     );
-    series.attachPrimitive(primitive as never);
+    // `attached` de LevelsPrimitive prend une série typée "Candlestick" ; l'interface générique
+    // en attend une de n'importe quel type de série, d'où le seul cast de tout ce fichier.
+    const seriesPrimitive = primitive as unknown as ISeriesPrimitive<Time>;
+    series.attachPrimitive(seriesPrimitive);
     chart.timeScale().fitContent();
     return () => {
-      series.detachPrimitive(primitive as never);
+      // Au changement de thème, l'effet de création démonte le graphe avant ce nettoyage-ci
+      // (React nettoie dans l'ordre de déclaration) : détacher d'une série déjà détruite
+      // programmerait un redessin sur un widget mort.
+      if (seriesRef.current === series) series.detachPrimitive(seriesPrimitive);
     };
   }, [bars, levels, isDark, t, i18n.language]);
 
