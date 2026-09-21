@@ -183,6 +183,51 @@ describe("strategyLevels", () => {
     ]);
   });
 
+  it("un condor partiellement racheté rend un jeu de rectangles par ligne composite encore ouverte", () => {
+    const legs = [
+      row({ id: "lp", kind: "long_put", strategy: "condors", strike: 8, quantity: 2 }),
+      row({ id: "sp", kind: "short_put", strategy: "condors", strike: 10, quantity: -2 }),
+      row({ id: "sc", kind: "short_call", strategy: "condors", strike: 16, quantity: -2 }),
+      row({ id: "lc", kind: "long_call", strategy: "condors", strike: 18, quantity: 2 }),
+    ];
+    const rows = [
+      // La moitié rachetée : sa propre ligne composite, close, ne dessine rien.
+      row({
+        id: "ic1",
+        kind: "condor",
+        strategy: "condors",
+        quantity: -2,
+        startWhen: "2026-04-02T13:45:00.000Z",
+        endWhen: "2026-05-10T15:00:00.000Z",
+        contract: { expiry: "2026-06-19" } as never,
+        legs,
+      }),
+      // La moitié encore ouverte : sa propre ligne composite, son propre jeu de rectangles.
+      row({
+        id: "ic2",
+        kind: "condor",
+        strategy: "condors",
+        quantity: -2,
+        startWhen: "2026-04-02T13:45:00.000Z",
+        contract: { expiry: "2026-06-19" } as never,
+        legs,
+      }),
+      ...legs,
+    ];
+
+    expect(find(strategyLevels(rows, "BTDR", ALL), "condor")).toEqual([
+      {
+        kind: "condor",
+        from: "2026-04-02",
+        to: "2026-06-19",
+        putStrikes: [8, 10],
+        callStrikes: [16, 18],
+        // La quantité de la ligne encore ouverte, jamais celle du condor d'origine (-4).
+        quantity: -2,
+      },
+    ]);
+  });
+
   it("ignore un condor dont une jambe n'a pas de strike", () => {
     const legs = [
       row({ id: "lp", kind: "long_put", strategy: "condors", strike: null, quantity: 1 }),

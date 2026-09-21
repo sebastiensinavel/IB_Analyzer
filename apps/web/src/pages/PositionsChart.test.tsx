@@ -18,8 +18,6 @@ import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
 vi.mock("lightweight-charts", () => {
   const series = {
     setData: vi.fn(),
-    createPriceLine: vi.fn(() => ({})),
-    removePriceLine: vi.fn(),
     attachPrimitive: vi.fn(),
     detachPrimitive: vi.fn(),
   };
