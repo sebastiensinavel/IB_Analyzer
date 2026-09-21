@@ -2,6 +2,9 @@ import type { AppDatabase } from "../schema";
 
 export const BACKUP_FORMAT = 1;
 
+/** Tables a backup must never carry. `backup` holds the key that encrypts the payload. */
+export const NEVER_BACKED_UP: readonly string[] = ["backup"];
+
 /**
  * Every table of the database — `statements` included, and the `backup` table excluded.
  *
