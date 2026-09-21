@@ -4,7 +4,7 @@ Not Starlette's CORSMiddleware: the preflight must carry
 `Access-Control-Allow-Private-Network`, which Chrome requires before a public HTTPS page may
 talk to 127.0.0.1, and CORSMiddleware does not know that header. An unknown origin gets a
 normal answer without any Allow-* header on `/health`: the browser is what refuses, the agent
-stays dumb. `/snapshot` and the Flex relay are different (see `ACTING_PATHS` below): they make
+stays dumb. `/snapshot`, `/bars` and the Flex relay are different (see `ACTING_PATHS` below): they make
 the agent act, so they refuse outright instead of relying on the browser.
 """
 
@@ -23,7 +23,7 @@ PREFLIGHT_MAX_AGE_S = 600
 # handler runs: a same-origin request carries no Origin header at all (a DNS-rebinding page, or
 # a plain <img src=…>), so "Origin present and unknown" is not strong enough - only "Origin
 # present, present in the list" is.
-ACTING_PATHS = frozenset({"/snapshot", "/flex/send-request", "/flex/get-statement"})
+ACTING_PATHS = frozenset({"/snapshot", "/bars", "/flex/send-request", "/flex/get-statement"})
 
 
 class OriginMiddleware(BaseHTTPMiddleware):

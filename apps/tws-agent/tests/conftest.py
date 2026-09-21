@@ -102,6 +102,8 @@ class FakeIB:
         portfolio_error: Exception | None = None,
         pnl=None,
         pnl_error: Exception | None = None,
+        bars=None,
+        bars_error: Exception | None = None,
     ):
         self._managed_accounts = managed_accounts if managed_accounts is not None else ["U1234567"]
         self._portfolio = portfolio if portfolio is not None else []
@@ -113,6 +115,10 @@ class FakeIB:
         # is a contract TWS stays silent about: it gets a default, all-nan object.
         self._pnl = pnl if pnl is not None else {}
         self._pnl_error = pnl_error
+        self._bars = bars if bars is not None else []
+        self._bars_error = bars_error
+        # (contract, kwargs) of every reqHistoricalDataAsync call, in order.
+        self.historical_requests: list[tuple] = []
         self.pnl_subscribed: list[tuple[str, str, int]] = []
         self.pnl_cancelled: list[tuple[str, str, int]] = []
         self.connected_to: tuple | None = None
@@ -147,6 +153,12 @@ class FakeIB:
             raise self._pnl_error
         self.pnl_subscribed.append((account, modelCode, conId))
         return self._pnl.get(conId, FakePnLSingle(account=account, conId=conId))
+
+    async def reqHistoricalDataAsync(self, contract, **kwargs):
+        self.historical_requests.append((contract, kwargs))
+        if self._bars_error is not None:
+            raise self._bars_error
+        return list(self._bars)
 
     def cancelPnLSingle(self, account, modelCode, conId):
         self.pnl_cancelled.append((account, modelCode, conId))

@@ -26,7 +26,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Query
 from fastapi.responses import JSONResponse, Response
-from ib_async import IB
+from ib_async import IB, Stock
 from pydantic import BaseModel, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -57,6 +57,11 @@ PNL_POLL_S = 0.05
 # IB's "no value": DBL_MAX, and the nan ib_async leaves in an object TWS has not filled yet.
 UNSET_THRESHOLD = 1e300
 CASH_TAGS = ("TotalCashBalance", "CashBalance", "AvailableFunds")
+# Defaults of /bars: what a chart of an underlying needs. TRADES is the only series carrying
+# volume, and IB adjusts it for splits but not dividends.
+BARS_DURATION = "2 Y"
+BARS_SIZE = "1 day"
+BARS_WHAT_TO_SHOW = "TRADES"
 
 
 class ReadOnlyIB(IB):
@@ -187,6 +192,19 @@ def serialize_position(item: Any, pnl: Any | None) -> dict[str, Any]:
     }
 
 
+def serialize_bar(bar: Any) -> dict[str, Any]:
+    """One candle, raw. `date` is what ib_async gives - a `date` for daily bars, a `datetime`
+    for intraday ones - and is only stringified here; the browser reads it."""
+    return {
+        "date": bar.date.isoformat(),
+        "open": bar.open,
+        "high": bar.high,
+        "low": bar.low,
+        "close": bar.close,
+        "volume": float(bar.volume),
+    }
+
+
 def serialize_execution(fill: Any) -> dict[str, Any]:
     execution = fill.execution
     report = fill.commissionReport
@@ -273,6 +291,41 @@ def create_app(config: Config) -> FastAPI:
                 "positions": [serialize_position(item, pnl.get(item.contract.conId)) for item in items],
                 "executions": [serialize_execution(fill) for fill in ib.fills()],
             }
+        finally:
+            ib.disconnect()
+
+    @app.get("/bars")
+    async def bars(
+        port: Annotated[int, Query(ge=1, le=65535)],
+        symbol: Annotated[str, Query(min_length=1, max_length=24)],
+        duration: Annotated[str, Query(max_length=16)] = BARS_DURATION,
+        barSize: Annotated[str, Query(max_length=16)] = BARS_SIZE,
+        ib_factory: Callable[[], IB] = Depends(get_ib_factory),
+    ):
+        """Historical bars of one underlying. Options are out of scope on purpose: IB keeps no
+        end-of-day data for them, and none at all once they expire."""
+        ib = ib_factory()
+        try:
+            await ib.connectAsync(IB_HOST, port, clientId=CLIENT_ID, timeout=CONNECT_TIMEOUT_S, readonly=True)
+        except Exception as exc:  # noqa: BLE001 - whatever ib_async raises, the answer is the same
+            ib.disconnect()
+            return JSONResponse(
+                status_code=503,
+                content={"code": "tws-unreachable", "detail": f"{type(exc).__name__}: {exc}"},
+            )
+        try:
+            rows = await ib.reqHistoricalDataAsync(
+                Stock(symbol.upper(), "SMART", "USD"),
+                endDateTime="",
+                durationStr=duration,
+                barSizeSetting=barSize,
+                whatToShow=BARS_WHAT_TO_SHOW,
+                useRTH=True,
+                formatDate=1,
+            )
+            # An empty list is TWS's answer for an unknown symbol, a missing market data
+            # subscription or a pacing violation alike: the browser shows "no data", never an error.
+            return {"symbol": symbol.upper(), "fetchedAt": utc_now_iso(), "bars": [serialize_bar(bar) for bar in rows]}
         finally:
             ib.disconnect()
 
