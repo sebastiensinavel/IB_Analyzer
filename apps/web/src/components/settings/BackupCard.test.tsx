@@ -225,7 +225,9 @@ describe("BackupCard", () => {
     expect(await screen.findByText(i18n.t("settings.actionFailed"))).toBeInTheDocument();
   });
 
-  // Ronde de correction 1 (important), point 1 : deux bugs distincts derrière ce bouton.
+  // Deleting destroys the server's only copy of the backup, no version and no trash — unlike
+  // Restore and Import, which only overwrite this browser's own copy, recomposable from the
+  // statements and a resync. It gets the same confirmation friction as those two.
   it("supprimer du serveur demande confirmation — sans date à nommer — et n'efface rien si l'utilisateur refuse", async () => {
     await enableBackup(db);
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
@@ -238,6 +240,10 @@ describe("BackupCard", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  // A successful server-side deletion must clear this browser's own record of "last
+  // deposit" too: the blob it names no longer exists, so leaving it standing would keep the
+  // card showing a date for a backup that is gone, until the next deposit happened to
+  // overwrite it.
   it("supprimer du serveur réussi efface aussi le dernier dépôt connu de ce navigateur", async () => {
     await enableBackup(db);
     await recordBackup(db, "2026-09-21T10:00:00.000Z", 4096);
@@ -259,8 +265,9 @@ describe("BackupCard", () => {
     expect(await screen.findByText(i18n.t("settings.backupNever"))).toBeInTheDocument();
   });
 
-  // Ronde de correction 1 (important), point 2 : c'était le seul appel réseau de la carte dont
-  // un échec ne montrait jamais rien — la date retombait à "—" en silence.
+  // Of the card's four network calls, this was the only one whose failure showed nothing:
+  // the date silently fell back to "—" and the confirmation carried on as if nothing had
+  // gone wrong. A failed status probe must report like every other failure here.
   it("restaurer affiche un message si le statut serveur est injoignable, jamais un silence", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("offline"));
     renderCard();

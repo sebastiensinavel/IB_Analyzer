@@ -143,12 +143,11 @@ describe("backup client", () => {
       expect(await fetchBackupStatus()).toEqual({ ok: false, kind: "anonymous" });
     });
 
-    // Ronde de correction 1 (Ruling U) : 403 n'est jamais "anonyme" côté Django — c'est ce que
-    // `APIKeyCookie._get_key` (ninja/security/apikey.py) répond à un CSRF refusé, quel que
-    // soit l'état de la session. Un utilisateur bel et bien connecté, mais dont le jeton CSRF a
-    // expiré, verrait alors "Connectez-vous" alors qu'il l'est déjà : recharger la page est le
-    // geste qui répare, pas se reconnecter. Ce test échoue tant que 403 reste rangé sous
-    // "anonymous" avec 401.
+    // django-ninja's `APIKeyCookie._get_key` raises 403 on a failed CSRF check before
+    // authentication even runs, so it can reach a user who is genuinely signed in — a stale
+    // token after a long tab, say. Folding it into "anonymous" would tell that user to sign
+    // in again when they already are; reloading the page is what actually fixes it, so the
+    // two must stay distinct.
     it("un jeton CSRF refusé se distingue d'une session anonyme", async () => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 403 }));
       expect(await fetchBackupStatus()).toEqual({ ok: false, kind: "csrf" });

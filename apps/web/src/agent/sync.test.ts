@@ -308,6 +308,13 @@ describe("syncAgent and the backup trigger", () => {
       await syncAgent(ok(payload()), ACCOUNT);
       // A second pass, success or not, is exactly the five-minute loop this rule exists to stop.
       await syncAgent(answer({ ok: false, code: "agent-unreachable" }), ACCOUNT);
+      // `fail()` is called from three separate sites in `syncAgent` (the fetch itself, a
+      // payload `parseAgentSnapshot` rejects, and an account mismatch); each one calls
+      // `deps.db.accounts.update`, so each is its own opportunity to leak past the mute if a
+      // future edit moved one of them outside `suppressBackupTrigger`. All three must be
+      // exercised here, not just the fetch failure above.
+      await syncAgent(answer({ ok: true, payload: { nope: 1 } }), ACCOUNT); // parse-error
+      await syncAgent(ok(payload({ accounts: ["U7654321"] })), ACCOUNT); // account-mismatch
     } finally {
       uninstall();
     }
