@@ -37,15 +37,20 @@ export function AppLayout() {
     return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
   }
 
-  // Configuration pages live outside the account scope; they still need an
-  // account to point the rest of the nav at. Without any account there is
-  // nothing to show but the accounts page.
+  // Configuration pages live outside the account scope, and point the rest of the nav at
+  // whichever account was last visited, when there is one.
   const remembered = getLastAccountId();
   const navAccountId =
     scoped ?? (remembered && accounts.some((a) => a.id === remembered) ? remembered : accounts[0]?.id) ?? null;
-  if (navAccountId === null) return <Navigate to="/accounts" replace />;
 
-  const pageLabelKey = findNavItem(location.pathname, navAccountId)?.labelKey;
+  // `accountId` (from the URL) is defined only for a route scoped to an account
+  // (/accounts/:accountId/...): with no account at all to fall back on, there is nothing to
+  // show but the accounts page. Settings and Help carry no :accountId in their path and render
+  // regardless — they are the only way back into the app for a browser that has never held an
+  // account, which is exactly the state a restored backup starts from (CLAUDE.md).
+  if (accountId !== undefined && navAccountId === null) return <Navigate to="/accounts" replace />;
+
+  const pageLabelKey = findNavItem(location.pathname, navAccountId ?? "")?.labelKey;
 
   const inset = (
     <>

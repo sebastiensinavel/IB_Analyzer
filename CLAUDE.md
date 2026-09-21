@@ -54,6 +54,10 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   comme code de récupération), leur taille et leur date, plafonnés à 20 Mo. Le paquet emporte
   toutes les tables sauf `backup`, `statements` compris. Le dépôt suit les écritures qui
   comptent — `TRIGGER_TABLES`, toutes sauf `snapshots` — jamais les snapshots de l'agent.
+- **Paramètres et Aide s'atteignent sans aucun compte** : `AppLayout` ne rebondit vers
+  `/accounts` que pour une route scopée à un compte, jamais pour ces deux-là. C'est le seul
+  chemin de restauration d'une sauvegarde sur un navigateur neuf, qui n'a par définition aucun
+  compte — resserrer la garde le referme.
 - **Propriété de plage, jamais comparaison de contenu** (spec §6.2) : Flex est propriétaire
   de ses jours réels, le relevé HTML n'écrit qu'avant, l'agent n'écrit qu'après. Deux
   transactions jumelles le même jour sont légitimes. **Cette plage ne descend jamais sous la

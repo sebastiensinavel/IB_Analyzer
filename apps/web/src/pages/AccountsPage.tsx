@@ -39,6 +39,11 @@ export function AccountsPage() {
       <div className="flex items-center justify-between">
         <h1 className="font-heading text-lg font-semibold tracking-tight">{t("accounts.title")}</h1>
         <div className="flex items-center gap-2">
+          {/* The one path into Settings from a device that holds no account at all: without it,
+              restoring a backup onto a fresh browser needs a URL nobody would guess. */}
+          <Link to="/settings" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            {t("nav.settings")}
+          </Link>
           <SessionCorner />
           <LanguageSwitcher />
           <ThemeToggle />

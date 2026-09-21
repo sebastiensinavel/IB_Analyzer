@@ -118,10 +118,27 @@ describe("AppLayout", () => {
     expect(screen.getByRole("link", { name: "Gérer les comptes" })).toHaveAttribute("href", "/accounts");
   });
 
-  it("sends the settings route to the accounts page when there is no account at all", async () => {
+  // The central case this sub-project fixes: a browser that has just restored a backup has no
+  // account yet, and Settings is the only place that restore can be triggered from. Redirecting
+  // to /accounts here would make the backup irrecoverable exactly when it is needed.
+  it("renders the settings route with no account at all, instead of redirecting", async () => {
     await db.accounts.clear();
     renderAt("/settings");
+    expect(await screen.findByText("settings content")).toBeInTheDocument();
+    expect(screen.queryByText("accounts page")).not.toBeInTheDocument();
+  });
+
+  it("still sends a scoped route to the accounts page when there is no account at all", async () => {
+    await db.accounts.clear();
+    renderAt("/accounts/alpha/dashboard");
     expect(await screen.findByText("accounts page")).toBeInTheDocument();
+  });
+
+  it("hides every account link in the sidebar with no account at all, keeping Settings and Help", async () => {
+    await db.accounts.clear();
+    renderAt("/settings");
+    await screen.findByText("settings content");
+    expect(navHrefs()).toEqual(["/settings", "/help"]);
   });
 });
 

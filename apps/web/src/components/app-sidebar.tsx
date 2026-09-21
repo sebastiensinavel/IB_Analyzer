@@ -22,13 +22,23 @@ import { NAV_SECTIONS } from "@/lib/navigation";
 import type { AccountRecord } from "@/db/schema";
 
 interface AppSidebarProps {
-  accountId: string;
+  /** Null with no account on this device at all: the sidebar still renders, its account-scoped
+   *  links just hidden (CLAUDE.md, "Paramètres et Aide s'atteignent sans aucun compte"). */
+  accountId: string | null;
   accounts: readonly AccountRecord[];
 }
 
 export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
   const { t } = useTranslation();
   const location = useLocation();
+
+  // Every account-scoped entry needs a real accountId to link to; without one they are simply
+  // not rendered rather than pointing nowhere or being disabled. Sections left empty by the
+  // filter (every section but Configuration) are dropped too, so no empty group header shows.
+  const visibleSections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => accountId !== null || !item.accountScoped),
+  })).filter((section) => section.items.length > 0);
 
   return (
     <Sidebar>
@@ -39,10 +49,10 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
           </div>
           <span className="font-heading text-sm font-semibold tracking-tight">IB Analyzer</span>
         </div>
-        <AccountSwitcher accountId={accountId} accounts={accounts} />
+        {accountId !== null && <AccountSwitcher accountId={accountId} accounts={accounts} />}
       </SidebarHeader>
       <SidebarContent>
-        {NAV_SECTIONS.map((section, index) => (
+        {visibleSections.map((section, index) => (
           <Fragment key={section.labelKey}>
             {index > 0 && <SidebarSeparator />}
             <SidebarGroup>
@@ -50,7 +60,10 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {section.items.map((item) => {
-                    const to = item.to(accountId);
+                    // Safe: an account-scoped item only survives the filter above when
+                    // accountId is not null. The fallback only satisfies the type for the
+                    // account-less entries (Settings, Help), whose `to` ignores it anyway.
+                    const to = item.to(accountId ?? "");
                     const Icon = item.icon;
                     return (
                       <SidebarMenuItem key={item.labelKey}>

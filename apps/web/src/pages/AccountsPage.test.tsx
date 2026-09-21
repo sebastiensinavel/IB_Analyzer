@@ -62,6 +62,13 @@ describe("AccountsPage", () => {
     expect(await screen.findByText("Alpha")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ouvrir" })).toHaveAttribute("href", "/accounts/alpha/dashboard");
   });
+
+  // Without it, Settings — where a backup restore happens — is unreachable from a device that
+  // has just lost every account, which is exactly when that restore matters.
+  it("offers a way to Settings", async () => {
+    renderPage();
+    expect(await screen.findByRole("link", { name: "Paramètres" })).toHaveAttribute("href", "/settings");
+  });
 });
 
 function jsonResponse(body: unknown, status: number) {
