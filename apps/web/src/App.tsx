@@ -1,6 +1,7 @@
 import { I18nextProvider } from "react-i18next";
 import { RouterProvider } from "react-router";
 import { SessionProvider } from "@/api/session";
+import { BackupSync } from "@/db/backup/BackupSync";
 import { DbProvider } from "@/db/DbProvider";
 import i18n from "@/i18n";
 import { router } from "@/routes/router";
@@ -13,6 +14,7 @@ export default function App() {
           not read it: the database belongs to the browser (sub-project 25). */}
       <SessionProvider>
         <DbProvider>
+          <BackupSync />
           <RouterProvider router={router} />
         </DbProvider>
       </SessionProvider>

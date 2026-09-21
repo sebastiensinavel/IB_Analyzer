@@ -1519,7 +1519,7 @@ git commit -m "Le client des trois routes de sauvegarde"
   - `pullBackup(db: AppDatabase, key: Uint8Array): Promise<BackupResult<void>>`
   - `BACKUP_DEBOUNCE_MS = 30_000`
 
-- [ ] **Step 1: Écrire le test du déclencheur**
+- [x] **Step 1: Écrire le test du déclencheur**
 
 `apps/web/src/db/backup/trigger.test.ts` :
 
@@ -1585,12 +1585,12 @@ describe("installBackupTrigger", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2: Lancer le test, vérifier qu'il échoue**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/trigger.test.ts`
 Attendu : ÉCHEC, le module n'existe pas.
 
-- [ ] **Step 3: Écrire `apps/web/src/db/backup/trigger.ts`**
+- [x] **Step 3: Écrire `apps/web/src/db/backup/trigger.ts`**
 
 ```ts
 import type { AppDatabase } from "../schema";
@@ -1639,12 +1639,12 @@ export function installBackupTrigger(db: AppDatabase, onChange: () => void): () 
 }
 ```
 
-- [ ] **Step 4: Lancer le test, vérifier qu'il passe**
+- [x] **Step 4: Lancer le test, vérifier qu'il passe**
 
 Depuis `apps/web` : `npx vitest run src/db/backup/trigger.test.ts`
 Attendu : quatre tests PASS.
 
-- [ ] **Step 5: Écrire l'orchestration et son test**
+- [x] **Step 5: Écrire l'orchestration et son test**
 
 `apps/web/src/db/backup/sync.ts` :
 
@@ -1737,7 +1737,7 @@ describe("pullBackup", () => {
 });
 ```
 
-- [ ] **Step 6: Brancher le déclencheur dans l'application**
+- [x] **Step 6: Brancher le déclencheur dans l'application**
 
 `apps/web/src/db/backup/BackupSync.tsx` :
 
@@ -1777,12 +1777,12 @@ Dans `apps/web/src/App.tsx`, à l'intérieur de `<DbProvider>` :
         </DbProvider>
 ```
 
-- [ ] **Step 7: Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 7: Lancer les tests, vérifier qu'ils passent**
 
 Depuis `apps/web` : `npx vitest run src/db/backup`
 Attendu : tout PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
