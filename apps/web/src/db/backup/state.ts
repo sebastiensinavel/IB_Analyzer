@@ -81,5 +81,7 @@ export async function recordBackupFailure(db: AppDatabase, kind: BackupFailure):
  */
 export async function clearBackupRecord(db: AppDatabase): Promise<void> {
   const existing = await readBackupState(db);
-  if (existing) await db.backup.put({ ...existing, lastBackupAt: null, lastBackupBytes: null });
+  if (existing) {
+    await db.backup.put({ ...existing, lastBackupAt: null, lastBackupBytes: null, lastBackupError: null });
+  }
 }

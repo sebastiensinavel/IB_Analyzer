@@ -42,7 +42,9 @@ describe("SettingsPage", () => {
     renderPage();
 
     expect(await screen.findByText("Non connecté.")).toBeInTheDocument();
-    expect(screen.getByText(/Serveur injoignable/)).toBeInTheDocument();
+    // The exact note, not a loose /Serveur injoignable/: the backup card on this same page says
+    // the same thing about itself, and a regex that matches both stops telling them apart.
+    expect(screen.getByText("Serveur injoignable : les réglages de compte sont indisponibles pour l'instant.")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
