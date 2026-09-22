@@ -1079,6 +1079,11 @@ neuf.
 - **`tsc --noEmit -p .` ne vérifie rien** sur un tsconfig-solution : seul `tsc -b` — ce que
   lance `pnpm check` — contrôle réellement les projets référencés. Vu pendant la vague de
   correction finale, après qu'un typage réputé propre soit passé à côté d'une erreur.
+- **La suite d'`apps/web` flanche sous charge**, et pas à cause de ce sous-projet : mesuré le
+  2026-09-22, `main` échoue une fois sur trois exécutions (`AppLayout.test.tsx`), la branche
+  une fois sur deux, jamais deux fois le même test. La cause est le délai par défaut d'une
+  seconde des `findBy...` de Testing Library, qui expire quand la machine est chargée. À
+  traiter par un délai explicite sur les assertions concernées, pas en relançant jusqu'au vert.
 
 ---
 
