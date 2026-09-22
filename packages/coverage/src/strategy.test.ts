@@ -314,6 +314,18 @@ describe("leapsPositions", () => {
     // Shares count one unit each, whatever multiplier the IB row carries or lacks.
     expect(delivered).toEqual([expect.objectContaining({ kind: "long_stock", label: "long", quantity: 100, marketValue: 2100, unrealizedPnl: 100, decision: null })]);
   });
+
+  it("tells how much of a LEAPS line the cover uses, capped by the line, null on what is sold", () => {
+    // Without the 100 ZZZ shares, the short call has nothing left to cover it but the LEAPS.
+    const noStock = priced([
+      option({ symbol: "ZZZ", right: "C", strike: 15, expiry: "2027-06-18", quantity: 1, avgPrice: 3, marketPrice: 4, marketValue: 400 }),
+      option({ symbol: "ZZZ", right: "C", strike: 20, expiry: "2026-09-18", quantity: -1, avgPrice: 0.5, marketPrice: 0.25, marketValue: -25 }),
+    ]);
+    const { optionBuys, optionSales } = leapsPositions(rows, noStock);
+    expect(optionBuys[0].used).toBe(1);
+    expect(optionSales[0].used).toBeNull();
+    expect(leapsPositions(rows, null).optionBuys[0].used).toBeNull();
+  });
 });
 
 describe("coverage of a call shared between the Wheel and the LEAPS", () => {

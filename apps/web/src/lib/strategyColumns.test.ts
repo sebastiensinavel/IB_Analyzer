@@ -17,7 +17,7 @@ function analyzedPosition(overrides: Partial<AnalyzedPosition> = {}): AnalyzedPo
 function line(overrides: Partial<StrategyLine> = {}): StrategyLine {
   return {
     contract: CONTRACT, kind: "short_put", label: "sell of put", quantity: -2, avgPrice: 2, lastPrice: 1.5,
-    marketValue: -300, dailyPnl: null, dayChange: null, unrealizedPnl: 100, decision: "keep", position: null, coverage: [], ...overrides,
+    marketValue: -300, dailyPnl: null, dayChange: null, unrealizedPnl: 100, decision: "keep", position: null, coverage: [], used: null, ...overrides,
   };
 }
 

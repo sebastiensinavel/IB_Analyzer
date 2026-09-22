@@ -92,7 +92,7 @@ stocké, aucune table Dexie, aucun serveur.
   export function strategyBoxContents(positions: StrategyPositions, strategy: PositionsStrategy): StrategyBoxContents;
   ```
 
-- [ ] **Step 1: Ajouter `used` à `StrategyLine`, avec son test**
+- [x] **Step 1: Ajouter `used` à `StrategyLine`, avec son test**
 
 Dans `strategy.ts`, ajouter le champ à l'interface `StrategyLine` (après `coverage`) et le
 calculer dans `line()` :
@@ -118,7 +118,7 @@ Run: `cd packages/coverage && npx vitest run strategy` — le nouveau test écho
 (`used` indéfini), puis passe. Si un test existant compare une `StrategyLine` entière par
 `toEqual`, y ajouter `used` avec la valeur attendue, jamais `expect.anything()`.
 
-- [ ] **Step 2: Écrire les tests de `strategyBoxes.test.ts` (échouent : fichier absent)**
+- [x] **Step 2: Écrire les tests de `strategyBoxes.test.ts` (échouent : fichier absent)**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -236,7 +236,7 @@ describe("strategyBoxContents — Condors and Others", () => {
 
 Run: `cd packages/coverage && npx vitest run strategyBoxes` — Expected: FAIL (module introuvable).
 
-- [ ] **Step 3: Écrire `strategyBoxes.ts`**
+- [x] **Step 3: Écrire `strategyBoxes.ts`**
 
 ```ts
 import { DETAIL_GROUPS, type DetailGroupId } from "./constants.ts";
@@ -355,13 +355,13 @@ export interface StrategyBoxContents {
 
 Ajouter `export * from "./strategyBoxes.ts";` à `packages/coverage/src/index.ts`.
 
-- [ ] **Step 4: Lancer les tests du paquet**
+- [x] **Step 4: Lancer les tests du paquet**
 
 Run: `cd packages/coverage && npx vitest run` — Expected: PASS, tous. Puis
 `npx tsc --noEmit -p packages/coverage` depuis la racine (ou le script `typecheck` du paquet
 s'il existe) : aucun appelant de `StrategyLine` ne doit manquer `used`.
 
-- [ ] **Step 5: Cocher les cases de la tâche 1 et commiter**
+- [x] **Step 5: Cocher les cases de la tâche 1 et commiter**
 
 ```bash
 git add packages/coverage docs/plans/2026-09-22-tableaux-de-strategie.md

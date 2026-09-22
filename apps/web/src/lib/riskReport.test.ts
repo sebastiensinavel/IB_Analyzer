@@ -117,6 +117,7 @@ function line(overrides: Partial<StrategyLine>): StrategyLine {
     decision: "keep",
     position: null,
     coverage: [],
+    used: null,
     ...overrides,
   };
 }

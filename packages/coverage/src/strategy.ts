@@ -44,6 +44,8 @@ export interface StrategyLine {
    * option; empty for what is bought and without a position.
    */
   coverage: CoverageAllocation[];
+  /** Long options only: min(|quantity|, position.usedQuantity); `null` otherwise or without a position. */
+  used: number | null;
 }
 
 export interface WheelShareLine extends WheelHolding {
@@ -207,6 +209,7 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
   const multiplier = kind === "long_stock" || kind === "short_stock" ? 1 : priced ? contractMultiplier(priced.position) : DEFAULT_MULTIPLIER;
   const lastPrice = priced?.position.marketPrice ?? null;
   const sold = kind === "short_put" || kind === "short_call";
+  const bought = kind === "long_call" || kind === "long_put";
   const marketValue = lastPrice === null ? null : lastPrice * quantity * multiplier;
   const day = dayShare(priced?.position ?? null, quantity);
   return {
@@ -225,6 +228,7 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
     decision: sold && lastPrice !== null && avgPrice !== null ? evaluateBuyback(avgPrice, lastPrice) : null,
     position: priced?.analyzed ?? null,
     coverage: sold && priced ? cappedCoverage(priced, sources, quantity) : [],
+    used: bought && priced ? Math.min(Math.abs(quantity), priced.analyzed.usedQuantity) : null,
   };
 }
 

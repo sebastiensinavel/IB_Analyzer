@@ -5,4 +5,5 @@ export * from "./classify.ts";
 export * from "./coverage.ts";
 export * from "./report.ts";
 export * from "./strategy.ts";
+export * from "./strategyBoxes.ts";
 export * from "./suggestions.ts";
