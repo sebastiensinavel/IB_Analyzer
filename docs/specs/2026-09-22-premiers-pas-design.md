@@ -168,15 +168,29 @@ leur place changent. Le composant `Section` et `Command` de `HelpPage.tsx` sont 
 |---|---|---|---|
 | — | L'application | `help.app` | L'accroche et les trois bénéfices de §2.1, la promesse de confidentialité, et les trois paliers en une phrase chacun : relevé ou Flex Query seuls ; les deux ; avec l'agent local pour l'intraday. |
 | 1 | Obtenir un relevé d'activité | `help.statement` | Dans le Client Portal : Performance & Reports › Statements › Activity ; choisir la période la plus longue proposée, le format HTML, télécharger. Un relevé par année pour remonter loin ; « Sources de données › Importer des fichiers » accepte plusieurs fichiers à la fois. Le fichier est conservé dans le navigateur pour pouvoir être rejoué. |
-| 2 | Configurer une Flex Query | `help.flex` | Dans le Client Portal : Performance & Reports › Flex Queries. Créer une Activity Flex Query avec les sections **Trades**, **Cash Transactions**, **Corporate Actions**, **Open Positions** et **Cash Report**, période « Last 365 days », format XML. Activer le Flex Web Service et copier le jeton ; noter l'identifiant de la requête. Les saisir dans « Sources de données › Flex Query ». Ce que le parseur ne trouve pas est listé dans Sources de données à chaque synchro. |
+| 2 | Configurer une Flex Query | `help.flex` | Dans le Client Portal : Performance & Reports › Flex Queries. Créer une Activity Flex Query avec les sections **Trades**, **Cash Transactions**, **Corporate Actions**, **Open Positions** et **Cash Report**, et dans chacune **cocher « Select All »** plutôt que les champs un par un (§5.1). Période « Last 365 days », format XML. Activer le Flex Web Service et copier le jeton ; noter l'identifiant de la requête. Les saisir dans « Sources de données › Flex Query ». Ce que le parseur ne trouve pas est listé dans Sources de données à chaque synchro. |
 | 3 | L'agent local | `help.what` | Inchangée, renumérotée : la section d'introduction actuelle. |
 | 4 à 9 | Installer uv, Installer l'agent, Le configurer et le lancer, Régler l'API de TWS, La permission du navigateur, Renseigner le port | `help.uv` … `help.port` | Inchangées, renumérotées. |
 
+### 5.1 Tout cocher, jamais champ par champ
+
+**L'Aide dit de cocher « Select All » dans chaque section**, jamais d'énumérer les colonnes à
+retenir. Décidé le 2026-09-22 (§8). Une liste de colonnes serait longue à lire, pénible à
+reproduire dans l'interface du Client Portal, et fausse au premier champ dont une version
+future du parseur aurait besoin. Tout cocher produit un XML un peu plus gros — volume
+parfaitement raisonnable pour une Flex Query — et met l'utilisateur à l'abri : les colonnes
+que le parseur lit sont là par construction.
+
+La conséquence vaut aussi pour la page Sources de données : un avertissement
+`column-missing` devient alors le signe qu'une section a été cochée partiellement, et l'Aide
+donne la réponse, tout cocher.
+
 **Les chemins du Client Portal sont à vérifier dans le Client Portal au moment de l'écriture
-des textes**, pas recopiés de ce spec : Interactive Brokers renomme ses menus. Le plan porte
-cette vérification comme une tâche, avec la liste exacte des sections lue dans
-`packages/ib-parsers/src/flex.ts` (`checkSections`) : c'est le parseur qui fait foi sur ce qui
-est requis, le texte le suit.
+des textes**, pas recopiés de ce spec : Interactive Brokers renomme ses menus, et le libellé
+exact de la case qui coche tout dans une section — « Select All » au 2026-09-22 — est à lire
+sur place. Le plan porte cette vérification comme une tâche, avec la liste exacte des sections
+lue dans `packages/ib-parsers/src/flex.ts` (`checkSections`) : c'est le parseur qui fait foi
+sur ce qui est requis, le texte le suit.
 
 Le lien « Comment obtenir un relevé » de §4.1 pointe sur `/help#statement` ; les sections
 portent un `id` pour cela.
@@ -262,3 +276,6 @@ Tous sous Vitest, sur `fake-indexeddb`, base semée, jamais de hook moqué (CLAU
   mais cela sème la base depuis une fixture embarquée dans le bundle et se décide à part.
 - **Aucune modification du serveur** : l'inscription reste fermée et sur invitation ; le
   texte le dit au lieu de le cacher.
+- **L'Aide fait cocher toute une section de la Flex Query, pas des champs choisis.** Un peu
+  plus de volume, nettement plus simple à suivre, et rien ne manque le jour où le parseur lit
+  une colonne de plus.
