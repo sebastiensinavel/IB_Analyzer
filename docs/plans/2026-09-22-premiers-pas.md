@@ -585,7 +585,7 @@ git commit -m "Remplace le tableau de bord vide d'un compte neuf par la premièr
 - Produces : un composant local `WelcomeCard` **non exporté**, rendu en tête de
   `AccountsPage`. Aucune autre tâche ne l'utilise.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter dans `apps/web/src/pages/AccountsPage.test.tsx`, dans le `describe("AccountsPage")` :
 
@@ -608,12 +608,12 @@ Ajouter dans `apps/web/src/pages/AccountsPage.test.tsx`, dans le `describe("Acco
   });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/AccountsPage.test.tsx -t "welcome"`
 Attendu : échec, l'accroche est introuvable.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, dans le bloc `accounts`, ajouter la clé `welcome` juste
 après `"title"` :
@@ -658,7 +658,7 @@ Dans `apps/web/src/i18n/en.json`, au même endroit :
     },
 ```
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Dans `apps/web/src/pages/AccountsPage.tsx` :
 
@@ -719,12 +719,12 @@ function WelcomeCard() {
 `Card`, `CardHeader`, `CardTitle`, `CardContent`, `Link`, `buttonVariants`, `cn` et
 `useTranslation` sont déjà importés par le fichier.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/AccountsPage.test.tsx src/i18n`
 Attendu : tout au vert.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 5, puis :
 

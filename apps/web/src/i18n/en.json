@@ -29,6 +29,22 @@
   },
   "accounts": {
     "title": "Accounts",
+    "welcome": {
+      "tagline": "Analyse your Interactive Brokers portfolios, shares and options.",
+      "benefits": [
+        "Coverage of your option sales and the cash they require, at any time.",
+        "Wheel, LEAPS and Condor journals rebuilt from your own history.",
+        "Full history, positions and per-strategy statistics."
+      ],
+      "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
+      "howTitle": "How it works",
+      "steps": [
+        "Add an IB account below.",
+        "Import an activity statement, or set up a Flex Query.",
+        "Read your dashboard; the local agent, optional, adds live data."
+      ],
+      "helpLink": "Getting started"
+    },
     "empty": "No account yet. Create the first one below.",
     "label": "Label",
     "ibAccountId": "IB account id",

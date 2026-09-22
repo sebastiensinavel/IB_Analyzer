@@ -29,6 +29,22 @@
   },
   "accounts": {
     "title": "Comptes",
+    "welcome": {
+      "tagline": "Analysez vos portefeuilles Interactive Brokers, actions et options.",
+      "benefits": [
+        "Couverture de vos ventes d'options et cash requis, à tout instant.",
+        "Journaux Wheel, LEAPS et Condors reconstitués depuis votre historique.",
+        "Historique complet, positions et statistiques par stratégie."
+      ],
+      "privacy": "Vos données restent dans ce navigateur : le serveur ne voit jamais vos transactions ni vos positions.",
+      "howTitle": "Comment ça marche",
+      "steps": [
+        "Ajoutez un compte IB ci-dessous.",
+        "Importez un relevé d'activité, ou branchez une Flex Query.",
+        "Lisez votre tableau de bord ; l'agent local, facultatif, ajoute les données en direct."
+      ],
+      "helpLink": "Premiers pas"
+    },
     "empty": "Aucun compte pour l'instant. Créez le premier ci-dessous.",
     "label": "Libellé",
     "ibAccountId": "Identifiant de compte IB",

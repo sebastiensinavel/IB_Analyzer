@@ -69,6 +69,23 @@ describe("AccountsPage", () => {
     renderPage();
     expect(await screen.findByRole("link", { name: "Paramètres" })).toHaveAttribute("href", "/settings");
   });
+
+  it("opens with what the application is, and says data stays in this browser", async () => {
+    renderPage();
+    expect(await screen.findByText(/Analysez vos portefeuilles Interactive Brokers/)).toBeInTheDocument();
+    expect(screen.getByText(/le serveur ne voit jamais vos transactions/)).toBeInTheDocument();
+    expect(screen.getByText("Comment ça marche")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Premiers pas" })).toHaveAttribute("href", "/help");
+  });
+
+  // Decided 2026-09-22: adding an account does not wipe the page a newcomer just read — the
+  // same page keeps serving to add another account and to open one.
+  it("keeps the welcome block once accounts exist", async () => {
+    await db.accounts.add({ id: "alpha", label: "Alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [] });
+    renderPage();
+    expect(await screen.findByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText(/Analysez vos portefeuilles Interactive Brokers/)).toBeInTheDocument();
+  });
 });
 
 function jsonResponse(body: unknown, status: number) {
