@@ -97,9 +97,9 @@ export function coverageValues(position: AnalyzedPosition): string[] {
  * The coverage a strategy's positions page shows (spec of sub-project 16, §3.4, extended by
  * sub-project 21, §4.5, and by sub-project 29): on a sold option the strategy's own cover — the
  * Wheel's shares and cash, the LEAPS' calls, a condor's spread —, on a bought option how much of
- * *the line* a call sold against it uses, capped by the line's own quantity, the same "used x/y" a
- * sold option's cover has carried since sub-project 22. A wing that holds the whole IB position
- * keeps the same badge as before.
+ * *the line* its cover uses — a sold call for a LEAPS, the spread for a condor wing — capped by
+ * the line's own quantity, the same "used x/y" a sold option's cover has carried since
+ * sub-project 22. A wing that holds the whole IB position keeps the same badge as before.
  *
  * Others is the exception: what is filed there is precisely what nothing covers, and UNCOVERED is
  * never an allocation. Its quantity is the naked part, the engine having already split off the

@@ -203,6 +203,23 @@ describe("StrategyPositionsPage — LEAPS", () => {
     expect(screen.queryByLabelText("Actions")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("LEAPS sans call vendu")).not.toBeInTheDocument();
   });
+
+  it("splits two LEAPS into the one a call covers and the one it doesn't", async () => {
+    // A second ZZZ LEAPS bought: two held, still only the one existing call sold against them.
+    const ZZZ_LEAPS_2: Transaction = { ...SAMPLE_JOURNAL_TRANSACTIONS[5], externalId: "flex:trade:406", when: "2026-06-06T14:30:00.000Z" };
+    await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, ZZZ_LEAPS_2]);
+    await db.snapshots.put({
+      ...SNAPSHOT,
+      positions: SNAPSHOT.positions.map((position) => (position === SNAPSHOT.positions[1] ? { ...position, quantity: 2, marketValue: 800 } : position)),
+    });
+    const { container } = renderPage("leaps");
+    const covered = await rowIn("LEAPS avec call vendu", "ZZZ Jun18'27 15 Call");
+    expect(texts(covered)).toEqual(["ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "used 1/1"]);
+    const uncovered = await rowIn("LEAPS sans call vendu", "ZZZ Jun18'27 15 Call");
+    expect(texts(uncovered)).toEqual(["ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "unused"]);
+    const titles = [...container.querySelectorAll("[data-slot=card]")].map((card) => card.getAttribute("aria-label"));
+    expect(titles).toEqual(["LEAPS sans call vendu", "LEAPS avec call vendu", "Ventes de calls"]);
+  });
 });
 
 /** A second MQZA 15 call, sold while the 200 assigned shares still covered two. */
@@ -329,14 +346,16 @@ describe("StrategyPositionsPage — search, expiries and column filters", () => 
   });
 
   it("remembers each box's view under its own key, per account and per strategy", async () => {
+    // A criterion that would hide the XOM put too, were it to leak into "Ventes de puts": the
+    // key must be scoped per box, not shared under "positions:wheel".
     await seed();
     window.localStorage.setItem(
       "ib2:tableView:beta:positions:wheel:callSells",
-      JSON.stringify({ v: 1, sort: [], criteria: { position: "XOM" } }),
+      JSON.stringify({ v: 1, sort: [], criteria: { position: "MQZA" } }),
     );
     renderPage("wheel");
-    const box = await screen.findByLabelText("Ventes de calls");
-    expect(await within(box).findByText("Aucune position ne correspond.")).toBeInTheDocument();
+    const calls = await screen.findByLabelText("Ventes de calls");
+    expect(within(calls).getByText("MQZA Oct16'26 15 Call")).toBeInTheDocument();
     const puts = screen.getByLabelText("Ventes de puts");
     expect(within(puts).getByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
   });
