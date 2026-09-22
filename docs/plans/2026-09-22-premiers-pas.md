@@ -434,15 +434,42 @@ quand `report === null && !stats`, et une cellule du `return` principal. **Seul 
 anticipé change** : atteindre le second suppose des statistiques, donc des transactions, donc
 un import ou une passe d'agent — `neverFed` y est forcément `false`.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Repair the existing empty-state test, then write the failing ones**
 
-Ajouter dans `apps/web/src/pages/DashboardPage.test.tsx`. Le `beforeEach` du fichier ne vide
-ni `db.accounts` ni `db.imports` : le test les gère lui-même.
+**Un test existant casse sous ce changement, et c'est attendu.**
+`it("shows the empty state with a link to the data sources without a snapshot")` rend le
+compte `alpha` sans transaction, sans snapshot **et sans import** : il passe donc par le
+`return` anticipé, où `neverFed` vaudra désormais `true`. Son intention est de fixer l'état
+vide **d'un compte déjà alimenté**, pas celui d'un compte neuf — que les nouveaux tests
+couvrent. Lui donner de quoi être ce qu'il teste, en tête de ce test :
+
+```tsx
+    await db.imports.add({
+      accountId: "alpha",
+      source: "statement_html",
+      at: "2026-09-01T10:00:00.000Z",
+      fileName: "x.htm",
+      period: null,
+      imported: 0,
+      skipped: 0,
+      dropped: [],
+      issues: [],
+    });
+```
+
+Et ajouter `db.imports.clear()` au `beforeEach` du fichier, pour que cet import ne fuie pas
+dans les tests suivants.
+
+L'autre test qui cherche le même texte, `it("keeps the journal cards without a snapshot, …")`,
+sème des transactions : il a donc des statistiques, passe par le `return` principal, et n'est
+pas concerné. Ne pas y toucher.
+
+Ajouter ensuite dans `apps/web/src/pages/DashboardPage.test.tsx`.
 
 ```tsx
 describe("DashboardPage: a brand new account", () => {
   beforeEach(async () => {
-    await Promise.all([db.accounts.clear(), db.imports.clear()]);
+    await db.accounts.clear();
     await db.accounts.add({ id: "neuf", label: "Neuf", ibAccountId: "U0000009", createdAt: "", warnedDroppedKinds: [] });
   });
 
@@ -846,6 +873,14 @@ git commit -m "Nomme l'ajout d'un compte IB pour ce qu'il est"
 - Produces : trois clés i18n, `auth.serverAccount`, `auth.optional` et
   `auth.serverAccountTitle`, utilisées par la tâche 8. `auth.signIn` **reste** et garde son
   texte : c'est le libellé du bouton de validation de la page de connexion.
+
+**Il existe un quatrième `auth.signIn`, et il ne change pas.**
+`apps/web/src/pages/SourcesPage.tsx` (carte Synchronisation, variable `showSignIn`) offre un
+lien de connexion quand le relais serveur est autorisé, l'agent absent et la session anonyme.
+Là, se connecter n'est pas facultatif : c'est ce qui manque pour faire ce que l'utilisateur
+vient de demander, et l'appeler « facultatif » contredirait le message juste à côté. **Ce lien
+garde `auth.signIn` et n'est pas touché par cette tâche.** Décidé au scan préalable du
+2026-09-22.
 
 **Forme retenue, identique aux trois endroits :** le lien porte `title` et `aria-label` valant
 `auth.serverAccountTitle` ; son contenu visible est `auth.serverAccount` suivi de
