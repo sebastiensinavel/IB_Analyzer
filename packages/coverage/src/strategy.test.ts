@@ -326,6 +326,22 @@ describe("leapsPositions", () => {
     expect(optionSales[0].used).toBeNull();
     expect(leapsPositions(rows, null).optionBuys[0].used).toBeNull();
   });
+
+  it("caps used by the line's own quantity, never the IB position's whole usedQuantity", () => {
+    // The IB position holds 2 LEAPS calls, fully used by the 2 short calls sold against them — no
+    // stock in this snapshot, so the LEAPS cover applies — but this journal line only carries 1 of
+    // the 2 contracts: Math.min(|quantity|, usedQuantity) must keep the line's own 1, not the
+    // position's 2.
+    const twoSold = [
+      row({ contract: LEAPS, strategy: "leaps", kind: "long_call", quantity: 1, openPrice: 3 }),
+      row({ id: "s#1", contract: SOLD, strategy: "leaps", kind: "short_call", quantity: -2, openPrice: 0.5 }),
+    ];
+    const twoContracts = priced([
+      option({ symbol: "ZZZ", right: "C", strike: 15, expiry: "2027-06-18", quantity: 2, avgPrice: 3, marketPrice: 4, marketValue: 800 }),
+      option({ symbol: "ZZZ", right: "C", strike: 20, expiry: "2026-09-18", quantity: -2, avgPrice: 0.5, marketPrice: 0.25, marketValue: -50 }),
+    ]);
+    expect(leapsPositions(twoSold, twoContracts).optionBuys[0].used).toBe(1);
+  });
 });
 
 describe("coverage of a call shared between the Wheel and the LEAPS", () => {

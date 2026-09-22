@@ -78,14 +78,16 @@ Dans cet ordre :
 **Part utilisée d'un LEAPS.** `min(|quantity|, position.usedQuantity)`, où `position` est la
 position IB analysée par le moteur de couverture : la même source que le badge `used x/y`
 d'aujourd'hui. Sans position dans le snapshot, la part utilisée vaut 0 et toute la ligne est
-libre. La part libre porte `unused`, la part utilisée `used k/k`.
+libre. Dans ce cas la ligne reste entière dans l'encadré libre, sans être découpée, et garde
+`used: null` — donc aucun badge, comme avant ce sous-projet. La part libre porte `unused`, la
+part utilisée `used k/k`.
 
 Le journal LEAPS ne vend que des calls. Si une vente de put devait un jour y apparaître, elle
 irait dans un encadré `other` (« Autres »), déclaré en dernier pour ce seul cas : jamais perdue sans bruit.
 
 ## 4. Découpage d'une ligne en deux parts
 
-Une fonction pure dans `packages/coverage/src/strategy.ts`, testée seule :
+Une fonction pure dans `packages/coverage/src/strategyBoxes.ts`, testée seule :
 
 - `splitWheelShares(line: WheelShareLine)` rend `{ uncovered, covered }`, chaque part étant
   une `WheelShareLine` ou `null` quand sa quantité vaut 0. Pour `covered`, la quantité est
