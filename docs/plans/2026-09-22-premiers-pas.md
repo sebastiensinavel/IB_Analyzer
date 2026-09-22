@@ -883,18 +883,24 @@ Dans `apps/web/src/components/SessionMenuItem.test.tsx`, remplacer de même
 
 Dans `apps/web/src/pages/SettingsPage.test.tsx`, ajouter :
 
+Ce fichier n'a pas de moquage de `useSession` : il rend un vrai `SessionProvider` et moque
+`fetch`. Son premier test, `it("offers only a sign-in link when anonymous, …")`, cherche
+`{ name: "Se connecter" }` : c'est cette ligne qui change, et une assertion s'y ajoute.
+
 ```tsx
-  it("names the server account, and says it is optional", async () => {
-    // Follow the file's own harness for an anonymous session.
-    renderSettings();
-    const link = await screen.findByRole("link", { name: /Compte serveur, facultatif/ });
-    expect(link).toHaveAttribute("href", "/login");
+  it("offers only a sign-in link when anonymous, no account-management cards", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({}, 401));
+
+    renderPage();
+
+    expect(await screen.findByText("Non connecté.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Compte serveur, facultatif/ })).toHaveAttribute("href", "/login");
+    // The word must be readable, not only announced.
     expect(screen.getByText("facultatif")).toBeInTheDocument();
+    expect(screen.queryByText("Changer le mot de passe")).not.toBeInTheDocument();
+    expect(screen.queryByText("Authentification à deux facteurs")).not.toBeInTheDocument();
   });
 ```
-
-Si `SettingsPage.test.tsx` moque déjà `useSession`, réutiliser sa fabrique de session
-anonyme telle quelle plutôt que d'en écrire une autre.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
@@ -1122,11 +1128,16 @@ tenter d'ouvrir le Client Portal ; ne pas inventer un autre chemin.
 
 Ajouter dans `apps/web/src/pages/HelpPage.test.tsx` :
 
+`CardTitle` (`packages/ui/src/components/ui/card.tsx`) rend un `div` portant
+`data-slot="card-title"`, **pas un titre** : l'ordre se lit sur cet attribut, jamais par
+`getAllByRole("heading")`, qui ne trouverait rien.
+
 ```tsx
   it("opens on what the application is, then the two data sources, then the agent", async () => {
     mockIndex(new Response("", { status: 404 }));
-    render(<MemoryRouter><HelpPage /></MemoryRouter>);
-    const titles = (await screen.findAllByRole("heading", { level: 3 })).map((h) => h.textContent);
+    const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    const titles = [...container.querySelectorAll("[data-slot=card-title]")].map((el) => el.textContent);
     expect(titles).toEqual([
       "L'application",
       "1. Obtenir un relevé d'activité",
@@ -1161,8 +1172,8 @@ Ajouter dans `apps/web/src/pages/HelpPage.test.tsx` :
   });
 ```
 
-Si `CardTitle` ne rend pas un `h3`, lire le niveau réel dans `packages/ui` et corriger le
-`level` de la requête — ne pas changer le composant `Card` pour satisfaire le test.
+`Card` étale ses props sur son `div` racine : `id` y passe tel quel, rien à changer dans
+`packages/ui`.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
