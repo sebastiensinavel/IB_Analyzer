@@ -1215,7 +1215,7 @@ cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/components/settings/BackupC
 
 **Interfaces:** aucune.
 
-- [ ] **Step 1 : le commentaire de `file.ts`**
+- [x] **Step 1 : le commentaire de `file.ts`**
 
 Son argument — « une clé de plus à retenir en ferait une sauvegarde que personne ne peut
 relire » — a changé de sens maintenant qu'une phrase existe. Le remplacer par :
@@ -1230,7 +1230,7 @@ relire » — a changé de sens maintenant qu'une phrase existe. Le remplacer pa
  */
 ```
 
-- [ ] **Step 2 : le §7.5 de l'architecture**
+- [x] **Step 2 : le §7.5 de l'architecture**
 
 Remplacer les trois puces du bloc « Côté navigateur » par :
 
@@ -1252,7 +1252,7 @@ sauvegarde, demandée uniquement pour restaurer sur un nouvel appareil ».
 **Le §13 n'est pas touché.** Sa ligne « Clé de sauvegarde dérivée du mot de passe » reste vraie :
 ce sous-projet n'utilise pas le mot de passe du compte.
 
-- [ ] **Step 3 : la puce de `CLAUDE.md`**
+- [x] **Step 3 : la puce de `CLAUDE.md`**
 
 Remplacer la puce « La sauvegarde est un blob opaque, opt-in » par :
 
@@ -1272,7 +1272,7 @@ Remplacer la puce « La sauvegarde est un blob opaque, opt-in » par :
 
 Et, dans le tableau des sous-projets, passer la ligne 26 à `fait (2026-09-22)`.
 
-- [ ] **Step 4 : `docs/points-reportes.md`**
+- [x] **Step 4 : `docs/points-reportes.md`**
 
 Remplacer toute la section « Sous-projet 26 à ouvrir : la sauvegarde sans rien à conserver » par :
 
@@ -1291,7 +1291,7 @@ Remplacer toute la section « Sous-projet 26 à ouvrir : la sauvegarde sans rien
 - Et tout ce que la revue de branche aura relevé.
 ```
 
-- [ ] **Step 5 : la vérification complète, une seule fois**
+- [x] **Step 5 : la vérification complète, une seule fois**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && pnpm check
@@ -1302,14 +1302,14 @@ flanche sous charge (dette du sous-projet 27, `findBy…` à une seconde) : un �
 `AppLayout.test.tsx` **n'est pas** un échec de ce travail, mais il se constate et se dit, il ne
 se masque pas par une relance jusqu'au vert.
 
-- [ ] **Step 6 : la vérification visuelle**
+- [x] **Step 6 : la vérification visuelle**
 
 Depuis la racine du dépôt, avec le skill `run-frontend`, capturer la page Paramètres en clair et
 en sombre : la carte au repos, le formulaire d'activation ouvert, le formulaire de restauration
 ouvert. Vérifier que les deux champs tiennent dans la carte et que le texte d'avertissement ne
 déborde pas.
 
-- [ ] **Step 7 : commit**
+- [x] **Step 7 : commit**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/db/backup/file.ts docs/specs/2026-09-03-architecture-design.md CLAUDE.md docs/points-reportes.md docs/plans/2026-09-22-sauvegarde-phrase-de-passe.md && git commit -m "Consigne la phrase de passe dans le spec, la règle et la dette"

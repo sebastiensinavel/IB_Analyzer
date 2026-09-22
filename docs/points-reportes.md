@@ -1012,46 +1012,41 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
-## Sous-projet 26 à ouvrir : la sauvegarde sans rien à conserver
+## Reporté par le sous-projet 26 (la clé enveloppée par une phrase de passe)
 
-Noté le 2026-09-21, à instruire au brainstorming du sous-projet ; rien n'est décidé ici.
-
-**Ce qui coûte aujourd'hui** : la clé AES-GCM 256 est tirée au hasard dans le navigateur,
-vit en IndexedDB et n'est montrée qu'une fois, comme code de récupération. Restaurer sur un
-navigateur neuf exige ce code, donc l'utilisateur a un objet à garder en lieu sûr pour la
-seule fois où il en aura besoin — perdu, la sauvegarde est un blob illisible.
-
-**La question posée** : peut-on remplacer ce code par un mot de passe, éventuellement celui
-du compte Django, sans jamais transmettre ce mot de passe en clair au serveur ?
-
-Pistes à évaluer, dans cet ordre de vraisemblance :
-
-- **Envelopper la clé plutôt que la dériver.** La clé aléatoire reste ce qui chiffre le
-  paquet ; un mot de passe dérive une clé d'enveloppe (Argon2id, ou PBKDF2 si l'on s'en tient
-  à WebCrypto) avec un sel, et seule la clé enveloppée accompagne la sauvegarde. Un
-  changement de mot de passe ne réenveloppe qu'une clé, il ne rechiffre pas 20 Mo, et le
-  navigateur neuf n'a plus qu'un mot de passe à taper. Le serveur détiendrait alors la clé
-  enveloppée à côté du blob : des octets de plus, aucune donnée de portefeuille, mais une
-  ligne supplémentaire de `core.Backup` à peser.
-- **Partager le mot de passe avec Django est la partie dure.** django-allauth reçoit le mot
-  de passe en clair au formulaire de connexion (il n'en stocke qu'un hachage) : le même
-  secret servirait donc à la fois à la connexion — transmis — et à l'enveloppe. Trois sorties
-  à comparer : une phrase de passe de sauvegarde distincte du mot de passe du compte ; un
-  pré-hachage côté navigateur, où Django n'authentifie plus que `KDF(mot de passe, sel)` et
-  la clé d'enveloppe vient d'une dérivation à domaine séparé du même secret ; ou une
-  authentification à divulgation nulle (OPAQUE, SRP), qui ferme la question mais remplace
-  tout le chemin de connexion d'allauth.
-- **Ce qu'il faudra trancher explicitement** : un mot de passe oublié rend la sauvegarde
-  illisible exactement comme un code perdu — le gain n'est pas la récupérabilité mais le
-  confort ; un mot de passe faible expose le blob à une attaque hors ligne là où une clé de
-  256 bits tirée au hasard ne l'exposait pas, d'où le paramétrage du KDF ; et le code de
-  récupération doit probablement survivre en option pour qui ne veut pas de compte serveur,
-  puisque la sauvegarde chiffrée est déjà la seule porte qui exige un compte.
-
-**Invariants que la solution ne doit pas entamer** : le serveur ne voit ni le mot de passe en
-clair ni la clé, le paquet reste un blob opaque, la clé ne quitte le navigateur qu'enveloppée,
-et Paramètres reste atteignable sans compte — c'est le chemin de restauration d'un navigateur
-neuf.
+- **Le format hérité n'est lu par personne**, choix du 2026-09-22 au motif d'un utilisateur
+  unique et d'un VPS qui n'est pas en ligne. Une deuxième installation avant la mise en ligne
+  exigerait de réintroduire une branche de compatibilité, son invite d'interface et ses tests.
+- **La règle de force de la phrase mesure la longueur, pas l'entropie** : `motdepasse123`
+  passe. Le rempart est Argon2id, assumé au spec §10.
+- **Changer la phrase n'est effectif qu'au prochain dépôt** : d'ici là, l'ancienne ouvre encore
+  le blob du serveur. Dit à l'utilisateur, jamais forcé par un dépôt immédiat.
+- **Un navigateur qui garde une clé périmée n'a aucun chemin vers le formulaire de phrase** :
+  `handleRestore` (`apps/web/src/components/settings/BackupCard.tsx`) n'ouvre le formulaire
+  que quand `readBackupState` rend `null`, et `disableBackup` garde la ligne en place. Un
+  navigateur A qui restaure un blob déposé par un navigateur B prend donc le chemin `{ key }`,
+  échoue par `BackupKeyError` et lit « Cette phrase de passe n'ouvre pas la sauvegarde »,
+  alors qu'aucune phrase ne lui a jamais été demandée. Hors des cinq chemins du spec, mais une
+  vraie impasse.
+- **« Chiffrement de la clé… » s'affiche aussi pendant une restauration**, où c'est la clé qui
+  est déballée, pas chiffrée (`settings.backupDeriving`). Les séparer demanderait une
+  quatorzième clé i18n.
+- **L'assertion d'enveloppe de `BackupCard.test.tsx` est faible** :
+  `expect(row!.wrap.salt).toHaveLength(16)` passerait tout aussi bien si `adoptBackupKey`
+  avait reçu une enveloppe fraîchement générée plutôt que celle de l'en-tête.
+- **Pas de soumission par Entrée** dans le formulaire à deux champs de la phrase de passe,
+  faute d'élément `<form>`.
+- **`rewrapBackupKey` ne rejette que l'absence de ligne, pas une ligne désactivée**, et son
+  `BackupKeyError` s'affiche comme « mauvaise phrase ». Inatteignable tant que le bouton reste
+  derrière `enabled`.
+- **Les tests coûteux du blob mélangent deux formes de délai Vitest** : les describes
+  d'Argon2id de `crypto.test.ts` passent le délai en troisième argument numérique, là où
+  `state.test.ts`, `sync.test.ts` et `BackupCard.test.tsx` le passent en objet `{ timeout }`.
+  Les deux formes sont valides sous Vitest 4.
+- **La parité des clés entre `fr.json` et `en.json` n'est toujours vérifiée par aucun test** —
+  dette du sous-projet 27, que ce sous-projet a de nouveau relue à la main (487 clés de
+  chaque côté, aucun écart).
+- Et tout ce que la revue de branche aura relevé.
 
 ---
 

@@ -394,9 +394,11 @@ remplacé à chaque dépôt.
 Côté navigateur :
 
 - **Clé AES-GCM 256 générée par WebCrypto** au premier envoi, stockée en IndexedDB.
-- **Affichée une seule fois** sous forme de code de récupération, à conserver par
-  l'utilisateur. Le serveur ne la voit jamais.
-- Restaurer sur un autre appareil demande ce code, une fois par appareil. Sur l'appareil
+- **Enveloppée par une phrase de passe** que l'utilisateur choisit : Argon2id dérive une clé
+  d'enveloppe, et l'enveloppe voyage dans l'en-tête du blob. Le serveur ne voit ni la phrase,
+  ni la clé. Il n'y a rien à conserver ; une phrase oubliée rend la sauvegarde illisible
+  (sous-projet 26).
+- Restaurer sur un autre appareil demande cette phrase, une fois par appareil. Sur l'appareil
   habituel, rien n'est jamais demandé.
 - Contenu : tout l'état local, comptes, jetons Flex, ledger, positions en cache, table sectorielle.
 - **Désactivée par défaut.** L'utilisateur qui ne veut rien sur le serveur n'a rien à faire.
@@ -487,13 +489,13 @@ des données change : hooks sur IndexedDB au lieu d'appels API.
 |---|---|---|
 | Transactions, positions | IndexedDB du navigateur | l'utilisateur |
 | Jeton et query id Flex | IndexedDB | l'utilisateur ; transitent par l'agent local, et par le proxy serveur en mode « agent local et serveur » quand l'agent est absent ; jamais journalisés |
-| Blob de sauvegarde | PostgreSQL du VPS | personne sans le code de récupération |
+| Blob de sauvegarde | PostgreSQL du VPS | personne sans la phrase de passe |
 | Compte utilisateur, mot de passe haché, secret TOTP | PostgreSQL | le serveur |
 | Données live TWS | agent local, jamais le serveur | l'utilisateur |
 
 Le jeton Flex est en lecture seule chez IB. Le mot de passe n'est pas demandé une seconde
-fois ; le seul secret supplémentaire est le code de récupération, requis uniquement pour
-restaurer sur un nouvel appareil.
+fois ; le seul secret supplémentaire est la phrase de passe de la sauvegarde, demandée
+uniquement pour restaurer sur un nouvel appareil.
 
 Vider les données du navigateur sans sauvegarde serveur ni export impose de réimporter les
 relevés HTML ; les 365 jours Flex se rechargent seuls.

@@ -50,10 +50,16 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   relirait la session ferait réapparaître le bug du 2026-09-21 : session expirée, serveur
   éteint ou simplement lent affichaient un portefeuille vide.
 - **La sauvegarde est un blob opaque, opt-in** : `core.Backup` ne stocke que des octets
-  chiffrés par le navigateur (AES-GCM 256, clé en IndexedDB hors du paquet, montrée une fois
-  comme code de récupération), leur taille et leur date, plafonnés à 20 Mo. Le paquet emporte
-  toutes les tables sauf `backup`, `statements` compris. Le dépôt suit les écritures qui
-  comptent — `TRIGGER_TABLES`, toutes sauf `snapshots` — jamais les snapshots de l'agent.
+  chiffrés par le navigateur (AES-GCM 256), leur taille et leur date, plafonnés à 20 Mo. La
+  clé vit en IndexedDB et **voyage enveloppée dans l'en-tête du blob** : une phrase de passe
+  d'au moins `MIN_PASSPHRASE_LENGTH` caractères dérive par Argon2id la clé qui l'enveloppe
+  (`packBlob`/`readHeader`, `apps/web/src/db/backup/crypto.ts`, octet de version 2). Le
+  serveur ne voit ni la phrase ni la clé, et ne gagne pour cela ni colonne ni endpoint. Il n'y
+  a **plus de code de récupération** depuis le sous-projet 26, et aucun blob antérieur n'est
+  lu. `BackupStateRecord.wrap` est obligatoire : une sauvegarde active a toujours une
+  enveloppe. Le paquet emporte toutes les tables sauf `backup`, `statements` compris. Le dépôt
+  suit les écritures qui comptent — `TRIGGER_TABLES`, toutes sauf `snapshots` — jamais les
+  snapshots de l'agent. L'export local `.json.gz`, lui, reste en clair.
 - **Paramètres et Aide s'atteignent sans aucun compte** : `AppLayout` ne rebondit vers
   `/accounts` que pour une route scopée à un compte, jamais pour ces deux-là. C'est le seul
   chemin de restauration d'une sauvegarde sur un navigateur neuf, qui n'a par définition aucun
@@ -407,7 +413,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 23 | Valeurs du jour : P&L du jour et variation par position | fait (2026-09-19) |
 | 24 | L'assignation d'après minuit : propriété de plage en jour de marché | fait (2026-09-19) |
 | 25 | Le compte serveur : ce qu'il ouvre, ce qu'il sauvegarde | fait (2026-09-21) |
-| 26 | La sauvegarde sans rien à conserver : clé enveloppée par un mot de passe | à ouvrir (`docs/points-reportes.md`) |
+| 26 | La sauvegarde sans rien à conserver : clé enveloppée par un mot de passe | fait (2026-09-22) |
 | 27 | Les graphes de cours dans les tableaux de positions | fait (2026-09-21) |
 
 ## Outillage
