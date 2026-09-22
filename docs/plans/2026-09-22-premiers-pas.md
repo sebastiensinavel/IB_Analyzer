@@ -85,7 +85,7 @@ de bord ; l'Aide réorganisée en premiers pas. Tout le nouveau texte passe par 
   `ImportRecord` n'existe pour le compte **et** que `lastAgentSyncAt` est absent de sa fiche ;
   `false` sinon. Les tâches 3 et 4 l'utilisent.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter à la fin de `apps/web/src/db/hooks.test.tsx`. Ajouter `useNeverFed` à l'import déjà
 présent depuis `@/db/hooks`.
@@ -134,12 +134,12 @@ describe("useNeverFed", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/db/hooks.test.tsx -t useNeverFed`
 Attendu : échec, `useNeverFed` n'est pas exporté par `@/db/hooks`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Ajouter dans `apps/web/src/db/hooks.ts`, juste après `useImports` :
 
@@ -162,12 +162,12 @@ export function useNeverFed(accountId: string): boolean | undefined {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Depuis `apps/web` : `npx vitest run src/db/hooks.test.tsx -t useNeverFed`
 Attendu : quatre tests au vert.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Cocher les cases de la tâche 1 dans ce plan, puis :
 

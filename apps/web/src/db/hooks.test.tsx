@@ -3,7 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import type { JournalsReport, Transaction } from "@ib/ledger";
 import { db, type AccountRecord } from "@/db/schema";
-import { useAccount, useImports, useJournals, useLedger, useRiskReport, useSectors, useSnapshot, useStatements } from "@/db/hooks";
+import { useAccount, useImports, useJournals, useLedger, useNeverFed, useRiskReport, useSectors, useSnapshot, useStatements } from "@/db/hooks";
 import { SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
 import { SAMPLE_SECTORS, SAMPLE_SNAPSHOT } from "@/mocks/positions";
 
@@ -176,5 +176,47 @@ describe("useJournals", () => {
     const { result } = renderHook(() => useJournals(account.id), { wrapper });
     expect(result.current.status).toBe("loading");
     await waitFor(() => expect(result.current.status).toBe("ready"));
+  });
+});
+
+/**
+ * The criterion behind the « Première étape » card: a statement import and a Flex sync both
+ * write an ImportRecord, the agent writes none but stamps `lastAgentSyncAt`. A refused import
+ * counts — the user acted, and the import report answers them from then on.
+ */
+describe("useNeverFed", () => {
+  it("is undefined while the queries have not answered", () => {
+    const { result } = renderHook(() => useNeverFed("nope"), { wrapper });
+    expect(result.current).toBeUndefined();
+  });
+
+  it("is true on an account nothing has ever fed", async () => {
+    const account = await seedAccount();
+    const { result } = renderHook(() => useNeverFed(account.id), { wrapper });
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  it("is false once an import has been recorded, even a refused one", async () => {
+    const account = await seedAccount();
+    await db.imports.add({
+      accountId: account.id,
+      source: "statement_html",
+      at: "2026-09-01T10:00:00.000Z",
+      fileName: "refused.htm",
+      period: null,
+      imported: 0,
+      skipped: 0,
+      dropped: [],
+      issues: [{ severity: "error", code: "normalization", detail: "nope" }],
+    });
+    const { result } = renderHook(() => useNeverFed(account.id), { wrapper });
+    await waitFor(() => expect(result.current).toBe(false));
+  });
+
+  it("is false once the agent has passed, which writes no import record", async () => {
+    const account = await seedAccount();
+    await db.accounts.update(account.id, { lastAgentSyncAt: "2026-09-22T12:00:00.000Z" });
+    const { result } = renderHook(() => useNeverFed(account.id), { wrapper });
+    await waitFor(() => expect(result.current).toBe(false));
   });
 });
