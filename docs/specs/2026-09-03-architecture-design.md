@@ -475,8 +475,8 @@ Reconstitution, liés à cette page (`2026-09-11-consistance-design.md`).
 sections Flex manquantes, import de relevés HTML avec compte rendu (lignes importées,
 ignorées, types supprimés), import CSV de la table sectorielle, détection de l'agent.
 
-**Paramètres** : sauvegarde serveur (activer, dernière date, supprimer, code de
-récupération, restaurer), export et import JSON local du ledger, langue, thème, 2FA.
+**Paramètres** : sauvegarde serveur (activer, dernière date, supprimer, changer la phrase de
+passe, restaurer), export et import JSON local du ledger, langue, thème, 2FA.
 
 Composants, thème, clés i18n et pages de la première version sont copiés. Seule la source
 des données change : hooks sur IndexedDB au lieu d'appels API.

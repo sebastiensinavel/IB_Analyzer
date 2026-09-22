@@ -1046,6 +1046,10 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **La parité des clés entre `fr.json` et `en.json` n'est toujours vérifiée par aucun test** —
   dette du sous-projet 27, que ce sous-projet a de nouveau relue à la main (487 clés de
   chaque côté, aucun écart).
+- **Le driver `run-frontend` ne peut pas vérifier visuellement la carte Sauvegarde tout seul** :
+  il ne sait ni simuler une session authentifiée, ni piloter les formulaires de la carte
+  (activation, restauration) avant la capture. Le sous-projet 26 a dû écrire un script
+  Playwright à la main pour ces captures.
 - Et tout ce que la revue de branche aura relevé.
 
 ---
