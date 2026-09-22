@@ -629,8 +629,8 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 
 ### Task 4: Vérification finale et instance de relecture
 
-- [ ] **Step 1:** `pnpm check` à la racine du worktree — Expected: lint, typage, build et tous
+- [x] **Step 1:** `pnpm check` à la racine du worktree — Expected: lint, typage, build et tous
   les tests verts. Corriger toute erreur dans un commit à part.
-- [ ] **Step 2:** `pnpm dev:start` dans le worktree ; relever les deux URL (Vite, Django) pour
+- [x] **Step 2:** `pnpm dev:start` dans le worktree ; relever les deux URL (Vite, Django) pour
   Seb. Ne pas arrêter l'instance.
-- [ ] **Step 3:** Cocher et commiter le plan.
+- [x] **Step 3:** Cocher et commiter le plan.
