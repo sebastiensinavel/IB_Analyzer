@@ -493,6 +493,9 @@
   "auth": {
     "signIn": "Sign in",
     "signOut": "Sign out",
+    "serverAccount": "Server account",
+    "optional": "optional",
+    "serverAccountTitle": "Server account, optional: Flex Query relay and encrypted backup.",
     "email": "Email",
     "password": "Password",
     "submit": "Submit",

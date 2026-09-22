@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { Button, buttonVariants } from "@ib/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { Input } from "@ib/ui/input";
+import { cn } from "@ib/ui/lib/utils";
 import {
   activateTotp,
   changePassword,
@@ -49,8 +50,14 @@ export function SettingsPage() {
           {(session.status === "anonymous" || session.status === "unreachable") && (
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground">{t("settings.signedOut")}</p>
-              <Link to="/login" className={buttonVariants({ variant: "outline", size: "sm" })}>
-                {t("auth.signIn")}
+              <Link
+                to="/login"
+                title={t("auth.serverAccountTitle")}
+                aria-label={t("auth.serverAccountTitle")}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
+              >
+                {t("auth.serverAccount")}
+                <span className="text-xs font-normal text-muted-foreground">{t("auth.optional")}</span>
               </Link>
             </div>
           )}

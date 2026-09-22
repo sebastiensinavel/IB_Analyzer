@@ -136,12 +136,15 @@ function SessionCorner() {
 
   return (
     // `cn(...)` is not decoration: `buttonVariants` emits both `border-transparent` (base)
-    // and `border-border` (outline), and only tailwind-merge picks the winner. Handed to
-    // `className` raw, the stylesheet's own order wins instead and the link renders with a
-    // transparent border — a flat label where a button was meant. `Button` itself runs the
-    // same `cn`, which is why it never showed there.
-    <Link to="/login" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-      {t("auth.signIn")}
+    // and `border-border` (outline), and only tailwind-merge picks the winner.
+    <Link
+      to="/login"
+      title={t("auth.serverAccountTitle")}
+      aria-label={t("auth.serverAccountTitle")}
+      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
+    >
+      {t("auth.serverAccount")}
+      <span className="text-xs font-normal text-muted-foreground">{t("auth.optional")}</span>
     </Link>
   );
 }

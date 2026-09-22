@@ -126,15 +126,17 @@ describe("AccountsPage: session", () => {
 
   it("offers a way to sign in when anonymous", async () => {
     renderWithSession(async () => jsonResponse({}, 401));
-    const link = await screen.findByRole("link", { name: "Se connecter" });
+    const link = await screen.findByRole("link", { name: /Compte serveur, facultatif/ });
     expect(link).toHaveAttribute("href", "/login");
+    // The word must be readable, not only announced: a newcomer has to see the server is optional.
+    expect(screen.getByText("facultatif")).toBeInTheDocument();
   });
 
   it("offers the same way in when the server is unreachable, and raises no alarm", async () => {
     renderWithSession(async () => {
       throw new TypeError("Failed to fetch");
     });
-    const link = await screen.findByRole("link", { name: "Se connecter" });
+    const link = await screen.findByRole("link", { name: /Compte serveur, facultatif/ });
     expect(link).toHaveAttribute("href", "/login");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -147,15 +149,15 @@ describe("AccountsPage: session", () => {
       return jsonResponse({}, 200);
     });
     expect(await screen.findByText("a@example.com")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Se connecter" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Compte serveur, facultatif/ })).not.toBeInTheDocument();
 
     await userEvent.setup().click(screen.getByRole("button", { name: "Se déconnecter" }));
-    await waitFor(() => expect(screen.getByRole("link", { name: "Se connecter" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("link", { name: /Compte serveur, facultatif/ })).toBeInTheDocument());
   });
 
   it("shows nothing at all while the session is still loading", () => {
     renderWithSession(() => new Promise(() => {}));
-    expect(screen.queryByRole("link", { name: "Se connecter" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Compte serveur, facultatif/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Se déconnecter" })).not.toBeInTheDocument();
   });
 });

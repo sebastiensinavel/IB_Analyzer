@@ -888,7 +888,7 @@ garde `auth.signIn` et n'est pas touché par cette tâche.** Décidé au scan pr
 interrogent le lien par `{ name: /Compte serveur, facultatif/ }`, et le mot visible par
 `getByText("facultatif")`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Dans `apps/web/src/pages/AccountsPage.test.tsx`, `describe("AccountsPage: session")`,
 remplacer les recherches `{ name: "Se connecter" }` par la nouvelle forme, dans les quatre
@@ -937,13 +937,13 @@ Ce fichier n'a pas de moquage de `useSession` : il rend un vrai `SessionProvider
   });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Depuis `apps/web` :
 `npx vitest run src/pages/AccountsPage.test.tsx src/components/SessionMenuItem.test.tsx src/pages/SettingsPage.test.tsx`
 Attendu : échec, aucun lien ne porte ce nom.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, bloc `auth`, après `"signOut"` :
 
@@ -961,7 +961,7 @@ Dans `apps/web/src/i18n/en.json`, bloc `auth` :
     "serverAccountTitle": "Server account, optional: Flex Query relay and encrypted backup.",
 ```
 
-- [ ] **Step 4: Change the three places**
+- [x] **Step 4: Change the three places**
 
 Dans `apps/web/src/pages/AccountsPage.tsx`, `SessionCorner`, le `return` final :
 
@@ -1016,13 +1016,13 @@ Compte :
 `SettingsPage.tsx` importe `buttonVariants` mais pas `cn` : ajouter
 `import { cn } from "@ib/ui/lib/utils";`.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` :
 `npx vitest run src/pages/AccountsPage.test.tsx src/components/SessionMenuItem.test.tsx src/pages/SettingsPage.test.tsx src/i18n`
 Attendu : tout au vert.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 7, puis :
 

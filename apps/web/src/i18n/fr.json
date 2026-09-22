@@ -493,6 +493,9 @@
   "auth": {
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
+    "serverAccount": "Compte serveur",
+    "optional": "facultatif",
+    "serverAccountTitle": "Compte serveur, facultatif : relais Flex Query et sauvegarde chiffrée.",
     "email": "E-mail",
     "password": "Mot de passe",
     "submit": "Valider",

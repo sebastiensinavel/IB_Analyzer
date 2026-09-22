@@ -31,7 +31,9 @@ describe("SettingsPage", () => {
     renderPage();
 
     expect(await screen.findByText("Non connecté.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Se connecter" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: /Compte serveur, facultatif/ })).toHaveAttribute("href", "/login");
+    // The word must be readable, not only announced.
+    expect(screen.getByText("facultatif")).toBeInTheDocument();
     expect(screen.queryByText("Changer le mot de passe")).not.toBeInTheDocument();
     expect(screen.queryByText("Authentification à deux facteurs")).not.toBeInTheDocument();
   });
