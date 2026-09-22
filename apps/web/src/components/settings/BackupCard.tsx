@@ -98,6 +98,13 @@ export function BackupCard() {
     setForm({ mode, passphrase: "", confirm: "" });
   }
 
+  /** Et le refermer efface le message qu'il a produit : « Les deux phrases ne correspondent
+   *  pas » survivrait aux champs dont elle parle, sans plus rien à désigner. */
+  function closeForm() {
+    setError(null);
+    setForm(null);
+  }
+
   /** La validation vit ici et pas dans `state.ts` : c'est une règle d'interface, et le moteur
    *  n'a pas à connaître de texte visible. */
   function passphraseProblem(mode: FormMode, passphrase: string, confirm: string): string | null {
@@ -296,7 +303,16 @@ export function BackupCard() {
     }
   }
 
-  const serverDisabled = !authenticated || busy;
+  /**
+   * `form !== null` gèle les autres boutons tant qu'un formulaire est ouvert — les siens
+   * ne lisent que `busy` et restent donc utilisables. Sans cela, ouvrir « Activer » puis
+   * cliquer « Restaurer » partait par le chemin `{ key }` sur une ligne désactivée que
+   * `disableBackup` a laissée en place, et valider ensuite réenveloppait la clé pendant que
+   * le serveur porte encore l'ancienne enveloppe : exactement la situation dont
+   * `backupChangePending` est la promesse (spec §5), mais sans l'avertissement, qui ne se
+   * rend qu'en mode `change`.
+   */
+  const serverDisabled = !authenticated || busy || form !== null;
 
   return (
     <Card>
@@ -403,7 +419,7 @@ export function BackupCard() {
               <Button size="sm" onClick={() => void handleSubmitForm()} disabled={busy}>
                 {busy ? t("settings.backupDeriving") : t("settings.backupConfirm")}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setForm(null)} disabled={busy}>
+              <Button size="sm" variant="outline" onClick={() => closeForm()} disabled={busy}>
                 {t("settings.backupCancel")}
               </Button>
             </div>

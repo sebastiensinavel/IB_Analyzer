@@ -125,6 +125,43 @@ describe("BackupCard", () => {
     expect(await db.backup.count()).toBe(0);
   });
 
+  // Un formulaire ouvert gèle les autres boutons de la carte. Sans cela, ouvrir « Activer »
+  // puis cliquer « Restaurer » partait par le chemin de la clé locale sur une ligne que
+  // `disableBackup` a laissée en place, et valider ensuite réenveloppait la clé pendant que le
+  // serveur porte encore l'ancienne enveloppe — la situation même dont `backupChangePending`
+  // est la promesse (spec §5), sans l'avertissement, qui ne se rend qu'en mode `change`.
+  it("gèle les autres boutons de la carte tant qu'un formulaire est ouvert", async () => {
+    renderCard();
+    await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupEnable") }));
+
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupEnable") })).toBeDisabled();
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupRestore") })).toBeDisabled();
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupDelete") })).toBeDisabled();
+    // Les siens, eux, lisent `busy` seul et restent utilisables ; l'export et l'import de
+    // fichier aussi, qui n'ont jamais rien à voir avec le serveur.
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupConfirm") })).toBeEnabled();
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupCancel") })).toBeEnabled();
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupExport") })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupCancel") }));
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupRestore") })).toBeEnabled();
+  });
+
+  // « Les deux phrases ne correspondent pas » survivrait aux deux champs dont elle parle,
+  // sans plus rien à désigner : `openForm` efface à l'entrée, refermer doit effacer à la sortie.
+  it("annuler emporte le message que le formulaire a produit", async () => {
+    renderCard();
+    await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupEnable") }));
+    await fillPassphrase(PHRASE, "une autre phrase");
+    await userEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupConfirm") }));
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupCancel") }));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(i18n.t("settings.backupPassphrase"))).not.toBeInTheDocument();
+  });
+
   // Le code de récupération a disparu : l'activation n'a plus rien à montrer une seule fois,
   // donc plus rien à perdre si l'utilisateur recharge la page juste après.
   it(
@@ -362,6 +399,9 @@ describe("BackupCard", () => {
       ).toBeInTheDocument();
       expect(await readBackupState(db)).toBeNull();
       expect((await db.accounts.toArray()).map((a) => a.id)).toEqual(["localonly"]);
+      // Le formulaire reste ouvert : la phrase est justement ce qui est en cause, et la
+      // refermer obligerait à rouvrir tout le chemin pour corriger une faute de frappe.
+      expect(screen.getByLabelText(i18n.t("settings.backupPassphrasePrompt"))).toBeInTheDocument();
     },
   );
 
@@ -379,6 +419,9 @@ describe("BackupCard", () => {
 
     expect(await screen.findByText(i18n.t("settings.backupUnreadablePackage"))).toBeInTheDocument();
     expect(screen.queryByText(i18n.t("settings.backupInvalidPassphrase"))).not.toBeInTheDocument();
+    // Ouvert comme pour une phrase erronée : les deux remontent par le même `catch`, et seul
+    // le message les distingue.
+    expect(screen.getByLabelText(i18n.t("settings.backupPassphrasePrompt"))).toBeInTheDocument();
   });
 
   it("importer un fichier local nomme sa date, remplace la base et ne parle jamais au serveur", async () => {
@@ -545,5 +588,8 @@ describe("BackupCard", () => {
     await userEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupConfirm") }));
 
     expect(await screen.findByText(i18n.t("auth.serverUnreachable"))).toBeInTheDocument();
+    // Refermé : le message ne porte pas sur la phrase, donc la redemander serait un
+    // contresens. Le message, lui, survit au formulaire qui l'a déclenché.
+    expect(screen.queryByLabelText(i18n.t("settings.backupPassphrasePrompt"))).not.toBeInTheDocument();
   });
 });
