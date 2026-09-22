@@ -328,7 +328,13 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   donne la teinte de la palette et l'étiquette traduite. Une page de stratégie ne dessine que
   la sienne ; Positions et Suggestion de position dessinent les quatre. Les barres `TRADES`
   d'IB sont ajustées des splits et les options n'ont pas d'historique de fin de journée : les
-  graphes ne montrent que des sous-jacents, splits non traités (spec §3).
+  graphes ne montrent que des sous-jacents, splits non traités (spec §3). **L'axe du temps se
+  pose à la main**, `setVisibleLogicalRange` sur la plage que rend `visibleRange`
+  (`components/PriceChart.tsx`) : `timeExtent` prolonge les données de `CHART_MARGIN_DAYS`
+  jours ouvrés au-delà du plus lointain des deux, dernière barre ou date dessinée, et la même
+  marge est laissée à gauche. `fitContent` recollerait le bord droit sur la dernière bougie —
+  son `applyDefaultOffset` écrase le décalage par `rightOffset`, 0 — et renverrait tous les
+  jours vides à gauche, échéances futures comprises.
 
 ## Workflow
 

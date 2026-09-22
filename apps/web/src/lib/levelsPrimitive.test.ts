@@ -1,6 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ChartLevel } from "@ib/ledger";
-import { LevelsPrimitive, LevelsRenderer, timeExtent, type DrawnLevel, type Placed, type Scope } from "@/lib/levelsPrimitive";
+import {
+  LevelsPrimitive,
+  LevelsRenderer,
+  CHART_MARGIN_DAYS,
+  timeExtent,
+  type DrawnLevel,
+  type Placed,
+  type Scope,
+} from "@/lib/levelsPrimitive";
 
 const bar = (date: string) => ({ date, open: 1, high: 1, low: 1, close: 1, volume: 1 });
 
@@ -56,6 +64,14 @@ const condorLevel: ChartLevel = {
 };
 
 describe("timeExtent", () => {
+  /** La marge de respiration attendue au bout de l'axe, jours ouvrés, après chaque date charnière. */
+  const marginAfter: Record<string, string[]> = {
+    "2026-09-22": ["2026-09-23", "2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13"],
+    "2026-09-24": ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15"],
+    "2026-09-25": ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"],
+    "2026-09-26": ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"],
+  };
+
   it("prolonge l'axe jusqu'à l'échéance la plus lointaine, jours ouvrés seulement", () => {
     const levels: ChartLevel[] = [
       { kind: "shortPut", price: 17.5, quantity: -4, expiries: ["2026-09-25"] },
@@ -64,13 +80,22 @@ describe("timeExtent", () => {
 
     const days = timeExtent([bar("2026-09-21"), bar("2026-09-22")], levels);
 
-    expect(days).toEqual(["2026-09-23", "2026-09-24", "2026-09-25"]);
+    expect(days).toEqual(["2026-09-23", "2026-09-24", "2026-09-25", ...marginAfter["2026-09-25"]]);
   });
 
-  it("ne prolonge rien quand tout est déjà couvert par les barres", () => {
+  it("ne pose que la marge quand tout est déjà couvert par les barres", () => {
     const levels: ChartLevel[] = [{ kind: "shortPut", price: 17.5, quantity: -4, expiries: ["2026-09-21"] }];
 
-    expect(timeExtent([bar("2026-09-21"), bar("2026-09-22")], levels)).toEqual([]);
+    // Le bord droit ne doit pas non plus coller à la dernière bougie : la marge est inconditionnelle.
+    expect(timeExtent([bar("2026-09-21"), bar("2026-09-22")], levels)).toEqual(marginAfter["2026-09-22"]);
+  });
+
+  it("laisse CHART_MARGIN_DAYS jours ouvrés au-delà de la dernière date dessinée", () => {
+    const levels: ChartLevel[] = [{ kind: "shortPut", price: 17.5, quantity: -4, expiries: ["2026-09-25"] }];
+
+    const days = timeExtent([bar("2026-09-22")], levels);
+
+    expect(days.indexOf("2026-09-25")).toBe(days.length - 1 - CHART_MARGIN_DAYS);
   });
 
   it("compte l'échéance d'un condor comme une date à couvrir", () => {
@@ -78,7 +103,7 @@ describe("timeExtent", () => {
       { kind: "condor", from: "2026-04-02", to: "2026-09-24", putStrikes: [8, 10], callStrikes: [16, 18], quantity: -1 },
     ];
 
-    expect(timeExtent([bar("2026-09-22")], levels)).toEqual(["2026-09-23", "2026-09-24"]);
+    expect(timeExtent([bar("2026-09-22")], levels)).toEqual(["2026-09-23", "2026-09-24", ...marginAfter["2026-09-24"]]);
   });
 
   it("ne prolonge rien sans barre : il n'y a alors rien à dessiner", () => {
@@ -94,7 +119,13 @@ describe("timeExtent", () => {
 
     // 2026-09-26 est un samedi : les jours intermédiaires restent ouvrés, mais la date
     // demandée doit exister, sinon rien ne peut la placer.
-    expect(timeExtent([bar("2026-09-22")], levels)).toEqual(["2026-09-23", "2026-09-24", "2026-09-25", "2026-09-26"]);
+    expect(timeExtent([bar("2026-09-22")], levels)).toEqual([
+      "2026-09-23",
+      "2026-09-24",
+      "2026-09-25",
+      "2026-09-26",
+      ...marginAfter["2026-09-26"],
+    ]);
   });
 });
 

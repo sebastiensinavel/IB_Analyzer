@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import type { ChartLevel, ChartLevelKind } from "@ib/ledger";
 import type { PriceBar } from "@/agent/client";
 import { levelColor, levelLabel, levelPrice } from "@/lib/chartLevels";
-import { LevelsPrimitive, timeExtent, type DrawnLevel } from "@/lib/levelsPrimitive";
+import { CHART_MARGIN_DAYS, LevelsPrimitive, timeExtent, type DrawnLevel } from "@/lib/levelsPrimitive";
 
 export interface PriceChartProps {
   bars: readonly PriceBar[];
@@ -48,6 +48,17 @@ export function drawnLevels(
       label: price === null || level.kind === "condor" ? null : levelLabel(level, price, word(level.kind), locale),
     };
   });
+}
+
+/**
+ * La plage logique à afficher, marge comprise : tous les jours vides de `timeExtent` à droite,
+ * et autant de créneaux vides à gauche, pour que la première bougie ne colle pas au bord.
+ * `fitContent` ne convient pas ici : il repose le bord droit sur la dernière *bougie* (son
+ * `applyDefaultOffset` écrase le décalage par celui des options, 0 par défaut), si bien que
+ * les jours vides se retrouveraient tous à gauche au lieu de prolonger l'axe.
+ */
+export function visibleRange(candleCount: number, emptyCount: number): { from: number; to: number } {
+  return { from: -CHART_MARGIN_DAYS, to: candleCount + emptyCount - 1 };
 }
 
 export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: PriceChartProps) {
@@ -114,7 +125,7 @@ export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: Pric
     // en attend une de n'importe quel type de série, d'où le seul cast de tout ce fichier.
     const seriesPrimitive = primitive as unknown as ISeriesPrimitive<Time>;
     series.attachPrimitive(seriesPrimitive);
-    chart.timeScale().fitContent();
+    if (candles.length > 0) chart.timeScale().setVisibleLogicalRange(visibleRange(candles.length, empty.length));
     return () => {
       // Au changement de thème, l'effet de création démonte le graphe avant ce nettoyage-ci
       // (React nettoie dans l'ordre de déclaration) : détacher d'une série déjà détruite

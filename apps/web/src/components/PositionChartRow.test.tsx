@@ -8,6 +8,7 @@ import i18n from "@/i18n";
 import { db } from "@/db/schema";
 import * as agent from "@/agent/client";
 import { PositionChartRow } from "@/components/PositionChartRow";
+import { CHART_MARGIN_DAYS } from "@/lib/levelsPrimitive";
 import { WithAccountData } from "@/test/WithAccountData";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 
@@ -22,7 +23,7 @@ vi.mock("lightweight-charts", () => {
     CandlestickSeries: {},
     createChart: vi.fn(() => ({
       addSeries: vi.fn(() => series),
-      timeScale: vi.fn(() => ({ fitContent: vi.fn(), timeToCoordinate: vi.fn(() => 10) })),
+      timeScale: vi.fn(() => ({ setVisibleLogicalRange: vi.fn(), timeToCoordinate: vi.fn(() => 10) })),
       remove: vi.fn(),
     })),
   };
@@ -61,6 +62,14 @@ function renderRow(
 }
 
 const BARS = [{ date: "2026-09-21", open: 13, high: 14, low: 12, close: 13.5, volume: 1 }];
+
+/** La plage logique posée sur le dernier graphe : ce que l'axe du temps montre vraiment. */
+async function lastVisibleRange(): Promise<{ from: number; to: number }> {
+  await screen.findByTestId("price-chart");
+  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+  const timeScale = chart.timeScale.mock.results.at(-1)!.value;
+  return timeScale.setVisibleLogicalRange.mock.calls.at(-1)![0];
+}
 
 /** Les niveaux passés à la dernière primitive attachée : ce que `PriceChart` a reçu à dessiner. */
 async function lastDrawnLevels(): Promise<ChartLevel[]> {
@@ -123,6 +132,20 @@ describe("PositionChartRow", () => {
 
     expect(await screen.findByTestId("price-chart")).toBeInTheDocument();
     expect(screen.queryByText(/agent local/)).not.toBeInTheDocument();
+  });
+
+  it("pousse l'axe au-delà de la dernière barre, marge des deux côtés", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    // Une seule barre, donc l'indice 0 : le bord droit doit tomber `CHART_MARGIN_DAYS` créneaux
+    // plus loin, et le gauche autant avant. `fitContent` recollerait le bord droit sur la barre.
+    expect(await lastVisibleRange()).toEqual({ from: -CHART_MARGIN_DAYS, to: CHART_MARGIN_DAYS });
   });
 
   it("occupe toute la largeur de la table", async () => {

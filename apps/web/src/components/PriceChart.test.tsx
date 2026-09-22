@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ChartLevel, ChartLevelKind } from "@ib/ledger";
 import { CHART_COLORS } from "@/lib/chartColors";
-import { drawnLevels } from "@/components/PriceChart";
+import { CHART_MARGIN_DAYS } from "@/lib/levelsPrimitive";
+import { drawnLevels, visibleRange } from "@/components/PriceChart";
 
 const WORDS: Record<ChartLevelKind, string> = {
   shares: "Long",
@@ -40,5 +41,16 @@ describe("drawnLevels", () => {
     const levels: ChartLevel[] = [{ kind: "leapsBuy", when: "2024-01-02", quantity: 2 }];
 
     expect(drawnLevels(levels, [bar("2026-03-17", 10, 8)], false, word, "fr")[0]).toMatchObject({ price: null, label: null });
+  });
+});
+
+describe("visibleRange", () => {
+  it("montre toutes les bougies, tous les jours vides, et la marge à gauche", () => {
+    expect(visibleRange(500, 27)).toEqual({ from: -CHART_MARGIN_DAYS, to: 526 });
+  });
+
+  it("garde la marge de droite même sans jour vide au-delà des bougies", () => {
+    // `timeExtent` pose toujours la marge : le dernier indice est déjà au-delà des bougies.
+    expect(visibleRange(500, CHART_MARGIN_DAYS).to).toBe(499 + CHART_MARGIN_DAYS);
   });
 });

@@ -37,26 +37,52 @@ function datesOf(level: ChartLevel): string[] {
 }
 
 /**
+ * Jours ouvrés de respiration à chaque bout de l'axe, au-delà du dernier jour qu'il doit
+ * porter : une verticale collée au bord est illisible, et la dernière bougie mérite la même
+ * marge. `visibleRange` (`components/PriceChart.tsx`) la reprend telle quelle à gauche.
+ */
+export const CHART_MARGIN_DAYS = 15;
+
+/** Le jour ouvré suivant `time`, en millisecondes : les week-ends sont sautés. */
+function nextTradingTime(time: number): number {
+  let next = time + MS_PER_DAY;
+  for (;;) {
+    const weekday = new Date(next).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) return next;
+    next += MS_PER_DAY;
+  }
+}
+
+const dayOf = (time: number) => new Date(time).toISOString().slice(0, 10);
+
+/**
  * Les jours vides à ajouter après la dernière barre pour qu'une échéance future ait une
  * coordonnée : sans eux, `timeToCoordinate` rend `null` et la verticale n'est pas tracée. Les
- * week-ends sont sautés, comme les barres elles-mêmes. Sans barre, rien n'est prolongé : il
- * n'y a alors aucun graphe.
+ * week-ends sont sautés, comme les barres elles-mêmes. L'axe va toujours `CHART_MARGIN_DAYS`
+ * jours ouvrés au-delà du plus lointain des deux, dernière barre ou date dessinée : sans cette
+ * marge, le bord droit colle à la dernière verticale, ou à la dernière bougie quand aucune date
+ * dessinée ne la dépasse. Sans barre, rien n'est prolongé : il n'y a alors aucun graphe.
  */
 export function timeExtent(bars: readonly PriceBar[], levels: readonly ChartLevel[]): string[] {
   if (bars.length === 0) return [];
   const last = bars[bars.length - 1].date;
   const furthest = levels.flatMap(datesOf).reduce((max, date) => (date > max ? date : max), last);
-  if (furthest <= last) return [];
   const days: string[] = [];
-  for (let time = Date.parse(`${last}T00:00:00Z`) + MS_PER_DAY; time <= Date.parse(`${furthest}T00:00:00Z`); time += MS_PER_DAY) {
+  const end = Date.parse(`${furthest}T00:00:00Z`);
+  for (let time = Date.parse(`${last}T00:00:00Z`) + MS_PER_DAY; time <= end; time += MS_PER_DAY) {
     const day = new Date(time);
     const weekday = day.getUTCDay();
     if (weekday === 0 || weekday === 6) continue;
-    days.push(day.toISOString().slice(0, 10));
+    days.push(dayOf(time));
   }
   // La date la plus lointaine doit toujours avoir une coordonnée, même un week-end : sinon
   // rien ne peut la placer. Les jours intermédiaires restent des jours ouvrés.
-  if (days[days.length - 1] !== furthest) days.push(furthest);
+  if (furthest > last && days[days.length - 1] !== furthest) days.push(furthest);
+  let time = Date.parse(`${days[days.length - 1] ?? last}T00:00:00Z`);
+  for (let added = 0; added < CHART_MARGIN_DAYS; added += 1) {
+    time = nextTradingTime(time);
+    days.push(dayOf(time));
+  }
   return days;
 }
 
