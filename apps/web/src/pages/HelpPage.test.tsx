@@ -45,18 +45,46 @@ describe("HelpPage", () => {
     const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
     await screen.findByText("L'application");
     const titles = [...container.querySelectorAll("[data-slot=card-title]")].map((el) => el.textContent);
+    // Four sections, not nine: everything about the optional agent lives inside the third one,
+    // so a newcomer does not read six installation cards as prerequisites.
     expect(titles).toEqual([
       "L'application",
       "1. Obtenir un relevé d'activité",
       "2. Configurer une Flex Query",
-      "3. L'agent local",
-      "4. Installer uv",
-      "5. Installer l'agent",
-      "6. Le configurer et le lancer",
-      "7. Régler l'API de TWS",
-      "8. La permission du navigateur",
-      "9. Renseigner le port",
+      "3. L'agent local, facultatif",
     ]);
+  });
+
+  it("keeps the agent's six steps, numbered and in order, inside that one section", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    const agentCard = (await screen.findByText("3. L'agent local, facultatif")).closest("[data-slot=card]");
+    expect(agentCard).toBeInstanceOf(HTMLElement);
+    const steps = [...(agentCard as HTMLElement).querySelectorAll("p.font-heading")].map((el) => el.textContent);
+    expect(steps).toEqual([
+      "1. Installer uv",
+      "2. Installer l'agent",
+      "3. Le configurer et le lancer",
+      "4. Régler l'API de TWS",
+      "5. La permission du navigateur",
+      "6. Renseigner le port",
+    ]);
+    // The six are inside the agent card, so they are not cards of their own.
+    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(4);
+  });
+
+  // A newcomer does not know either name; both are spelled out where they first appear.
+  it("spells out what TWS and the Client Portal are", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/TWS, pour Trader Workstation, est l'application de bureau/)).toBeInTheDocument();
+    expect(screen.getByText(/Le Client Portal est le site d'Interactive Brokers/)).toBeInTheDocument();
+  });
+
+  it("gives example socket ports for several TWS instances", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/7501 pour le premier, 7502 pour le second/)).toBeInTheDocument();
   });
 
   it("anchors the two sections the first-step card points at", async () => {

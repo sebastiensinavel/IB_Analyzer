@@ -19,6 +19,20 @@ function Command({ children }: { children: string }) {
   );
 }
 
+/**
+ * One numbered point inside a section. The agent needs six of them and they are one story, so
+ * they share a card rather than each claiming the weight of a top-level section — a newcomer
+ * counting nine cards read eight of them as required before the application would work.
+ */
+function Step({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2 border-t pt-3 first:border-t-0 first:pt-0">
+      <p className="font-heading font-medium">{title}</p>
+      {children}
+    </div>
+  );
+}
+
 function Section({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
     <Card id={id}>
@@ -73,6 +87,7 @@ export function HelpPage() {
       </Section>
 
       <Section id="statement" title={t("help.statement.title")}>
+        <p className="text-muted-foreground">{t("help.statement.portal")}</p>
         <p className="text-muted-foreground">{t("help.statement.text")}</p>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
           {(t("help.statement.items", { returnObjects: true }) as string[]).map((item) => (
@@ -98,52 +113,53 @@ export function HelpPage() {
       </Section>
 
       <Section title={t("help.what.title")}>
+        <p className="text-muted-foreground">{t("help.what.tws")}</p>
         <p className="text-muted-foreground">{t("help.what.text")}</p>
         <p className="text-muted-foreground">{t("help.what.dayValues")}</p>
-      </Section>
 
-      <Section title={t("help.uv.title")}>
-        <p className="text-muted-foreground">{t("help.uv.text")}</p>
-        <p>{t("help.uv.macLinux")}</p>
-        <Command>{UV_INSTALL_UNIX}</Command>
-        <p>{t("help.uv.windows")}</p>
-        <Command>{UV_INSTALL_WINDOWS}</Command>
-      </Section>
+        <Step title={t("help.uv.title")}>
+          <p className="text-muted-foreground">{t("help.uv.text")}</p>
+          <p>{t("help.uv.macLinux")}</p>
+          <Command>{UV_INSTALL_UNIX}</Command>
+          <p>{t("help.uv.windows")}</p>
+          <Command>{UV_INSTALL_WINDOWS}</Command>
+        </Step>
 
-      <Section title={t("help.install.title")}>
-        <p className="text-muted-foreground">{t("help.install.text")}</p>
-        {index.status === "ok" && <Command>{`uv tool install ${origin}/agent/${index.index.filename}`}</Command>}
-        {index.status === "unavailable" && <p className="text-muted-foreground">{t("help.install.unavailable")}</p>}
-      </Section>
+        <Step title={t("help.install.title")}>
+          <p className="text-muted-foreground">{t("help.install.text")}</p>
+          {index.status === "ok" && <Command>{`uv tool install ${origin}/agent/${index.index.filename}`}</Command>}
+          {index.status === "unavailable" && <p className="text-muted-foreground">{t("help.install.unavailable")}</p>}
+        </Step>
 
-      <Section title={t("help.configure.title")}>
-        <p className="text-muted-foreground">{t("help.configure.text")}</p>
-        <Command>{`ib-tws-agent init --origin ${origin}`}</Command>
-        <Command>ib-tws-agent</Command>
-      </Section>
+        <Step title={t("help.configure.title")}>
+          <p className="text-muted-foreground">{t("help.configure.text")}</p>
+          <Command>{`ib-tws-agent init --origin ${origin}`}</Command>
+          <Command>ib-tws-agent</Command>
+        </Step>
 
-      <Section title={t("help.tws.title")}>
-        <p className="text-muted-foreground">{t("help.tws.text")}</p>
-        <ul className="list-disc space-y-1 pl-5">
-          {twsItems.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </Section>
+        <Step title={t("help.tws.title")}>
+          <p className="text-muted-foreground">{t("help.tws.text")}</p>
+          <ul className="list-disc space-y-1 pl-5">
+            {twsItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </Step>
 
-      <Section title={t("help.chrome.title")}>
-        <p className="text-muted-foreground">{t("help.chrome.text")}</p>
-      </Section>
+        <Step title={t("help.chrome.title")}>
+          <p className="text-muted-foreground">{t("help.chrome.text")}</p>
+        </Step>
 
-      <Section title={t("help.port.title")}>
-        <p className="text-muted-foreground">{t("help.port.text")}</p>
-        {lastAccountId && (
-          <div>
-            <Link to={`/accounts/${lastAccountId}/sources`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-              {t("help.port.link")}
-            </Link>
-          </div>
-        )}
+        <Step title={t("help.port.title")}>
+          <p className="text-muted-foreground">{t("help.port.text")}</p>
+          {lastAccountId && (
+            <div>
+              <Link to={`/accounts/${lastAccountId}/sources`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                {t("help.port.link")}
+              </Link>
+            </div>
+          )}
+        </Step>
       </Section>
     </div>
   );

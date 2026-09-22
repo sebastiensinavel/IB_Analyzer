@@ -85,6 +85,25 @@ describe("AccountsPage", () => {
     expect(screen.getByRole("link", { name: "Premiers pas" })).toHaveAttribute("href", "/help");
   });
 
+  // Decided 2026-09-22: the page's job is to open or add an account, so the pitch comes last.
+  it("puts the welcome block below the add form, not above the accounts", async () => {
+    renderPage();
+    const tagline = await screen.findByText(/Analysez vos portefeuilles Interactive Brokers/);
+    const addTitle = screen.getByText("Ajouter un compte IB");
+    expect(addTitle.compareDocumentPosition(tagline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  // The heading gets a line of its own under the buttons: on this `max-w-lg` page it wrapped
+  // onto four lines beside them.
+  it("puts the title on its own line, after the button row", async () => {
+    renderPage();
+    const title = await screen.findByRole("heading", { name: "Vos comptes Interactive Brokers" });
+    const settings = screen.getByRole("link", { name: "Paramètres" });
+    expect(settings.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The heading is not a child of the button row: that row is what used to squeeze it.
+    expect(settings.parentElement).not.toContainElement(title);
+  });
+
   // Decided 2026-09-22: adding an account does not wipe the page a newcomer just read — the
   // same page keeps serving to add another account and to open one.
   it("keeps the welcome block once accounts exist", async () => {

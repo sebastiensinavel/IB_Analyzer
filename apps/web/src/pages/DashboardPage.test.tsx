@@ -204,10 +204,39 @@ describe("DashboardPage", () => {
 
   it("says why nothing is suggested, with a link to the sector table", async () => {
     await db.snapshots.put(SAMPLE_SNAPSHOT);
+    // One scored row, too low to be suggested: the card has a table to speak about, so it
+    // renders and explains itself. Without any score at all it would not render — see below.
+    await db.sectors.put(sector("KO", "Staples", 3));
     renderDashboard();
     const card = await screen.findByLabelText("Suggestion de Position");
     expect(await within(card).findByText("Aucune suggestion : aucune ligne de la table sectorielle ne remplit les critères.")).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Aller à Secteur et Score" })).toHaveAttribute("href", "/accounts/alpha/sectors");
+  });
+
+  // Decided 2026-09-22: on an account whose sector table has not been scored yet, the card has
+  // nothing to rank and would only compete with the page's own instruction.
+  it("hides the suggestion card entirely while no ticker has been scored", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderDashboard();
+    await screen.findByLabelText("Couverture en Cash");
+    expect(screen.queryByLabelText("Suggestion de Position")).not.toBeInTheDocument();
+  });
+
+  it("brings the card back as soon as one ticker carries a score", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    await db.sectors.put(sector("KO", "Staples", 3));
+    renderDashboard();
+    expect(await screen.findByLabelText("Suggestion de Position")).toBeInTheDocument();
+  });
+
+  // A row whose score was cleared is not a scored row: the column is nullable and « — » means
+  // absent, never zero (repo rule).
+  it("treats a row with no score as no score at all", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    await db.sectors.put(sector("KO", "Staples", null));
+    renderDashboard();
+    await screen.findByLabelText("Couverture en Cash");
+    expect(screen.queryByLabelText("Suggestion de Position")).not.toBeInTheDocument();
   });
 });
 

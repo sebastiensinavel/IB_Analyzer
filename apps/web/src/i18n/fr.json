@@ -39,7 +39,7 @@
       "privacy": "Vos données restent dans ce navigateur : le serveur ne voit jamais vos transactions ni vos positions.",
       "howTitle": "Comment ça marche",
       "steps": [
-        "Ajoutez un compte IB ci-dessous.",
+        "Ajoutez un compte IB.",
         "Importez un relevé d'activité, ou branchez une Flex Query.",
         "Lisez votre tableau de bord ; l'agent local, facultatif, ajoute les données en direct."
       ],
@@ -586,6 +586,7 @@
     },
     "statement": {
       "title": "1. Obtenir un relevé d'activité",
+      "portal": "Le Client Portal est le site d'Interactive Brokers où vous gérez votre compte et téléchargez vos relevés, celui où vous vous connectez avec votre identifiant IB. Ce n'est pas Trader Workstation, la plateforme où vous passez vos ordres.",
       "text": "Dans le Client Portal : Performance & Reports › Statements › Activity. Choisissez la période la plus longue proposée, le format HTML, et téléchargez.",
       "items": [
         "Un relevé par année pour remonter loin : « Sources de données › Importer des fichiers » accepte plusieurs fichiers à la fois et les écrit dans l'ordre de leurs périodes.",
@@ -610,41 +611,42 @@
       "missing": "Ce que l'application ne trouve pas est listé dans Sources de données à chaque synchronisation."
     },
     "what": {
-      "title": "3. L'agent local",
+      "title": "3. L'agent local, facultatif",
+      "tws": "TWS, pour Trader Workstation, est l'application de bureau d'Interactive Brokers, celle où vous passez vos ordres. L'agent local est un petit programme à installer sur votre machine : il lit TWS pour ce site. Les six points ci-dessous s'enchaînent dans l'ordre.",
       "text": "L'agent lit TWS sur votre machine et ne parle qu'à ce site et à Interactive Brokers. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de ce site vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer.",
       "dayValues": "Var. jour et P&L jour viennent de l'agent local : un portefeuille reconstruit depuis un relevé ou une réponse Flex les laisse à « — », comme un contrat acheté ou vendu le jour même."
     },
     "uv": {
-      "title": "4. Installer uv",
+      "title": "1. Installer uv",
       "text": "uv installe l'agent et l'interpréteur Python qu'il lui faut.",
       "macLinux": "macOS et Linux",
       "windows": "Windows"
     },
     "install": {
-      "title": "5. Installer l'agent",
+      "title": "2. Installer l'agent",
       "text": "La commande installe la version que ce site sert. Relancez-la après une mise à jour du site.",
       "unavailable": "Ce serveur ne sert pas le paquet de l'agent : en développement, lancez pnpm build:agent."
     },
     "configure": {
-      "title": "6. Le configurer et le lancer",
+      "title": "3. Le configurer et le lancer",
       "text": "La première commande enregistre l'adresse de ce site, la seule à laquelle l'agent répondra. La seconde le lance ; laissez-la tourner pendant que vous utilisez le site."
     },
     "tws": {
-      "title": "7. Régler l'API de TWS",
+      "title": "4. Régler l'API de TWS",
       "text": "Dans TWS : Configuration › API › Settings.",
       "items": [
         "Cocher « Enable ActiveX and Socket Clients ».",
-        "Noter le « Socket port » : un port par compte, chaque TWS a le sien.",
+        "Noter le « Socket port » : un port par compte, chaque TWS a le sien. Si vous lancez plusieurs TWS, donnez-leur des ports distincts, par exemple 7501 pour le premier, 7502 pour le second, et ainsi de suite.",
         "Ajouter 127.0.0.1 dans « Trusted IPs ».",
         "« Read-Only API » peut rester coché : l'agent ne passe aucun ordre."
       ]
     },
     "chrome": {
-      "title": "8. La permission du navigateur",
+      "title": "5. La permission du navigateur",
       "text": "La première fois, Chrome demande si ce site peut accéder à votre réseau local : c'est l'agent sur votre machine. Accepter."
     },
     "port": {
-      "title": "9. Renseigner le port",
+      "title": "6. Renseigner le port",
       "text": "Dans Sources de données, carte Agent local, saisissez le port TWS du compte. Il ne sert qu'aux données en direct, pas pour relayer Flex Query.",
       "link": "Ouvrir Sources de données"
     }

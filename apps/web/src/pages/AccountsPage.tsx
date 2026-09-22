@@ -36,21 +36,20 @@ export function AccountsPage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4 p-4 md:p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-heading text-lg font-semibold tracking-tight">{t("accounts.title")}</h1>
-        <div className="flex items-center gap-2">
-          {/* The one path into Settings from a device that holds no account at all: without it,
-              restoring a backup onto a fresh browser needs a URL nobody would guess. */}
-          <Link to="/settings" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            {t("nav.settings")}
-          </Link>
-          <SessionCorner />
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
+      {/* The title sits UNDER the buttons, on a line of its own. This page is `max-w-lg`, and
+          four controls plus a six-word heading on one row wrapped the heading onto four lines.
+          Giving it the full width costs one line and reads straight. */}
+      <div className="flex items-center justify-end gap-2">
+        {/* The one path into Settings from a device that holds no account at all: without it,
+            restoring a backup onto a fresh browser needs a URL nobody would guess. */}
+        <Link to="/settings" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+          {t("nav.settings")}
+        </Link>
+        <SessionCorner />
+        <LanguageSwitcher />
+        <ThemeToggle />
       </div>
-
-      <WelcomeCard />
+      <h1 className="font-heading text-lg font-semibold tracking-tight">{t("accounts.title")}</h1>
 
       <Card>
         <CardContent className="flex flex-col gap-2 py-4">
@@ -97,6 +96,11 @@ export function AccountsPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Last, not first (decided 2026-09-22): the page's job is to open or add an account, and
+          a returning user should meet their own accounts before a pitch they have read. The page
+          is short enough that a newcomer still finds it. */}
+      <WelcomeCard />
     </div>
   );
 }
