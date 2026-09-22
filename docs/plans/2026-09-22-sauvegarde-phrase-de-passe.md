@@ -904,7 +904,7 @@ imposerait `pnpm dlx shadcn add` puis la réécriture des imports `@/` en relati
 l'encadré du code de récupération. `window.prompt` ne convient plus : il ne sait ni masquer la
 saisie, ni en demander deux.
 
-- [ ] **Step 1 : écrire les tests qui échouent**
+- [x] **Step 1 : écrire les tests qui échouent**
 
 ```ts
 it("demande la phrase deux fois à l'activation", async () => {
@@ -979,7 +979,7 @@ Les tests d'Argon2id sont lents : ajouter `{ timeout: 20_000 }` en troisième ar
 
 Supprimer aussi de `crypto.test.ts` les cas de `toRecoveryCode`/`fromRecoveryCode`.
 
-- [ ] **Step 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Step 2 : lancer les tests, vérifier qu'ils échouent**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/components/settings/BackupCard.test.tsx
@@ -987,7 +987,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/components/settings/
 
 Attendu : ÉCHEC — aucun champ « Phrase de passe » n'existe.
 
-- [ ] **Step 3 : les textes**
+- [x] **Step 3 : les textes**
 
 Dans `apps/web/src/i18n/fr.json`, **supprimer** `backupRecoveryHint`, `backupRecoveryPrompt`
 et `backupInvalidCode`, puis ajouter, au même endroit dans le bloc `settings` :
@@ -1029,7 +1029,7 @@ Dans `apps/web/src/i18n/en.json`, aux mêmes clés :
 La parité des clés entre les deux fichiers n'est vérifiée par aucun test (dette du sous-projet
 27) : la relire à la main, clé par clé.
 
-- [ ] **Step 4 : implémenter la carte**
+- [x] **Step 4 : implémenter la carte**
 
 Retirer de `crypto.ts` les fonctions `toRecoveryCode`, `fromRecoveryCode`, la constante `GROUP`,
 la fonction `base64url` et le long commentaire sur le point comme séparateur.
@@ -1188,7 +1188,7 @@ Le rendu du formulaire, à la place de l'ancien encadré du code :
 `Input` s'importe de `@ib/ui/input`. Le `<label htmlFor>` est ce que `getByLabelText` des tests
 lit ; sans lui, les tests ne trouvent rien.
 
-- [ ] **Step 5 : lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5 : lancer les tests, vérifier qu'ils passent**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/components/settings/BackupCard.test.tsx src/db/backup/crypto.test.ts src/pages/SettingsPage.test.tsx
@@ -1197,7 +1197,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/components/settings/
 Attendu : SUCCÈS. `SettingsPage.test.tsx` référence peut-être le code de récupération : le
 corriger ici, c'est le même retrait.
 
-- [ ] **Step 6 : commit**
+- [x] **Step 6 : commit**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/components/settings/BackupCard.tsx apps/web/src/components/settings/BackupCard.test.tsx apps/web/src/db/backup/crypto.ts apps/web/src/db/backup/crypto.test.ts apps/web/src/i18n/fr.json apps/web/src/i18n/en.json apps/web/src/pages/SettingsPage.test.tsx docs/plans/2026-09-22-sauvegarde-phrase-de-passe.md && git commit -m "Demande une phrase de passe et retire le code de récupération"

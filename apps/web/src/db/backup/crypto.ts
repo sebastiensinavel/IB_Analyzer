@@ -4,7 +4,6 @@ import type { BackupPayload } from "./payload";
 const KEY_BYTES = 32;
 const IV_BYTES = 12;
 const SALT_BYTES = 16;
-const GROUP = 8;
 
 /**
  * Douze caractères, et rien d'autre : une règle, un test, aucune dépendance (spec §5).
@@ -94,8 +93,8 @@ export function generateBackupKey(): Uint8Array<ArrayBuffer> {
  * Every byte array that reaches `crypto.subtle` is typed `Uint8Array<ArrayBuffer>`, not the
  * default `Uint8Array<ArrayBufferLike>`: WebCrypto's `BufferSource` excludes a view backed by a
  * `SharedArrayBuffer`, so the wider type would need a cast at each of the four call sites below.
- * Nothing here is ever shared-backed — the bytes come from `getRandomValues`, from a decoded
- * recovery code or from a `Response`'s own buffer — so narrowing states the truth instead.
+ * Nothing here is ever shared-backed — the bytes come from `getRandomValues`, from an unwrapped
+ * envelope or from a `Response`'s own buffer — so narrowing states the truth instead.
  */
 function importKey(key: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   if (key.byteLength !== KEY_BYTES) throw new BackupKeyError(`A backup key is ${KEY_BYTES} bytes`);
@@ -163,37 +162,6 @@ export async function unwrapKey(wrap: BackupWrap, passphrase: string): Promise<U
   } catch {
     throw new BackupKeyError("This passphrase does not open the backup");
   }
-}
-
-function base64url(bytes: Uint8Array): string {
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-/**
- * Groups of eight, so a human can read it aloud and type it back.
- *
- * The separator between groups is a dot, not a dash. base64url's own alphabet already
- * contains "-" (it's the substitute for "+"), so a dash-separated code is ambiguous to
- * read back: `fromRecoveryCode` can't tell a separator dash from a data dash, and
- * stripping every "-" would silently corrupt any key whose base64url form happens to
- * contain one — which, at 43 characters, is most of them. A dot never appears in
- * base64url output, so it can be stripped unconditionally without touching the data.
- */
-export function toRecoveryCode(key: Uint8Array): string {
-  return (base64url(key).match(new RegExp(`.{1,${GROUP}}`, "g")) ?? []).join(".");
-}
-
-export function fromRecoveryCode(code: string): Uint8Array<ArrayBuffer> {
-  const normalized = code.trim().replace(/[.\s]/g, "");
-  let binary: string;
-  try {
-    binary = atob(normalized.replace(/-/g, "+").replace(/_/g, "/"));
-  } catch {
-    throw new BackupKeyError("Recovery code is not readable");
-  }
-  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  if (bytes.byteLength !== KEY_BYTES) throw new BackupKeyError(`A backup key is ${KEY_BYTES} bytes`);
-  return bytes;
 }
 
 /** "IB2B". Un blob du sous-projet 25 n'avait aucun en-tête : il ne porte donc pas cette

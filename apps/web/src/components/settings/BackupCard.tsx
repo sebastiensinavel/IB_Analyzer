@@ -3,16 +3,34 @@ import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Button } from "@ib/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
+import { Input } from "@ib/ui/input";
 import { Separator } from "@ib/ui/separator";
 import { useSession } from "@/api/session";
 import { deleteBackup, fetchBackupStatus, type BackupFailure } from "@/api/backup";
 import { useDb } from "@/db/DbProvider";
-import { adoptBackupKey, clearBackupRecord, disableBackup, enableBackup, readBackupState } from "@/db/backup/state";
-import { pullBackup, pushBackup } from "@/db/backup/sync";
+import {
+  adoptBackupKey,
+  clearBackupRecord,
+  disableBackup,
+  enableBackup,
+  readBackupState,
+  rewrapBackupKey,
+} from "@/db/backup/state";
+import { pullBackup, pushBackup, type BackupOpener } from "@/db/backup/sync";
 import { backupFileName, exportToBlob, importFromFile } from "@/db/backup/file";
-import { BackupKeyError, decodePayload, fromRecoveryCode, gunzip, toRecoveryCode } from "@/db/backup/crypto";
+import {
+  BackupKeyError,
+  BackupPackageError,
+  decodePayload,
+  gunzip,
+  MIN_PASSPHRASE_LENGTH,
+} from "@/db/backup/crypto";
 import { BackupSchemaError } from "@/db/backup/payload";
 import { formatBytes, formatDateTime } from "@/lib/format";
+
+/** Ce que le formulaire en ligne demande : choisir une phrase, en changer, ou en donner une
+ *  pour ouvrir la sauvegarde du serveur — seul mode à ne rien faire confirmer. */
+type FormMode = "enable" | "restore" | "change";
 
 /**
  * The two file buttons never look at `useSession`: exporting and importing a local file is
@@ -28,7 +46,9 @@ export function BackupCard() {
   const authenticated = session.status === "authenticated";
   const enabled = state?.enabled === true;
 
-  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  // Le formulaire en ligne, ouvert par le bouton qui en a besoin. `null` tant que rien ne
+  // le demande : il prend la place qu'occupait l'encadré du code de récupération.
+  const [form, setForm] = useState<{ mode: FormMode; passphrase: string; confirm: string } | null>(null);
   // Always a failure: no code path ever sets a success message, so there is nothing left to
   // distinguish with `{ ok }`. Success shows in the state line itself (the new "Dernier
   // dépôt", the code disappearing, …), never here.
@@ -56,25 +76,52 @@ export function BackupCard() {
 
   /**
    * The two ways of overwriting this browser — the server restore and the local file — fail on
-   * the same three things, so they read the same exception. A wrong key and a package from a
-   * newer schema each have a cause the user can act on; anything else does not.
+   * the same things, so they read the same exception. A wrong passphrase, a package this
+   * version cannot read and a package from a newer schema each have a cause the user can act
+   * on; anything else does not.
+   *
+   * `BackupPackageError` gets its own sentence rather than sharing the passphrase one: telling
+   * someone to retype their phrase in front of a corrupt package sends them round in circles
+   * over something the phrase has nothing to do with.
    */
   function restoreFailureMessage(error: unknown): string {
-    if (error instanceof BackupKeyError) return t("settings.backupInvalidCode");
+    if (error instanceof BackupKeyError) return t("settings.backupInvalidPassphrase");
+    if (error instanceof BackupPackageError) return t("settings.backupUnreadablePackage");
     if (error instanceof BackupSchemaError) return t("settings.backupTooNew");
     return t("settings.actionFailed");
   }
 
-  async function handleEnable() {
+  /** Ouvrir un formulaire efface le message de l'essai précédent : le laisser sous des
+   *  champs vides le ferait lire comme un verdict sur ce qui n'a pas encore été tapé. */
+  function openForm(mode: FormMode) {
+    setError(null);
+    setForm({ mode, passphrase: "", confirm: "" });
+  }
+
+  /** La validation vit ici et pas dans `state.ts` : c'est une règle d'interface, et le moteur
+   *  n'a pas à connaître de texte visible. */
+  function passphraseProblem(mode: FormMode, passphrase: string, confirm: string): string | null {
+    if (passphrase.length < MIN_PASSPHRASE_LENGTH) return t("settings.backupPassphraseTooShort");
+    if (mode !== "restore" && passphrase !== confirm) return t("settings.backupPassphraseMismatch");
+    return null;
+  }
+
+  async function handleSubmitForm() {
+    if (!form) return;
+    const problem = passphraseProblem(form.mode, form.passphrase, form.confirm);
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      const row = await enableBackup(db);
-      // Shown once, kept only in this component's own state: a reload or a navigation away
-      // loses it for good, exactly as the warning below says it will.
-      setRecoveryCode(toRecoveryCode(row.key));
-    } catch {
-      setError(t("settings.actionFailed"));
+      if (form.mode === "enable") await enableBackup(db, form.passphrase);
+      else if (form.mode === "change") await rewrapBackupKey(db, form.passphrase);
+      else await runRestore({ passphrase: form.passphrase });
+      setForm(null);
+    } catch (error) {
+      setError(restoreFailureMessage(error));
     } finally {
       setBusy(false);
     }
@@ -104,19 +151,49 @@ export function BackupCard() {
   }
 
   /**
+   * Le navigateur habituel détient la clé : rien ne lui est demandé (spec §5), et lui
+   * réclamer sa phrase serait trois secondes d'Argon2id pour une propriété de sécurité
+   * qu'il a déjà. Un navigateur neuf n'a que la phrase, et le formulaire s'ouvre avant
+   * toute question au serveur.
+   */
+  async function handleRestore() {
+    setBusy(true);
+    setError(null);
+    try {
+      const current = await readBackupState(db);
+      if (!current) {
+        openForm("restore");
+        return;
+      }
+      await runRestore({ key: current.key });
+    } catch (error) {
+      setError(restoreFailureMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
    * The confirmation names the date of what is about to overwrite this browser (spec §7):
    * the server's own `updatedAt`, fetched fresh rather than read from this device's last
-   * known deposit, which a brand new device — the very case a recovery code exists for —
-   * has none of. On the usual device the key is already on hand and nothing is prompted; on
-   * a new one, once only, and kept from then on (spec §7).
+   * known deposit, which a brand new device — the very case the passphrase exists for — has
+   * none of.
    *
    * A failed status probe reports through `failureMessage` and stops there: falling back to
    * "—" and carrying on to the confirmation in silence would make this the only one of the
    * card's four network calls that could fail without telling the user anything. Continuing
    * anyway would also be pointless — `pullBackup` needs the same route `fetchBackupStatus`
    * just failed on, and would fail the same way.
+   *
+   * La clé et l'enveloppe ne sont adoptées qu'une fois la restauration réussie. Les écrire
+   * d'abord armerait ce navigateur d'une clé qui peut n'être pas la bonne, et la prochaine
+   * écriture déclenchante rechiffrerait toute la base sous elle, remplaçant l'unique copie
+   * du serveur par un blob que plus personne n'ouvre.
+   *
+   * Ne rattrape rien : ses deux appelants le font, `handleSubmitForm` par son `catch` et
+   * `handleRestore` par le sien.
    */
-  async function handleRestore() {
+  async function runRestore(opener: BackupOpener) {
     setBusy(true);
     setError(null);
     try {
@@ -135,30 +212,12 @@ export function BackupCard() {
       const date = status.value.updatedAt ? formatDateTime(status.value.updatedAt) : "—";
       if (!window.confirm(t("settings.backupRestoreConfirm", { date }))) return;
 
-      const current = await readBackupState(db);
-      let key = current?.key ?? null;
-      // A key typed from a recovery code is adopted only once the pull has proved it opens the
-      // server's blob. Writing it first would arm this browser with a key that may be a typo
-      // away from the real one — a typo inside base64url's own alphabet still decodes to 32
-      // valid bytes, so length alone lets nearly all of them through — and the next triggering
-      // write would then re-encrypt the whole database under it and replace the server's only
-      // copy of the backup, leaving it unreadable by anyone, recovery code included.
-      let adopt = false;
-      if (!key) {
-        const code = window.prompt(t("settings.backupRecoveryPrompt"));
-        if (!code) return;
-        key = fromRecoveryCode(code);
-        adopt = true;
-      }
-
-      const result = await pullBackup(db, key);
+      const result = await pullBackup(db, opener);
       if (!result.ok) {
         setError(failureMessage(result.kind));
         return;
       }
-      if (adopt) await adoptBackupKey(db, key);
-    } catch (error) {
-      setError(restoreFailureMessage(error));
+      if (!("key" in opener)) await adoptBackupKey(db, result.value.key, result.value.wrap);
     } finally {
       setBusy(false);
     }
@@ -276,7 +335,7 @@ export function BackupCard() {
 
         <div className="flex flex-wrap items-center gap-2">
           {!enabled ? (
-            <Button size="sm" onClick={() => void handleEnable()} disabled={serverDisabled}>
+            <Button size="sm" onClick={() => openForm("enable")} disabled={serverDisabled}>
               {t("settings.backupEnable")}
             </Button>
           ) : (
@@ -289,6 +348,13 @@ export function BackupCard() {
               {t("settings.backupNow")}
             </Button>
           )}
+          {/* `rewrapBackupKey` refuse une ligne absente, jamais une ligne désactivée : il n'y a
+              pas de phrase à changer tant qu'aucune clé n'est enveloppée, et la garde est ici. */}
+          {enabled && (
+            <Button size="sm" variant="outline" onClick={() => openForm("change")} disabled={serverDisabled}>
+              {t("settings.backupChangePassphrase")}
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => void handleRestore()} disabled={serverDisabled}>
             {t("settings.backupRestore")}
           </Button>
@@ -297,11 +363,50 @@ export function BackupCard() {
           </Button>
         </div>
 
-        {recoveryCode && (
-          <div className="flex flex-col gap-1 rounded-md border p-3">
-            <p className="text-xs text-muted-foreground">{t("settings.backupRecoveryPrompt")}</p>
-            <p className="break-all font-mono text-sm">{recoveryCode}</p>
-            <p className="text-xs text-muted-foreground">{t("settings.backupRecoveryHint")}</p>
+        {/* En ligne, jamais en boîte de dialogue : `packages/ui` n'a pas de `dialog.tsx`, et
+            `window.prompt` ne sait ni masquer la saisie, ni en demander deux. Le `htmlFor` des
+            deux libellés est ce qui les rend lisibles — pour un lecteur d'écran comme pour un
+            test. */}
+        {form && (
+          <div className="flex flex-col gap-2 rounded-md border p-3">
+            <label className="text-xs text-muted-foreground" htmlFor="backup-passphrase">
+              {form.mode === "restore" ? t("settings.backupPassphrasePrompt") : t("settings.backupPassphrase")}
+            </label>
+            <Input
+              id="backup-passphrase"
+              type="password"
+              autoComplete="new-password"
+              value={form.passphrase}
+              onChange={(event) => setForm({ ...form, passphrase: event.target.value })}
+            />
+            {/* Restaurer n'est pas choisir : la phrase existe déjà, et la faire confirmer
+                n'apprendrait rien que le blob du serveur ne dise mieux. */}
+            {form.mode !== "restore" && (
+              <>
+                <label className="text-xs text-muted-foreground" htmlFor="backup-passphrase-confirm">
+                  {t("settings.backupPassphraseConfirm")}
+                </label>
+                <Input
+                  id="backup-passphrase-confirm"
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.confirm}
+                  onChange={(event) => setForm({ ...form, confirm: event.target.value })}
+                />
+              </>
+            )}
+            <p className="text-xs text-muted-foreground">{t("settings.backupPassphraseHint")}</p>
+            {form.mode === "change" && (
+              <p className="text-xs text-muted-foreground">{t("settings.backupChangePending")}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={() => void handleSubmitForm()} disabled={busy}>
+                {busy ? t("settings.backupDeriving") : t("settings.backupConfirm")}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setForm(null)} disabled={busy}>
+                {t("settings.backupCancel")}
+              </Button>
+            </div>
           </div>
         )}
 
