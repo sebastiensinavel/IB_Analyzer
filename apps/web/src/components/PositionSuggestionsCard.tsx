@@ -27,9 +27,23 @@ const NUMERIC = "text-right font-mono tabular-nums";
 export function PositionSuggestionsCard({ accountId, report }: { accountId: string; report: RiskReport | null }) {
   const { t } = useTranslation();
   const sectors = useSectors();
-  const suggestions = useMemo(() => (sectors ? positionSuggestions([...sectors.values()], report) : undefined), [sectors, report]);
+  // `[]` rather than `undefined` while the sector table loads: the guard below returns before
+  // this value is ever read in that state, so the render needs no third case.
+  const suggestions = useMemo(() => (sectors ? positionSuggestions([...sectors.values()], report) : []), [sectors, report]);
   const chart = useOpenChart();
   const title = t("dashboard.suggestions.title");
+
+  // Nothing to suggest from, and nothing to say about it: a sector table where no ticker has
+  // been scored yet cannot rank anything, so the card would only be an empty box competing with
+  // whatever the page is actually telling the user to do — on a brand new account, the first
+  // step. Once a single score exists the card comes back, empty state included: from then on
+  // "no ticker meets the criteria" is a real answer about real rows, not a missing table.
+  //
+  // A table still loading counts as unscored, so the card appears once rather than flashing a
+  // "Chargement…" box that a moment later has no reason to be there. That is also why the
+  // render below never has to handle `suggestions === undefined`: past this line the sector
+  // table has answered.
+  if (!sectors || ![...sectors.values()].some((row) => row.score !== null)) return null;
 
   return (
     <Card aria-label={title}>
@@ -40,9 +54,7 @@ export function PositionSuggestionsCard({ accountId, report }: { accountId: stri
         </CardDescription>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        {suggestions === undefined ? (
-          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-        ) : suggestions.length === 0 ? (
+        {suggestions.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-8 text-center">
             <p className="text-sm text-muted-foreground">{t("dashboard.suggestions.empty")}</p>
             <Link to={`/accounts/${accountId}/sectors`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>

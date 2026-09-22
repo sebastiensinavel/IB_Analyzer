@@ -3,7 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import type { JournalsReport, Transaction } from "@ib/ledger";
 import { db, type AccountRecord } from "@/db/schema";
-import { useAccount, useImports, useJournals, useLedger, useRiskReport, useSectors, useSnapshot, useStatements } from "@/db/hooks";
+import { useAccount, useImports, useJournals, useLedger, useNeverFed, useRiskReport, useSectors, useSnapshot, useStatements } from "@/db/hooks";
 import { SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
 import { SAMPLE_SECTORS, SAMPLE_SNAPSHOT } from "@/mocks/positions";
 
@@ -176,5 +176,61 @@ describe("useJournals", () => {
     const { result } = renderHook(() => useJournals(account.id), { wrapper });
     expect(result.current.status).toBe("loading");
     await waitFor(() => expect(result.current.status).toBe("ready"));
+  });
+});
+
+/**
+ * The criterion behind the « Première étape » card: a statement import and a Flex sync both
+ * write an ImportRecord, the agent writes none but stamps `lastAgentSyncAt`. A refused import
+ * counts — the user acted, and the import report answers them from then on.
+ */
+describe("useNeverFed", () => {
+  // The account exists and the answer is knowable: what is asserted is that the hook says
+  // `undefined` on the first synchronous render, before Dexie answers, and only then settles.
+  // An account id that does not exist would leave it `undefined` for ever and would pass
+  // against an implementation that never resolves at all.
+  it("is undefined on the first render, before the queries answer, then settles", async () => {
+    const account = await seedAccount();
+    const { result } = renderHook(() => useNeverFed(account.id), { wrapper });
+    expect(result.current).toBeUndefined();
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  // A deleted account, or one the URL invents: `useAccount` answers `null`, not `undefined`,
+  // so the hook does settle — on `true`, nothing having fed an account that is not there. That
+  // is the optional chaining in `account?.lastAgentSyncAt`; drop it and this throws.
+  it("settles on true for an account that does not exist", async () => {
+    const { result } = renderHook(() => useNeverFed("nope"), { wrapper });
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  it("is true on an account nothing has ever fed", async () => {
+    const account = await seedAccount();
+    const { result } = renderHook(() => useNeverFed(account.id), { wrapper });
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  it("is false once an import has been recorded, even a refused one", async () => {
+    const account = await seedAccount();
+    await db.imports.add({
+      accountId: account.id,
+      source: "statement_html",
+      at: "2026-09-01T10:00:00.000Z",
+      fileName: "refused.htm",
+      period: null,
+      imported: 0,
+      skipped: 0,
+      dropped: [],
+      issues: [{ severity: "error", code: "normalization", detail: "nope" }],
+    });
+    const { result } = renderHook(() => useNeverFed(account.id), { wrapper });
+    await waitFor(() => expect(result.current).toBe(false));
+  });
+
+  it("is false once the agent has passed, which writes no import record", async () => {
+    const account = await seedAccount();
+    await db.accounts.update(account.id, { lastAgentSyncAt: "2026-09-22T12:00:00.000Z" });
+    const { result } = renderHook(() => useNeverFed(account.id), { wrapper });
+    await waitFor(() => expect(result.current).toBe(false));
   });
 });

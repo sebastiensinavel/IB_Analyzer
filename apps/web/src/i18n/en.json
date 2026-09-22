@@ -28,12 +28,31 @@
     "cancel": "Cancel"
   },
   "accounts": {
-    "title": "Accounts",
-    "empty": "No account yet. Create the first one below.",
-    "label": "Label",
+    "title": "Your Interactive Brokers accounts",
+    "welcome": {
+      "tagline": "Analyze your Interactive Brokers portfolios, shares and options.",
+      "benefits": [
+        "Coverage of your option sales and the cash they require, at any time.",
+        "Wheel, LEAPS and Condor journals rebuilt from your own history.",
+        "Full history, positions and per-strategy statistics."
+      ],
+      "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
+      "howTitle": "How it works",
+      "steps": [
+        "Add an IB account.",
+        "Import an activity statement, or set up a Flex Query.",
+        "Read your dashboard; the local agent, optional, adds live data."
+      ],
+      "helpLink": "Getting started"
+    },
+    "empty": "No IB account yet. Add the first one below.",
+    "addTitle": "Add an IB account",
+    "addHint": "An account here is an Interactive Brokers account you track. It is created in this browser; nothing is sent.",
+    "label": "Name",
+    "labelPlaceholder": "Margin account",
     "ibAccountId": "IB account id",
-    "ibAccountIdHint": "As shown in the Client Portal, e.g. U1234567",
-    "create": "Create the account",
+    "ibAccountIdHint": "As shown in the Client Portal, e.g. U1234567. It checks that imported files and the local agent really belong to this account.",
+    "create": "Add this account",
     "open": "Open",
     "add": "Add an account…",
     "errors": {
@@ -41,6 +60,12 @@
       "ib-account-id-invalid": "This does not look like an IB account id.",
       "slug-taken": "An account with this label already exists."
     }
+  },
+  "firstStep": {
+    "title": "First step",
+    "text": "Import an activity statement in HTML exported from the Client Portal, or fill in your Flex Query token and id. The dashboard fills up with the first import.",
+    "sourcesLink": "Go to data sources",
+    "helpLink": "How to get a statement"
   },
   "unknownAccount": {
     "title": "Unknown account",
@@ -341,7 +366,7 @@
     "purge": {
       "button": "Delete transactions",
       "purging": "Deleting…",
-      "confirm": "Delete this account's history ({{transactions}} rows), contracts, positions, cash points and import journal? Your {{statements}} kept statements, the Flex/TWS settings and the sector table stay in place. “Replay statements” rebuilds the history, contracts, positions and cash the statements brought; a Flex sync rebuilds its own.",
+      "confirm": "Delete this account's history ({{transactions}} rows), contracts, positions, cash points and import journal? Your {{statements}} kept statements, the Flex/TWS settings and the sector table stay in place. “Replay the statements” rebuilds the history, contracts, positions and cash the statements brought; a Flex sync rebuilds its own.",
       "done_one": "{{count}} history row and {{contracts}} contracts deleted, along with the positions, the cash points and the import journal.",
       "done_other": "{{count}} history rows and {{contracts}} contracts deleted, along with the positions, the cash points and the import journal.",
       "failed": "Deletion cancelled, nothing was removed."
@@ -468,6 +493,9 @@
   "auth": {
     "signIn": "Sign in",
     "signOut": "Sign out",
+    "serverAccount": "Server account",
+    "optional": "optional",
+    "serverAccountTitle": "Server account, optional: Flex Query relay and encrypted backup.",
     "email": "Email",
     "password": "Password",
     "submit": "Submit",
@@ -475,7 +503,13 @@
     "serverUnreachable": "Server unreachable right now.",
     "secondFactor": "Second factor",
     "secondFactorHint": "Enter the code from your authenticator app, or a recovery code.",
-    "code": "Code"
+    "code": "Code",
+    "intro": {
+      "opens": "A server account opens two things: the server relaying your Flex Query when the local agent is absent, and the encrypted backup of your data.",
+      "without": "Everything else works without it: statements, Flex Query through the local agent, journals, positions.",
+      "invitation": "Access is by invitation. Without one you are missing nothing: close this page and carry on."
+    },
+    "back": "Back"
   },
   "invitation": {
     "title": "Accept the invitation",
@@ -540,8 +574,47 @@
   },
   "help": {
     "title": "Help",
+    "app": {
+      "title": "The application",
+      "text": "IB Analyzer analyzes your Interactive Brokers portfolios, stocks and options: coverage of your option sales and required cash, Wheel, LEAPS and Condor journals rebuilt from your history, full history, positions and statistics per strategy.",
+      "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
+      "sources": "The application can draw on several data sources, filtering out duplicates automatically.",
+      "tiers": [
+        "HTML activity statements: a data export provided by Interactive Brokers that you load into the application by hand. They can bring in recent data as well as data older than a year, and they are the quickest way to get a first look at the application.",
+        "Flex Queries: an export format provided by Interactive Brokers that automates the import. It gives you data as fresh as yesterday's market close. Flex Queries cannot import data older than 365 days.",
+        "The local agent, optional, adds today's positions and fills. It also collects the data the charts need. It cannot fetch any history: it comes on top of the other sources."
+      ],
+      "history": "For the application to work well, importing your whole history is strongly recommended. That is what makes it possible to check that every transaction is there and that together they rebuild the last known values of your portfolio."
+    },
+    "statement": {
+      "title": "1. Get an activity statement",
+      "portal": "The Client Portal is the Interactive Brokers website where you manage your account and download your statements, the one you sign in to with your IB username. It is not Trader Workstation, the platform where you place your orders.",
+      "text": "In the Client Portal: Performance & Reports › Statements › Activity. Choose the longest period offered, the HTML format, and download.",
+      "items": [
+        "One statement per year to go back further: \"Data sources › Import files\" accepts several files at once and writes them in the order of their periods.",
+        "The file is kept in this browser so it can be replayed; \"Replay the statements\" rebuilds everything from the kept files.",
+        "A statement also carries your positions and your cash at the end of its period: a single file is enough to fill the app."
+      ]
+    },
+    "flex": {
+      "title": "2. Set up a Flex Query",
+      "text": "In the Client Portal: Performance & Reports › Flex Queries. Create an Activity Flex Query, period \"Last 365 days\", format XML.",
+      "selectAll": "In each section, tick \"Select All\" rather than fields one by one: it is faster, and nothing will be missing the day the app reads one more column.",
+      "sectionsTitle": "Sections to include",
+      "sections": [
+        "Trades",
+        "Cash Transactions",
+        "Corporate Actions",
+        "Open Positions",
+        "Cash Report"
+      ],
+      "corporateActions": "Corporate Actions is the only one whose absence triggers no warning: without it, splits and mergers go missing in silence.",
+      "token": "Then enable the Flex Web Service and copy the token; note the query's id. Enter both in \"Data sources › Flex Query\".",
+      "missing": "What the app cannot find is listed in Data sources at every sync."
+    },
     "what": {
-      "title": "The local agent",
+      "title": "3. The local agent, optional",
+      "tws": "TWS, short for Trader Workstation, is the Interactive Brokers desktop application, the one where you place your orders. The local agent is a small program you install on your machine: it reads TWS for this site. The six points below follow one another in order.",
       "text": "The agent reads TWS on your machine and talks to this site and to Interactive Brokers only. It stores nothing: positions, cash and today's fills never leave your computer. It also relays this site's Flex Query calls to Interactive Brokers, keeping nothing: in \"local agent only\" mode, the Flex token never goes through the server. Without it, the app works with statements, and with Flex Query if you let the server relay.",
       "dayValues": "Day chg and Daily P&L come from the local agent: a portfolio rebuilt from a statement or a Flex response leaves them at \"—\", as does a contract bought or sold today."
     },
@@ -565,7 +638,7 @@
       "text": "In TWS: Configuration › API › Settings.",
       "items": [
         "Tick \"Enable ActiveX and Socket Clients\".",
-        "Note the \"Socket port\": one port per account, each TWS has its own.",
+        "Note the \"Socket port\": one port per account, each TWS has its own. If you run several TWS instances, give them distinct ports, for example 7501 for the first, 7502 for the second, and so on.",
         "Add 127.0.0.1 to \"Trusted IPs\".",
         "\"Read-Only API\" can stay ticked: the agent never places an order."
       ]
@@ -576,7 +649,7 @@
     },
     "port": {
       "title": "6. Fill in the port",
-      "text": "In Data sources, Local agent card, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
+      "text": "In Data sources, Local agent section, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
       "link": "Open Data sources"
     }
   },

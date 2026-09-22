@@ -33,15 +33,15 @@ beforeEach(async () => {
 describe("AccountsPage", () => {
   it("says there is no account yet", async () => {
     renderPage();
-    expect(await screen.findByText(/Aucun compte pour l'instant/)).toBeInTheDocument();
+    expect(await screen.findByText(/Aucun compte IB pour l'instant/)).toBeInTheDocument();
   });
 
   it("creates an account and lands on its data sources", async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.type(screen.getByLabelText("Libellé"), "Beta");
+    await user.type(screen.getByLabelText("Nom"), "Beta");
     await user.type(screen.getByLabelText("Identifiant de compte IB"), "u1234567");
-    await user.click(screen.getByRole("button", { name: "Créer le compte" }));
+    await user.click(screen.getByRole("button", { name: "Ajouter ce compte" }));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/accounts/beta/sources"));
     expect(await db.accounts.get("beta")).toMatchObject({ ibAccountId: "U1234567" });
   });
@@ -49,11 +49,18 @@ describe("AccountsPage", () => {
   it("shows the error for a bad IB id and creates nothing", async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.type(screen.getByLabelText("Libellé"), "x");
+    await user.type(screen.getByLabelText("Nom"), "x");
     await user.type(screen.getByLabelText("Identifiant de compte IB"), "nope");
-    await user.click(screen.getByRole("button", { name: "Créer le compte" }));
+    await user.click(screen.getByRole("button", { name: "Ajouter ce compte" }));
     expect(await screen.findByText("Ce n'est pas un identifiant de compte IB.")).toBeInTheDocument();
     expect(await db.accounts.count()).toBe(0);
+  });
+
+  it("says what an account here is, and what the IB id is for", async () => {
+    renderPage();
+    expect(await screen.findByText("Ajouter un compte IB")).toBeInTheDocument();
+    expect(screen.getByText(/compte Interactive Brokers que vous suivez/)).toBeInTheDocument();
+    expect(screen.getByText(/vérifier que les fichiers importés et l'agent local/)).toBeInTheDocument();
   });
 
   it("lists existing accounts with a link to open them", async () => {
@@ -68,6 +75,42 @@ describe("AccountsPage", () => {
   it("offers a way to Settings", async () => {
     renderPage();
     expect(await screen.findByRole("link", { name: "Paramètres" })).toHaveAttribute("href", "/settings");
+  });
+
+  it("opens with what the application is, and says data stays in this browser", async () => {
+    renderPage();
+    expect(await screen.findByText(/Analysez vos portefeuilles Interactive Brokers/)).toBeInTheDocument();
+    expect(screen.getByText(/le serveur ne voit jamais vos transactions/)).toBeInTheDocument();
+    expect(screen.getByText("Comment ça marche")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Premiers pas" })).toHaveAttribute("href", "/help");
+  });
+
+  // Decided 2026-09-22: the page's job is to open or add an account, so the pitch comes last.
+  it("puts the welcome block below the add form, not above the accounts", async () => {
+    renderPage();
+    const tagline = await screen.findByText(/Analysez vos portefeuilles Interactive Brokers/);
+    const addTitle = screen.getByText("Ajouter un compte IB");
+    expect(addTitle.compareDocumentPosition(tagline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  // The heading gets a line of its own under the buttons: on this `max-w-lg` page it wrapped
+  // onto four lines beside them.
+  it("puts the title on its own line, after the button row", async () => {
+    renderPage();
+    const title = await screen.findByRole("heading", { name: "Vos comptes Interactive Brokers" });
+    const settings = screen.getByRole("link", { name: "Paramètres" });
+    expect(settings.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The heading is not a child of the button row: that row is what used to squeeze it.
+    expect(settings.parentElement).not.toContainElement(title);
+  });
+
+  // Decided 2026-09-22: adding an account does not wipe the page a newcomer just read — the
+  // same page keeps serving to add another account and to open one.
+  it("keeps the welcome block once accounts exist", async () => {
+    await db.accounts.add({ id: "alpha", label: "Alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [] });
+    renderPage();
+    expect(await screen.findByText("Alpha")).toBeInTheDocument();
+    expect(screen.getByText(/Analysez vos portefeuilles Interactive Brokers/)).toBeInTheDocument();
   });
 });
 
@@ -102,15 +145,17 @@ describe("AccountsPage: session", () => {
 
   it("offers a way to sign in when anonymous", async () => {
     renderWithSession(async () => jsonResponse({}, 401));
-    const link = await screen.findByRole("link", { name: "Se connecter" });
+    const link = await screen.findByRole("link", { name: /Compte serveur, facultatif/ });
     expect(link).toHaveAttribute("href", "/login");
+    // The word must be readable, not only announced: a newcomer has to see the server is optional.
+    expect(screen.getByText("facultatif")).toBeInTheDocument();
   });
 
   it("offers the same way in when the server is unreachable, and raises no alarm", async () => {
     renderWithSession(async () => {
       throw new TypeError("Failed to fetch");
     });
-    const link = await screen.findByRole("link", { name: "Se connecter" });
+    const link = await screen.findByRole("link", { name: /Compte serveur, facultatif/ });
     expect(link).toHaveAttribute("href", "/login");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -123,15 +168,15 @@ describe("AccountsPage: session", () => {
       return jsonResponse({}, 200);
     });
     expect(await screen.findByText("a@example.com")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Se connecter" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Compte serveur, facultatif/ })).not.toBeInTheDocument();
 
     await userEvent.setup().click(screen.getByRole("button", { name: "Se déconnecter" }));
-    await waitFor(() => expect(screen.getByRole("link", { name: "Se connecter" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("link", { name: /Compte serveur, facultatif/ })).toBeInTheDocument());
   });
 
   it("shows nothing at all while the session is still loading", () => {
     renderWithSession(() => new Promise(() => {}));
-    expect(screen.queryByRole("link", { name: "Se connecter" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Compte serveur, facultatif/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Se déconnecter" })).not.toBeInTheDocument();
   });
 });

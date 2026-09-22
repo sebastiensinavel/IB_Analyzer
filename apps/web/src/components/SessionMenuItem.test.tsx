@@ -27,14 +27,15 @@ describe("SessionMenuItem", () => {
   it("offers a sign-in link when anonymous", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 401 }));
     renderItem();
-    const link = await screen.findByRole("link", { name: "Se connecter" });
+    const link = await screen.findByRole("link", { name: /Compte serveur, facultatif/ });
     expect(link).toHaveAttribute("href", "/login");
+    expect(screen.getByText("facultatif")).toBeInTheDocument();
   });
 
   it("offers the same sign-in link when the server is unreachable, with no alarm", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
     renderItem();
-    const link = await screen.findByRole("link", { name: "Se connecter" });
+    const link = await screen.findByRole("link", { name: /Compte serveur, facultatif/ });
     expect(link).toHaveAttribute("href", "/login");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -56,6 +57,6 @@ describe("SessionMenuItem", () => {
     expect(await screen.findByText("a@example.com")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Se déconnecter" }));
 
-    await waitFor(() => expect(screen.getByRole("link", { name: "Se connecter" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("link", { name: /Compte serveur, facultatif/ })).toBeInTheDocument());
   });
 });

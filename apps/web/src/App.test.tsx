@@ -12,6 +12,6 @@ describe("App", () => {
 
   it("mounts with the shared i18n and router providers", async () => {
     render(<App />);
-    expect(await screen.findByText("Comptes")).toBeInTheDocument();
+    expect(await screen.findByText("Vos comptes Interactive Brokers")).toBeInTheDocument();
   });
 });

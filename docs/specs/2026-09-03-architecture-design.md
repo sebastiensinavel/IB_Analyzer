@@ -481,6 +481,15 @@ passe, restaurer), export et import JSON local du ledger, langue, thème, 2FA.
 Composants, thème, clés i18n et pages de la première version sont copiés. Seule la source
 des données change : hooks sur IndexedDB au lieu d'appels API.
 
+**Note du 2026-09-22** : la page Comptes s'ouvre sur un bloc d'accueil permanent — ce qu'est
+l'application, la promesse que les données restent dans le navigateur, et les trois étapes du
+démarrage —, et son formulaire dit « Ajouter un compte IB ». « Se connecter » s'appelle
+« Compte serveur » et porte le mot « facultatif » partout où il apparaît. Une carte
+« Première étape » tient lieu de page tant que rien n'a jamais alimenté un compte, sur
+Sources de données et sur le tableau de bord. L'Aide est réorganisée en premiers pas :
+l'application, le relevé d'activité, la Flex Query, puis l'agent
+(`2026-09-22-premiers-pas-design.md`).
+
 ---
 
 ## 10. Sécurité et vie privée

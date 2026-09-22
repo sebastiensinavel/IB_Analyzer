@@ -16,9 +16,148 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/**
+ * jsdom implements no `scrollIntoView` at all, so it cannot be spied on: it is installed for
+ * the test and removed again. Its absence is exactly what the page guards against.
+ */
+function stubScrollIntoView(): { scrolled: Element[]; restore: () => void } {
+  // `Element` declares scrollIntoView as required, so the prototype is reached through a
+  // shape that makes it optional: jsdom leaves it out, and the stub has to be removable.
+  const proto = Element.prototype as unknown as { scrollIntoView?: (this: Element, arg?: unknown) => void };
+  const had = "scrollIntoView" in proto;
+  const scrolled: Element[] = [];
+  proto.scrollIntoView = function (this: Element) {
+    scrolled.push(this);
+  };
+  return {
+    scrolled,
+    restore: () => {
+      if (!had) delete proto.scrollIntoView;
+    },
+  };
+}
+
 const ORIGIN = window.location.origin; // jsdom: http://localhost:3000
 
 describe("HelpPage", () => {
+  it("opens on what the application is, then the two data sources, then the agent", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    const titles = [...container.querySelectorAll("[data-slot=card-title]")].map((el) => el.textContent);
+    // Four sections, not nine: everything about the optional agent lives inside the third one,
+    // so a newcomer does not read six installation cards as prerequisites.
+    expect(titles).toEqual([
+      "L'application",
+      "1. Obtenir un relevé d'activité",
+      "2. Configurer une Flex Query",
+      "3. L'agent local, facultatif",
+    ]);
+  });
+
+  it("keeps the agent's six steps, numbered and in order, inside that one section", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    const agentCard = (await screen.findByText("3. L'agent local, facultatif")).closest("[data-slot=card]");
+    expect(agentCard).toBeInstanceOf(HTMLElement);
+    const steps = [...(agentCard as HTMLElement).querySelectorAll("p.font-heading")].map((el) => el.textContent);
+    expect(steps).toEqual([
+      "1. Installer uv",
+      "2. Installer l'agent",
+      "3. Le configurer et le lancer",
+      "4. Régler l'API de TWS",
+      "5. La permission du navigateur",
+      "6. Renseigner le port",
+    ]);
+    // The six are inside the agent card, so they are not cards of their own.
+    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(4);
+  });
+
+  // The three sources and what each can and cannot do: a newcomer choosing between them needs
+  // the limits, not just the names.
+  it("names the three data sources with the limit of each, and urges a full history", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/en filtrant automatiquement les doublons/)).toBeInTheDocument();
+    expect(screen.getByText(/que vous chargez dans l'application à la main/)).toBeInTheDocument();
+    expect(screen.getByText(/ne peuvent pas importer de données au-delà de 365 jours/)).toBeInTheDocument();
+    expect(screen.getByText(/Il ne permet pas de récupérer un historique/)).toBeInTheDocument();
+    expect(screen.getByText(/fortement recommandé d'importer l'ensemble de l'historique/)).toBeInTheDocument();
+  });
+
+  // A newcomer does not know either name; both are spelled out where they first appear.
+  it("spells out what TWS and the Client Portal are", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/TWS, pour Trader Workstation, est l'application de bureau/)).toBeInTheDocument();
+    expect(screen.getByText(/Le Client Portal est le site d'Interactive Brokers/)).toBeInTheDocument();
+  });
+
+  it("gives example socket ports for several TWS instances", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/7501 pour le premier, 7502 pour le second/)).toBeInTheDocument();
+  });
+
+  it("anchors the two sections the first-step card points at", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    expect(container.querySelector("#statement")).not.toBeNull();
+    expect(container.querySelector("#flex")).not.toBeNull();
+  });
+
+  // The ids alone promise nothing: the router carries no `ScrollRestoration`, so without the
+  // page's own effect `/help#statement` lands at the top of the page.
+  it("scrolls the section the hash names into view", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const stub = stubScrollIntoView();
+    try {
+      const { container } = render(
+        <MemoryRouter initialEntries={["/help#statement"]}><HelpPage /></MemoryRouter>,
+      );
+      await screen.findByText("L'application");
+      expect(stub.scrolled).toEqual([container.querySelector("#statement")]);
+    } finally {
+      stub.restore();
+    }
+  });
+
+  it("scrolls nothing, and throws nothing, for a hash that names no section", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const stub = stubScrollIntoView();
+    try {
+      render(<MemoryRouter initialEntries={["/help#nowhere"]}><HelpPage /></MemoryRouter>);
+      await screen.findByText("L'application");
+      expect(stub.scrolled).toEqual([]);
+    } finally {
+      stub.restore();
+    }
+  });
+
+  // Without the `?.` on `scrollIntoView`, this render throws in jsdom — and so would every
+  // other test on this page the day one of them carried a hash.
+  it("renders on a hash even where the browser has no scrollIntoView", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    expect("scrollIntoView" in Element.prototype).toBe(false);
+    render(<MemoryRouter initialEntries={["/help#statement"]}><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText("L'application")).toBeInTheDocument();
+  });
+
+  // Listing columns one by one would be long to follow and wrong the day the parser reads one
+  // more; Corporate Actions is named because nothing warns when it is missing.
+  it("tells the user to select all of each section, and names the five", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/Select All/)).toBeInTheDocument();
+    for (const section of ["Trades", "Cash Transactions", "Corporate Actions", "Open Positions", "Cash Report"]) {
+      // getAllByText: "Corporate Actions" legitimately appears twice — once as a section
+      // name, once in the sentence explaining why it is named (nothing warns when it is
+      // missing) — so uniqueness is not the point, presence is.
+      expect(screen.getAllByText(new RegExp(section)).length).toBeGreaterThan(0);
+    }
+  });
+
   it("builds the install and init commands from the current origin and the served index", async () => {
     mockIndex(new Response(JSON.stringify({ version: "0.1.0", filename: "ib_tws_agent-0.1.0-py3-none-any.whl" }), { status: 200 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);

@@ -81,6 +81,15 @@ export default function LoginPage() {
         </div>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <h1 className="font-heading text-lg font-semibold tracking-tight">{t("auth.serverAccount")}</h1>
+        {/* No route is protected (spec §7.3): reaching this page is always a choice. Saying so
+            here is what keeps a newcomer from reading a closed door where there is an option. */}
+        <p className="text-sm text-muted-foreground">{t("auth.intro.opens")}</p>
+        <p className="text-sm text-muted-foreground">{t("auth.intro.without")}</p>
+        <p className="text-sm text-muted-foreground">{t("auth.intro.invitation")}</p>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>{awaitingCode ? t("auth.secondFactor") : t("auth.signIn")}</CardTitle>
@@ -124,6 +133,12 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+
+      <div>
+        <Link to={from} className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+          {t("auth.back")}
+        </Link>
+      </div>
     </div>
   );
 }

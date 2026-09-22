@@ -34,10 +34,13 @@ export function SessionMenuItem() {
   return (
     <Link
       to="/login"
+      title={t("auth.serverAccountTitle")}
+      aria-label={t("auth.serverAccountTitle")}
       className="flex w-full items-center gap-1.5 px-1 text-xs text-muted-foreground hover:text-foreground"
     >
       <LogIn className="size-3.5" />
-      {t("auth.signIn")}
+      {t("auth.serverAccount")}
+      <span className="opacity-70">{t("auth.optional")}</span>
     </Link>
   );
 }

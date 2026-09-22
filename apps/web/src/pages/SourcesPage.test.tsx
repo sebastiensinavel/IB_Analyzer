@@ -177,6 +177,31 @@ describe("SourcesPage", () => {
     expect(screen.queryByTestId("sector-card")).toBeNull();
     expect(screen.queryByLabelText("Importer un CSV")).toBeNull();
   });
+
+  it("opens with the first-step card while nothing has ever fed the account", async () => {
+    renderSources();
+    expect(await screen.findByText("Première étape")).toBeInTheDocument();
+    // We are already on Sources: only the help link is offered here.
+    expect(screen.queryByRole("link", { name: "Aller aux sources de données" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Comment obtenir un relevé" })).toBeInTheDocument();
+  });
+
+  it("drops the first-step card once an import has been recorded", async () => {
+    await db.imports.add({
+      accountId: "test",
+      source: "statement_html",
+      at: "2026-09-01T10:00:00.000Z",
+      fileName: "x.htm",
+      period: null,
+      imported: 3,
+      skipped: 0,
+      dropped: [],
+      issues: [],
+    });
+    renderSources();
+    expect(await screen.findByText("Compte")).toBeInTheDocument();
+    expect(screen.queryByText("Première étape")).not.toBeInTheDocument();
+  });
 });
 
 describe("SourcesPage: positions", () => {

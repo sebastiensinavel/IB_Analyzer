@@ -29,7 +29,7 @@ function renderDashboard(accountId = "alpha") {
 }
 
 beforeEach(async () => {
-  await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.sectors.clear()]);
+  await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.sectors.clear(), db.imports.clear()]);
 });
 
 function tileValue(card: HTMLElement, label: string): HTMLElement {
@@ -93,6 +93,17 @@ describe("DashboardPage", () => {
   });
 
   it("shows the empty state with a link to the data sources without a snapshot", async () => {
+    await db.imports.add({
+      accountId: "alpha",
+      source: "statement_html",
+      at: "2026-09-01T10:00:00.000Z",
+      fileName: "x.htm",
+      period: null,
+      imported: 0,
+      skipped: 0,
+      dropped: [],
+      issues: [],
+    });
     renderDashboard();
     expect(await screen.findByText("Aucune position — importez un relevé HTML ou une réponse de Flex Query avec Open Positions.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Aller aux sources de données" })).toHaveAttribute("href", "/accounts/alpha/sources");
@@ -193,9 +204,72 @@ describe("DashboardPage", () => {
 
   it("says why nothing is suggested, with a link to the sector table", async () => {
     await db.snapshots.put(SAMPLE_SNAPSHOT);
+    // One scored row, too low to be suggested: the card has a table to speak about, so it
+    // renders and explains itself. Without any score at all it would not render — see below.
+    await db.sectors.put(sector("KO", "Staples", 3));
     renderDashboard();
     const card = await screen.findByLabelText("Suggestion de Position");
     expect(await within(card).findByText("Aucune suggestion : aucune ligne de la table sectorielle ne remplit les critères.")).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Aller à Secteur et Score" })).toHaveAttribute("href", "/accounts/alpha/sectors");
+  });
+
+  // Decided 2026-09-22: on an account whose sector table has not been scored yet, the card has
+  // nothing to rank and would only compete with the page's own instruction.
+  it("hides the suggestion card entirely while no ticker has been scored", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderDashboard();
+    await screen.findByLabelText("Couverture en Cash");
+    expect(screen.queryByLabelText("Suggestion de Position")).not.toBeInTheDocument();
+  });
+
+  it("brings the card back as soon as one ticker carries a score", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    await db.sectors.put(sector("KO", "Staples", 3));
+    renderDashboard();
+    expect(await screen.findByLabelText("Suggestion de Position")).toBeInTheDocument();
+  });
+
+  // A row whose score was cleared is not a scored row: the column is nullable and « — » means
+  // absent, never zero (repo rule).
+  it("treats a row with no score as no score at all", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    await db.sectors.put(sector("KO", "Staples", null));
+    renderDashboard();
+    await screen.findByLabelText("Couverture en Cash");
+    expect(screen.queryByLabelText("Suggestion de Position")).not.toBeInTheDocument();
+  });
+});
+
+describe("DashboardPage: a brand new account", () => {
+  beforeEach(async () => {
+    await db.accounts.clear();
+    await db.accounts.add({ id: "neuf", label: "Neuf", ibAccountId: "U0000009", createdAt: "", warnedDroppedKinds: [] });
+  });
+
+  it("shows the first step instead of an empty page", async () => {
+    renderDashboard("neuf");
+    expect(await screen.findByText("Première étape")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Aller aux sources de données" })).toHaveAttribute(
+      "href",
+      "/accounts/neuf/sources",
+    );
+    expect(screen.queryByText(/Aucune position —/)).not.toBeInTheDocument();
+  });
+
+  it("goes back to « Aucune position » once an import happened without a snapshot", async () => {
+    await db.imports.add({
+      accountId: "neuf",
+      source: "statement_html",
+      at: "2026-09-01T10:00:00.000Z",
+      fileName: "x.htm",
+      period: null,
+      imported: 0,
+      skipped: 0,
+      dropped: [],
+      issues: [],
+    });
+    renderDashboard("neuf");
+    expect(await screen.findByText(/Aucune position —/)).toBeInTheDocument();
+    expect(screen.queryByText("Première étape")).not.toBeInTheDocument();
   });
 });

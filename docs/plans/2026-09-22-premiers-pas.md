@@ -85,7 +85,7 @@ de bord ; l'Aide réorganisée en premiers pas. Tout le nouveau texte passe par 
   `ImportRecord` n'existe pour le compte **et** que `lastAgentSyncAt` est absent de sa fiche ;
   `false` sinon. Les tâches 3 et 4 l'utilisent.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter à la fin de `apps/web/src/db/hooks.test.tsx`. Ajouter `useNeverFed` à l'import déjà
 présent depuis `@/db/hooks`.
@@ -134,12 +134,12 @@ describe("useNeverFed", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/db/hooks.test.tsx -t useNeverFed`
 Attendu : échec, `useNeverFed` n'est pas exporté par `@/db/hooks`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Ajouter dans `apps/web/src/db/hooks.ts`, juste après `useImports` :
 
@@ -162,12 +162,12 @@ export function useNeverFed(accountId: string): boolean | undefined {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Depuis `apps/web` : `npx vitest run src/db/hooks.test.tsx -t useNeverFed`
 Attendu : quatre tests au vert.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Cocher les cases de la tâche 1 dans ce plan, puis :
 
@@ -192,7 +192,7 @@ git commit -m "Ajoute useNeverFed, le critère du compte jamais alimenté"
   `showSourcesLink` vaut `true` par défaut ; la page Sources de données passe `false`, on y est
   déjà. Les tâches 3 et 4 l'utilisent.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Créer `apps/web/src/components/FirstStepCard.test.tsx` :
 
@@ -235,12 +235,12 @@ describe("FirstStepCard", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/components/FirstStepCard.test.tsx`
 Attendu : échec, le module `./FirstStepCard` n'existe pas.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, ajouter un bloc `firstStep` **après** le bloc `accounts` :
 
@@ -264,7 +264,7 @@ Et dans `apps/web/src/i18n/en.json`, au même endroit :
   },
 ```
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Créer `apps/web/src/components/FirstStepCard.tsx` :
 
@@ -314,12 +314,12 @@ export function FirstStepCard({ accountId, showSourcesLink = true }: FirstStepCa
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/components/FirstStepCard.test.tsx src/i18n`
 Attendu : tout au vert, parité des clés comprise.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 2, puis :
 
@@ -340,7 +340,7 @@ git commit -m "Ajoute la carte Première étape"
 - Consumes : `useNeverFed` (tâche 1), `FirstStepCard` (tâche 2).
 - Produces : rien.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter dans `apps/web/src/pages/SourcesPage.test.tsx`, dans le `describe` principal :
 
@@ -371,12 +371,12 @@ Ajouter dans `apps/web/src/pages/SourcesPage.test.tsx`, dans le `describe` princ
   });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/SourcesPage.test.tsx -t "first-step"`
 Attendu : échec, « Première étape » introuvable.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Dans `apps/web/src/pages/SourcesPage.tsx` :
 
@@ -402,12 +402,12 @@ et ajouter `useNeverFed` à l'import existant depuis `@/db/hooks`.
       {neverFed === true && <FirstStepCard accountId={account.id} showSourcesLink={false} />}
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/SourcesPage.test.tsx`
 Attendu : tout le fichier au vert, les tests existants compris.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Cocher les cases de la tâche 3, puis :
 
@@ -434,15 +434,42 @@ quand `report === null && !stats`, et une cellule du `return` principal. **Seul 
 anticipé change** : atteindre le second suppose des statistiques, donc des transactions, donc
 un import ou une passe d'agent — `neverFed` y est forcément `false`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Repair the existing empty-state test, then write the failing ones**
 
-Ajouter dans `apps/web/src/pages/DashboardPage.test.tsx`. Le `beforeEach` du fichier ne vide
-ni `db.accounts` ni `db.imports` : le test les gère lui-même.
+**Un test existant casse sous ce changement, et c'est attendu.**
+`it("shows the empty state with a link to the data sources without a snapshot")` rend le
+compte `alpha` sans transaction, sans snapshot **et sans import** : il passe donc par le
+`return` anticipé, où `neverFed` vaudra désormais `true`. Son intention est de fixer l'état
+vide **d'un compte déjà alimenté**, pas celui d'un compte neuf — que les nouveaux tests
+couvrent. Lui donner de quoi être ce qu'il teste, en tête de ce test :
+
+```tsx
+    await db.imports.add({
+      accountId: "alpha",
+      source: "statement_html",
+      at: "2026-09-01T10:00:00.000Z",
+      fileName: "x.htm",
+      period: null,
+      imported: 0,
+      skipped: 0,
+      dropped: [],
+      issues: [],
+    });
+```
+
+Et ajouter `db.imports.clear()` au `beforeEach` du fichier, pour que cet import ne fuie pas
+dans les tests suivants.
+
+L'autre test qui cherche le même texte, `it("keeps the journal cards without a snapshot, …")`,
+sème des transactions : il a donc des statistiques, passe par le `return` principal, et n'est
+pas concerné. Ne pas y toucher.
+
+Ajouter ensuite dans `apps/web/src/pages/DashboardPage.test.tsx`.
 
 ```tsx
 describe("DashboardPage: a brand new account", () => {
   beforeEach(async () => {
-    await Promise.all([db.accounts.clear(), db.imports.clear()]);
+    await db.accounts.clear();
     await db.accounts.add({ id: "neuf", label: "Neuf", ibAccountId: "U0000009", createdAt: "", warnedDroppedKinds: [] });
   });
 
@@ -475,12 +502,12 @@ describe("DashboardPage: a brand new account", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/DashboardPage.test.tsx -t "brand new"`
 Attendu : échec sur le premier test, « Première étape » introuvable.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Dans `apps/web/src/pages/DashboardPage.tsx` :
 
@@ -530,12 +557,12 @@ par
   }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/DashboardPage.test.tsx`
 Attendu : tout le fichier au vert.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Cocher les cases de la tâche 4, puis :
 
@@ -558,7 +585,7 @@ git commit -m "Remplace le tableau de bord vide d'un compte neuf par la premièr
 - Produces : un composant local `WelcomeCard` **non exporté**, rendu en tête de
   `AccountsPage`. Aucune autre tâche ne l'utilise.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter dans `apps/web/src/pages/AccountsPage.test.tsx`, dans le `describe("AccountsPage")` :
 
@@ -581,12 +608,12 @@ Ajouter dans `apps/web/src/pages/AccountsPage.test.tsx`, dans le `describe("Acco
   });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/AccountsPage.test.tsx -t "welcome"`
 Attendu : échec, l'accroche est introuvable.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, dans le bloc `accounts`, ajouter la clé `welcome` juste
 après `"title"` :
@@ -631,7 +658,7 @@ Dans `apps/web/src/i18n/en.json`, au même endroit :
     },
 ```
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Dans `apps/web/src/pages/AccountsPage.tsx` :
 
@@ -692,12 +719,12 @@ function WelcomeCard() {
 `Card`, `CardHeader`, `CardTitle`, `CardContent`, `Link`, `buttonVariants`, `cn` et
 `useTranslation` sont déjà importés par le fichier.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/AccountsPage.test.tsx src/i18n`
 Attendu : tout au vert.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 5, puis :
 
@@ -720,7 +747,7 @@ git commit -m "Ouvre la page Comptes sur ce qu'est l'application"
 - Produces : rien. **La validation du formulaire ne change pas** : `createAccount` puis
   `navigate("/accounts/:id/sources")`.
 
-- [ ] **Step 1: Update the existing tests and add the new ones**
+- [x] **Step 1: Update the existing tests and add the new ones**
 
 Dans `apps/web/src/pages/AccountsPage.test.tsx`, les trois tests existants nomment les
 anciens libellés. Les mettre à jour :
@@ -743,12 +770,12 @@ Puis ajouter :
   });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Depuis `apps/web` : `npx vitest run src/pages/AccountsPage.test.tsx`
 Attendu : échec des quatre tests ci-dessus, les libellés n'existent pas encore.
 
-- [ ] **Step 3: Change the texts**
+- [x] **Step 3: Change the texts**
 
 Dans `apps/web/src/i18n/fr.json`, bloc `accounts` :
 
@@ -780,7 +807,7 @@ Dans `apps/web/src/i18n/en.json`, bloc `accounts` :
 
 Les clés `open`, `add` et `errors.*` ne changent pas.
 
-- [ ] **Step 4: Change the form**
+- [x] **Step 4: Change the form**
 
 Dans `apps/web/src/pages/AccountsPage.tsx`, la carte du formulaire devient :
 
@@ -815,12 +842,12 @@ Dans `apps/web/src/pages/AccountsPage.tsx`, la carte du formulaire devient :
 
 `handleSubmit` n'est pas touché.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/AccountsPage.test.tsx src/i18n`
 Attendu : tout au vert, la navigation vers `/accounts/beta/sources` comprise.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 6, puis :
 
@@ -847,13 +874,21 @@ git commit -m "Nomme l'ajout d'un compte IB pour ce qu'il est"
   `auth.serverAccountTitle`, utilisées par la tâche 8. `auth.signIn` **reste** et garde son
   texte : c'est le libellé du bouton de validation de la page de connexion.
 
+**Il existe un quatrième `auth.signIn`, et il ne change pas.**
+`apps/web/src/pages/SourcesPage.tsx` (carte Synchronisation, variable `showSignIn`) offre un
+lien de connexion quand le relais serveur est autorisé, l'agent absent et la session anonyme.
+Là, se connecter n'est pas facultatif : c'est ce qui manque pour faire ce que l'utilisateur
+vient de demander, et l'appeler « facultatif » contredirait le message juste à côté. **Ce lien
+garde `auth.signIn` et n'est pas touché par cette tâche.** Décidé au scan préalable du
+2026-09-22.
+
 **Forme retenue, identique aux trois endroits :** le lien porte `title` et `aria-label` valant
 `auth.serverAccountTitle` ; son contenu visible est `auth.serverAccount` suivi de
 `auth.optional` en petit et atténué. L'`aria-label` donne donc le nom accessible : les tests
 interrogent le lien par `{ name: /Compte serveur, facultatif/ }`, et le mot visible par
 `getByText("facultatif")`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Dans `apps/web/src/pages/AccountsPage.test.tsx`, `describe("AccountsPage: session")`,
 remplacer les recherches `{ name: "Se connecter" }` par la nouvelle forme, dans les quatre
@@ -902,13 +937,13 @@ Ce fichier n'a pas de moquage de `useSession` : il rend un vrai `SessionProvider
   });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Depuis `apps/web` :
 `npx vitest run src/pages/AccountsPage.test.tsx src/components/SessionMenuItem.test.tsx src/pages/SettingsPage.test.tsx`
 Attendu : échec, aucun lien ne porte ce nom.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, bloc `auth`, après `"signOut"` :
 
@@ -926,7 +961,7 @@ Dans `apps/web/src/i18n/en.json`, bloc `auth` :
     "serverAccountTitle": "Server account, optional: Flex Query relay and encrypted backup.",
 ```
 
-- [ ] **Step 4: Change the three places**
+- [x] **Step 4: Change the three places**
 
 Dans `apps/web/src/pages/AccountsPage.tsx`, `SessionCorner`, le `return` final :
 
@@ -981,13 +1016,13 @@ Compte :
 `SettingsPage.tsx` importe `buttonVariants` mais pas `cn` : ajouter
 `import { cn } from "@ib/ui/lib/utils";`.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` :
 `npx vitest run src/pages/AccountsPage.test.tsx src/components/SessionMenuItem.test.tsx src/pages/SettingsPage.test.tsx src/i18n`
 Attendu : tout au vert.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 7, puis :
 
@@ -1009,7 +1044,7 @@ git commit -m "Nomme la connexion compte serveur et la dit facultative"
 - Consumes : `auth.serverAccount` (tâche 7).
 - Produces : rien.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter dans `apps/web/src/pages/LoginPage.test.tsx` :
 
@@ -1027,12 +1062,12 @@ Ajouter dans `apps/web/src/pages/LoginPage.test.tsx` :
 Ce fichier interroge le bouton de validation par `{ name: /se connecter|sign in/i }` : ce
 bouton garde `auth.signIn`, les tests existants ne changent pas.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/LoginPage.test.tsx -t invitation`
 Attendu : échec, l'introduction n'existe pas.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, bloc `auth` :
 
@@ -1056,7 +1091,7 @@ Dans `apps/web/src/i18n/en.json`, bloc `auth` :
     "back": "Back",
 ```
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Dans `apps/web/src/pages/LoginPage.tsx`, entre l'en-tête et la `<Card>`, insérer le titre et
 l'introduction :
@@ -1084,12 +1119,12 @@ Et sous la `<Card>`, un retour vers l'écran d'où l'on vient :
 
 `from` est déjà calculé dans le composant ; `Link` est déjà importé.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/LoginPage.test.tsx src/i18n`
 Attendu : tout au vert, les tests d'identifiants refusés et de serveur injoignable compris.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 8, puis :
 
@@ -1124,7 +1159,7 @@ git commit -m "Dit sur la page de connexion ce qu'un compte serveur ouvre"
 écrits tels que le spec §5 les donne, et Seb les vérifie à la relecture de la branche. Ne pas
 tenter d'ouvrir le Client Portal ; ne pas inventer un autre chemin.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter dans `apps/web/src/pages/HelpPage.test.tsx` :
 
@@ -1175,12 +1210,12 @@ Ajouter dans `apps/web/src/pages/HelpPage.test.tsx` :
 `Card` étale ses props sur son `div` racine : `id` y passe tel quel, rien à changer dans
 `packages/ui`.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/HelpPage.test.tsx`
 Attendu : échec des trois nouveaux tests.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, bloc `help`, ajouter **avant** `"what"` :
 
@@ -1232,7 +1267,7 @@ Dans `apps/web/src/i18n/en.json`, la traduction fidèle des mêmes clés, avec l
 Les noms de sections de la Flex Query et « Select All » restent en anglais dans les deux
 langues : ce sont les libellés de l'interface d'Interactive Brokers.
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Dans `apps/web/src/pages/HelpPage.tsx` :
 
@@ -1293,12 +1328,12 @@ function Section({ id, title, children }: { id?: string; title: string; children
 Les sections de l'agent gardent leur JSX mot pour mot, dans leur ordre actuel, après
 celles-ci.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/HelpPage.test.tsx src/components/FirstStepCard.test.tsx src/i18n`
 Attendu : tout au vert, les six tests existants de l'Aide compris.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 9, puis :
 
@@ -1320,7 +1355,7 @@ git commit -m "Réorganise l'Aide en premiers pas"
 - Consumes : tout ce qui précède.
 - Produces : rien.
 
-- [ ] **Step 1: Note the change in the architecture spec**
+- [x] **Step 1: Note the change in the architecture spec**
 
 À la fin du §9 de `docs/specs/2026-09-03-architecture-design.md`, ajouter :
 
@@ -1335,7 +1370,7 @@ l'application, le relevé d'activité, la Flex Query, puis l'agent
 (`2026-09-22-premiers-pas-design.md`).
 ```
 
-- [ ] **Step 2: Add the registry line in CLAUDE.md**
+- [x] **Step 2: Add the registry line in CLAUDE.md**
 
 Dans le tableau des sous-projets de `CLAUDE.md`, après la ligne 27 :
 
@@ -1343,18 +1378,18 @@ Dans le tableau des sous-projets de `CLAUDE.md`, après la ligne 27 :
 | 28 | Premiers pas : accueil, compte serveur facultatif, première étape, Aide | fait (2026-09-22) |
 ```
 
-- [ ] **Step 3: Mark the spec done**
+- [x] **Step 3: Mark the spec done**
 
 Dans `docs/specs/2026-09-22-premiers-pas-design.md`, remplacer `Statut : spécifié
 (2026-09-22).` par `Statut : livré (2026-09-22).`
 
-- [ ] **Step 4: Run the full check**
+- [x] **Step 4: Run the full check**
 
 Depuis la racine du dépôt : `pnpm check`
 Attendu : lint, typage, fraîcheur du schéma d'API, build et **tous** les tests au vert. Ne
 rien conclure avant d'avoir lu la sortie ; un échec se corrige ici, il ne se reporte pas.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Cocher les cases de la tâche 10, puis :
 

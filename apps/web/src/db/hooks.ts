@@ -45,6 +45,23 @@ export function useImports(accountId: string): ImportRecord[] | undefined {
 }
 
 /**
+ * True when nothing has ever fed this account. Both a statement import and a Flex sync go
+ * through `importFile`, so both leave an `ImportRecord` — a refused one included, which is
+ * wanted: the user acted, and the import report answers them from then on. The agent writes
+ * no record at all (see `ImportRecord.source`) and stamps `lastAgentSyncAt` instead, so the
+ * account record is the second half of the criterion.
+ *
+ * `undefined` while either query is still answering: a caller that rendered on a bare `false`
+ * would flash a card away a moment after showing it.
+ */
+export function useNeverFed(accountId: string): boolean | undefined {
+  const account = useAccount(accountId);
+  const imports = useImports(accountId);
+  if (account === undefined || imports === undefined) return undefined;
+  return imports.length === 0 && account?.lastAgentSyncAt === undefined;
+}
+
+/**
  * The statements kept for one account, by the period each one declares, oldest first.
  * A rebuild may re-key a file whose period the parser now reads differently, so this is
  * the stored order, not a promise about the next replay. `undefined` while loading.

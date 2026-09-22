@@ -28,12 +28,31 @@
     "cancel": "Annuler"
   },
   "accounts": {
-    "title": "Comptes",
-    "empty": "Aucun compte pour l'instant. Créez le premier ci-dessous.",
-    "label": "Libellé",
+    "title": "Vos comptes Interactive Brokers",
+    "welcome": {
+      "tagline": "Analysez vos portefeuilles Interactive Brokers, actions et options.",
+      "benefits": [
+        "Couverture de vos ventes d'options et cash requis, à tout instant.",
+        "Journaux Wheel, LEAPS et Condors reconstitués depuis votre historique.",
+        "Historique complet, positions et statistiques par stratégie."
+      ],
+      "privacy": "Vos données restent dans ce navigateur : le serveur ne voit jamais vos transactions ni vos positions.",
+      "howTitle": "Comment ça marche",
+      "steps": [
+        "Ajoutez un compte IB.",
+        "Importez un relevé d'activité, ou branchez une Flex Query.",
+        "Lisez votre tableau de bord ; l'agent local, facultatif, ajoute les données en direct."
+      ],
+      "helpLink": "Premiers pas"
+    },
+    "empty": "Aucun compte IB pour l'instant. Ajoutez le premier ci-dessous.",
+    "addTitle": "Ajouter un compte IB",
+    "addHint": "Un compte ici est un compte Interactive Brokers que vous suivez. Il est créé dans ce navigateur ; rien n'est envoyé.",
+    "label": "Nom",
+    "labelPlaceholder": "Compte marge",
     "ibAccountId": "Identifiant de compte IB",
-    "ibAccountIdHint": "Tel qu'affiché dans le Client Portal, ex. U1234567",
-    "create": "Créer le compte",
+    "ibAccountIdHint": "Tel qu'affiché dans le Client Portal, ex. U1234567. Il sert à vérifier que les fichiers importés et l'agent local sont bien ceux de ce compte.",
+    "create": "Ajouter ce compte",
     "open": "Ouvrir",
     "add": "Ajouter un compte…",
     "errors": {
@@ -41,6 +60,12 @@
       "ib-account-id-invalid": "Ce n'est pas un identifiant de compte IB.",
       "slug-taken": "Un compte porte déjà ce libellé."
     }
+  },
+  "firstStep": {
+    "title": "Première étape",
+    "text": "Importez un relevé d'activité HTML exporté du Client Portal, ou renseignez le jeton et l'identifiant de votre Flex Query. Le tableau de bord se remplit dès le premier import.",
+    "sourcesLink": "Aller aux sources de données",
+    "helpLink": "Comment obtenir un relevé"
   },
   "unknownAccount": {
     "title": "Compte inconnu",
@@ -468,6 +493,9 @@
   "auth": {
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
+    "serverAccount": "Compte serveur",
+    "optional": "facultatif",
+    "serverAccountTitle": "Compte serveur, facultatif : relais Flex Query et sauvegarde chiffrée.",
     "email": "E-mail",
     "password": "Mot de passe",
     "submit": "Valider",
@@ -475,7 +503,13 @@
     "serverUnreachable": "Serveur injoignable pour le moment.",
     "secondFactor": "Second facteur",
     "secondFactorHint": "Entrez le code fourni par votre application d'authentification, ou un code de secours.",
-    "code": "Code"
+    "code": "Code",
+    "intro": {
+      "opens": "Un compte serveur ouvre deux choses : le relais de votre Flex Query par le serveur quand l'agent local est absent, et la sauvegarde chiffrée de vos données.",
+      "without": "Tout le reste fonctionne sans : relevés, Flex Query par l'agent local, journaux, positions.",
+      "invitation": "L'accès se fait sur invitation. Sans invitation, il ne vous manque rien : fermez cette page et continuez."
+    },
+    "back": "Retour"
   },
   "invitation": {
     "title": "Accepter l'invitation",
@@ -540,8 +574,47 @@
   },
   "help": {
     "title": "Aide",
+    "app": {
+      "title": "L'application",
+      "text": "IB Analyzer analyse vos portefeuilles Interactive Brokers, actions et options : couverture de vos ventes d'options et cash requis, journaux Wheel, LEAPS et Condors reconstitués depuis votre historique, historique complet, positions et statistiques par stratégie.",
+      "privacy": "Vos données restent dans ce navigateur : le serveur ne voit jamais vos transactions ni vos positions.",
+      "sources": "L'application peut se servir de différentes sources de données, en filtrant automatiquement les doublons.",
+      "tiers": [
+        "Les relevés d'activité HTML : un export de données fourni par Interactive Brokers, que vous chargez dans l'application à la main. Ils peuvent servir à importer des données récentes comme des données de plus d'un an, et permettent d'avoir un aperçu de l'application très rapidement.",
+        "Les Flex Query : un format d'export fourni par Interactive Brokers qui permet d'automatiser l'import. Vous avez ainsi des données fraîches jusqu'à la clôture des marchés de la veille. Les Flex Query ne peuvent pas importer de données au-delà de 365 jours.",
+        "L'agent local, facultatif, ajoute les positions et les exécutions du jour. Il récolte aussi les données nécessaires aux graphiques. Il ne permet pas de récupérer un historique : il vient donc en complément des autres."
+      ],
+      "history": "Pour que l'application fonctionne bien, il est fortement recommandé d'importer l'ensemble de l'historique. C'est ce qui permet de vérifier que toutes les transactions sont bien présentes et qu'elles reconstituent les dernières valeurs connues de votre portefeuille."
+    },
+    "statement": {
+      "title": "1. Obtenir un relevé d'activité",
+      "portal": "Le Client Portal est le site d'Interactive Brokers où vous gérez votre compte et téléchargez vos relevés, celui où vous vous connectez avec votre identifiant IB. Ce n'est pas Trader Workstation, la plateforme où vous passez vos ordres.",
+      "text": "Dans le Client Portal : Performance & Reports › Statements › Activity. Choisissez la période la plus longue proposée, le format HTML, et téléchargez.",
+      "items": [
+        "Un relevé par année pour remonter loin : « Sources de données › Importer des fichiers » accepte plusieurs fichiers à la fois et les écrit dans l'ordre de leurs périodes.",
+        "Le fichier est conservé dans ce navigateur pour pouvoir être rejoué ; « Relire les relevés » reconstruit tout depuis les fichiers gardés.",
+        "Un relevé porte aussi vos positions et votre cash à sa fin de période : un seul fichier suffit à remplir l'application."
+      ]
+    },
+    "flex": {
+      "title": "2. Configurer une Flex Query",
+      "text": "Dans le Client Portal : Performance & Reports › Flex Queries. Créez une Activity Flex Query, période « Last 365 days », format XML.",
+      "selectAll": "Dans chaque section, cochez « Select All » plutôt que les champs un par un : c'est plus rapide, et rien ne manquera le jour où l'application lira une colonne de plus.",
+      "sectionsTitle": "Les sections à inclure",
+      "sections": [
+        "Trades",
+        "Cash Transactions",
+        "Corporate Actions",
+        "Open Positions",
+        "Cash Report"
+      ],
+      "corporateActions": "Corporate Actions est la seule dont l'absence ne déclenche aucun avertissement : sans elle, splits et fusions manquent en silence.",
+      "token": "Activez ensuite le Flex Web Service et copiez le jeton ; notez l'identifiant de la requête. Saisissez les deux dans « Sources de données › Flex Query ».",
+      "missing": "Ce que l'application ne trouve pas est listé dans Sources de données à chaque synchronisation."
+    },
     "what": {
-      "title": "L'agent local",
+      "title": "3. L'agent local, facultatif",
+      "tws": "TWS, pour Trader Workstation, est l'application de bureau d'Interactive Brokers, celle où vous passez vos ordres. L'agent local est un petit programme à installer sur votre machine : il lit TWS pour ce site. Les six points ci-dessous s'enchaînent dans l'ordre.",
       "text": "L'agent lit TWS sur votre machine et ne parle qu'à ce site et à Interactive Brokers. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de ce site vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer.",
       "dayValues": "Var. jour et P&L jour viennent de l'agent local : un portefeuille reconstruit depuis un relevé ou une réponse Flex les laisse à « — », comme un contrat acheté ou vendu le jour même."
     },
@@ -565,7 +638,7 @@
       "text": "Dans TWS : Configuration › API › Settings.",
       "items": [
         "Cocher « Enable ActiveX and Socket Clients ».",
-        "Noter le « Socket port » : un port par compte, chaque TWS a le sien.",
+        "Noter le « Socket port » : un port par compte, chaque TWS a le sien. Si vous lancez plusieurs TWS, donnez-leur des ports distincts, par exemple 7501 pour le premier, 7502 pour le second, et ainsi de suite.",
         "Ajouter 127.0.0.1 dans « Trusted IPs ».",
         "« Read-Only API » peut rester coché : l'agent ne passe aucun ordre."
       ]
@@ -576,7 +649,7 @@
     },
     "port": {
       "title": "6. Renseigner le port",
-      "text": "Dans Sources de données, carte Agent local, saisissez le port TWS du compte. Il ne sert qu'aux données en direct, pas pour relayer Flex Query.",
+      "text": "Dans Sources de données, section Agent local, saisissez le port TWS du compte. Il ne sert qu'aux données en direct, pas pour relayer Flex Query.",
       "link": "Ouvrir Sources de données"
     }
   },

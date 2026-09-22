@@ -36,19 +36,20 @@ export function AccountsPage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4 p-4 md:p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-heading text-lg font-semibold tracking-tight">{t("accounts.title")}</h1>
-        <div className="flex items-center gap-2">
-          {/* The one path into Settings from a device that holds no account at all: without it,
-              restoring a backup onto a fresh browser needs a URL nobody would guess. */}
-          <Link to="/settings" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            {t("nav.settings")}
-          </Link>
-          <SessionCorner />
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
+      {/* The title sits UNDER the buttons, on a line of its own. This page is `max-w-lg`, and
+          four controls plus a six-word heading on one row wrapped the heading onto four lines.
+          Giving it the full width costs one line and reads straight. */}
+      <div className="flex items-center justify-end gap-2">
+        {/* The one path into Settings from a device that holds no account at all: without it,
+            restoring a backup onto a fresh browser needs a URL nobody would guess. */}
+        <Link to="/settings" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+          {t("nav.settings")}
+        </Link>
+        <SessionCorner />
+        <LanguageSwitcher />
+        <ThemeToggle />
       </div>
+      <h1 className="font-heading text-lg font-semibold tracking-tight">{t("accounts.title")}</h1>
 
       <Card>
         <CardContent className="flex flex-col gap-2 py-4">
@@ -71,13 +72,19 @@ export function AccountsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t("accounts.create")}</CardTitle>
+          <CardTitle>{t("accounts.addTitle")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">{t("accounts.addHint")}</p>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <label className="flex flex-col gap-1 text-sm">
               {t("accounts.label")}
-              <Input value={label} onChange={(e) => setLabel(e.target.value)} required />
+              <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder={t("accounts.labelPlaceholder")}
+                required
+              />
             </label>
             <label className="flex flex-col gap-1 text-sm">
               {t("accounts.ibAccountId")}
@@ -89,6 +96,11 @@ export function AccountsPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Last, not first (decided 2026-09-22): the page's job is to open or add an account, and
+          a returning user should meet their own accounts before a pitch they have read. The page
+          is short enough that a newcomer still finds it. */}
+      <WelcomeCard />
     </div>
   );
 }
@@ -128,12 +140,58 @@ function SessionCorner() {
 
   return (
     // `cn(...)` is not decoration: `buttonVariants` emits both `border-transparent` (base)
-    // and `border-border` (outline), and only tailwind-merge picks the winner. Handed to
-    // `className` raw, the stylesheet's own order wins instead and the link renders with a
-    // transparent border — a flat label where a button was meant. `Button` itself runs the
-    // same `cn`, which is why it never showed there.
-    <Link to="/login" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-      {t("auth.signIn")}
+    // and `border-border` (outline), and only tailwind-merge picks the winner.
+    <Link
+      to="/login"
+      title={t("auth.serverAccountTitle")}
+      aria-label={t("auth.serverAccountTitle")}
+      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
+    >
+      {t("auth.serverAccount")}
+      <span className="text-xs font-normal text-muted-foreground">{t("auth.optional")}</span>
     </Link>
+  );
+}
+
+/**
+ * `/accounts` is the landing page of a device with no local account, and the only route a
+ * newcomer reaches on their own: nothing else tells them what this application is. Rendered
+ * whatever the number of accounts — decided 2026-09-22 — because the page keeps serving to
+ * add another account and to open one, and a block that vanished on the first add would
+ * change the page under the user right after they acted.
+ */
+function WelcomeCard() {
+  const { t } = useTranslation();
+  const benefits = t("accounts.welcome.benefits", { returnObjects: true }) as string[];
+  const steps = t("accounts.welcome.steps", { returnObjects: true }) as string[];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>IB Analyzer</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 text-sm">
+        <p>{t("accounts.welcome.tagline")}</p>
+        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+          {benefits.map((benefit) => (
+            <li key={benefit}>{benefit}</li>
+          ))}
+        </ul>
+        <p className="rounded-md bg-muted px-3 py-2">{t("accounts.welcome.privacy")}</p>
+        <div className="flex flex-col gap-1">
+          <p className="font-medium">{t("accounts.welcome.howTitle")}</p>
+          <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+            {steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </div>
+        <div>
+          <Link to="/help" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            {t("accounts.welcome.helpLink")}
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
