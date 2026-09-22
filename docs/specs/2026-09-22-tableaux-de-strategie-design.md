@@ -37,14 +37,17 @@ Dans cet ordre :
 
 | # | Identifiant | Titre | Contenu |
 |---|---|---|---|
-| 1 | `sharesUncovered` | Actions assignées sans call | part libre de chaque ticker |
-| 2 | `sharesCallAbove` | Actions assignées, call ≥ assignation | part couverte, `averageCallStrike ≥ averageAssignmentPrice` |
+| 1 | `putSells` | Ventes de puts | lignes `short_put` de `groups.optionSells` |
+| 2 | `sharesUncovered` | Actions assignées sans call | part libre de chaque ticker |
 | 3 | `sharesCallBelow` | Actions assignées, call < assignation | part couverte, sinon |
-| 4 | `callSells` | Ventes de calls | lignes `short_call` de `groups.optionSells` |
-| 5 | `putSells` | Ventes de puts | lignes `short_put` de `groups.optionSells` |
+| 4 | `sharesCallAbove` | Actions assignées, call ≥ assignation | part couverte, `averageCallStrike ≥ averageAssignmentPrice` |
+| 5 | `callSells` | Ventes de calls | lignes `short_call` de `groups.optionSells` |
 
-Les trois premiers encadrés gardent les onze colonnes de `WHEEL_SHARE_COLUMNS` et la ligne
-`WheelShareRow`. Les deux derniers gardent `POSITION_COLUMNS` et `PositionRow`.
+Ordre revu par Seb après relecture (2026-09-22) : les ventes de puts d'abord, et le tableau
+« call < assignation », le plus critique, avant « call ≥ assignation ».
+
+Les trois encadrés d'actions gardent les onze colonnes de `WHEEL_SHARE_COLUMNS` et la ligne
+`WheelShareRow`. Les deux encadrés de ventes gardent `POSITION_COLUMNS` et `PositionRow`.
 
 **Comparaison au prix moyen (arbitré le 2026-09-22).** Les deux parts d'un ticker portent le
 même `averageAssignmentPrice`, celui de toutes les actions Wheel du ticker, jamais celui des
@@ -55,7 +58,7 @@ ces deux conventions. L'objet du découpage est de repérer les actions oubliée
 un P/L réalisé.
 
 **Comparaison impossible.** Une part couverte dont `averageCallStrike` ou
-`averageAssignmentPrice` est `null` va dans le tableau 3, sans surlignage d'alerte : dans le
+`averageAssignmentPrice` est `null` va dans `sharesCallBelow`, sans surlignage d'alerte : dans le
 doute, elle apparaît dans le tableau à surveiller. Le surlignage de la cellule du prix du call
 (`callStrikeBelowAssignment`) reste tel qu'aujourd'hui, donc vrai seulement quand les deux prix
 existent et que le call est en dessous.
@@ -145,9 +148,9 @@ Vitest dans `packages/coverage`, écrits à la main :
 
 - 200 actions assignées et 1 call : 100 dans la part libre, 100 dans la part couverte, avec
   `assignedTotal`, `unrealizedPnl` et `dailyPnl` divisés par deux ;
-- call au-dessus du prix d'assignation, dans le tableau 2 ; call en dessous, dans le
-  tableau 3 ; égalité, dans le tableau 2 ;
-- strike ou prix d'assignation absent : tableau 3, `callStrikeBelowAssignment` faux ;
+- call au-dessus du prix d'assignation, dans `sharesCallAbove` ; call en dessous, dans
+  `sharesCallBelow` ; égalité, dans `sharesCallAbove` ;
+- strike ou prix d'assignation absent : `sharesCallBelow`, `callStrikeBelowAssignment` faux ;
 - tout couvert : pas de part libre ; aucun call : pas de part couverte ;
 - 2 LEAPS et 1 call utilisé : 1 + 1 ; LEAPS sans position dans le snapshot : tout libre ;
 - ventes de calls et de puts séparées ; Condors et Autres inchangés.
@@ -159,7 +162,7 @@ montre ses cinq titres avec les bonnes quantités, la page LEAPS ses trois.
 
 - Prix moyen d'assignation du ticker pour les deux parts, et non les lots FIFO que le journal
   ferait sortir (§2), arbitré le 2026-09-22.
-- Une part couverte dont la comparaison est impossible va dans le tableau 3 (§2).
+- Une part couverte dont la comparaison est impossible va dans `sharesCallBelow` (§2).
 - La part utilisée d'un LEAPS vient du `usedQuantity` du moteur de couverture, comme le badge
   (§3).
 - L'encadré « Actions » des LEAPS reste, en dernier, rendu seulement s'il a des lignes (§3).

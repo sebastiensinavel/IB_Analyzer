@@ -130,7 +130,7 @@ describe("StrategyPositionsPage — Wheel", () => {
     const { container } = renderPage("wheel");
     await screen.findByLabelText("Actions assignées sans call");
     const titles = [...container.querySelectorAll("[data-slot=card]")].map((card) => card.getAttribute("aria-label"));
-    expect(titles).toEqual(["Actions assignées sans call", "Actions assignées, call < assignation", "Ventes de calls", "Ventes de puts"]);
+    expect(titles).toEqual(["Ventes de puts", "Actions assignées sans call", "Actions assignées, call < assignation", "Ventes de calls"]);
   });
 
   it("lists the option sales: the Wheel's part priced from the snapshot, a line the snapshot lacks left blank", async () => {
