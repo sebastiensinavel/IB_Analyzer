@@ -185,6 +185,13 @@ La conséquence vaut aussi pour la page Sources de données : un avertissement
 `column-missing` devient alors le signe qu'une section a été cochée partiellement, et l'Aide
 donne la réponse, tout cocher.
 
+**Corporate Actions est la cinquième section, et la seule que le parseur ne réclame pas.**
+`checkSections` (`packages/ib-parsers/src/flex.ts`) n'exige que quatre sections — Trades, Cash
+Transactions, Open Positions, Cash Report — et avertit d'une absence par `section-missing`.
+Corporate Actions est lu (les opérations sur titres en viennent) mais jamais vérifié : décochée,
+elle ne produit **aucun avertissement**, et les splits et fusions manquent en silence. C'est
+précisément pourquoi l'Aide la nomme comme les autres.
+
 **Les chemins du Client Portal sont à vérifier dans le Client Portal au moment de l'écriture
 des textes**, pas recopiés de ce spec : Interactive Brokers renomme ses menus, et le libellé
 exact de la case qui coche tout dans une section — « Select All » au 2026-09-22 — est à lire
