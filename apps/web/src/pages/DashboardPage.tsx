@@ -5,6 +5,7 @@ import type { StrategyStats } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
 import { CashCoverageCard } from "@/components/CashCoverageCard";
+import { FirstStepCard } from "@/components/FirstStepCard";
 import { PositionSuggestionsCard } from "@/components/PositionSuggestionsCard";
 import { CapitalCard } from "@/components/stats/CapitalCard";
 import { CurrencySelect } from "@/components/stats/CurrencySelect";
@@ -13,6 +14,7 @@ import { MonthlyPnlCard } from "@/components/stats/MonthlyPnlCard";
 import { PnlTotalCard } from "@/components/stats/PnlTotalCard";
 import { ReturnCard } from "@/components/stats/ReturnCard";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
+import { useNeverFed } from "@/db/hooks";
 import { useCapitalSeries } from "@/hooks/useCapitalSeries";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
@@ -25,6 +27,7 @@ export function DashboardPage() {
   const view = useAccountJournals();
   const series = useCapitalSeries("portfolio");
   const [chosen, setChosen] = useState<string | null>(null);
+  const neverFed = useNeverFed(accountId);
 
   if (report === undefined || view.status === "loading") {
     return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
@@ -49,10 +52,15 @@ export function DashboardPage() {
   );
 
   if (report === null && !stats) {
+    // An account nothing has ever fed gets a first step rather than an empty page: this is
+    // where « Ouvrir » lands a newcomer straight after they added their account. While
+    // `neverFed` is still undefined, neither card is rendered — showing one and swapping it a
+    // moment later reads as a glitch.
     return (
       <div className="flex flex-col gap-4 p-4 md:p-6">
         {title}
-        {noPositions}
+        {neverFed === true && <FirstStepCard accountId={accountId} />}
+        {neverFed === false && noPositions}
         <PositionSuggestionsCard accountId={accountId} report={report} />
       </div>
     );

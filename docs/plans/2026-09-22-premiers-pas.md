@@ -434,7 +434,7 @@ quand `report === null && !stats`, et une cellule du `return` principal. **Seul 
 anticipé change** : atteindre le second suppose des statistiques, donc des transactions, donc
 un import ou une passe d'agent — `neverFed` y est forcément `false`.
 
-- [ ] **Step 1: Repair the existing empty-state test, then write the failing ones**
+- [x] **Step 1: Repair the existing empty-state test, then write the failing ones**
 
 **Un test existant casse sous ce changement, et c'est attendu.**
 `it("shows the empty state with a link to the data sources without a snapshot")` rend le
@@ -502,12 +502,12 @@ describe("DashboardPage: a brand new account", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/DashboardPage.test.tsx -t "brand new"`
 Attendu : échec sur le premier test, « Première étape » introuvable.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Dans `apps/web/src/pages/DashboardPage.tsx` :
 
@@ -557,12 +557,12 @@ par
   }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/DashboardPage.test.tsx`
 Attendu : tout le fichier au vert.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Cocher les cases de la tâche 4, puis :
 
