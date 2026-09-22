@@ -3,6 +3,7 @@ import type { BackupPayload } from "./payload";
 
 const KEY_BYTES = 32;
 const IV_BYTES = 12;
+const SALT_BYTES = 16;
 const GROUP = 8;
 
 /**
@@ -122,6 +123,46 @@ export async function decryptBlob(
   const iv = blob.subarray(0, IV_BYTES);
   const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, await importKey(key), blob.subarray(IV_BYTES));
   return new Uint8Array(plain);
+}
+
+/** Les trois morceaux que l'en-tête du blob transporte (spec §2). */
+export interface BackupWrap {
+  salt: Uint8Array<ArrayBuffer>;
+  iv: Uint8Array<ArrayBuffer>;
+  wrapped: Uint8Array<ArrayBuffer>;
+}
+
+/**
+ * La phrase ne chiffre jamais le paquet, seulement les 32 octets de la clé qui, elle, le
+ * chiffre. Changer de phrase réécrit donc 48 octets, jamais 20 Mo.
+ */
+export async function wrapKey(key: Uint8Array<ArrayBuffer>, passphrase: string): Promise<BackupWrap> {
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+  const wrapping = await deriveWrapKey(passphrase, salt);
+  const wrapped = new Uint8Array(
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await importKey(wrapping), key),
+  );
+  return { salt, iv, wrapped };
+}
+
+/**
+ * Une phrase erronée dérive une clé d'enveloppe erronée, dont la balise d'authentification
+ * d'AES-GCM échoue sur quarante-huit octets — jamais sur vingt mégaoctets. C'est tout ce qui
+ * distingue une mauvaise phrase, et c'est suffisant : AES-GCM authentifie son propre chiffré.
+ */
+export async function unwrapKey(wrap: BackupWrap, passphrase: string): Promise<Uint8Array<ArrayBuffer>> {
+  const wrapping = await deriveWrapKey(passphrase, wrap.salt);
+  try {
+    const plain = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: wrap.iv },
+      await importKey(wrapping),
+      wrap.wrapped,
+    );
+    return new Uint8Array(plain);
+  } catch {
+    throw new BackupKeyError("This passphrase does not open the backup");
+  }
 }
 
 function base64url(bytes: Uint8Array): string {

@@ -13,6 +13,8 @@ import {
   gzip,
   MIN_PASSPHRASE_LENGTH,
   toRecoveryCode,
+  unwrapKey,
+  wrapKey,
 } from "./crypto";
 
 const payload = { format: 1, createdAt: "2026-09-21T00:00:00.000Z", tables: { sectors: [{ ticker: "ZXAG" }] } };
@@ -111,4 +113,53 @@ describe("deriveWrapKey", () => {
   it("exige douze caractères", () => {
     expect(MIN_PASSPHRASE_LENGTH).toBe(12);
   });
+});
+
+describe("wrapKey / unwrapKey", () => {
+  const PHRASE = "une phrase de passe";
+
+  // Chaque test dérive une ou deux fois (crypto.ts), chaque dérivation coûtant quelques
+  // secondes : le délai par défaut de vitest (5 000 ms) ne suffit pas, comme pour
+  // deriveWrapKey ci-dessus.
+  it(
+    "rend la clé d'origine",
+    async () => {
+      const key = generateBackupKey();
+      const wrap = await wrapKey(key, PHRASE);
+      expect(Array.from(await unwrapKey(wrap, PHRASE))).toEqual(Array.from(key));
+    },
+    20000,
+  );
+
+  it(
+    "refuse une phrase erronée par un BackupKeyError",
+    async () => {
+      const wrap = await wrapKey(generateBackupKey(), PHRASE);
+      await expect(unwrapKey(wrap, "une autre phrase")).rejects.toBeInstanceOf(BackupKeyError);
+    },
+    20000,
+  );
+
+  it(
+    "tire un sel neuf à chaque enveloppe",
+    async () => {
+      const key = generateBackupKey();
+      const one = await wrapKey(key, PHRASE);
+      const other = await wrapKey(key, PHRASE);
+      expect(Array.from(one.salt)).not.toEqual(Array.from(other.salt));
+      expect(Array.from(one.wrapped)).not.toEqual(Array.from(other.wrapped));
+    },
+    20000,
+  );
+
+  it(
+    "enveloppe la clé en 48 octets : 32 de clé et 16 de balise",
+    async () => {
+      const wrap = await wrapKey(generateBackupKey(), PHRASE);
+      expect(wrap.wrapped).toHaveLength(48);
+      expect(wrap.salt).toHaveLength(16);
+      expect(wrap.iv).toHaveLength(12);
+    },
+    20000,
+  );
 });

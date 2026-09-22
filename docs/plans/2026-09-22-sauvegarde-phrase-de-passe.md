@@ -235,7 +235,7 @@ Mesuré avant d'être figé : <chiffres des deux mesures>."
   - `wrapKey(key: Uint8Array<ArrayBuffer>, passphrase: string): Promise<BackupWrap>`
   - `unwrapKey(wrap: BackupWrap, passphrase: string): Promise<Uint8Array<ArrayBuffer>>`
 
-- [ ] **Step 1 : écrire le test qui échoue**
+- [x] **Step 1 : écrire le test qui échoue**
 
 ```ts
 describe("wrapKey / unwrapKey", () => {
@@ -272,7 +272,7 @@ describe("wrapKey / unwrapKey", () => {
 Compléter l'import du fichier de test avec `wrapKey`, `unwrapKey`, `generateBackupKey`,
 `BackupKeyError` s'ils n'y sont pas déjà.
 
-- [ ] **Step 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Step 2 : lancer le test, vérifier qu'il échoue**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.test.ts
@@ -280,7 +280,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.tes
 
 Attendu : ÉCHEC, `wrapKey is not a function`.
 
-- [ ] **Step 3 : implémenter**
+- [x] **Step 3 : implémenter**
 
 Dans `crypto.ts`, après `decryptBlob` :
 
@@ -326,7 +326,7 @@ export async function unwrapKey(wrap: BackupWrap, passphrase: string): Promise<U
 }
 ```
 
-- [ ] **Step 4 : lancer le test, vérifier qu'il passe**
+- [x] **Step 4 : lancer le test, vérifier qu'il passe**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.test.ts
@@ -334,7 +334,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.tes
 
 Attendu : SUCCÈS.
 
-- [ ] **Step 5 : commit**
+- [x] **Step 5 : commit**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/db/backup/crypto.ts apps/web/src/db/backup/crypto.test.ts docs/plans/2026-09-22-sauvegarde-phrase-de-passe.md && git commit -m "Enveloppe la clé de sauvegarde dans une phrase de passe"
