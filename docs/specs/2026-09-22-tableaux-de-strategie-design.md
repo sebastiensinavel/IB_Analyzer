@@ -1,6 +1,6 @@
 # Sous-projet 29 — Les tableaux de la Wheel et des LEAPS rangés par point de contrôle
 
-Statut : conçu (2026-09-22).
+Statut : livré (2026-09-22).
 
 Les pages Positions de la Wheel et des LEAPS montrent chacune deux tableaux : « Actions
 assignées » et « Ventes d'options » pour la Wheel, « Achats d'options » et « Ventes d'options »

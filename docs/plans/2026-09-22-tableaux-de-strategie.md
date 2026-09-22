@@ -598,7 +598,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 - Modify: `CLAUDE.md`
 - Modify: `docs/specs/2026-09-22-tableaux-de-strategie-design.md` (statut)
 
-- [ ] **Step 1: `CLAUDE.md`**
+- [x] **Step 1: `CLAUDE.md`**
 
 - Registre : ajouter la ligne `| 29 | Les tableaux de la Wheel et des LEAPS rangés par point de contrôle | fait (<date du merge>) |`.
 - Règle « Les tableaux de la page Positions partagent leurs colonnes » : « seule la table
@@ -614,9 +614,9 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
   « La carte « Actions assignées » de la Wheel ne compte que les calls couverts » par « Les
   cartes d'actions assignées de la Wheel ne comptent que les calls couverts ».
 
-- [ ] **Step 2: Spec** — `Statut : livré (<date>).`
+- [x] **Step 2: Spec** — `Statut : livré (<date>).`
 
-- [ ] **Step 3: Cocher et commiter**
+- [x] **Step 3: Cocher et commiter**
 
 ```bash
 git add CLAUDE.md docs

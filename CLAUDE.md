@@ -140,9 +140,9 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `PositionTable` les pose en disposition fixe sur chaque tableau, celui du cash compris, qui
   laisse vides les colonnes autres que Position et Valeur de marché. Une colonne s'ajoute là,
   jamais dans un seul tableau : les colonnes ne seraient plus alignées. Les pages de stratégie
-  reprennent `POSITION_COLUMNS` pour leurs tableaux d'options et d'actions LEAPS ; seule la
-  table « Actions assignées » de la Wheel a ses onze colonnes propres, `WHEEL_SHARE_COLUMNS`
-  (même fichier), délibérément : elle ne s'aligne pas sur les douze colonnes partagées.
+  reprennent `POSITION_COLUMNS` pour leurs tableaux d'options et d'actions LEAPS ; seules les
+  trois tables d'actions assignées de la Wheel ont leurs onze colonnes propres, `WHEEL_SHARE_COLUMNS`
+  (même fichier), délibérément : elles ne s'alignent pas sur les douze colonnes partagées.
 - **L'Historique ne pagine pas** : un seul tableau virtualisé (`components/history/HistoryTable.tsx`)
   défile dans sa carte, en-tête figé, bordé d'une barre temporelle (`TimelineScrubber`). Ses lignes
   ont une hauteur constante, `HISTORY_ROW_HEIGHT` (`lib/historyColumns.ts`), et aucune cellule ne
@@ -305,6 +305,8 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   la couverture IB, seulement celle de la stratégie (`STRATEGY_COVER_SOURCES`) : `cash` et `stock`
   pour une vente Wheel, `leaps` pour une vente LEAPS, jamais `UNCOVERED`, la part nue d'un call
   relevant d'Autres ; un LEAPS acheté garde son « used x/y », des actions LEAPS n'ont aucun badge.
+  Le badge et le filtre Couverture d'une option achetée se lisent sur `StrategyLine.used`
+  (`apps/web/src/lib/riskReport.ts`), plafonné par la ligne, ailes de Condor comprises.
   Les actions Wheel ont leur propre couverture, `coveredShares` (`wheelHoldings`,
   `packages/ledger/src/journals/holdings.ts`). Les quatre stratégies ont leur page
   (`positions/wheel`, `/leaps`, `/condors`, `/others`), servies par un seul composant : ses
@@ -320,8 +322,14 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   jamais l'`uncoveredQuantity` du moteur, moins ce qu'Autres détient déjà, donc la part migrée ne
   peut pas contredire la barre de titre ; sans snapshot rien ne migre. La quantité d'une telle
   ligne ne vaut alors plus celle du Journal de la stratégie, qui reste le registre des lots : la
-  classification se fait une fois, à la vente. La carte « Actions assignées » de la Wheel ne
-  compte que les calls couverts, ce qui rend « used x/y » vrai.
+  classification se fait une fois, à la vente. Les cartes d'actions assignées de la Wheel ne
+  comptent que les calls couverts, ce qui rend « used x/y » vrai. **Les pages Wheel et LEAPS
+  rangent leurs lignes par point de contrôle** : `strategyBoxContents`
+  (`packages/coverage/src/strategyBoxes.ts`) coupe les actions Wheel d'un ticker en part libre
+  et part couverte — la couverte au-dessus ou en dessous selon le prix moyen des calls contre
+  le prix moyen d'assignation du ticker, jamais celui des lots FIFO, une comparaison impossible
+  en dessous — et un LEAPS en part libre et part utilisée (`used`, plafonnée par la ligne). Les
+  graphes ne changent pas d'un encadré à l'autre.
 - **La suggestion de position mesure en valeur de risque, jamais en capital** :
   `positionSuggestions` (`packages/coverage/src/suggestions.ts`) additionne `riskValue` des positions
   du compte affiché, par ticker et par secteur de la table sectorielle, et porte
@@ -416,6 +424,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 26 | La sauvegarde sans rien à conserver : clé enveloppée par un mot de passe | fait (2026-09-22) |
 | 27 | Les graphes de cours dans les tableaux de positions | fait (2026-09-21) |
 | 28 | Premiers pas : accueil, compte serveur facultatif, première étape, Aide | fait (2026-09-22) |
+| 29 | Les tableaux de la Wheel et des LEAPS rangés par point de contrôle | fait (2026-09-22) |
 
 ## Outillage
 
