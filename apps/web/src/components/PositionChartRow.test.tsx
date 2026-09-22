@@ -221,4 +221,72 @@ describe("PositionChartRow", () => {
     const kinds = (await lastDrawnLevels()).map((level) => level.kind).sort();
     expect(kinds).toEqual(["leapsBuy", "shortCall"]);
   });
+
+  it("demande son substitut pour un ticker qu'IB ne sert pas, et dit lequel il montre", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    const fetchBars = vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "SPY", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow({ ticker: "XSP" });
+
+    await screen.findByTestId("price-chart");
+    expect(fetchBars).toHaveBeenCalledWith(7501, "SPY", undefined);
+    expect(
+      screen.getByText("Cours de SPY : Interactive Brokers ne cote pas XSP. Les niveaux restent aux prix de XSP."),
+    ).toBeInTheDocument();
+  });
+
+  it("ne dit rien de substitut quand IB sert le ticker lui-même", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    await screen.findByTestId("price-chart");
+    expect(screen.queryByText(/Cours de/)).not.toBeInTheDocument();
+  });
+
+  it("nomme le ticker réellement demandé quand même le substitut ne rend rien", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "SPY", fetchedAt: "2026-09-21T20:00:00Z", bars: [] },
+    });
+
+    renderRow({ ticker: "XSP" });
+
+    expect(await screen.findByText("Interactive Brokers ne rend aucun historique pour SPY")).toBeInTheDocument();
+  });
+
+  it("garde les niveaux du vrai sous-jacent, jamais ceux du substitut", async () => {
+    await db.accounts.put({
+      id: "beta",
+      label: "beta",
+      ibAccountId: "U0000002",
+      createdAt: "",
+      warnedDroppedKinds: [],
+      twsPort: 7501,
+    });
+    // Un put XSP vendu, toujours ouvert : la Wheel lui doit un niveau. Demandés sur "SPY", les
+    // journaux n'en rendraient aucun.
+    await db.transactions.add({
+      accountId: "beta", externalId: "flex:trade:901", source: "flex", kind: "trade",
+      symbol: "XSP   261016P00650000", secType: "OPT", right: "P", strike: 650, expiry: "2026-10-16",
+      quantity: -1, price: 1, amount: 100, commission: -1, currency: "USD",
+      when: "2026-08-03T14:30:00.000Z", description: "XSP 16OCT26 650 P",
+    });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "SPY", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow({ accountId: "beta", ticker: "XSP", strategies: ["wheel"] });
+
+    expect((await lastDrawnLevels()).map((level) => level.kind)).toEqual(["shortPut"]);
+  });
 });

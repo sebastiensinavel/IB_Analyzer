@@ -591,6 +591,7 @@
     "agentError": "The local agent answered an error",
     "twsDown": "TWS is not answering on port {{port}}",
     "noBars": "Interactive Brokers returns no history for {{ticker}}",
+    "proxy": "Showing {{proxy}}: Interactive Brokers does not quote {{ticker}}. The levels stay at {{ticker}} prices.",
     "loading": "Loading the chart…"
   },
   "tableFilter": {

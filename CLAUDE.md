@@ -335,6 +335,18 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   marge est laissée à gauche. `fitContent` recollerait le bord droit sur la dernière bougie —
   son `applyDefaultOffset` écrase le décalage par `rightOffset`, 0 — et renverrait tous les
   jours vides à gauche, échéances futures comprises.
+- **Un graphe peut montrer un autre titre que son ticker, et le dit** : `chartProxyOf`
+  (`apps/web/src/lib/chartProxies.ts`) porte la seule table de substituts — `XSP` → `SPY`. Le
+  Mini-SPX est un **indice** : aucune action ne porte ce nom chez IB en USD, si bien que
+  `Stock('XSP','SMART','USD')` rend l'erreur 200, et l'indice lui-même demande l'abonnement
+  « CBOE Streaming Market Indexes », non souscrit (vérifié au 2026-09-22 : la recherche TWS
+  n'offre aucune ligne *Index* sous XSP ni sous SPX). Élargir la résolution au lieu de
+  substituer serait pire que l'erreur : `XSP` est aussi l'ETF iShares Core S&P 500 sur **TSE,
+  en CAD**, qu'un graphe rendrait sans rien dire. `PositionChartRow` demande donc le substitut,
+  l'écrit au-dessus du graphe (`charts.proxy`), nomme le ticker réellement demandé dans
+  « aucun historique », et garde `strategyLevels` sur le vrai ticker : les niveaux restent aux
+  strikes XSP. L'agent, lui, ne connaît aucun de ces tickers — la substitution est un choix
+  d'affichage, comme les teintes de `chartLevels.ts`.
 
 ## Workflow
 

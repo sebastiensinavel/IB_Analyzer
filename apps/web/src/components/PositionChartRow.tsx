@@ -16,6 +16,7 @@ import { fetchBars, type PriceBar } from "@/agent/client";
 import { useAccountJournals } from "@/db/AccountDataProvider";
 import { useAccount } from "@/db/hooks";
 import { useTheme } from "@/hooks/useTheme";
+import { chartProxyOf } from "@/lib/chartProxies";
 
 // Chargée seulement quand un graphe s'ouvre vraiment : `lightweight-charts` ne doit pas peser
 // sur l'import de tout ce qui affiche cette ligne, dont le tableau de bord (`DashboardPage`).
@@ -53,6 +54,10 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
   // entre « fiche en cours de chargement » (`accountLoaded` faux) et « pas de port ».
   const accountLoaded = account !== undefined;
   const port = account?.twsPort;
+  // Le titre qu'IB sait servir : le ticker lui-même, ou son substitut quand IB n'en a aucun
+  // historique. Les niveaux, eux, restent calculés sur `ticker` : ce sont ses strikes.
+  const proxy = chartProxyOf(ticker);
+  const asked = proxy ?? ticker;
 
   useEffect(() => {
     if (!accountLoaded) return;
@@ -62,7 +67,7 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
     }
     let cancelled = false;
     // Aucun cache : chaque ouverture interroge TWS, barre du jour comprise.
-    void fetchBars(port, ticker, currency).then((result) => {
+    void fetchBars(port, asked, currency).then((result) => {
       if (cancelled) return;
       if (!result.ok) {
         if (result.code === "tws-unreachable") setState({ status: "tws-down", port });
@@ -75,7 +80,7 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
     return () => {
       cancelled = true;
     };
-  }, [accountLoaded, port, ticker, currency]);
+  }, [accountLoaded, port, asked, currency]);
 
   const levels = useMemo(
     () => (journals.status === "ready" ? strategyLevels(journals.report.rows, ticker, strategies) : []),
@@ -86,15 +91,20 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
     <TableRow data-testid="position-chart-row" className="hover:bg-transparent">
       <TableCell colSpan={columnCount} className="bg-muted/30 p-4">
         {state.status === "bars" ? (
-          <Suspense
-            fallback={
-              <div className="flex h-24 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-                <span>{t("charts.loading")}</span>
-              </div>
-            }
-          >
-            <PriceChart bars={state.bars} levels={levels} isDark={isDark} />
-          </Suspense>
+          <>
+            {proxy !== null && (
+              <p className="mb-2 text-xs text-muted-foreground">{t("charts.proxy", { proxy, ticker })}</p>
+            )}
+            <Suspense
+              fallback={
+                <div className="flex h-24 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <span>{t("charts.loading")}</span>
+                </div>
+              }
+            >
+              <PriceChart bars={state.bars} levels={levels} isDark={isDark} />
+            </Suspense>
+          </>
         ) : (
           <div className="flex h-24 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
             {state.status === "loading" && <span>{t("charts.loading")}</span>}
@@ -108,7 +118,7 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
             )}
             {state.status === "agent-error" && <span>{t("charts.agentError")}</span>}
             {state.status === "tws-down" && <span>{t("charts.twsDown", { port: state.port })}</span>}
-            {state.status === "no-bars" && <span>{t("charts.noBars", { ticker })}</span>}
+            {state.status === "no-bars" && <span>{t("charts.noBars", { ticker: asked })}</span>}
           </div>
         )}
       </TableCell>
