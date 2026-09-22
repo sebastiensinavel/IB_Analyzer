@@ -578,11 +578,13 @@
       "title": "The application",
       "text": "IB Analyzer analyzes your Interactive Brokers portfolios, stocks and options: coverage of your option sales and required cash, Wheel, LEAPS and Condor journals rebuilt from your history, full history, positions and statistics per strategy.",
       "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
+      "sources": "The application can draw on several data sources, filtering out duplicates automatically.",
       "tiers": [
-        "An HTML activity statement alone, or a Flex Query alone, is enough: history, positions, coverage and journals.",
-        "Both together add history beyond the Flex Query's 365 days.",
-        "The local agent, optional, adds today's positions and fills."
-      ]
+        "HTML activity statements: a data export provided by Interactive Brokers that you load into the application by hand. They can bring in recent data as well as data older than a year, and they are the quickest way to get a first look at the application.",
+        "Flex Queries: an export format provided by Interactive Brokers that automates the import. It gives you data as fresh as yesterday's market close. Flex Queries cannot import data older than 365 days.",
+        "The local agent, optional, adds today's positions and fills. It also collects the data the charts need. It cannot fetch any history: it comes on top of the other sources."
+      ],
+      "history": "For the application to work well, importing your whole history is strongly recommended. That is what makes it possible to check that every transaction is there and that together they rebuild the last known values of your portfolio."
     },
     "statement": {
       "title": "1. Get an activity statement",
@@ -647,7 +649,7 @@
     },
     "port": {
       "title": "6. Fill in the port",
-      "text": "In Data sources, Local agent card, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
+      "text": "In Data sources, Local agent section, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
       "link": "Open Data sources"
     }
   },

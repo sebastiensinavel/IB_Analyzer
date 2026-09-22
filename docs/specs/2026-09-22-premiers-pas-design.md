@@ -308,6 +308,18 @@ Six changements demandés après la première relecture de la branche, tous appl
 - **Le bloc d'accueil passe en bas de la page Comptes.** Le travail de la page est d'ouvrir ou
   d'ajouter un compte ; un habitué rencontre ses comptes avant un argumentaire déjà lu. La
   première étape ne dit plus « ci-dessous », qui serait faux.
+
+Deux changements de plus, demandés au second passage.
+
+- **La section « L'application » décrit les trois sources et leurs limites**, au lieu des trois
+  puces qui résumaient les paliers. Elle dit que l'application filtre automatiquement les
+  doublons, puis, pour chaque source, ce qu'elle apporte et ce qu'elle ne peut pas faire : le
+  relevé HTML se charge à la main et remonte au-delà d'un an, la Flex Query automatise l'import
+  mais plafonne à 365 jours, l'agent n'apporte aucun historique et sert le jour même et les
+  graphiques. Elle se clôt sur la recommandation d'importer tout l'historique, parce que c'est
+  ce qui permet de vérifier que les transactions reconstituent les dernières valeurs connues du
+  portefeuille.
+- **Le point 6 parle de la « section Agent local »**, pas de la carte.
 - **L'Aide fait cocher toute une section de la Flex Query, pas des champs choisis.** Un peu
   plus de volume, nettement plus simple à suivre, et rien ne manque le jour où le parseur lit
   une colonne de plus.

@@ -73,6 +73,18 @@ describe("HelpPage", () => {
     expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(4);
   });
 
+  // The three sources and what each can and cannot do: a newcomer choosing between them needs
+  // the limits, not just the names.
+  it("names the three data sources with the limit of each, and urges a full history", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/en filtrant automatiquement les doublons/)).toBeInTheDocument();
+    expect(screen.getByText(/que vous chargez dans l'application à la main/)).toBeInTheDocument();
+    expect(screen.getByText(/ne peuvent pas importer de données au-delà de 365 jours/)).toBeInTheDocument();
+    expect(screen.getByText(/Il ne permet pas de récupérer un historique/)).toBeInTheDocument();
+    expect(screen.getByText(/fortement recommandé d'importer l'ensemble de l'historique/)).toBeInTheDocument();
+  });
+
   // A newcomer does not know either name; both are spelled out where they first appear.
   it("spells out what TWS and the Client Portal are", async () => {
     mockIndex(new Response("", { status: 404 }));

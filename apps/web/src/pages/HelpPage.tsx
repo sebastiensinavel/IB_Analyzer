@@ -79,11 +79,13 @@ export function HelpPage() {
       <Section title={t("help.app.title")}>
         <p className="text-muted-foreground">{t("help.app.text")}</p>
         <p className="rounded-md bg-muted px-3 py-2">{t("help.app.privacy")}</p>
-        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+        <p className="text-muted-foreground">{t("help.app.sources")}</p>
+        <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
           {(t("help.app.tiers", { returnObjects: true }) as string[]).map((tier) => (
             <li key={tier}>{tier}</li>
           ))}
         </ul>
+        <p className="text-muted-foreground">{t("help.app.history")}</p>
       </Section>
 
       <Section id="statement" title={t("help.statement.title")}>
