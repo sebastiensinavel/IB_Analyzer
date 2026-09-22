@@ -1,6 +1,6 @@
 # Sous-projet 28 — Premiers pas : l'accueil d'un nouvel utilisateur
 
-Statut : spécifié (2026-09-22).
+Statut : livré (2026-09-22).
 
 Un nouvel arrivant atterrit sur `/accounts`. Il y trouve un titre « Comptes », une carte
 « Aucun compte pour l'instant. Créez le premier ci-dessous. », un formulaire « Créer le

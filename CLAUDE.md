@@ -415,6 +415,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 25 | Le compte serveur : ce qu'il ouvre, ce qu'il sauvegarde | fait (2026-09-21) |
 | 26 | La sauvegarde sans rien à conserver : clé enveloppée par un mot de passe | fait (2026-09-22) |
 | 27 | Les graphes de cours dans les tableaux de positions | fait (2026-09-21) |
+| 28 | Premiers pas : accueil, compte serveur facultatif, première étape, Aide | fait (2026-09-22) |
 
 ## Outillage
 

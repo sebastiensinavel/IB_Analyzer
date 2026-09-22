@@ -1355,7 +1355,7 @@ git commit -m "Réorganise l'Aide en premiers pas"
 - Consumes : tout ce qui précède.
 - Produces : rien.
 
-- [ ] **Step 1: Note the change in the architecture spec**
+- [x] **Step 1: Note the change in the architecture spec**
 
 À la fin du §9 de `docs/specs/2026-09-03-architecture-design.md`, ajouter :
 
@@ -1370,7 +1370,7 @@ l'application, le relevé d'activité, la Flex Query, puis l'agent
 (`2026-09-22-premiers-pas-design.md`).
 ```
 
-- [ ] **Step 2: Add the registry line in CLAUDE.md**
+- [x] **Step 2: Add the registry line in CLAUDE.md**
 
 Dans le tableau des sous-projets de `CLAUDE.md`, après la ligne 27 :
 
@@ -1378,18 +1378,18 @@ Dans le tableau des sous-projets de `CLAUDE.md`, après la ligne 27 :
 | 28 | Premiers pas : accueil, compte serveur facultatif, première étape, Aide | fait (2026-09-22) |
 ```
 
-- [ ] **Step 3: Mark the spec done**
+- [x] **Step 3: Mark the spec done**
 
 Dans `docs/specs/2026-09-22-premiers-pas-design.md`, remplacer `Statut : spécifié
 (2026-09-22).` par `Statut : livré (2026-09-22).`
 
-- [ ] **Step 4: Run the full check**
+- [x] **Step 4: Run the full check**
 
 Depuis la racine du dépôt : `pnpm check`
 Attendu : lint, typage, fraîcheur du schéma d'API, build et **tous** les tests au vert. Ne
 rien conclure avant d'avoir lu la sortie ; un échec se corrige ici, il ne se reporte pas.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Cocher les cases de la tâche 10, puis :
 
