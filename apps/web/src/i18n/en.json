@@ -42,6 +42,12 @@
       "slug-taken": "An account with this label already exists."
     }
   },
+  "firstStep": {
+    "title": "First step",
+    "text": "Import an activity statement in HTML exported from the Client Portal, or fill in your Flex Query token and id. The dashboard fills up with the first import.",
+    "sourcesLink": "Go to data sources",
+    "helpLink": "How to get a statement"
+  },
   "unknownAccount": {
     "title": "Unknown account",
     "hint": "No account matches {{id}} on this device.",

@@ -192,7 +192,7 @@ git commit -m "Ajoute useNeverFed, le critère du compte jamais alimenté"
   `showSourcesLink` vaut `true` par défaut ; la page Sources de données passe `false`, on y est
   déjà. Les tâches 3 et 4 l'utilisent.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Créer `apps/web/src/components/FirstStepCard.test.tsx` :
 
@@ -235,12 +235,12 @@ describe("FirstStepCard", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/components/FirstStepCard.test.tsx`
 Attendu : échec, le module `./FirstStepCard` n'existe pas.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, ajouter un bloc `firstStep` **après** le bloc `accounts` :
 
@@ -264,7 +264,7 @@ Et dans `apps/web/src/i18n/en.json`, au même endroit :
   },
 ```
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Créer `apps/web/src/components/FirstStepCard.tsx` :
 
@@ -314,12 +314,12 @@ export function FirstStepCard({ accountId, showSourcesLink = true }: FirstStepCa
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/components/FirstStepCard.test.tsx src/i18n`
 Attendu : tout au vert, parité des clés comprise.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 2, puis :
 

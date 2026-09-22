@@ -42,6 +42,12 @@
       "slug-taken": "Un compte porte déjà ce libellé."
     }
   },
+  "firstStep": {
+    "title": "Première étape",
+    "text": "Importez un relevé d'activité HTML exporté du Client Portal, ou renseignez le jeton et l'identifiant de votre Flex Query. Le tableau de bord se remplit dès le premier import.",
+    "sourcesLink": "Aller aux sources de données",
+    "helpLink": "Comment obtenir un relevé"
+  },
   "unknownAccount": {
     "title": "Compte inconnu",
     "hint": "Aucun compte ne correspond à {{id}} sur cet appareil.",
