@@ -386,7 +386,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 - Consumes (tâche 1) : `strategyBoxContents`, `isShareBoxId`, `SHARE_BOX_IDS`, `LINE_BOX_IDS`, `StrategyBoxId`, `ShareBoxId`, `LineBoxId`, `StrategyLine.used`.
 - Produces : `STRATEGY_BOXES: Record<PositionsStrategy, readonly StrategyBoxDef[]>` avec `StrategyBoxDef { id: StrategyBoxId; titleKey: string }` ; `useStrategyBoxViews(...)` → `Record<StrategyBoxId, TableViewState>`.
 
-- [ ] **Step 1: Réécrire les tests de page Wheel et LEAPS (échouent)**
+- [x] **Step 1: Réécrire les tests de page Wheel et LEAPS (échouent)**
 
 Dans `StrategyPositionsPage.test.tsx`, les titres « Actions assignées », « Ventes d'options » et
 « Achats d'options » des pages Wheel et LEAPS disparaissent. Le seed (`seed()`) donne 200 MQZA
@@ -456,7 +456,7 @@ une ligne d'actions assignées se fait dans `"Actions assignées sans call"`).
 
 Run: `cd apps/web && npx vitest run StrategyPositions` — Expected: FAIL (titres inconnus).
 
-- [ ] **Step 2: Badge et filtre Couverture d'une option achetée lus sur `line.used`**
+- [x] **Step 2: Badge et filtre Couverture d'une option achetée lus sur `line.used`**
 
 Dans `apps/web/src/lib/riskReport.ts` :
 
@@ -472,7 +472,7 @@ Mettre à jour le commentaire des deux fonctions : le badge d'une option acheté
 depuis le sous-projet 22. Une aile de condor qui détient toute la position IB garde le même
 badge qu'avant.
 
-- [ ] **Step 3: Déclarer les encadrés et les titres**
+- [x] **Step 3: Déclarer les encadrés et les titres**
 
 `apps/web/src/lib/strategyBoxes.ts` :
 
@@ -539,7 +539,7 @@ export const STRATEGY_BOXES: Record<PositionsStrategy, readonly StrategyBoxDef[]
 Supprimer `assignedShares` des deux fichiers après avoir vérifié par `grep -rn assignedShares
 apps/web/src` qu'il n'a plus d'usage.
 
-- [ ] **Step 4: Une vue par identifiant**
+- [x] **Step 4: Une vue par identifiant**
 
 `apps/web/src/hooks/useStrategyBoxViews.ts` : un `useTableView` explicite par identifiant de
 `SHARE_BOX_IDS` (colonnes `shareColumns`) et de `LINE_BOX_IDS` (colonnes `lineColumns`), jamais
@@ -547,7 +547,7 @@ dans une boucle (règle des hooks), clé `tableViewKey(accountId, \`${prefix}:${
 typé `Record<StrategyBoxId, TableViewState>` pour qu'un identifiant ajouté sans hook ne compile
 pas. Mettre à jour le commentaire (onze vues au lieu de cinq).
 
-- [ ] **Step 5: La page lit `strategyBoxContents`**
+- [x] **Step 5: La page lit `strategyBoxContents`**
 
 Dans `StrategyPositionsPage.tsx` :
 
@@ -576,12 +576,12 @@ Le reste du rendu ne change pas : `shares.get(def.id)` rend un `SharesBox`, sino
 graphes gardent `scope` et `WHEEL_SCOPE`. La clé d'ouverture du graphe
 `${boxId}|…` distingue déjà deux parts du même ticker dans deux encadrés.
 
-- [ ] **Step 6: Lancer les tests ciblés**
+- [x] **Step 6: Lancer les tests ciblés**
 
 Run: `cd apps/web && npx vitest run StrategyPositions riskReport strategyColumns tableBoxes` —
 Expected: PASS. Puis `npx tsc --noEmit -p apps/web` (ou le script `typecheck` d'`apps/web`).
 
-- [ ] **Step 7: Cocher les cases de la tâche 2 et commiter**
+- [x] **Step 7: Cocher les cases de la tâche 2 et commiter**
 
 ```bash
 git add apps/web docs/plans/2026-09-22-tableaux-de-strategie.md

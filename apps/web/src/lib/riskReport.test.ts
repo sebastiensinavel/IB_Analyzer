@@ -160,11 +160,11 @@ describe("strategyCoverageBadges", () => {
     expect(strategyCoverageBadges(line({ position: whole, coverage: [] }), "wheel")).toEqual([]);
   });
 
-  it("keeps 'used X/Y' on a LEAPS bought, and shows nothing on shares", () => {
+  it("keeps 'used X/Y' on a LEAPS bought, read off the line's own used, and shows nothing on shares", () => {
     const bought = position({ kind: "long_call", quantity: 8, usedQuantity: 8 });
-    expect(strategyCoverageBadges(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought }), "leaps")).toEqual([
-      { variant: "success", label: "used 8/8", tooltip: null },
-    ]);
+    expect(
+      strategyCoverageBadges(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought, used: 8 }), "leaps"),
+    ).toEqual([{ variant: "success", label: "used 8/8", tooltip: null }]);
     const held = position({ kind: "long_stock", quantity: 100, usedQuantity: 100 });
     expect(strategyCoverageBadges(line({ kind: "long_stock", label: "long", quantity: 100, position: held }), "leaps")).toEqual([]);
   });
@@ -189,7 +189,7 @@ describe("strategyCoverageValues", () => {
     expect(strategyCoverageValues(line({ position: whole, coverage: [{ source: "stock", quantity: 1, detail: "" }] }), "wheel")).toEqual(["stock"]);
     expect(strategyCoverageValues(line({ kind: "short_call", quantity: -3, coverage: [] }), "others")).toEqual(["UNCOVERED"]);
     const bought = position({ kind: "long_call", quantity: 8, usedQuantity: 8 });
-    expect(strategyCoverageValues(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought }), "leaps")).toEqual(["used"]);
+    expect(strategyCoverageValues(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought, used: 8 }), "leaps")).toEqual(["used"]);
     // No position at all — the journal reads the wing open, the snapshot does not carry it — so
     // both halves of the mirror stay empty: an empty badge cell (nothing to render) and an empty
     // filterable value (facetValues files it under "—", the rule for any absent value).

@@ -95,9 +95,11 @@ export function coverageValues(position: AnalyzedPosition): string[] {
 
 /**
  * The coverage a strategy's positions page shows (spec of sub-project 16, §3.4, extended by
- * sub-project 21, §4.5): on a sold option the strategy's own cover — the Wheel's shares and cash,
- * the LEAPS' calls, a condor's spread —, on a LEAPS or a condor's wing how much of it covers
- * calls, nothing on shares, whose cover of calls is the Wheel's.
+ * sub-project 21, §4.5, and by sub-project 29): on a sold option the strategy's own cover — the
+ * Wheel's shares and cash, the LEAPS' calls, a condor's spread —, on a bought option how much of
+ * *the line* a call sold against it uses, capped by the line's own quantity, the same "used x/y" a
+ * sold option's cover has carried since sub-project 22. A wing that holds the whole IB position
+ * keeps the same badge as before.
  *
  * Others is the exception: what is filed there is precisely what nothing covers, and UNCOVERED is
  * never an allocation. Its quantity is the naked part, the engine having already split off the
@@ -108,7 +110,7 @@ export function strategyCoverageBadges(line: StrategyLine, strategy: PositionsSt
     if (strategy !== "others") return allocationBadges(line.coverage);
     return [{ variant: COVERAGE_SOURCE_VARIANT[COVER_NONE], label: `${COVER_NONE} ×${Math.abs(line.quantity)}`, tooltip: null }];
   }
-  if (line.kind === "long_call" || line.kind === "long_put") return coverageBadges(line.position);
+  if (line.kind === "long_call" || line.kind === "long_put") return line.used === null ? [] : [usedBadge(line.used, Math.abs(line.quantity))];
   return [];
 }
 
@@ -119,7 +121,7 @@ export function strategyCoverageValues(line: StrategyLine, strategy: PositionsSt
     return [...new Set(line.coverage.map((allocation) => allocation.source))];
   }
   if (line.kind === "long_call" || line.kind === "long_put") {
-    return line.position === null ? [] : [line.position.usedQuantity > 0 ? "used" : "unused"];
+    return line.used === null ? [] : [line.used > 0 ? "used" : "unused"];
   }
   return [];
 }

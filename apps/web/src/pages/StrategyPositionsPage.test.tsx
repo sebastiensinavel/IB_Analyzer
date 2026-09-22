@@ -43,6 +43,9 @@ const MARA_CALL: Transaction = {
   when: "2026-08-25T14:30:00.000Z",
 };
 
+/** A MQZA 20 call sold on the 200 Wheel shares assigned at 17: struck above the assignment price. */
+const MARA_CALL_20: Transaction = { ...MARA_CALL, externalId: "flex:trade:405", symbol: "MQZA  261016C00020000", strike: 20 };
+
 /** An XOM 110 put sold on 2026-08-10, absent from the snapshot below. */
 const XOM_PUT: Transaction = {
   ...SAMPLE_JOURNAL_TRANSACTIONS[0],
@@ -98,28 +101,57 @@ describe("StrategyPositionsPage — Wheel", () => {
     await seed();
     renderPage("wheel");
     expect(await screen.findByText("Positions Wheel")).toBeInTheDocument();
-    const row = await rowIn("Actions assignées", "MQZA");
-    expect(texts(row)).toEqual(["MQZA", "", "200", "17.00", "15.00", "$3,400.00", "18.00", "—", "—", "$200.00", "used 100/200"]);
-    expect(cells(row)[4]).toHaveClass("bg-warning/25");
-    expect(cells(row)[3]).not.toHaveClass("bg-warning/25");
+    const free = await rowIn("Actions assignées sans call", "MQZA");
+    expect(texts(free)).toEqual(["MQZA", "", "100", "17.00", "—", "$1,700.00", "18.00", "—", "—", "$100.00", "unused"]);
+    const covered = await rowIn("Actions assignées, call < assignation", "MQZA");
+    expect(texts(covered)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
+    expect(cells(covered)[4]).toHaveClass("bg-warning/25");
+    expect(cells(covered)[3]).not.toHaveClass("bg-warning/25");
+    expect(screen.queryByLabelText("Actions assignées, call ≥ assignation")).not.toBeInTheDocument();
+  });
+
+  it("puts shares under a call struck above the assignment price in their own box", async () => {
+    await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL_20]);
+    await db.snapshots.put({
+      ...SNAPSHOT,
+      positions: SNAPSHOT.positions.map((position) =>
+        position === SNAPSHOT.positions[4] ? { ...position, strike: 20, description: "MQZA 16OCT26 20 C" } : position,
+      ),
+    });
+    renderPage("wheel");
+    const covered = await rowIn("Actions assignées, call ≥ assignation", "MQZA");
+    expect(texts(covered)).toEqual(["MQZA", "", "100", "17.00", "20.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
+    expect(cells(covered)[4]).not.toHaveClass("bg-warning/25");
+    expect(screen.queryByLabelText("Actions assignées, call < assignation")).not.toBeInTheDocument();
+  });
+
+  it("lists the box titles in checkpoint order, only the boxes with lines", async () => {
+    await seed();
+    const { container } = renderPage("wheel");
+    await screen.findByLabelText("Actions assignées sans call");
+    const titles = [...container.querySelectorAll("[data-slot=card]")].map((card) => card.getAttribute("aria-label"));
+    expect(titles).toEqual(["Actions assignées sans call", "Actions assignées, call < assignation", "Ventes de calls", "Ventes de puts"]);
   });
 
   it("lists the option sales: the Wheel's part priced from the snapshot, a line the snapshot lacks left blank", async () => {
     await seed();
     renderPage("wheel");
-    const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
+    const call = await rowIn("Ventes de calls", "MQZA Oct16'26 15 Call");
     expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.80", "1.00", "—", "—", "-$20.00", "keep", "stock ×1"]);
-    const put = await rowIn("Ventes d'options", "XOM Oct16'26 110 Put");
+    const put = await rowIn("Ventes de puts", "XOM Oct16'26 110 Put");
     expect(texts(put)).toEqual(["XOM Oct16'26 110 Put", "sell of put", "", "—", "-1", "1.20", "—", "—", "—", "—", "", ""]);
     // The LEAPS call is not the Wheel's.
-    expect(within(screen.getByLabelText("Ventes d'options")).queryByText("ZZZ Sep18'26 20 Call")).not.toBeInTheDocument();
+    expect(within(screen.getByLabelText("Ventes de calls")).queryByText("ZZZ Sep18'26 20 Call")).not.toBeInTheDocument();
   });
 
   it("shows no box at all, and says so once, when the Wheel holds nothing open", async () => {
     renderPage("wheel");
     expect(await screen.findByText("Aucune position ne correspond.")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Actions assignées")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Ventes d'options")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Actions assignées sans call")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Actions assignées, call < assignation")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Actions assignées, call ≥ assignation")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Ventes de calls")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Ventes de puts")).not.toBeInTheDocument();
   });
 
   it("shows the day's move and P&L in their own cells, not just somewhere in the row", async () => {
@@ -134,7 +166,7 @@ describe("StrategyPositionsPage — Wheel", () => {
       ),
     });
     renderPage("wheel");
-    const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
+    const call = await rowIn("Ventes de calls", "MQZA Oct16'26 15 Call");
     // dayChange is POSITION_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
     expect(cells(call)[7]).toHaveTextContent("+5.0%");
     expect(cells(call)[8]).toHaveTextContent("-$20.00");
@@ -143,17 +175,19 @@ describe("StrategyPositionsPage — Wheel", () => {
   it("prorates the assigned shares' day P&L to the Wheel's share of the position, day change unprorated", async () => {
     // 200 MQZA shares assigned, 100 of them sold off later: the Wheel still tracks 100, the snapshot
     // still reports the IB position at 200 — a real, non-null, distinguishable pair (1% / $20, not
-    // $20 twice over): dailyPnl 40 × 100/200 = 20, dayChange 0.01 carried unprorated.
+    // $20 twice over): dailyPnl 40 × 100/200 = 20, dayChange 0.01 carried unprorated. The whole
+    // position is covered by the one remaining call, so it lands in the covered box.
     await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, MARA_SHARES_SOLD]);
     await db.snapshots.put({
       ...SNAPSHOT,
       positions: SNAPSHOT.positions.map((position) => (position === SNAPSHOT.positions[0] ? { ...position, dailyPnl: 40, dayChange: 0.01 } : position)),
     });
     renderPage("wheel");
-    const row = await rowIn("Actions assignées", "MQZA");
+    const row = await rowIn("Actions assignées, call < assignation", "MQZA");
     // dayChange is WHEEL_SHARE_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
     expect(cells(row)[7]).toHaveTextContent("+1.0%");
     expect(cells(row)[8]).toHaveTextContent("$20.00");
+    expect(screen.queryByLabelText("Actions assignées sans call")).not.toBeInTheDocument();
   });
 });
 
@@ -162,11 +196,12 @@ describe("StrategyPositionsPage — LEAPS", () => {
     await seed();
     renderPage("leaps");
     expect(await screen.findByText("Positions LEAPS")).toBeInTheDocument();
-    const leaps = await rowIn("Achats d'options", "ZZZ Jun18'27 15 Call");
+    const leaps = await rowIn("LEAPS avec call vendu", "ZZZ Jun18'27 15 Call");
     expect(texts(leaps)).toEqual(["ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "used 1/1"]);
-    const call = await rowIn("Ventes d'options", "ZZZ Sep18'26 20 Call");
+    const call = await rowIn("Ventes de calls", "ZZZ Sep18'26 20 Call");
     expect(texts(call)).toEqual(["ZZZ Sep18'26 20 Call", "sell of call", "", "-$25.00", "-1", "0.50", "0.25", "—", "—", "$25.00", "buy back", "leaps ×1"]);
     expect(screen.queryByLabelText("Actions")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("LEAPS sans call vendu")).not.toBeInTheDocument();
   });
 });
 
@@ -209,9 +244,9 @@ describe("StrategyPositionsPage — a call that lost its cover", () => {
   it("shows the Wheel only the covered call, and its shares card says used 100/100", async () => {
     await seedNaked();
     renderPage("wheel");
-    const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
+    const call = await rowIn("Ventes de calls", "MQZA Oct16'26 15 Call");
     expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "—", "—", "-$30.00", "keep", "stock ×1"]);
-    const held = await rowIn("Actions assignées", "MQZA");
+    const held = await rowIn("Actions assignées, call < assignation", "MQZA");
     expect(texts(held)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
   });
 
@@ -232,11 +267,11 @@ describe("StrategyPositionsPage — search, expiries and column filters", () => 
   it("searches every box of the page on the ticker and drops the ones it empties", async () => {
     await seed();
     renderPage("wheel");
-    await screen.findByLabelText("Actions assignées");
+    await screen.findByLabelText("Actions assignées sans call");
     const user = userEvent.setup();
     await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=XOM");
-    await waitFor(() => expect(screen.queryByLabelText("Actions assignées")).not.toBeInTheDocument());
-    expect(within(screen.getByLabelText("Ventes d'options")).getByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByLabelText("Actions assignées sans call")).not.toBeInTheDocument());
+    expect(within(screen.getByLabelText("Ventes de puts")).getByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
   });
 
   it("offers only the expiries of the strategy's own options", async () => {
@@ -244,7 +279,7 @@ describe("StrategyPositionsPage — search, expiries and column filters", () => 
     try {
       await seed();
       renderPage("leaps");
-      await screen.findByLabelText("Achats d'options");
+      await screen.findByLabelText("LEAPS avec call vendu");
       const bar = screen.getByRole("group", { name: "Filtrer par expiration" });
       // The Wheel's MQZA and XOM expiries are not the LEAPS': only ZZZ's two are offered.
       expect(within(bar).getAllByRole("button").map((button) => button.textContent)).toEqual(["Sep18'26", "Jun18'27"]);
@@ -258,11 +293,12 @@ describe("StrategyPositionsPage — search, expiries and column filters", () => 
     try {
       await seed();
       renderPage("wheel");
-      await screen.findByLabelText("Actions assignées");
+      await screen.findByLabelText("Actions assignées sans call");
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       await user.click(within(screen.getByRole("group", { name: "Filtrer par expiration" })).getByRole("button", { name: "Oct16'26" }));
-      await waitFor(() => expect(screen.queryByLabelText("Actions assignées")).not.toBeInTheDocument());
-      expect(within(screen.getByLabelText("Ventes d'options")).getByText("Position : Oct16'26")).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByLabelText("Actions assignées sans call")).not.toBeInTheDocument());
+      expect(screen.queryByLabelText("Actions assignées, call < assignation")).not.toBeInTheDocument();
+      expect(within(screen.getByLabelText("Ventes de calls")).getByText("Position : Oct16'26")).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
@@ -271,7 +307,7 @@ describe("StrategyPositionsPage — search, expiries and column filters", () => 
   it("keeps a box its own column filter empties, with a way back", async () => {
     await seed();
     renderPage("wheel");
-    const box = await screen.findByLabelText("Ventes d'options");
+    const box = await screen.findByLabelText("Ventes de puts");
     const user = userEvent.setup();
     const header = within(box).getByRole("columnheader", { name: /^Qté/ });
     await user.click(within(header).getByRole("button", { name: /^Qté/ }));
@@ -285,7 +321,7 @@ describe("StrategyPositionsPage — search, expiries and column filters", () => 
   it("sorts the assigned shares on their own columns", async () => {
     await seed();
     renderPage("wheel");
-    const box = await screen.findByLabelText("Actions assignées");
+    const box = await screen.findByLabelText("Actions assignées sans call");
     const user = userEvent.setup();
     const header = within(box).getByRole("columnheader", { name: /^Quantité/ });
     await user.click(within(header).getByRole("button", { name: /^Quantité/ }));
@@ -295,13 +331,14 @@ describe("StrategyPositionsPage — search, expiries and column filters", () => 
   it("remembers each box's view under its own key, per account and per strategy", async () => {
     await seed();
     window.localStorage.setItem(
-      "ib2:tableView:beta:positions:wheel:optionSells",
+      "ib2:tableView:beta:positions:wheel:callSells",
       JSON.stringify({ v: 1, sort: [], criteria: { position: "XOM" } }),
     );
     renderPage("wheel");
-    const box = await screen.findByLabelText("Ventes d'options");
-    expect(within(box).getByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
-    expect(within(box).queryByText("MQZA Oct16'26 15 Call")).not.toBeInTheDocument();
+    const box = await screen.findByLabelText("Ventes de calls");
+    expect(await within(box).findByText("Aucune position ne correspond.")).toBeInTheDocument();
+    const puts = screen.getByLabelText("Ventes de puts");
+    expect(within(puts).getByText("XOM Oct16'26 110 Put")).toBeInTheDocument();
   });
 });
 

@@ -98,7 +98,7 @@ describe("the chart row of the strategy pages", () => {
     expect(row.nextElementSibling).toBe(await screen.findByTestId("position-chart-row"));
   });
 
-  it("ouvre le graphe sous une ligne d'actions assignées, sur onze colonnes", async () => {
+  it("ouvre le graphe sous une ligne d'actions assignées sans call, sur onze colonnes", async () => {
     const user = userEvent.setup();
     renderStrategy("wheel");
     const row = await rowFor("MQZA");

@@ -56,7 +56,7 @@ describe("strategyColumnSpecs", () => {
 
   it("filters a condor's sold leg on its spread allocation and its wing on its use", () => {
     const sold = line({ coverage: [{ source: "spread", quantity: 1, detail: "" }] });
-    const usedWing = line({ kind: "long_put", quantity: 1, position: analyzedPosition({ usedQuantity: 1 }) });
+    const usedWing = line({ kind: "long_put", quantity: 1, position: analyzedPosition({ usedQuantity: 1 }), used: 1 });
     const specs = Object.fromEntries(strategyColumnSpecs(() => null, "condors").map((spec) => [spec.key, spec]));
     expect(specs.coverage.value(sold)).toEqual(["spread"]);
     expect(specs.coverage.value(usedWing)).toEqual(["used"]);

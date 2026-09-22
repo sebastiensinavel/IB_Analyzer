@@ -1,7 +1,6 @@
-import type { DetailGroupId, PositionsStrategy } from "@ib/coverage";
+import type { PositionsStrategy, StrategyBoxId } from "@ib/coverage";
 
-/** A box of a strategy's positions page: a group of DETAIL_GROUPS, or the Wheel's assigned shares. */
-export type StrategyBoxId = DetailGroupId | "shares";
+export type { StrategyBoxId };
 
 export interface StrategyBoxDef {
   id: StrategyBoxId;
@@ -9,22 +8,25 @@ export interface StrategyBoxDef {
 }
 
 /**
- * Which boxes each strategy's positions page carries, in which order, under which title (spec of
- * sub-project 21, §4.2). The orders and the titles the Wheel and the LEAPS pages already had do
- * not move; the shared group titles carry the same words, so they are used everywhere else.
- *
- * A declared box with no line never renders: the Wheel shows no "Option buys" because it holds
- * none, and the Condors show wings only when they have some.
+ * Which boxes each strategy's positions page carries, in which order, under which title. The Wheel
+ * and the LEAPS pages sort their lines by checkpoint (spec of sub-project 29): forgotten shares or
+ * LEAPS first, then the calls against the assignment price, then the sales. Condors and Others keep
+ * the Positions groups (sub-project 21). A declared box with no line never renders.
  */
 export const STRATEGY_BOXES: Record<PositionsStrategy, readonly StrategyBoxDef[]> = {
   wheel: [
-    { id: "shares", titleKey: "strategyPositions.groups.assignedShares" },
-    { id: "optionSells", titleKey: "positions.groups.optionSells" },
+    { id: "sharesUncovered", titleKey: "strategyPositions.groups.sharesUncovered" },
+    { id: "sharesCallAbove", titleKey: "strategyPositions.groups.sharesCallAbove" },
+    { id: "sharesCallBelow", titleKey: "strategyPositions.groups.sharesCallBelow" },
+    { id: "callSells", titleKey: "strategyPositions.groups.callSells" },
+    { id: "putSells", titleKey: "strategyPositions.groups.putSells" },
   ],
   leaps: [
-    { id: "optionBuys", titleKey: "positions.groups.optionBuys" },
-    { id: "optionSells", titleKey: "positions.groups.optionSells" },
+    { id: "leapsUncovered", titleKey: "strategyPositions.groups.leapsUncovered" },
+    { id: "leapsCovered", titleKey: "strategyPositions.groups.leapsCovered" },
+    { id: "callSells", titleKey: "strategyPositions.groups.callSells" },
     { id: "long", titleKey: "strategyPositions.groups.shares" },
+    { id: "other", titleKey: "positions.groups.other" },
   ],
   condors: [
     { id: "optionBuys", titleKey: "positions.groups.optionBuys" },

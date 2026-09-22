@@ -135,7 +135,13 @@
   "strategyPositions": {
     "title": { "wheel": "Wheel positions", "leaps": "LEAPS positions", "condors": "Condors positions", "others": "Others positions" },
     "groups": {
-      "assignedShares": "Assigned shares",
+      "sharesUncovered": "Assigned shares without a call",
+      "sharesCallAbove": "Assigned shares, call ≥ assignment",
+      "sharesCallBelow": "Assigned shares, call < assignment",
+      "callSells": "Call sales",
+      "putSells": "Put sales",
+      "leapsUncovered": "LEAPS without a sold call",
+      "leapsCovered": "LEAPS with a sold call",
       "shares": "Shares"
     },
     "columns": {

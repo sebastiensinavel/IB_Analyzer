@@ -2,11 +2,14 @@ import { Fragment, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import {
+  isShareBoxId,
+  strategyBoxContents,
   strategyPositions,
-  type DetailGroupId,
+  type LineBoxId,
   type PositionsStrategy,
   type PricedSnapshot,
   type RiskReport,
+  type ShareBoxId,
   type StrategyLine,
   type WheelShareLine,
 } from "@ib/coverage";
@@ -67,8 +70,8 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   const defs = STRATEGY_BOXES[strategy];
   const ready = journals.status === "ready" && snapshot !== undefined && report !== undefined;
   const rows = journals.status === "ready" ? journals.report.rows : NO_ROWS;
-  const positions = useMemo(
-    () => (ready ? strategyPositions(rows, strategy, pricedSnapshot(snapshot, report)) : null),
+  const boxes = useMemo(
+    () => (ready ? strategyBoxContents(strategyPositions(rows, strategy, pricedSnapshot(snapshot, report)), strategy) : null),
     [ready, rows, strategy, snapshot, report],
   );
   const setExpiry = useCallback(
@@ -76,16 +79,16 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
     [defs, views],
   );
 
-  if (!ready || positions === null) return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
+  if (!ready || boxes === null) return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
 
   const viewOf = Object.fromEntries(defs.map((def) => [def.id, views[def.id].view]));
   const searchedLines = searchBoxes(
-    defs.filter((def) => def.id !== "shares").map((def) => ({ id: def.id, title: t(def.titleKey), all: positions.groups[def.id as DetailGroupId] })),
+    defs.filter((def) => !isShareBoxId(def.id)).map((def) => ({ id: def.id, title: t(def.titleKey), all: boxes.lines[def.id as LineBoxId] })),
     lineSpecs,
     { text: search.applied, ticker: (line: StrategyLine) => line.contract.ticker },
   );
   const searchedShares = searchBoxes(
-    defs.filter((def) => def.id === "shares").map((def) => ({ id: def.id, title: t(def.titleKey), all: positions.shares })),
+    defs.filter((def) => isShareBoxId(def.id)).map((def) => ({ id: def.id, title: t(def.titleKey), all: boxes.shares[def.id as ShareBoxId] })),
     shareSpecs,
     { text: search.applied, ticker: (line: WheelShareLine) => line.ticker },
   );
