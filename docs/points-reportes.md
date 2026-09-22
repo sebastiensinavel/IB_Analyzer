@@ -690,6 +690,11 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **`apps/web/src/routes/AppLayout.test.tsx` échoue une fois sous charge de suite complète, sur
   `main` aussi** (« Unable to find role=link … Couverture : aucun snapshot… », environ 9 s) et
   passe seul : un test instable dépendant de la charge, préexistant à ce sous-projet.
+- **La carte Suggestion de Position disparaît entièrement tant qu'aucun ticker n'est noté**
+  (sous-projet 28, relecture du 2026-09-22). Conséquence assumée : le lien « Aller à Secteur et
+  Score » de son état vide n'est plus le chemin par lequel on découvre la table sectorielle,
+  puisqu'il faut déjà un score pour le voir. La page Secteur et Score reste atteignable par le
+  menu latéral. À revoir si un utilisateur ne trouve pas la table.
 - **`apps/web/src/components/PositionChartRow.test.tsx`, « garde les niveaux du vrai sous-jacent,
   jamais ceux du substitut », échoue environ une fois sur trois — et pas seulement sous charge.**
   `lastDrawnLevels()` rend `[]` là où `["shortPut"]` est attendu. Mesuré au sous-projet 28 : une

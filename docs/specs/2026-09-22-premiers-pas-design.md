@@ -283,6 +283,31 @@ Tous sous Vitest, sur `fake-indexeddb`, base semée, jamais de hook moqué (CLAU
   mais cela sème la base depuis une fixture embarquée dans le bundle et se décide à part.
 - **Aucune modification du serveur** : l'inscription reste fermée et sur invitation ; le
   texte le dit au lieu de le cacher.
+
+## 9. Retours de relecture, 2026-09-22
+
+Six changements demandés après la première relecture de la branche, tous appliqués.
+
+- **La carte Suggestion de Position ne s'affiche qu'à partir d'un score.** Tant qu'aucune ligne
+  de la table sectorielle ne porte de score, elle ne peut rien classer et n'affiche qu'une boîte
+  vide qui concurrence la consigne de la page. Une table encore en chargement compte comme non
+  notée, pour que la carte apparaisse une fois plutôt que de clignoter. Dès qu'un score existe
+  elle revient, état vide compris : « aucune ligne ne remplit les critères » est alors une vraie
+  réponse sur de vraies lignes.
+- **L'Aide n'assume plus d'expertise.** « TWS » est développé en Trader Workstation, l'application
+  de bureau d'Interactive Brokers, et le Client Portal est décrit comme le site où l'on gère son
+  compte et télécharge ses relevés, par opposition à la plateforme de trading.
+- **Les six étapes de l'agent tiennent dans une seule section**, numérotées de 1 à 6 à
+  l'intérieur. Neuf cartes de même poids se lisaient comme neuf prérequis ; l'agent est
+  facultatif et son titre le dit désormais.
+- **Le Socket port donne des exemples** : des ports distincts par TWS, 7501 pour le premier,
+  7502 pour le second.
+- **Le titre de la page Comptes passe sous la rangée de boutons.** Sur cette page large de
+  `max-w-lg`, quatre contrôles plus un titre de six mots sur la même ligne repliaient le titre
+  sur quatre lignes.
+- **Le bloc d'accueil passe en bas de la page Comptes.** Le travail de la page est d'ouvrir ou
+  d'ajouter un compte ; un habitué rencontre ses comptes avant un argumentaire déjà lu. La
+  première étape ne dit plus « ci-dessous », qui serait faux.
 - **L'Aide fait cocher toute une section de la Flex Query, pas des champs choisis.** Un peu
   plus de volume, nettement plus simple à suivre, et rien ne manque le jour où le parseur lit
   une colonne de plus.
