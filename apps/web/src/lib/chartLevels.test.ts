@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ChartLevel } from "@ib/ledger";
 import { CHART_COLORS } from "@/lib/chartColors";
-import { formatLevelValue, levelColor, levelLabel, levelPrice } from "@/lib/chartLevels";
+import { formatLevelValue, levelColor, levelFill, levelLabel, levelPrice } from "@/lib/chartLevels";
 
 const bar = (date: string, high: number, low: number) => ({ date, open: low, high, low, close: high, volume: 1 });
 
@@ -12,6 +12,12 @@ describe("chartLevels", () => {
     expect(levelColor("shortPut", false)).toBe(CHART_COLORS.light.series[2]);
     expect(levelColor("leapsBuy", false)).toBe(CHART_COLORS.light.series[3]);
     expect(levelColor("shortPut", true)).toBe(CHART_COLORS.dark.series[2]);
+  });
+
+  it("voile le remplissage d'un condor plus fort sur le thème sombre", () => {
+    // Sur fond sombre, l'opacité du thème clair ne se distingue plus du fond : elle double.
+    expect(levelFill("condor", false)).toBe(`${CHART_COLORS.light.series[0]}33`);
+    expect(levelFill("condor", true)).toBe(`${CHART_COLORS.dark.series[0]}66`);
   });
 
   it("lit le prix d'un achat LEAPS au milieu haut-bas de la barre du jour", () => {

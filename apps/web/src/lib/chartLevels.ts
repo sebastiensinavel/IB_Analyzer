@@ -22,6 +22,19 @@ export function levelColor(kind: ChartLevelKind, isDark: boolean): string {
 }
 
 /**
+ * L'opacité du remplissage des rectangles d'un condor, par thème. Un même voile ne se perçoit
+ * pas pareil des deux côtés : sur le fond de carte sombre, `33` ne creuse que 0,103 de ΔL
+ * OKLab, un écart que l'œil ne distingue plus une fois la page entière sombre, là où `66` le
+ * double sans effacer les bougies prises sous le voile.
+ */
+const CONDOR_FILL_ALPHA = { light: "33", dark: "66" };
+
+/** La couleur de remplissage d'un rectangle : la teinte du niveau, voilée selon le thème. */
+export function levelFill(kind: ChartLevelKind, isDark: boolean): string {
+  return `${levelColor(kind, isDark)}${isDark ? CONDOR_FILL_ALPHA.dark : CONDOR_FILL_ALPHA.light}`;
+}
+
+/**
  * Le prix d'une horizontale. Un achat LEAPS n'en porte pas : il se lit au milieu haut-bas de
  * la barre de son jour d'achat, et vaut `null` si ce jour n'a pas de barre. Un condor n'a pas
  * d'horizontale du tout : ses strikes sont les bords de ses rectangles.

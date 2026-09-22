@@ -16,7 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { ChartLevel, ChartLevelKind } from "@ib/ledger";
 import type { PriceBar } from "@/agent/client";
-import { levelColor, levelLabel, levelPrice } from "@/lib/chartLevels";
+import { levelColor, levelFill, levelLabel, levelPrice } from "@/lib/chartLevels";
 import { CHART_MARGIN_DAYS, LevelsPrimitive, timeExtent, type DrawnLevel } from "@/lib/levelsPrimitive";
 
 export interface PriceChartProps {
@@ -44,6 +44,7 @@ export function drawnLevels(
     return {
       level,
       color: levelColor(level.kind, isDark),
+      fill: levelFill(level.kind, isDark),
       price,
       label: price === null || level.kind === "condor" ? null : levelLabel(level, price, word(level.kind), locale),
     };

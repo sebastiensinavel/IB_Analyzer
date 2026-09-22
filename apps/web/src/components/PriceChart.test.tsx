@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ChartLevel, ChartLevelKind } from "@ib/ledger";
 import { CHART_COLORS } from "@/lib/chartColors";
+import { levelFill } from "@/lib/chartLevels";
 import { CHART_MARGIN_DAYS } from "@/lib/levelsPrimitive";
 import { drawnLevels, visibleRange } from "@/components/PriceChart";
 
@@ -19,7 +20,13 @@ describe("drawnLevels", () => {
     const levels: ChartLevel[] = [{ kind: "shortPut", price: 17.5, quantity: -6, expiries: ["2026-10-16"] }];
 
     expect(drawnLevels(levels, [], false, word, "fr")).toEqual([
-      { level: levels[0], color: CHART_COLORS.light.series[2], price: 17.5, label: "17,5 Put: -6" },
+      {
+        level: levels[0],
+        color: CHART_COLORS.light.series[2],
+        fill: levelFill("shortPut", false),
+        price: 17.5,
+        label: "17,5 Put: -6",
+      },
     ]);
   });
 
@@ -35,6 +42,8 @@ describe("drawnLevels", () => {
     ];
 
     expect(drawnLevels(levels, [], false, word, "fr")[0]).toMatchObject({ price: null, label: null });
+    // Le remplissage, lui, suit le thème : c'est tout ce dont un condor a besoin pour se peindre.
+    expect(drawnLevels(levels, [], true, word, "fr")[0].fill).toBe(levelFill("condor", true));
   });
 
   it("laisse sans étiquette un achat LEAPS dont le jour n'a pas de barre", () => {

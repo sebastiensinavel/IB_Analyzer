@@ -46,6 +46,7 @@ function fakeTarget() {
 const drawn = (level: ChartLevel, over: Partial<DrawnLevel> = {}): DrawnLevel => ({
   level,
   color: "#112233",
+  fill: "#11223366",
   price: null,
   label: null,
   ...over,
@@ -182,6 +183,8 @@ describe("LevelsRenderer", () => {
     expect(ctx.fillRect).toHaveBeenNthCalledWith(1, 10, 20, 90, 10);
     // Rectangle des calls : de longCall (5) à shortCall (10) — jamais mélangé avec les puts.
     expect(ctx.fillRect).toHaveBeenNthCalledWith(2, 10, 5, 90, 5);
+    // Le voile vient du niveau, jamais d'une opacité recodée ici : le thème seul en décide.
+    expect(ctx.fillStyle).toBe("#11223366");
   });
 
   it("ne peint qu'un rectangle quand l'autre paire perd une ordonnée", () => {

@@ -13,6 +13,8 @@ import type { PriceBar } from "@/agent/client";
 export interface DrawnLevel {
   level: ChartLevel;
   color: string;
+  /** Le remplissage des rectangles d'un condor : la teinte voilée que donne `levelFill`. */
+  fill: string;
   /** `null` pour un condor, et pour un achat LEAPS dont le jour n'a pas de barre. */
   price: number | null;
   /** `null` quand le niveau n'en porte pas : les condors. */
@@ -154,7 +156,7 @@ export class LevelsRenderer {
     const [from, to] = item.xs;
     const [longPut, shortPut, shortCall, longCall] = item.rect;
     if (from === null || to === null) return;
-    ctx.fillStyle = `${item.drawn.color}33`;
+    ctx.fillStyle = item.drawn.fill;
     for (const [top, bottom] of [
       [shortPut, longPut],
       [longCall, shortCall],
