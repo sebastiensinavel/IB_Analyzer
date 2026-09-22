@@ -200,7 +200,7 @@ export function fromRecoveryCode(code: string): Uint8Array<ArrayBuffer> {
  *  magie, et c'est par là qu'il est refusé (spec §10). */
 const MAGIC = new Uint8Array([0x49, 0x42, 0x32, 0x42]);
 
-/** L'octet de version nomme la suite entière : Argon2id 64 Mio/3/1, puis AES-GCM 256. */
+/** L'octet de version nomme la suite entière : Argon2id 32 Mio/3/1, puis AES-GCM 256. */
 export const BLOB_VERSION = 2;
 
 const SALT_AT = MAGIC.length + 1;
