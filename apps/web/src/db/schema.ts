@@ -3,6 +3,7 @@ import type { DroppedCount, Position, Transaction, TransactionKind, TransactionS
 import { toReportTime, type ParseIssue } from "@ib/ib-parsers";
 import type { BackupFailure } from "@/api/backup";
 import type { FlexRelay, FlexRelayMode } from "@/flex/relay";
+import type { BackupWrap } from "./backup/crypto";
 import type { ContractRecord } from "./contracts";
 
 export type AgentSyncCode = "agent-unreachable" | "tws-unreachable" | "agent-error" | "account-mismatch" | "parse-error";
@@ -123,14 +124,22 @@ export interface BackupStateRecord {
   id: "local";
   enabled: boolean;
   /**
-   * Raw AES-GCM 256 bytes; shown once as a recovery code, never sent to the server.
+   * Raw AES-GCM 256 bytes, never sent to the server and never shown to the user: the
+   * recovery code that used to display them is gone (sub-project 26).
    *
    * `Uint8Array<ArrayBuffer>`, not the default `Uint8Array<ArrayBufferLike>`: WebCrypto's
    * `BufferSource` excludes a `SharedArrayBuffer`-backed view, so the wider type would need a
-   * cast at every call into `crypto.subtle`. The bytes come from `crypto.getRandomValues` or
-   * from a decoded recovery code, both of which really are `ArrayBuffer`-backed.
+   * cast at every call into `crypto.subtle`.
    */
   key: Uint8Array<ArrayBuffer>;
+  /**
+   * The key, wrapped by a passphrase-derived key, copied into the header of every deposit.
+   *
+   * Required, never optional: the type then carries the guarantee that an interface hint
+   * would only have stated — an active backup always has an envelope, and no in-between
+   * state exists where the key sits there without one.
+   */
+  wrap: BackupWrap;
   lastBackupAt: string | null;
   lastBackupBytes: number | null;
   /**
@@ -246,6 +255,12 @@ export class AppDatabase extends Dexie {
     this.version(10).stores({
       backup: "id",
     });
+    // The recovery code is gone (sub-project 26): a row written before it carries a key with
+    // no envelope, a state the type no longer admits. Clearing the table returns the browser
+    // to "server backup disabled", which the Settings card already states in full — the user
+    // re-enables it by choosing a passphrase, and the first deposit replaces the server's
+    // only blob. Dexie inherits the schema of the previous version, so no `.stores()` here.
+    this.version(11).upgrade((tx) => tx.table("backup").clear());
   }
 }
 

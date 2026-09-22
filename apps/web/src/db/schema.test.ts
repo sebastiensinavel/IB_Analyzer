@@ -410,3 +410,27 @@ describe("AppDatabase version 9", () => {
     }
   });
 });
+
+it("vide la table backup en montant de 10 à 11, sans toucher au reste", async () => {
+  const name = `upgrade-backup-${crypto.randomUUID()}`;
+  const old = new Dexie(name);
+  old.version(10).stores({ backup: "id", accounts: "id" });
+  await old.open();
+  await old.table("backup").put({ id: "local", enabled: true, key: new Uint8Array(32) });
+  await old.table("accounts").put({
+    id: "beta",
+    label: "Beta",
+    ibAccountId: "U1234567",
+    createdAt: "2026-09-01T00:00:00.000Z",
+    warnedDroppedKinds: [],
+  });
+  old.close();
+
+  const upgraded = new AppDatabase(name);
+  await upgraded.open();
+  expect(await upgraded.backup.toArray()).toEqual([]);
+  // La ligne du compte prouve que la montée vise `backup` et ne balaye pas la base : sans
+  // elle, une migration qui détruirait tout passerait ce test.
+  expect(await upgraded.accounts.count()).toBe(1);
+  upgraded.close();
+});

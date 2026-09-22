@@ -515,7 +515,7 @@ cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/db/backup/crypto.ts apps/we
   - `adoptBackupKey(db: AppDatabase, key: Uint8Array<ArrayBuffer>, wrap: BackupWrap): Promise<BackupStateRecord>`
   - `rewrapBackupKey(db: AppDatabase, passphrase: string): Promise<BackupStateRecord>`
 
-- [ ] **Step 1 : écrire les tests qui échouent**
+- [x] **Step 1 : écrire les tests qui échouent**
 
 Dans `apps/web/src/db/schema.test.ts`, à la suite des cas existants :
 
@@ -592,7 +592,7 @@ it("refuse de réenvelopper quand rien n'est activé", async () => {
 phrase** : les compléter par `"une phrase de passe"`, et ajouter `{ timeout: 20_000 }` en
 troisième argument de chaque `it` qui active — Argon2id rend ces cas lents.
 
-- [ ] **Step 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Step 2 : lancer les tests, vérifier qu'ils échouent**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/schema.test.ts src/db/backup/state.test.ts
@@ -601,7 +601,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/schema.test.ts sr
 Attendu : ÉCHEC — `enableBackup` attend un argument de moins, `rewrapBackupKey` n'existe pas,
 la table `backup` n'est pas vidée.
 
-- [ ] **Step 3 : implémenter le schéma**
+- [x] **Step 3 : implémenter le schéma**
 
 Dans `apps/web/src/db/schema.ts`, remplacer le commentaire de `key` et ajouter `wrap` :
 
@@ -642,7 +642,7 @@ Puis, à la fin du constructeur, après la version 10 :
     this.version(11).upgrade((tx) => tx.table("backup").clear());
 ```
 
-- [ ] **Step 4 : implémenter les écritures**
+- [x] **Step 4 : implémenter les écritures**
 
 Dans `apps/web/src/db/backup/state.ts`, remplacer `enableBackup` et `adoptBackupKey`, et
 ajouter `rewrapBackupKey` :
@@ -711,7 +711,7 @@ export async function rewrapBackupKey(db: AppDatabase, passphrase: string): Prom
 }
 ```
 
-- [ ] **Step 5 : lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5 : lancer les tests, vérifier qu'ils passent**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/schema.test.ts src/db/backup/state.test.ts
@@ -721,7 +721,7 @@ Attendu : SUCCÈS. Les appelants de `enableBackup`/`adoptBackupKey` dans `Backup
 compilent plus — c'est attendu, la tâche 6 les reprend. Ne pas les « réparer » ici en passant
 une phrase bidon.
 
-- [ ] **Step 6 : commit**
+- [x] **Step 6 : commit**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/db/schema.ts apps/web/src/db/schema.test.ts apps/web/src/db/backup/state.ts apps/web/src/db/backup/state.test.ts docs/plans/2026-09-22-sauvegarde-phrase-de-passe.md && git commit -m "Rend l'enveloppe obligatoire et vide la table backup en Dexie 11"

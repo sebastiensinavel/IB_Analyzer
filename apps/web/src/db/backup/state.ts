@@ -1,6 +1,6 @@
 import type { BackupFailure } from "@/api/backup";
 import type { AppDatabase, BackupStateRecord } from "../schema";
-import { generateBackupKey } from "./crypto";
+import { BackupKeyError, generateBackupKey, wrapKey, type BackupWrap } from "./crypto";
 
 const ROW_ID = "local" as const;
 
@@ -12,21 +12,22 @@ export async function readBackupState(db: AppDatabase): Promise<BackupStateRecor
 
 /**
  * Off by default (architecture spec §7.5): a user who wants nothing on the server has
- * nothing to do. Enabling twice keeps the first key — regenerating it would strand the
- * blob already deposited, and the recovery code already written down.
+ * nothing to do. Enabling twice keeps the first key — regenerating it would strand the blob
+ * already deposited — but always re-wraps with the passphrase just typed, which is the one
+ * the user means to use from now on.
  */
-export async function enableBackup(db: AppDatabase): Promise<BackupStateRecord> {
+export async function enableBackup(db: AppDatabase, passphrase: string): Promise<BackupStateRecord> {
   const existing = await readBackupState(db);
-  const row: BackupStateRecord = existing
-    ? { ...existing, enabled: true }
-    : {
-        id: ROW_ID,
-        enabled: true,
-        key: generateBackupKey(),
-        lastBackupAt: null,
-        lastBackupBytes: null,
-        lastBackupError: null,
-      };
+  const key = existing?.key ?? generateBackupKey();
+  const row: BackupStateRecord = {
+    id: ROW_ID,
+    enabled: true,
+    key,
+    wrap: await wrapKey(key, passphrase),
+    lastBackupAt: existing?.lastBackupAt ?? null,
+    lastBackupBytes: existing?.lastBackupBytes ?? null,
+    lastBackupError: existing?.lastBackupError ?? null,
+  };
   await db.backup.put(row);
   return row;
 }
@@ -37,20 +38,40 @@ export async function disableBackup(db: AppDatabase): Promise<void> {
   if (existing) await db.backup.put({ ...existing, enabled: false });
 }
 
-/** Restoring on a new device: the recovery code's key replaces this browser's. */
+/** Restoring on a new device: the key the passphrase opened, and the envelope it came in,
+ *  replace this browser's — the two together, because the key alone is no longer a
+ *  representable state. */
 export async function adoptBackupKey(
   db: AppDatabase,
   key: Uint8Array<ArrayBuffer>,
+  wrap: BackupWrap,
 ): Promise<BackupStateRecord> {
   const existing = await readBackupState(db);
   const row: BackupStateRecord = {
     id: ROW_ID,
     enabled: true,
     key,
+    wrap,
     lastBackupAt: existing?.lastBackupAt ?? null,
     lastBackupBytes: existing?.lastBackupBytes ?? null,
     lastBackupError: existing?.lastBackupError ?? null,
   };
+  await db.backup.put(row);
+  return row;
+}
+
+/**
+ * Changing the passphrase re-wraps the key this browser already holds in the clear; it never
+ * unlocks anything, so the old passphrase is not asked for — requiring it would be a ritual
+ * with no security property, on a device that already has everything (spec §5).
+ *
+ * The server still carries the old envelope until the deposit this triggers lands, so the old
+ * passphrase still opens the backup until then. The card says so.
+ */
+export async function rewrapBackupKey(db: AppDatabase, passphrase: string): Promise<BackupStateRecord> {
+  const existing = await readBackupState(db);
+  if (!existing) throw new BackupKeyError("No backup key to re-wrap");
+  const row: BackupStateRecord = { ...existing, wrap: await wrapKey(existing.key, passphrase) };
   await db.backup.put(row);
   return row;
 }
