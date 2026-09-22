@@ -521,7 +521,7 @@
     "backupPassphraseTooShort": "La phrase de passe doit faire au moins 12 caractères.",
     "backupPassphraseMismatch": "Les deux phrases ne correspondent pas.",
     "backupChangePassphrase": "Changer la phrase de passe",
-    "backupChangePending": "La nouvelle phrase ne prendra effet qu'au prochain dépôt ; d'ici là, l'ancienne ouvre encore la sauvegarde.",
+    "backupChangePending": "La nouvelle phrase part aussitôt sur le serveur ; tant qu'un dépôt n'a pas réussi, l'ancienne ouvre encore la sauvegarde.",
     "backupDeriving": "Chiffrement de la clé…",
     "backupConfirm": "Valider",
     "backupCancel": "Annuler",

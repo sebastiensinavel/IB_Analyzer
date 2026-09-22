@@ -196,7 +196,8 @@ tiennent devant le corps qu'ils protègent.
 `backupInvalidCode`. Entrent, entre autres : le libellé et l'aide du champ de phrase, celui du
 champ de confirmation, le refus d'une confirmation qui diffère, le refus d'une phrase trop
 courte, l'avertissement d'oubli, le bouton « Changer la phrase de passe », l'attente pendant
-la dérivation, et le message qui dit qu'un changement n'est effectif qu'au prochain dépôt.
+la dérivation, et le message qui dit qu'un changement part aussitôt sur le serveur et que
+l'ancienne phrase ouvre encore la sauvegarde tant qu'un dépôt n'a pas réussi.
 
 La parité des clés entre les deux fichiers n'est vérifiée par aucun test (dette notée au
 sous-projet 27) : elle se relit à la main ici.

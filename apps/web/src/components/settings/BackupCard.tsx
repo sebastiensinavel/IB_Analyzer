@@ -105,11 +105,19 @@ export function BackupCard() {
     setForm(null);
   }
 
-  /** La validation vit ici et pas dans `state.ts` : c'est une règle d'interface, et le moteur
-   *  n'a pas à connaître de texte visible. */
+  /**
+   * La validation vit ici et pas dans `state.ts` : c'est une règle d'interface, et le moteur
+   * n'a pas à connaître de texte visible.
+   *
+   * Les deux contrôles sont ceux du **choix** d'une phrase, jamais de sa saisie pour ouvrir :
+   * une sauvegarde existante s'ouvre avec la phrase qui l'a fermée, quelle qu'elle soit.
+   * Appliquer la longueur en mode `restore` rendrait une sauvegarde inouvrable par la carte,
+   * avec la bonne phrase, le jour où `MIN_PASSPHRASE_LENGTH` monterait.
+   */
   function passphraseProblem(mode: FormMode, passphrase: string, confirm: string): string | null {
+    if (mode === "restore") return null;
     if (passphrase.length < MIN_PASSPHRASE_LENGTH) return t("settings.backupPassphraseTooShort");
-    if (mode !== "restore" && passphrase !== confirm) return t("settings.backupPassphraseMismatch");
+    if (passphrase !== confirm) return t("settings.backupPassphraseMismatch");
     return null;
   }
 
@@ -124,7 +132,7 @@ export function BackupCard() {
     setError(null);
     try {
       if (form.mode === "enable") await enableBackup(db, form.passphrase);
-      else if (form.mode === "change") await rewrapBackupKey(db, form.passphrase);
+      else if (form.mode === "change") await changePassphrase(form.passphrase);
       else await runRestore({ passphrase: form.passphrase });
       setForm(null);
     } catch (error) {
@@ -132,6 +140,22 @@ export function BackupCard() {
     } finally {
       setBusy(false);
     }
+  }
+
+  /**
+   * Réenvelopper puis déposer, jamais réenvelopper seul (spec §5) : `rewrapBackupKey` écrit
+   * dans `db.backup`, que `TRIGGER_TABLES` exclut délibérément, donc aucun dépôt automatique
+   * ne suivrait jamais. La phrase changée resterait alors locale — l'utilisateur cesse de
+   * réciter l'ancienne, perd son navigateur des mois plus tard, et c'est l'ancienne, seule,
+   * qui ouvrait encore le blob du serveur.
+   *
+   * L'échec du dépôt ne défait pas la réenveloppe locale : elle est juste, et `lastBackupError`
+   * dit déjà sur la carte que le serveur n'a pas suivi.
+   */
+  async function changePassphrase(passphrase: string) {
+    await rewrapBackupKey(db, passphrase);
+    const result = await pushBackup(db);
+    if (result && !result.ok) setError(failureMessage(result.kind));
   }
 
   async function handleDisable() {

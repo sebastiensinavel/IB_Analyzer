@@ -521,7 +521,7 @@
     "backupPassphraseTooShort": "The passphrase must be at least 12 characters long.",
     "backupPassphraseMismatch": "The two phrases do not match.",
     "backupChangePassphrase": "Change the passphrase",
-    "backupChangePending": "The new phrase takes effect at the next deposit; until then, the old one still opens the backup.",
+    "backupChangePending": "The new phrase is sent to the server right away; until a deposit succeeds, the old one still opens the backup.",
     "backupDeriving": "Encrypting the key…",
     "backupConfirm": "Confirm",
     "backupCancel": "Cancel",

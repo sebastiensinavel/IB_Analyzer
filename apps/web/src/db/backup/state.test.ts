@@ -103,7 +103,7 @@ describe("clearBackupRecord", () => {
 
 describe("adoptBackupKey", () => {
   it(
-    "remplace la clé du poste par celle du code de récupération",
+    "remplace la clé du poste par celle que l'enveloppe adoptée a ouverte",
     { timeout: 20_000 },
     async () => {
       await enableBackup(db, "une phrase de passe");

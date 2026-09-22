@@ -1019,8 +1019,16 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   exigerait de réintroduire une branche de compatibilité, son invite d'interface et ses tests.
 - **La règle de force de la phrase mesure la longueur, pas l'entropie** : `motdepasse123`
   passe. Le rempart est Argon2id, assumé au spec §10.
-- **Changer la phrase n'est effectif qu'au prochain dépôt** : d'ici là, l'ancienne ouvre encore
-  le blob du serveur. Dit à l'utilisateur, jamais forcé par un dépôt immédiat.
+- **Une restauration par la clé locale n'adopte pas l'enveloppe du serveur** : `runRestore`
+  (`apps/web/src/components/settings/BackupCard.tsx`) n'appelle `adoptBackupKey` que sur le
+  chemin de la phrase ; sur celui de la clé, `pullBackup` lit l'en-tête, s'en sert pour rendre
+  l'enveloppe — et l'appelant la jette. Un navigateur A resté sur une enveloppe ancienne
+  **défait donc en silence un changement de phrase fait sur B**, à son prochain dépôt
+  automatique : le blob du serveur repart coiffé de l'enveloppe de A, et un navigateur
+  réellement neuf n'ouvre plus la sauvegarde avec la phrase récente. Fermer le trou demanderait
+  de relire l'enveloppe du serveur avant chaque dépôt — un GET par dépôt, donc un sous-projet à
+  part. Le dépôt immédiat qui suit désormais un changement de phrase rétrécit la fenêtre, il ne
+  la referme pas.
 - **Un navigateur qui garde une clé périmée n'a aucun chemin vers le formulaire de phrase** :
   `handleRestore` (`apps/web/src/components/settings/BackupCard.tsx`) n'ouvre le formulaire
   que quand `readBackupState` rend `null`, et `disableBackup` garde la ligne en place. Un

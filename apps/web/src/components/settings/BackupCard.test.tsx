@@ -9,7 +9,16 @@ import { AppDatabase, db } from "@/db/schema";
 import { DbProvider } from "@/db/DbProvider";
 import { enableBackup, readBackupState, recordBackup } from "@/db/backup/state";
 import { pushBackup } from "@/db/backup/sync";
-import { encodePayload, encryptBlob, generateBackupKey, gzip, packBlob, wrapKey } from "@/db/backup/crypto";
+import {
+  encodePayload,
+  encryptBlob,
+  generateBackupKey,
+  gzip,
+  MIN_PASSPHRASE_LENGTH,
+  packBlob,
+  readHeader,
+  wrapKey,
+} from "@/db/backup/crypto";
 import { buildPayload } from "@/db/backup/payload";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { bytesOf } from "@/test/bytes";
@@ -213,6 +222,42 @@ describe("BackupCard", () => {
     },
   );
 
+  // `rewrapBackupKey` n'écrit que dans `db.backup`, que `TRIGGER_TABLES` exclut : sans ce
+  // dépôt explicite, aucun automatique ne suivrait jamais, la phrase changée resterait locale,
+  // et c'est l'ancienne — celle qu'on cesse de réciter — qui ouvrirait encore le blob du
+  // serveur le jour où le navigateur disparaît.
+  it(
+    "dépose aussitôt la nouvelle enveloppe quand la phrase change",
+    SLOW,
+    async () => {
+      await enableBackup(db, "ancienne phrase");
+      const posts: Uint8Array<ArrayBuffer>[] = [];
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+        const request = init as RequestInit | undefined;
+        if (request?.method === "POST") {
+          const blob = new Uint8Array(request.body as ArrayBuffer);
+          posts.push(blob);
+          return new Response(
+            JSON.stringify({ present: true, updatedAt: "2026-09-22T10:00:00Z", bytes: blob.byteLength }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({ present: false, updatedAt: null, bytes: null }), { status: 200 });
+      });
+      renderCard();
+
+      await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupChangePassphrase") }));
+      await fillPassphrase("nouvelle phrase longue");
+      await userEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupConfirm") }));
+
+      await waitFor(() => expect(posts).toHaveLength(1), { timeout: DERIVING });
+      // Et c'est bien la neuve : l'en-tête déposé porte l'enveloppe que la base vient d'écrire,
+      // sans quoi le serveur garderait l'ancienne et le dépôt n'aurait rien changé.
+      const row = await readBackupState(db);
+      expect(bytesOf(readHeader(posts[0]).wrap.wrapped)).toEqual(bytesOf(row!.wrap.wrapped));
+    },
+  );
+
   it("propose l'export local même sans compte", async () => {
     renderCard();
     expect(await screen.findByRole("button", { name: i18n.t("settings.backupExport") })).toBeEnabled();
@@ -341,6 +386,24 @@ describe("BackupCard", () => {
       expect(screen.queryByLabelText(i18n.t("settings.backupPassphrasePrompt"))).not.toBeInTheDocument();
     },
   );
+
+  // Une sauvegarde s'ouvre avec la phrase qui l'a fermée, quelle qu'elle soit : appliquer la
+  // longueur minimale à l'ouverture la rendrait inouvrable par la carte, avec la bonne phrase,
+  // le jour où `MIN_PASSPHRASE_LENGTH` monterait.
+  it("n'impose pas la longueur minimale à la phrase qui ouvre une sauvegarde", async () => {
+    const short = "brève";
+    expect(short.length).toBeLessThan(MIN_PASSPHRASE_LENGTH);
+    // Aucun dépôt sur le serveur : la carte le dit, ce qui prouve qu'elle est allée jusque-là
+    // au lieu de refuser la phrase sur sa longueur.
+    renderCard();
+
+    await userEvent.click(await screen.findByRole("button", { name: i18n.t("settings.backupRestore") }));
+    await userEvent.type(await screen.findByLabelText(i18n.t("settings.backupPassphrasePrompt")), short);
+    await userEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupConfirm") }));
+
+    expect(await screen.findByText(i18n.t("settings.backupMissing"))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t("settings.backupPassphraseTooShort"))).not.toBeInTheDocument();
+  });
 
   it("demande la phrase pour restaurer sur un navigateur qui n'a pas la clé", async () => {
     renderCard();
