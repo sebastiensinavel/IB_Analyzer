@@ -33,15 +33,15 @@ beforeEach(async () => {
 describe("AccountsPage", () => {
   it("says there is no account yet", async () => {
     renderPage();
-    expect(await screen.findByText(/Aucun compte pour l'instant/)).toBeInTheDocument();
+    expect(await screen.findByText(/Aucun compte IB pour l'instant/)).toBeInTheDocument();
   });
 
   it("creates an account and lands on its data sources", async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.type(screen.getByLabelText("Libellé"), "Beta");
+    await user.type(screen.getByLabelText("Nom"), "Beta");
     await user.type(screen.getByLabelText("Identifiant de compte IB"), "u1234567");
-    await user.click(screen.getByRole("button", { name: "Créer le compte" }));
+    await user.click(screen.getByRole("button", { name: "Ajouter ce compte" }));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/accounts/beta/sources"));
     expect(await db.accounts.get("beta")).toMatchObject({ ibAccountId: "U1234567" });
   });
@@ -49,11 +49,18 @@ describe("AccountsPage", () => {
   it("shows the error for a bad IB id and creates nothing", async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.type(screen.getByLabelText("Libellé"), "x");
+    await user.type(screen.getByLabelText("Nom"), "x");
     await user.type(screen.getByLabelText("Identifiant de compte IB"), "nope");
-    await user.click(screen.getByRole("button", { name: "Créer le compte" }));
+    await user.click(screen.getByRole("button", { name: "Ajouter ce compte" }));
     expect(await screen.findByText("Ce n'est pas un identifiant de compte IB.")).toBeInTheDocument();
     expect(await db.accounts.count()).toBe(0);
+  });
+
+  it("says what an account here is, and what the IB id is for", async () => {
+    renderPage();
+    expect(await screen.findByText("Ajouter un compte IB")).toBeInTheDocument();
+    expect(screen.getByText(/compte Interactive Brokers que vous suivez/)).toBeInTheDocument();
+    expect(screen.getByText(/vérifier que les fichiers importés et l'agent local/)).toBeInTheDocument();
   });
 
   it("lists existing accounts with a link to open them", async () => {

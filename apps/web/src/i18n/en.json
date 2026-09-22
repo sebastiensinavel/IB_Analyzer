@@ -28,7 +28,7 @@
     "cancel": "Cancel"
   },
   "accounts": {
-    "title": "Accounts",
+    "title": "Your Interactive Brokers accounts",
     "welcome": {
       "tagline": "Analyse your Interactive Brokers portfolios, shares and options.",
       "benefits": [
@@ -45,11 +45,14 @@
       ],
       "helpLink": "Getting started"
     },
-    "empty": "No account yet. Create the first one below.",
-    "label": "Label",
+    "empty": "No IB account yet. Add the first one below.",
+    "addTitle": "Add an IB account",
+    "addHint": "An account here is an Interactive Brokers account you track. It is created in this browser; nothing is sent.",
+    "label": "Name",
+    "labelPlaceholder": "Margin account",
     "ibAccountId": "IB account id",
-    "ibAccountIdHint": "As shown in the Client Portal, e.g. U1234567",
-    "create": "Create the account",
+    "ibAccountIdHint": "As shown in the Client Portal, e.g. U1234567. It checks that imported files and the local agent really belong to this account.",
+    "create": "Add this account",
     "open": "Open",
     "add": "Add an account…",
     "errors": {

@@ -747,7 +747,7 @@ git commit -m "Ouvre la page Comptes sur ce qu'est l'application"
 - Produces : rien. **La validation du formulaire ne change pas** : `createAccount` puis
   `navigate("/accounts/:id/sources")`.
 
-- [ ] **Step 1: Update the existing tests and add the new ones**
+- [x] **Step 1: Update the existing tests and add the new ones**
 
 Dans `apps/web/src/pages/AccountsPage.test.tsx`, les trois tests existants nomment les
 anciens libellés. Les mettre à jour :
@@ -770,12 +770,12 @@ Puis ajouter :
   });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Depuis `apps/web` : `npx vitest run src/pages/AccountsPage.test.tsx`
 Attendu : échec des quatre tests ci-dessus, les libellés n'existent pas encore.
 
-- [ ] **Step 3: Change the texts**
+- [x] **Step 3: Change the texts**
 
 Dans `apps/web/src/i18n/fr.json`, bloc `accounts` :
 
@@ -807,7 +807,7 @@ Dans `apps/web/src/i18n/en.json`, bloc `accounts` :
 
 Les clés `open`, `add` et `errors.*` ne changent pas.
 
-- [ ] **Step 4: Change the form**
+- [x] **Step 4: Change the form**
 
 Dans `apps/web/src/pages/AccountsPage.tsx`, la carte du formulaire devient :
 
@@ -842,12 +842,12 @@ Dans `apps/web/src/pages/AccountsPage.tsx`, la carte du formulaire devient :
 
 `handleSubmit` n'est pas touché.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/AccountsPage.test.tsx src/i18n`
 Attendu : tout au vert, la navigation vers `/accounts/beta/sources` comprise.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 6, puis :
 

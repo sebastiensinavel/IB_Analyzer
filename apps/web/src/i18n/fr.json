@@ -28,7 +28,7 @@
     "cancel": "Annuler"
   },
   "accounts": {
-    "title": "Comptes",
+    "title": "Vos comptes Interactive Brokers",
     "welcome": {
       "tagline": "Analysez vos portefeuilles Interactive Brokers, actions et options.",
       "benefits": [
@@ -45,11 +45,14 @@
       ],
       "helpLink": "Premiers pas"
     },
-    "empty": "Aucun compte pour l'instant. Créez le premier ci-dessous.",
-    "label": "Libellé",
+    "empty": "Aucun compte IB pour l'instant. Ajoutez le premier ci-dessous.",
+    "addTitle": "Ajouter un compte IB",
+    "addHint": "Un compte ici est un compte Interactive Brokers que vous suivez. Il est créé dans ce navigateur ; rien n'est envoyé.",
+    "label": "Nom",
+    "labelPlaceholder": "Compte marge",
     "ibAccountId": "Identifiant de compte IB",
-    "ibAccountIdHint": "Tel qu'affiché dans le Client Portal, ex. U1234567",
-    "create": "Créer le compte",
+    "ibAccountIdHint": "Tel qu'affiché dans le Client Portal, ex. U1234567. Il sert à vérifier que les fichiers importés et l'agent local sont bien ceux de ce compte.",
+    "create": "Ajouter ce compte",
     "open": "Ouvrir",
     "add": "Ajouter un compte…",
     "errors": {

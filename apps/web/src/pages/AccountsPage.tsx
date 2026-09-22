@@ -73,13 +73,19 @@ export function AccountsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t("accounts.create")}</CardTitle>
+          <CardTitle>{t("accounts.addTitle")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">{t("accounts.addHint")}</p>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <label className="flex flex-col gap-1 text-sm">
               {t("accounts.label")}
-              <Input value={label} onChange={(e) => setLabel(e.target.value)} required />
+              <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder={t("accounts.labelPlaceholder")}
+                required
+              />
             </label>
             <label className="flex flex-col gap-1 text-sm">
               {t("accounts.ibAccountId")}
