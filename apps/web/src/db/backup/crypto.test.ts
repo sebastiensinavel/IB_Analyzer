@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { bytesOf } from "@/test/bytes";
 import {
   BackupKeyError,
+  BackupPackageError,
   decodePayload,
   decryptBlob,
   deriveWrapKeyForTest,
@@ -12,9 +13,13 @@ import {
   gunzip,
   gzip,
   MIN_PASSPHRASE_LENGTH,
+  packBlob,
+  readHeader,
   toRecoveryCode,
   unwrapKey,
   wrapKey,
+  WRAP_HEADER_BYTES,
+  type BackupWrap,
 } from "./crypto";
 
 const payload = { format: 1, createdAt: "2026-09-21T00:00:00.000Z", tables: { sectors: [{ ticker: "ZXAG" }] } };
@@ -162,4 +167,68 @@ describe("wrapKey / unwrapKey", () => {
     },
     20000,
   );
+});
+
+describe("packBlob / readHeader", () => {
+  async function aWrap(): Promise<BackupWrap> {
+    return wrapKey(generateBackupKey(), "une phrase de passe");
+  }
+
+  it(
+    "rend l'enveloppe et le corps intacts",
+    async () => {
+      const wrap = await aWrap();
+      const body = new Uint8Array([1, 2, 3, 4, 5]) as Uint8Array<ArrayBuffer>;
+      const read = readHeader(packBlob(wrap, body));
+      expect(Array.from(read.wrap.salt)).toEqual(Array.from(wrap.salt));
+      expect(Array.from(read.wrap.iv)).toEqual(Array.from(wrap.iv));
+      expect(Array.from(read.wrap.wrapped)).toEqual(Array.from(wrap.wrapped));
+      expect(Array.from(read.body)).toEqual([1, 2, 3, 4, 5]);
+    },
+    20000,
+  );
+
+  it(
+    "pose quatre-vingt-un octets devant le corps",
+    async () => {
+      const packed = packBlob(await aWrap(), new Uint8Array(10) as Uint8Array<ArrayBuffer>);
+      expect(packed).toHaveLength(91);
+      expect(WRAP_HEADER_BYTES).toBe(81);
+    },
+    20000,
+  );
+
+  it(
+    "refuse un paquet sans la magie",
+    async () => {
+      const packed = packBlob(await aWrap(), new Uint8Array(20) as Uint8Array<ArrayBuffer>);
+      packed[0] = 0;
+      expect(() => readHeader(packed)).toThrow(BackupPackageError);
+    },
+    20000,
+  );
+
+  it(
+    "refuse une version inconnue",
+    async () => {
+      const packed = packBlob(await aWrap(), new Uint8Array(20) as Uint8Array<ArrayBuffer>);
+      packed[4] = 99;
+      expect(() => readHeader(packed)).toThrow(BackupPackageError);
+    },
+    20000,
+  );
+
+  it("refuse un paquet trop court pour son propre en-tête", () => {
+    expect(() => readHeader(new Uint8Array(40) as Uint8Array<ArrayBuffer>)).toThrow(BackupPackageError);
+  });
+
+  // Le corps fait 200 octets, pas 3 (correction de la tâche 3, Seb) : encryptBlob(3 octets) ne
+  // rend que 31 octets (IV 12 + chiffré 19), sous le garde-fou de longueur de readHeader
+  // (WRAP_HEADER_BYTES = 81). Le test échouerait alors sur ce garde-fou sans jamais exercer la
+  // comparaison de la magie qu'il prétend vérifier. 200 octets de corps rendent un blob de
+  // 228 octets, qui passe le garde-fou et atteint la comparaison de "IB2B".
+  it("refuse un blob du sous-projet 25, qui n'a aucun en-tête", async () => {
+    const legacy = await encryptBlob(generateBackupKey(), new Uint8Array(200) as Uint8Array<ArrayBuffer>);
+    expect(() => readHeader(legacy)).toThrow(BackupPackageError);
+  });
 });

@@ -195,3 +195,67 @@ export function fromRecoveryCode(code: string): Uint8Array<ArrayBuffer> {
   if (bytes.byteLength !== KEY_BYTES) throw new BackupKeyError(`A backup key is ${KEY_BYTES} bytes`);
   return bytes;
 }
+
+/** "IB2B". Un blob du sous-projet 25 n'avait aucun en-tête : il ne porte donc pas cette
+ *  magie, et c'est par là qu'il est refusé (spec §10). */
+const MAGIC = new Uint8Array([0x49, 0x42, 0x32, 0x42]);
+
+/** L'octet de version nomme la suite entière : Argon2id 64 Mio/3/1, puis AES-GCM 256. */
+export const BLOB_VERSION = 2;
+
+const SALT_AT = MAGIC.length + 1;
+const WRAP_IV_AT = SALT_AT + SALT_BYTES;
+const WRAPPED_AT = WRAP_IV_AT + IV_BYTES;
+const WRAPPED_BYTES = KEY_BYTES + 16;
+
+/** 81 octets. Les 93 du spec §2 les comptent avec l'IV du corps, qu'`encryptBlob` écrit lui-même. */
+export const WRAP_HEADER_BYTES = WRAPPED_AT + WRAPPED_BYTES;
+
+/**
+ * Un paquet que cette version ne sait pas lire — magie absente, version inconnue, trop court.
+ * Distinct de `BackupKeyError` : dire « phrase de passe invalide » devant un blob corrompu
+ * enverrait l'utilisateur retaper indéfiniment une phrase qui n'est pas en cause.
+ */
+export class BackupPackageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BackupPackageError";
+  }
+}
+
+export function packBlob(wrap: BackupWrap, body: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer> {
+  const out = new Uint8Array(WRAP_HEADER_BYTES + body.byteLength);
+  out.set(MAGIC, 0);
+  out[MAGIC.length] = BLOB_VERSION;
+  out.set(wrap.salt, SALT_AT);
+  out.set(wrap.iv, WRAP_IV_AT);
+  out.set(wrap.wrapped, WRAPPED_AT);
+  out.set(body, WRAP_HEADER_BYTES);
+  return out;
+}
+
+export function readHeader(blob: Uint8Array<ArrayBuffer>): { wrap: BackupWrap; body: Uint8Array<ArrayBuffer> } {
+  // Strictement WRAP_HEADER_BYTES, jamais + IV_BYTES : un corps de test peut être plus court
+  // que l'IV d'un `encryptBlob` réel (5 octets, ci-dessous), et n'a pas à l'être pour que
+  // l'en-tête tienne. Le garde-fou ne protège que la lecture de l'en-tête lui-même.
+  if (blob.byteLength <= WRAP_HEADER_BYTES) {
+    throw new BackupPackageError("Backup package too short to carry a header");
+  }
+  if (!MAGIC.every((byte, index) => blob[index] === byte)) {
+    throw new BackupPackageError("Not a backup package");
+  }
+  if (blob[MAGIC.length] !== BLOB_VERSION) {
+    throw new BackupPackageError(`Unsupported backup package version: ${String(blob[MAGIC.length])}`);
+  }
+  // `slice`, jamais `subarray` : une vue garderait vivant le tampon des vingt mégaoctets
+  // entiers pour quarante-huit octets de clé, et rendrait `Uint8Array<ArrayBufferLike>`
+  // là où WebCrypto veut `Uint8Array<ArrayBuffer>`.
+  return {
+    wrap: {
+      salt: blob.slice(SALT_AT, WRAP_IV_AT),
+      iv: blob.slice(WRAP_IV_AT, WRAPPED_AT),
+      wrapped: blob.slice(WRAPPED_AT, WRAP_HEADER_BYTES),
+    },
+    body: blob.slice(WRAP_HEADER_BYTES),
+  };
+}

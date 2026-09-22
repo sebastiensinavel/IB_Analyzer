@@ -361,7 +361,7 @@ cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/db/backup/crypto.ts apps/we
 **plus les 12** de l'IV du corps, que `encryptBlob` écrit déjà lui-même en tête de ce qu'il
 rend. `WRAP_HEADER_BYTES` vaut donc 81, jamais 93.
 
-- [ ] **Step 1 : écrire le test qui échoue**
+- [x] **Step 1 : écrire le test qui échoue**
 
 ```ts
 describe("packBlob / readHeader", () => {
@@ -411,7 +411,7 @@ describe("packBlob / readHeader", () => {
 Le dernier test est le seul qui parle encore du passé, et il dit la seule chose qu'on en dise :
 un tel blob est refusé (spec §2, §10).
 
-- [ ] **Step 2 : lancer le test, vérifier qu'il échoue**
+- [x] **Step 2 : lancer le test, vérifier qu'il échoue**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.test.ts
@@ -419,7 +419,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.tes
 
 Attendu : ÉCHEC, `packBlob is not a function`.
 
-- [ ] **Step 3 : implémenter**
+- [x] **Step 3 : implémenter**
 
 ```ts
 /** "IB2B". Un blob du sous-projet 25 n'avait aucun en-tête : il ne porte donc pas cette
@@ -484,7 +484,7 @@ export function readHeader(blob: Uint8Array<ArrayBuffer>): { wrap: BackupWrap; b
 }
 ```
 
-- [ ] **Step 4 : lancer le test, vérifier qu'il passe**
+- [x] **Step 4 : lancer le test, vérifier qu'il passe**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.test.ts
@@ -492,7 +492,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.tes
 
 Attendu : SUCCÈS.
 
-- [ ] **Step 5 : commit**
+- [x] **Step 5 : commit**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/db/backup/crypto.ts apps/web/src/db/backup/crypto.test.ts docs/plans/2026-09-22-sauvegarde-phrase-de-passe.md && git commit -m "Pose l'enveloppe dans un en-tête devant le corps du blob"
