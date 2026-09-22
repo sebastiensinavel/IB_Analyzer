@@ -19,9 +19,9 @@ function Command({ children }: { children: string }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
-    <Card>
+    <Card id={id}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
@@ -45,6 +45,41 @@ export function HelpPage() {
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t("help.title")}</h1>
+
+      <Section title={t("help.app.title")}>
+        <p className="text-muted-foreground">{t("help.app.text")}</p>
+        <p className="rounded-md bg-muted px-3 py-2">{t("help.app.privacy")}</p>
+        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+          {(t("help.app.tiers", { returnObjects: true }) as string[]).map((tier) => (
+            <li key={tier}>{tier}</li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section id="statement" title={t("help.statement.title")}>
+        <p className="text-muted-foreground">{t("help.statement.text")}</p>
+        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+          {(t("help.statement.items", { returnObjects: true }) as string[]).map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section id="flex" title={t("help.flex.title")}>
+        <p className="text-muted-foreground">{t("help.flex.text")}</p>
+        <p>{t("help.flex.selectAll")}</p>
+        <div className="flex flex-col gap-1">
+          <p className="font-medium">{t("help.flex.sectionsTitle")}</p>
+          <ul className="list-disc space-y-1 pl-5 font-mono text-xs">
+            {(t("help.flex.sections", { returnObjects: true }) as string[]).map((section) => (
+              <li key={section}>{section}</li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-muted-foreground">{t("help.flex.corporateActions")}</p>
+        <p className="text-muted-foreground">{t("help.flex.token")}</p>
+        <p className="text-muted-foreground">{t("help.flex.missing")}</p>
+      </Section>
 
       <Section title={t("help.what.title")}>
         <p className="text-muted-foreground">{t("help.what.text")}</p>

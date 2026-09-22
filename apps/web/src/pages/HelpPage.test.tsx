@@ -19,6 +19,47 @@ afterEach(() => {
 const ORIGIN = window.location.origin; // jsdom: http://localhost:3000
 
 describe("HelpPage", () => {
+  it("opens on what the application is, then the two data sources, then the agent", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    const titles = [...container.querySelectorAll("[data-slot=card-title]")].map((el) => el.textContent);
+    expect(titles).toEqual([
+      "L'application",
+      "1. Obtenir un relevé d'activité",
+      "2. Configurer une Flex Query",
+      "3. L'agent local",
+      "4. Installer uv",
+      "5. Installer l'agent",
+      "6. Le configurer et le lancer",
+      "7. Régler l'API de TWS",
+      "8. La permission du navigateur",
+      "9. Renseigner le port",
+    ]);
+  });
+
+  it("anchors the two sections the first-step card points at", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    expect(container.querySelector("#statement")).not.toBeNull();
+    expect(container.querySelector("#flex")).not.toBeNull();
+  });
+
+  // Listing columns one by one would be long to follow and wrong the day the parser reads one
+  // more; Corporate Actions is named because nothing warns when it is missing.
+  it("tells the user to select all of each section, and names the five", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/Select All/)).toBeInTheDocument();
+    for (const section of ["Trades", "Cash Transactions", "Corporate Actions", "Open Positions", "Cash Report"]) {
+      // getAllByText: "Corporate Actions" legitimately appears twice — once as a section
+      // name, once in the sentence explaining why it is named (nothing warns when it is
+      // missing) — so uniqueness is not the point, presence is.
+      expect(screen.getAllByText(new RegExp(section)).length).toBeGreaterThan(0);
+    }
+  });
+
   it("builds the install and init commands from the current origin and the served index", async () => {
     mockIndex(new Response(JSON.stringify({ version: "0.1.0", filename: "ib_tws_agent-0.1.0-py3-none-any.whl" }), { status: 200 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);

@@ -574,28 +574,63 @@
   },
   "help": {
     "title": "Help",
+    "app": {
+      "title": "The application",
+      "text": "IB Analyzer analyzes your Interactive Brokers portfolios, stocks and options: coverage of your option sales and required cash, Wheel, LEAPS and Condor journals rebuilt from your history, full history, positions and statistics per strategy.",
+      "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
+      "tiers": [
+        "An HTML activity statement alone, or a Flex Query alone, is enough: history, positions, coverage and journals.",
+        "Both together add history beyond the Flex Query's 365 days.",
+        "The local agent, optional, adds today's positions and fills."
+      ]
+    },
+    "statement": {
+      "title": "1. Get an activity statement",
+      "text": "In the Client Portal: Performance & Reports › Statements › Activity. Choose the longest period offered, the HTML format, and download.",
+      "items": [
+        "One statement per year to go back further: \"Data sources › Import files\" accepts several files at once and writes them in the order of their periods.",
+        "The file is kept in this browser so it can be replayed; \"Replay statements\" rebuilds everything from the kept files.",
+        "A statement also carries your positions and your cash at the end of its period: a single file is enough to fill the app."
+      ]
+    },
+    "flex": {
+      "title": "2. Set up a Flex Query",
+      "text": "In the Client Portal: Performance & Reports › Flex Queries. Create an Activity Flex Query, period \"Last 365 days\", format XML.",
+      "selectAll": "In each section, tick \"Select All\" rather than fields one by one: it is faster, and nothing will be missing the day the app reads one more column.",
+      "sectionsTitle": "Sections to include",
+      "sections": [
+        "Trades",
+        "Cash Transactions",
+        "Corporate Actions",
+        "Open Positions",
+        "Cash Report"
+      ],
+      "corporateActions": "Corporate Actions is the only one whose absence triggers no warning: without it, splits and mergers go missing in silence.",
+      "token": "Then enable the Flex Web Service and copy the token; note the query's id. Enter both in \"Data sources › Flex Query\".",
+      "missing": "What the app cannot find is listed in Data sources at every sync."
+    },
     "what": {
-      "title": "The local agent",
+      "title": "3. The local agent",
       "text": "The agent reads TWS on your machine and talks to this site and to Interactive Brokers only. It stores nothing: positions, cash and today's fills never leave your computer. It also relays this site's Flex Query calls to Interactive Brokers, keeping nothing: in \"local agent only\" mode, the Flex token never goes through the server. Without it, the app works with statements, and with Flex Query if you let the server relay.",
       "dayValues": "Day chg and Daily P&L come from the local agent: a portfolio rebuilt from a statement or a Flex response leaves them at \"—\", as does a contract bought or sold today."
     },
     "uv": {
-      "title": "1. Install uv",
+      "title": "4. Install uv",
       "text": "uv installs the agent and the Python it needs.",
       "macLinux": "macOS and Linux",
       "windows": "Windows"
     },
     "install": {
-      "title": "2. Install the agent",
+      "title": "5. Install the agent",
       "text": "The command installs the version this site serves. Run it again after the site is updated.",
       "unavailable": "This server does not serve the agent package: in development, run pnpm build:agent."
     },
     "configure": {
-      "title": "3. Configure and start it",
+      "title": "6. Configure and start it",
       "text": "The first command records this site's address, the only one the agent will answer. The second starts it; leave it running while you use the site."
     },
     "tws": {
-      "title": "4. Set up the TWS API",
+      "title": "7. Set up the TWS API",
       "text": "In TWS: Configuration › API › Settings.",
       "items": [
         "Tick \"Enable ActiveX and Socket Clients\".",
@@ -605,11 +640,11 @@
       ]
     },
     "chrome": {
-      "title": "5. The browser's permission",
+      "title": "8. The browser's permission",
       "text": "The first time, Chrome asks whether this site may reach your local network: that is the agent on your machine. Accept."
     },
     "port": {
-      "title": "6. Fill in the port",
+      "title": "9. Fill in the port",
       "text": "In Data sources, Local agent card, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
       "link": "Open Data sources"
     }

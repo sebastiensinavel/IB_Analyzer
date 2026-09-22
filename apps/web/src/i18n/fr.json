@@ -574,28 +574,63 @@
   },
   "help": {
     "title": "Aide",
+    "app": {
+      "title": "L'application",
+      "text": "IB Analyzer analyse vos portefeuilles Interactive Brokers, actions et options : couverture de vos ventes d'options et cash requis, journaux Wheel, LEAPS et Condors reconstitués depuis votre historique, historique complet, positions et statistiques par stratégie.",
+      "privacy": "Vos données restent dans ce navigateur : le serveur ne voit jamais vos transactions ni vos positions.",
+      "tiers": [
+        "Un relevé d'activité HTML seul, ou une Flex Query seule, suffit : historique, positions, couverture et journaux.",
+        "Les deux ensemble ajoutent l'historique au-delà des 365 jours de la Flex Query.",
+        "L'agent local, facultatif, ajoute les positions et les exécutions du jour."
+      ]
+    },
+    "statement": {
+      "title": "1. Obtenir un relevé d'activité",
+      "text": "Dans le Client Portal : Performance & Reports › Statements › Activity. Choisissez la période la plus longue proposée, le format HTML, et téléchargez.",
+      "items": [
+        "Un relevé par année pour remonter loin : « Sources de données › Importer des fichiers » accepte plusieurs fichiers à la fois et les écrit dans l'ordre de leurs périodes.",
+        "Le fichier est conservé dans ce navigateur pour pouvoir être rejoué ; « Relire les relevés » reconstruit tout depuis les fichiers gardés.",
+        "Un relevé porte aussi vos positions et votre cash à sa fin de période : un seul fichier suffit à remplir l'application."
+      ]
+    },
+    "flex": {
+      "title": "2. Configurer une Flex Query",
+      "text": "Dans le Client Portal : Performance & Reports › Flex Queries. Créez une Activity Flex Query, période « Last 365 days », format XML.",
+      "selectAll": "Dans chaque section, cochez « Select All » plutôt que les champs un par un : c'est plus rapide, et rien ne manquera le jour où l'application lira une colonne de plus.",
+      "sectionsTitle": "Les sections à inclure",
+      "sections": [
+        "Trades",
+        "Cash Transactions",
+        "Corporate Actions",
+        "Open Positions",
+        "Cash Report"
+      ],
+      "corporateActions": "Corporate Actions est la seule dont l'absence ne déclenche aucun avertissement : sans elle, splits et fusions manquent en silence.",
+      "token": "Activez ensuite le Flex Web Service et copiez le jeton ; notez l'identifiant de la requête. Saisissez les deux dans « Sources de données › Flex Query ».",
+      "missing": "Ce que l'application ne trouve pas est listé dans Sources de données à chaque synchronisation."
+    },
     "what": {
-      "title": "L'agent local",
+      "title": "3. L'agent local",
       "text": "L'agent lit TWS sur votre machine et ne parle qu'à ce site et à Interactive Brokers. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de ce site vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer.",
       "dayValues": "Var. jour et P&L jour viennent de l'agent local : un portefeuille reconstruit depuis un relevé ou une réponse Flex les laisse à « — », comme un contrat acheté ou vendu le jour même."
     },
     "uv": {
-      "title": "1. Installer uv",
+      "title": "4. Installer uv",
       "text": "uv installe l'agent et l'interpréteur Python qu'il lui faut.",
       "macLinux": "macOS et Linux",
       "windows": "Windows"
     },
     "install": {
-      "title": "2. Installer l'agent",
+      "title": "5. Installer l'agent",
       "text": "La commande installe la version que ce site sert. Relancez-la après une mise à jour du site.",
       "unavailable": "Ce serveur ne sert pas le paquet de l'agent : en développement, lancez pnpm build:agent."
     },
     "configure": {
-      "title": "3. Le configurer et le lancer",
+      "title": "6. Le configurer et le lancer",
       "text": "La première commande enregistre l'adresse de ce site, la seule à laquelle l'agent répondra. La seconde le lance ; laissez-la tourner pendant que vous utilisez le site."
     },
     "tws": {
-      "title": "4. Régler l'API de TWS",
+      "title": "7. Régler l'API de TWS",
       "text": "Dans TWS : Configuration › API › Settings.",
       "items": [
         "Cocher « Enable ActiveX and Socket Clients ».",
@@ -605,11 +640,11 @@
       ]
     },
     "chrome": {
-      "title": "5. La permission du navigateur",
+      "title": "8. La permission du navigateur",
       "text": "La première fois, Chrome demande si ce site peut accéder à votre réseau local : c'est l'agent sur votre machine. Accepter."
     },
     "port": {
-      "title": "6. Renseigner le port",
+      "title": "9. Renseigner le port",
       "text": "Dans Sources de données, carte Agent local, saisissez le port TWS du compte. Il ne sert qu'aux données en direct, pas pour relayer Flex Query.",
       "link": "Ouvrir Sources de données"
     }

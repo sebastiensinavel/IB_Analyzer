@@ -1159,7 +1159,7 @@ git commit -m "Dit sur la page de connexion ce qu'un compte serveur ouvre"
 écrits tels que le spec §5 les donne, et Seb les vérifie à la relecture de la branche. Ne pas
 tenter d'ouvrir le Client Portal ; ne pas inventer un autre chemin.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter dans `apps/web/src/pages/HelpPage.test.tsx` :
 
@@ -1210,12 +1210,12 @@ Ajouter dans `apps/web/src/pages/HelpPage.test.tsx` :
 `Card` étale ses props sur son `div` racine : `id` y passe tel quel, rien à changer dans
 `packages/ui`.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/HelpPage.test.tsx`
 Attendu : échec des trois nouveaux tests.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, bloc `help`, ajouter **avant** `"what"` :
 
@@ -1267,7 +1267,7 @@ Dans `apps/web/src/i18n/en.json`, la traduction fidèle des mêmes clés, avec l
 Les noms de sections de la Flex Query et « Select All » restent en anglais dans les deux
 langues : ce sont les libellés de l'interface d'Interactive Brokers.
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Dans `apps/web/src/pages/HelpPage.tsx` :
 
@@ -1328,12 +1328,12 @@ function Section({ id, title, children }: { id?: string; title: string; children
 Les sections de l'agent gardent leur JSX mot pour mot, dans leur ordre actuel, après
 celles-ci.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/HelpPage.test.tsx src/components/FirstStepCard.test.tsx src/i18n`
 Attendu : tout au vert, les six tests existants de l'Aide compris.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 9, puis :
 
