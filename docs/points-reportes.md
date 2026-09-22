@@ -1064,12 +1064,21 @@ neuf.
 - **La couleur d'un condor n'est vérifiée par aucun test, seulement à l'œil.**
 - **`LevelsPrimitive.attached` n'accepte pas `requestUpdate`** : sans effet tant que la
   primitive est recréée à chaque changement de niveaux.
-- **`agent-error` (agent présent, réponse invalide) affiche le même message que « agent
-  absent ».**
-- **`strategies.join(",").split(",")` rendrait `[""]` pour une portée vide** ; aucun appelant
-  ne le fait.
 - **`apps/web/src/i18n/index.test.ts` ne vérifie pas la parité des clés entre `fr.json` et
   `en.json`** — dette antérieure à ce sous-projet.
+- **Un condor ouvert avant la fenêtre de deux ans ne dessine rien**, et une échéance qui
+  tombe un jour férié de marché n'a ni verticale ni étiquette : le niveau disparaît en
+  silence plutôt que de se poser au bord.
+- **Un changement de thème réinitialise le zoom et le défilement du graphe** : le graphe est
+  recréé, `fitContent()` rejoue.
+- **`duration` et `barSize` de `/bars` n'ont aucun appelant** ; leur comportement est fixé par
+  un test que personne n'exerce.
+- **Le graphe ne s'ouvre qu'à la souris** : les lignes cliquables n'ont ni `role`, ni
+  `tabIndex`, ni gestion clavier, et un clic sur un badge ou une infobulle de la ligne le
+  bascule aussi.
+- **`tsc --noEmit -p .` ne vérifie rien** sur un tsconfig-solution : seul `tsc -b` — ce que
+  lance `pnpm check` — contrôle réellement les projets référencés. Vu pendant la vague de
+  correction finale, après qu'un typage réputé propre soit passé à côté d'une erreur.
 
 ---
 
