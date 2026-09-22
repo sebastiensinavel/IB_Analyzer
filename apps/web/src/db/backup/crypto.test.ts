@@ -4,12 +4,14 @@ import {
   BackupKeyError,
   decodePayload,
   decryptBlob,
+  deriveWrapKeyForTest,
   encodePayload,
   encryptBlob,
   fromRecoveryCode,
   generateBackupKey,
   gunzip,
   gzip,
+  MIN_PASSPHRASE_LENGTH,
   toRecoveryCode,
 } from "./crypto";
 
@@ -72,5 +74,41 @@ describe("toRecoveryCode", () => {
       const code = toRecoveryCode(key);
       expect(bytesOf(fromRecoveryCode(code))).toEqual(bytesOf(key));
     }
+  });
+});
+
+describe("deriveWrapKey", () => {
+  // Chaque dérivation coûte, mesurée, quelques secondes (crypto.ts) ; un test qui en fait
+  // deux dépasse le délai par défaut de vitest (5 000 ms), pas parce qu'il est lent à tort.
+  it(
+    "rend la même clé pour la même phrase et le même sel",
+    async () => {
+      const salt = new Uint8Array(16).fill(3) as Uint8Array<ArrayBuffer>;
+      const first = await deriveWrapKeyForTest("phrase de passe longue", salt);
+      const second = await deriveWrapKeyForTest("phrase de passe longue", salt);
+      expect(Array.from(first)).toEqual(Array.from(second));
+      expect(first).toHaveLength(32);
+    },
+    20000,
+  );
+
+  it(
+    "rend une clé différente pour un autre sel",
+    async () => {
+      const one = await deriveWrapKeyForTest(
+        "phrase de passe longue",
+        new Uint8Array(16).fill(1) as Uint8Array<ArrayBuffer>,
+      );
+      const other = await deriveWrapKeyForTest(
+        "phrase de passe longue",
+        new Uint8Array(16).fill(2) as Uint8Array<ArrayBuffer>,
+      );
+      expect(Array.from(one)).not.toEqual(Array.from(other));
+    },
+    20000,
+  );
+
+  it("exige douze caractères", () => {
+    expect(MIN_PASSPHRASE_LENGTH).toBe(12);
   });
 });

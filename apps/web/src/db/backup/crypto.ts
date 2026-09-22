@@ -1,8 +1,40 @@
+import { argon2idAsync } from "@noble/hashes/argon2.js";
 import type { BackupPayload } from "./payload";
 
 const KEY_BYTES = 32;
 const IV_BYTES = 12;
 const GROUP = 8;
+
+/**
+ * Douze caractères, et rien d'autre : une règle, un test, aucune dépendance (spec §5).
+ * La règle mesure la longueur et non l'entropie, donc `motdepasse123` passe — c'est assumé.
+ * Le rempart contre une attaque hors ligne est Argon2id, pas un jugement sur le texte.
+ */
+export const MIN_PASSPHRASE_LENGTH = 12;
+
+/**
+ * La suite que l'octet de version 2 du format désigne (spec §2). Ces paramètres ne voyagent
+ * **pas** dans le blob : un coût mémoire lu dans un fichier est un paramètre fourni par
+ * l'attaquant, et un blob forgé annonçant quatre gigaoctets ferait tomber le navigateur qui
+ * tente de le restaurer. Les changer un jour sera une version 3, que le lecteur aiguillera.
+ *
+ * `m: 32768` (32 Mio), pas 64 : mesuré à l'étape 2 de la tâche 1 sur la machine de
+ * développement, `m: 65536` dépassait le plafond de cinq secondes (~6.2 s, deux mesures),
+ * là où `m: 32768` tient (~2.5–3.3 s). Le spec est corrigé dans le même commit.
+ *
+ * `asyncTick` rend la main à la boucle d'événements : l'onglet reste vivant et le spinner
+ * s'affiche réellement pendant les quelques secondes de dérivation. C'est ce qui dispense
+ * d'un Web Worker.
+ */
+const ARGON2 = { m: 32768, t: 3, p: 1, dkLen: KEY_BYTES, asyncTick: 1 } as const;
+
+async function deriveWrapKey(passphrase: string, salt: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+  return new Uint8Array(await argon2idAsync(passphrase, salt, ARGON2));
+}
+
+/** Exporté sous ce nom pour que les tests mesurent la dérivation seule ; aucun code de
+ *  production n'appelle cette fonction hors de ce fichier. */
+export const deriveWrapKeyForTest = deriveWrapKey;
 
 export class BackupKeyError extends Error {
   constructor(message: string) {

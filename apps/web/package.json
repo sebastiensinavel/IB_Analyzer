@@ -19,6 +19,7 @@
     "@ib/ib-parsers": "workspace:*",
     "@ib/ledger": "workspace:*",
     "@ib/ui": "workspace:*",
+    "@noble/hashes": "^2.4.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-virtual": "^3.14.11",
     "class-variance-authority": "^0.7.1",

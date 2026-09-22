@@ -61,7 +61,7 @@ quarante-huit octets, jamais sur vingt mégaoctets. L'échec remonte comme un `B
 exactement la forme d'erreur que la carte Paramètres sait déjà rendre.
 
 **Les paramètres Argon2id ne sont pas dans l'en-tête ; l'octet de version les nomme.** La
-version 2 désigne la suite entière : Argon2id 64 Mio, trois passes, parallélisme 1, puis
+version 2 désigne la suite entière : Argon2id 32 Mio, trois passes, parallélisme 1, puis
 AES-GCM 256 pour l'enveloppe comme pour le corps. Changer un paramètre un jour sera une
 version 3, que le lecteur aiguillera. Deux raisons, dont la seconde est la vraie : ça
 économise douze octets, mais surtout **un coût mémoire lu dans le fichier est un paramètre
@@ -79,7 +79,7 @@ Tout vit dans `apps/web/src/db/backup/crypto.ts`, à côté de `encryptBlob`/`de
 ne changent pas.
 
 - **`deriveWrapKey(phrase, sel)`** appelle `argon2idAsync` de `@noble/hashes/argon2` avec
-  `{ m: 65536, t: 3, p: 1, dkLen: 32, asyncTick: 1 }`. La variante asynchrone rend la main à
+  `{ m: 32768, t: 3, p: 1, dkLen: 32, asyncTick: 1 }`. La variante asynchrone rend la main à
   la boucle d'événements périodiquement : l'onglet reste vivant et le spinner s'affiche
   réellement pendant la dérivation, là où la variante synchrone figerait le fil principal
   plusieurs secondes sans rien repeindre. Aucun Web Worker n'est donc nécessaire.
@@ -93,10 +93,14 @@ ne changent pas.
 `@noble/hashes` est déjà une dépendance de production du dépôt (`packages/ib-parsers`, pour
 le hachage synchrone) ; `apps/web` la déclare à son tour.
 
-**Le coût réel d'Argon2id 64 Mio en JavaScript pur est à mesurer, pas à supposer.** Le plan
+**Le coût réel d'Argon2id 32 Mio en JavaScript pur est à mesurer, pas à supposer.** Le plan
 le mesure à sa première tâche. Plafond acceptable : **cinq secondes** sur la machine de
 développement. Au-delà, la version 2 descend à 32 Mio, écrit noir sur blanc dans ce spec
 avant que le reste ne soit construit — jamais découvert après coup.
+
+Mesuré à la tâche 1 (2026-09-22, machine de développement) : `m: 65536` (64 Mio) dépassait le
+plafond, environ 6,2 s sur deux mesures ; `m: 32768` (32 Mio) tient, environ 2,5–3,3 s. La
+version 2 retient donc `m: 32768`, comme corrigé ci-dessus et dans `crypto.ts`.
 
 ## 4. Ce qui est stocké localement
 

@@ -78,7 +78,7 @@ signal d'arrêt : s'arrêter et demander.
   `deriveWrapKey(passphrase: string, salt: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>>`.
   La tâche 2 l'utilise depuis le même fichier.
 
-- [ ] **Step 1 : ajouter la dépendance**
+- [x] **Step 1 : ajouter la dépendance**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && pnpm --filter web add @noble/hashes@^2.4.0
@@ -87,7 +87,7 @@ cd /home/seb/IA/IB_Analyzer2 && pnpm --filter web add @noble/hashes@^2.4.0
 Vérifier que `apps/web/package.json` liste bien `"@noble/hashes": "^2.4.0"` dans
 `dependencies` (pas `devDependencies` : le code part dans le paquet servi).
 
-- [ ] **Step 2 : mesurer le coût réel avant d'écrire quoi que ce soit**
+- [x] **Step 2 : mesurer le coût réel avant d'écrire quoi que ce soit**
 
 Écrire ce script dans le répertoire de travail temporaire (jamais dans le dépôt) :
 
@@ -116,7 +116,7 @@ sous **5 000 ms**, garder 64 Mio. Sinon, retenir `m = 32768` et **corriger le sp
 même commit** — la ligne « Argon2id 64 Mio » du §2 et du §3, et la ligne du §10. Reporter les
 deux mesures dans le message de commit.
 
-- [ ] **Step 3 : écrire le test qui échoue**
+- [x] **Step 3 : écrire le test qui échoue**
 
 Ajouter à la fin de `apps/web/src/db/backup/crypto.test.ts` :
 
@@ -153,7 +153,7 @@ l'exporter pour de bon inviterait un futur appelant à dériver ailleurs. L'alia
 est. Un test qui appellerait `wrapKey` à la place mesurerait deux choses à la fois et ne
 dirait plus laquelle a cassé.
 
-- [ ] **Step 4 : lancer le test, vérifier qu'il échoue**
+- [x] **Step 4 : lancer le test, vérifier qu'il échoue**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.test.ts
@@ -161,7 +161,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.tes
 
 Attendu : ÉCHEC, `deriveWrapKeyForTest is not exported` (ou `is not a function`).
 
-- [ ] **Step 5 : implémenter**
+- [x] **Step 5 : implémenter**
 
 Dans `apps/web/src/db/backup/crypto.ts`, sous les imports existants :
 
@@ -204,7 +204,7 @@ export const deriveWrapKeyForTest = deriveWrapKey;
 
 Si la mesure de l'étape 2 a imposé 32 Mio, écrire `m: 32768` **et** corriger le spec.
 
-- [ ] **Step 6 : lancer le test, vérifier qu'il passe**
+- [x] **Step 6 : lancer le test, vérifier qu'il passe**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.test.ts
@@ -212,7 +212,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/crypto.tes
 
 Attendu : SUCCÈS, y compris les tests existants du fichier.
 
-- [ ] **Step 7 : commit**
+- [x] **Step 7 : commit**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && git add apps/web/package.json pnpm-lock.yaml apps/web/src/db/backup/crypto.ts apps/web/src/db/backup/crypto.test.ts docs/plans/2026-09-22-sauvegarde-phrase-de-passe.md docs/specs/2026-09-22-sauvegarde-phrase-de-passe-design.md && git commit -m "Dérive une clé d'enveloppe par Argon2id
