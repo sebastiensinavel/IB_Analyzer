@@ -6,17 +6,20 @@
  * message qui dit quoi installer. La ligne s'ouvre toujours, tout de suite : un clic fait
  * toujours quelque chose.
  */
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 import type { Strategy } from "@ib/ledger";
 import { strategyLevels } from "@ib/ledger";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { fetchBars, type PriceBar } from "@/agent/client";
-import { PriceChart } from "@/components/PriceChart";
 import { useAccountJournals } from "@/db/AccountDataProvider";
 import { useAccount } from "@/db/hooks";
 import { useTheme } from "@/hooks/useTheme";
+
+// Chargée seulement quand un graphe s'ouvre vraiment : `lightweight-charts` ne doit pas peser
+// sur l'import de tout ce qui affiche cette ligne, dont le tableau de bord (`DashboardPage`).
+const PriceChart = lazy(() => import("@/components/PriceChart").then((m) => ({ default: m.PriceChart })));
 
 export interface PositionChartRowProps {
   ticker: string;
@@ -83,7 +86,15 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
     <TableRow data-testid="position-chart-row" className="hover:bg-transparent">
       <TableCell colSpan={columnCount} className="bg-muted/30 p-4">
         {state.status === "bars" ? (
-          <PriceChart bars={state.bars} levels={levels} isDark={isDark} />
+          <Suspense
+            fallback={
+              <div className="flex h-24 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                <span>{t("charts.loading")}</span>
+              </div>
+            }
+          >
+            <PriceChart bars={state.bars} levels={levels} isDark={isDark} />
+          </Suspense>
         ) : (
           <div className="flex h-24 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
             {state.status === "loading" && <span>{t("charts.loading")}</span>}
