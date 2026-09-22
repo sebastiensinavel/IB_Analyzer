@@ -185,9 +185,23 @@ describe("useJournals", () => {
  * counts — the user acted, and the import report answers them from then on.
  */
 describe("useNeverFed", () => {
-  it("is undefined while the queries have not answered", () => {
-    const { result } = renderHook(() => useNeverFed("nope"), { wrapper });
+  // The account exists and the answer is knowable: what is asserted is that the hook says
+  // `undefined` on the first synchronous render, before Dexie answers, and only then settles.
+  // An account id that does not exist would leave it `undefined` for ever and would pass
+  // against an implementation that never resolves at all.
+  it("is undefined on the first render, before the queries answer, then settles", async () => {
+    const account = await seedAccount();
+    const { result } = renderHook(() => useNeverFed(account.id), { wrapper });
     expect(result.current).toBeUndefined();
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  // A deleted account, or one the URL invents: `useAccount` answers `null`, not `undefined`,
+  // so the hook does settle — on `true`, nothing having fed an account that is not there. That
+  // is the optional chaining in `account?.lastAgentSyncAt`; drop it and this throws.
+  it("settles on true for an account that does not exist", async () => {
+    const { result } = renderHook(() => useNeverFed("nope"), { wrapper });
+    await waitFor(() => expect(result.current).toBe(true));
   });
 
   it("is true on an account nothing has ever fed", async () => {

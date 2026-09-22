@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { cn } from "@ib/ui/lib/utils";
@@ -31,12 +31,28 @@ function Section({ id, title, children }: { id?: string; title: string; children
 }
 
 /**
+ * Scrolls to the section a `#hash` names — `/help#statement` from the first-step card. The
+ * router is a `createBrowserRouter` with no `ScrollRestoration`, so a client-side navigation
+ * would otherwise land at the top of the page and the anchor would promise nothing.
+ * `scrollIntoView` is guarded: jsdom does not implement it.
+ */
+function useHashScroll(hash: string) {
+  useEffect(() => {
+    const id = hash.replace(/^#/, "");
+    if (!id) return;
+    const target = document.getElementById(id);
+    target?.scrollIntoView?.({ block: "start" });
+  }, [hash]);
+}
+
+/**
  * Every command is built from `window.location.origin` and from the index the site serves
  * next to the agent's wheel: no domain name, no version, no file name in this code
  * (spec §8). Reading the origin at render time is what keeps CLAUDE.md's rule true.
  */
 export function HelpPage() {
   const { t } = useTranslation();
+  useHashScroll(useLocation().hash);
   const origin = window.location.origin;
   const index = useAgentIndex(origin);
   const lastAccountId = getLastAccountId();

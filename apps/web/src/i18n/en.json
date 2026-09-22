@@ -30,7 +30,7 @@
   "accounts": {
     "title": "Your Interactive Brokers accounts",
     "welcome": {
-      "tagline": "Analyse your Interactive Brokers portfolios, shares and options.",
+      "tagline": "Analyze your Interactive Brokers portfolios, shares and options.",
       "benefits": [
         "Coverage of your option sales and the cash they require, at any time.",
         "Wheel, LEAPS and Condor journals rebuilt from your own history.",
@@ -366,7 +366,7 @@
     "purge": {
       "button": "Delete transactions",
       "purging": "Deleting…",
-      "confirm": "Delete this account's history ({{transactions}} rows), contracts, positions, cash points and import journal? Your {{statements}} kept statements, the Flex/TWS settings and the sector table stay in place. “Replay statements” rebuilds the history, contracts, positions and cash the statements brought; a Flex sync rebuilds its own.",
+      "confirm": "Delete this account's history ({{transactions}} rows), contracts, positions, cash points and import journal? Your {{statements}} kept statements, the Flex/TWS settings and the sector table stay in place. “Replay the statements” rebuilds the history, contracts, positions and cash the statements brought; a Flex sync rebuilds its own.",
       "done_one": "{{count}} history row and {{contracts}} contracts deleted, along with the positions, the cash points and the import journal.",
       "done_other": "{{count}} history rows and {{contracts}} contracts deleted, along with the positions, the cash points and the import journal.",
       "failed": "Deletion cancelled, nothing was removed."
@@ -589,7 +589,7 @@
       "text": "In the Client Portal: Performance & Reports › Statements › Activity. Choose the longest period offered, the HTML format, and download.",
       "items": [
         "One statement per year to go back further: \"Data sources › Import files\" accepts several files at once and writes them in the order of their periods.",
-        "The file is kept in this browser so it can be replayed; \"Replay statements\" rebuilds everything from the kept files.",
+        "The file is kept in this browser so it can be replayed; \"Replay the statements\" rebuilds everything from the kept files.",
         "A statement also carries your positions and your cash at the end of its period: a single file is enough to fill the app."
       ]
     },

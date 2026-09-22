@@ -16,6 +16,27 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/**
+ * jsdom implements no `scrollIntoView` at all, so it cannot be spied on: it is installed for
+ * the test and removed again. Its absence is exactly what the page guards against.
+ */
+function stubScrollIntoView(): { scrolled: Element[]; restore: () => void } {
+  // `Element` declares scrollIntoView as required, so the prototype is reached through a
+  // shape that makes it optional: jsdom leaves it out, and the stub has to be removable.
+  const proto = Element.prototype as unknown as { scrollIntoView?: (this: Element, arg?: unknown) => void };
+  const had = "scrollIntoView" in proto;
+  const scrolled: Element[] = [];
+  proto.scrollIntoView = function (this: Element) {
+    scrolled.push(this);
+  };
+  return {
+    scrolled,
+    restore: () => {
+      if (!had) delete proto.scrollIntoView;
+    },
+  };
+}
+
 const ORIGIN = window.location.origin; // jsdom: http://localhost:3000
 
 describe("HelpPage", () => {
@@ -44,6 +65,43 @@ describe("HelpPage", () => {
     await screen.findByText("L'application");
     expect(container.querySelector("#statement")).not.toBeNull();
     expect(container.querySelector("#flex")).not.toBeNull();
+  });
+
+  // The ids alone promise nothing: the router carries no `ScrollRestoration`, so without the
+  // page's own effect `/help#statement` lands at the top of the page.
+  it("scrolls the section the hash names into view", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const stub = stubScrollIntoView();
+    try {
+      const { container } = render(
+        <MemoryRouter initialEntries={["/help#statement"]}><HelpPage /></MemoryRouter>,
+      );
+      await screen.findByText("L'application");
+      expect(stub.scrolled).toEqual([container.querySelector("#statement")]);
+    } finally {
+      stub.restore();
+    }
+  });
+
+  it("scrolls nothing, and throws nothing, for a hash that names no section", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const stub = stubScrollIntoView();
+    try {
+      render(<MemoryRouter initialEntries={["/help#nowhere"]}><HelpPage /></MemoryRouter>);
+      await screen.findByText("L'application");
+      expect(stub.scrolled).toEqual([]);
+    } finally {
+      stub.restore();
+    }
+  });
+
+  // Without the `?.` on `scrollIntoView`, this render throws in jsdom — and so would every
+  // other test on this page the day one of them carried a hash.
+  it("renders on a hash even where the browser has no scrollIntoView", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    expect("scrollIntoView" in Element.prototype).toBe(false);
+    render(<MemoryRouter initialEntries={["/help#statement"]}><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText("L'application")).toBeInTheDocument();
   });
 
   // Listing columns one by one would be long to follow and wrong the day the parser reads one

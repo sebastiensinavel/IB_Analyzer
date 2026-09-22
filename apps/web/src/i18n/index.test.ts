@@ -6,7 +6,41 @@ import fr from "@/i18n/fr.json";
 
 const RESOURCES = { fr, en } as const;
 
+/**
+ * Every leaf path of a resource tree, array indices included: several blocks — the welcome
+ * benefits, the first steps, the Flex sections, the help items — are arrays of strings, and a
+ * translation that lost one of them would otherwise pass unnoticed.
+ */
+function leafPaths(value: unknown, prefix = ""): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => leafPaths(item, `${prefix}[${index}]`));
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).flatMap(([key, child]) =>
+      leafPaths(child, prefix ? `${prefix}.${key}` : key),
+    );
+  }
+  return [prefix];
+}
+
 describe("i18n", () => {
+  /**
+   * `fallbackLng: "en"` makes a missing French key render English silently, and a missing
+   * English key render the raw key: neither breaks a test that only reads the other file.
+   * This is the guarantee that the two files carry exactly the same keys.
+   */
+  it("carries exactly the same keys in French and in English", () => {
+    const frPaths = leafPaths(fr);
+    const enPaths = leafPaths(en);
+    expect(frPaths.length).toBeGreaterThan(0);
+    const frOnly = frPaths.filter((path) => !enPaths.includes(path));
+    const enOnly = enPaths.filter((path) => !frPaths.includes(path));
+    expect({ missingFromEnglish: frOnly, missingFromFrench: enOnly }).toEqual({
+      missingFromEnglish: [],
+      missingFromFrench: [],
+    });
+  });
+
   it("defaults to French and knows the dashboard nav key", () => {
     expect(i18n.language).toBe("fr");
     expect(i18n.t("nav.dashboard")).toBe("Tableau de bord");
