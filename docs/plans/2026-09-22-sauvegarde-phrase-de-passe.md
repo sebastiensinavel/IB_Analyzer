@@ -743,7 +743,7 @@ cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/db/schema.ts apps/web/src/d
   - `pullBackup(db: AppDatabase, opener: BackupOpener): Promise<BackupResult<{ key: Uint8Array<ArrayBuffer>; wrap: BackupWrap }>>`
   - `pushBackup` garde sa signature.
 
-- [ ] **Step 1 : écrire les tests qui échouent**
+- [x] **Step 1 : écrire les tests qui échouent**
 
 Le fichier moque `globalThis.fetch` par `vi.spyOn`, jamais le module `@/api/backup` : garder
 cette forme. Ce petit serveur en mémoire sert les cinq cas ci-dessous.
@@ -812,7 +812,7 @@ it("refuse un paquet sans en-tête par un BackupPackageError", async () => {
 les compléter par `"une phrase de passe"`. Argon2id rend ces cas lents — ajouter
 `{ timeout: 20_000 }` en troisième argument de chaque `it` du fichier qui active la sauvegarde.
 
-- [ ] **Step 2 : lancer les tests, vérifier qu'ils échouent**
+- [x] **Step 2 : lancer les tests, vérifier qu'ils échouent**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/sync.test.ts
@@ -820,7 +820,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/sync.test.
 
 Attendu : ÉCHEC — `pullBackup` prend encore une clé nue.
 
-- [ ] **Step 3 : implémenter**
+- [x] **Step 3 : implémenter**
 
 Dans `sync.ts`, la ligne du dépôt devient :
 
@@ -868,7 +868,7 @@ export async function pullBackup(
 
 Compléter les imports de `sync.ts` : `packBlob`, `readHeader`, `unwrapKey`, `type BackupWrap`.
 
-- [ ] **Step 4 : lancer les tests, vérifier qu'ils passent**
+- [x] **Step 4 : lancer les tests, vérifier qu'ils passent**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/sync.test.ts
@@ -876,7 +876,7 @@ cd /home/seb/IA/IB_Analyzer2/apps/web && npx vitest run src/db/backup/sync.test.
 
 Attendu : SUCCÈS.
 
-- [ ] **Step 5 : commit**
+- [x] **Step 5 : commit**
 
 ```bash
 cd /home/seb/IA/IB_Analyzer2 && git add apps/web/src/db/backup/sync.ts apps/web/src/db/backup/sync.test.ts docs/plans/2026-09-22-sauvegarde-phrase-de-passe.md && git commit -m "Dépose l'en-tête et ouvre le blob par la clé ou par la phrase"

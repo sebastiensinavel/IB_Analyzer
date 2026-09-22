@@ -1,6 +1,18 @@
 import { getBackup, putBackup, type BackupResult } from "@/api/backup";
 import type { AppDatabase } from "../schema";
-import { BackupKeyError, decodePayload, decryptBlob, encodePayload, encryptBlob, gunzip, gzip } from "./crypto";
+import {
+  BackupKeyError,
+  decodePayload,
+  decryptBlob,
+  encodePayload,
+  encryptBlob,
+  gunzip,
+  gzip,
+  packBlob,
+  readHeader,
+  unwrapKey,
+  type BackupWrap,
+} from "./crypto";
 import { buildPayload, restorePayload } from "./payload";
 import { readBackupState, recordBackup, recordBackupFailure } from "./state";
 import { suppressBackupTrigger } from "./trigger";
@@ -20,8 +32,8 @@ export async function pushBackup(
   try {
     const state = await readBackupState(db);
     if (!state?.enabled) return null;
-    const blob = await encryptBlob(state.key, await gzip(encodePayload(await buildPayload(db))));
-    const result = await putBackup(blob);
+    const body = await encryptBlob(state.key, await gzip(encodePayload(await buildPayload(db))));
+    const result = await putBackup(packBlob(state.wrap, body));
     if (result.ok) await recordBackup(db, result.value.updatedAt, result.value.bytes);
     else await recordBackupFailure(db, result.kind);
     return result;
@@ -33,23 +45,35 @@ export async function pushBackup(
   }
 }
 
+/** Ce avec quoi on ouvre : la clé que ce navigateur détient déjà, ou la phrase qu'on vient
+ *  de taper sur un navigateur neuf. Jamais les deux. */
+export type BackupOpener = { key: Uint8Array<ArrayBuffer> } | { passphrase: string };
+
 /**
- * A key that does not open the blob is reported as a `BackupKeyError`, never as a generic
- * failure. AES-GCM authenticates its own ciphertext, so `crypto.subtle.decrypt` rejecting —
- * with an `OperationError` carrying no detail — means exactly one thing: this key is not the
- * one the blob was written with. The caller has to be able to tell that apart from a network
- * failure, because it is what decides whether a freshly typed recovery code may be kept.
+ * Une phrase — ou une clé — qui n'ouvre pas le blob remonte en `BackupKeyError`, jamais en
+ * échec générique : AES-GCM authentifie son propre chiffré, donc un rejet de `decrypt` veut
+ * dire exactement une chose. Un paquet que cette version ne sait pas lire remonte en
+ * `BackupPackageError`, qui est une autre chose : l'appelant doit pouvoir dire « retapez
+ * votre phrase » sans le dire devant un blob corrompu.
+ *
+ * Rend la clé et l'enveloppe dont le paquet s'est ouvert, pour que l'appelant les adopte —
+ * et seulement après que la restauration a réussi.
  */
-export async function pullBackup(db: AppDatabase, key: Uint8Array<ArrayBuffer>): Promise<BackupResult<void>> {
+export async function pullBackup(
+  db: AppDatabase,
+  opener: BackupOpener,
+): Promise<BackupResult<{ key: Uint8Array<ArrayBuffer>; wrap: BackupWrap }>> {
   const blob = await getBackup();
   if (!blob.ok) return blob;
+  const { wrap, body } = readHeader(blob.value);
+  const key = "key" in opener ? opener.key : await unwrapKey(wrap, opener.passphrase);
   let plain: Uint8Array<ArrayBuffer>;
   try {
-    plain = await decryptBlob(key, blob.value);
+    plain = await decryptBlob(key, body);
   } catch (error) {
     throw error instanceof BackupKeyError ? error : new BackupKeyError("This key does not open the backup");
   }
   const payload = decodePayload(await gunzip(plain));
   await suppressBackupTrigger(() => restorePayload(db, payload));
-  return { ok: true, value: undefined };
+  return { ok: true, value: { key, wrap } };
 }
