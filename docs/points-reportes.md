@@ -690,6 +690,17 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **`apps/web/src/routes/AppLayout.test.tsx` échoue une fois sous charge de suite complète, sur
   `main` aussi** (« Unable to find role=link … Couverture : aucun snapshot… », environ 9 s) et
   passe seul : un test instable dépendant de la charge, préexistant à ce sous-projet.
+- **`apps/web/src/components/PositionChartRow.test.tsx`, « garde les niveaux du vrai sous-jacent,
+  jamais ceux du substitut », échoue environ une fois sur trois — et pas seulement sous charge.**
+  `lastDrawnLevels()` rend `[]` là où `["shortPut"]` est attendu. Mesuré au sous-projet 28 : une
+  fois sur trois en lançant le seul fichier sur la branche, une fois sur cinq en le lançant sur
+  `main` dans un worktree jetable, donc **préexistant et sans rapport avec ce sous-projet**, qui
+  ne touche ni le composant, ni `chartLevels.ts`, ni `strategyLevels`, ni les clés `charts.*`.
+  L'aide `lastDrawnLevels` attend `price-chart` puis lit aussitôt le dernier `attachPrimitive` :
+  elle ne laisse jamais les journaux finir de se recalculer, si bien qu'elle lit parfois la passe
+  de dessin d'avant, celle où les niveaux sont encore vides. Le correctif est dans l'aide, pas
+  dans le composant : attendre que `drawn` soit non vide avant de le lire, ou fixer le nombre de
+  passes. À faire le jour où cette instabilité coûte une campagne.
 - **`apps/web/src/pages/SectorsPage.test.tsx`, « adds only once on a double Enter, and shows no
   false 'already in the table' error », a échoué une fois sous charge de suite complète**, sur
   `main` au merge du sous-projet 16 (`pnpm check` à la racine, tests privés et instance de
