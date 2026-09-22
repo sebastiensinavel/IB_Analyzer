@@ -340,7 +340,7 @@ git commit -m "Ajoute la carte Première étape"
 - Consumes : `useNeverFed` (tâche 1), `FirstStepCard` (tâche 2).
 - Produces : rien.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter dans `apps/web/src/pages/SourcesPage.test.tsx`, dans le `describe` principal :
 
@@ -371,12 +371,12 @@ Ajouter dans `apps/web/src/pages/SourcesPage.test.tsx`, dans le `describe` princ
   });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/SourcesPage.test.tsx -t "first-step"`
 Attendu : échec, « Première étape » introuvable.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Dans `apps/web/src/pages/SourcesPage.tsx` :
 
@@ -402,12 +402,12 @@ et ajouter `useNeverFed` à l'import existant depuis `@/db/hooks`.
       {neverFed === true && <FirstStepCard accountId={account.id} showSourcesLink={false} />}
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/SourcesPage.test.tsx`
 Attendu : tout le fichier au vert, les tests existants compris.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Cocher les cases de la tâche 3, puis :
 

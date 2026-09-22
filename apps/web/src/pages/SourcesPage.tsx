@@ -9,12 +9,13 @@ import { RadioGroup, RadioGroupItem } from "@ib/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
 import { useSession } from "@/api/session";
 import { useAgentPresence, useAgentSync, refreshPresence } from "@/agent/useAgentSync";
+import { FirstStepCard } from "@/components/FirstStepCard";
 import { ImportReportCard } from "@/components/ImportReportCard";
 import { AccountError, clearFlexCredentials, deleteAccount, setFlexCredentials, setFlexRelay, setTwsPort } from "@/db/accounts";
 import { useAccountJournals } from "@/db/AccountDataProvider";
 import { clearDerived, type ClearDerivedReport } from "@/db/clearDerived";
 import { useDb } from "@/db/DbProvider";
-import { useAccount, useContractIdentities, useImports, useStatements } from "@/db/hooks";
+import { useAccount, useContractIdentities, useImports, useNeverFed, useStatements } from "@/db/hooks";
 import { importFiles, type ImportReport } from "@/db/importFile";
 import { withImportLock } from "@/db/importLock";
 import { countOrphanRows, deleteStatement, replayStatements, type ReplayReport } from "@/db/replayStatements";
@@ -29,6 +30,7 @@ export function SourcesPage() {
   const navigate = useNavigate();
   const db = useDb();
   const account = useAccount(accountId);
+  const neverFed = useNeverFed(accountId);
   const imports = useImports(accountId);
   const [reports, setReports] = useState<ImportReport[]>([]);
   const [importing, setImporting] = useState(false);
@@ -163,6 +165,8 @@ export function SourcesPage() {
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.sources")}</h1>
+
+      {neverFed === true && <FirstStepCard accountId={account.id} showSourcesLink={false} />}
 
       <Card>
         <CardHeader>
