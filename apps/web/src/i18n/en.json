@@ -503,7 +503,13 @@
     "serverUnreachable": "Server unreachable right now.",
     "secondFactor": "Second factor",
     "secondFactorHint": "Enter the code from your authenticator app, or a recovery code.",
-    "code": "Code"
+    "code": "Code",
+    "intro": {
+      "opens": "A server account opens two things: the server relaying your Flex Query when the local agent is absent, and the encrypted backup of your data.",
+      "without": "Everything else works without it: statements, Flex Query through the local agent, journals, positions.",
+      "invitation": "Access is by invitation. Without one you are missing nothing: close this page and carry on."
+    },
+    "back": "Back"
   },
   "invitation": {
     "title": "Accept the invitation",

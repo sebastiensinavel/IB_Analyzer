@@ -503,7 +503,13 @@
     "serverUnreachable": "Serveur injoignable pour le moment.",
     "secondFactor": "Second facteur",
     "secondFactorHint": "Entrez le code fourni par votre application d'authentification, ou un code de secours.",
-    "code": "Code"
+    "code": "Code",
+    "intro": {
+      "opens": "Un compte serveur ouvre deux choses : le relais de votre Flex Query par le serveur quand l'agent local est absent, et la sauvegarde chiffrée de vos données.",
+      "without": "Tout le reste fonctionne sans : relevés, Flex Query par l'agent local, journaux, positions.",
+      "invitation": "L'accès se fait sur invitation. Sans invitation, il ne vous manque rien : fermez cette page et continuez."
+    },
+    "back": "Retour"
   },
   "invitation": {
     "title": "Accepter l'invitation",

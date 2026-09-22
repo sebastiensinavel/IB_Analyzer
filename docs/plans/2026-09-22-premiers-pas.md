@@ -1044,7 +1044,7 @@ git commit -m "Nomme la connexion compte serveur et la dit facultative"
 - Consumes : `auth.serverAccount` (tâche 7).
 - Produces : rien.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Ajouter dans `apps/web/src/pages/LoginPage.test.tsx` :
 
@@ -1062,12 +1062,12 @@ Ajouter dans `apps/web/src/pages/LoginPage.test.tsx` :
 Ce fichier interroge le bouton de validation par `{ name: /se connecter|sign in/i }` : ce
 bouton garde `auth.signIn`, les tests existants ne changent pas.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Depuis `apps/web` : `npx vitest run src/pages/LoginPage.test.tsx -t invitation`
 Attendu : échec, l'introduction n'existe pas.
 
-- [ ] **Step 3: Add the texts**
+- [x] **Step 3: Add the texts**
 
 Dans `apps/web/src/i18n/fr.json`, bloc `auth` :
 
@@ -1091,7 +1091,7 @@ Dans `apps/web/src/i18n/en.json`, bloc `auth` :
     "back": "Back",
 ```
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Dans `apps/web/src/pages/LoginPage.tsx`, entre l'en-tête et la `<Card>`, insérer le titre et
 l'introduction :
@@ -1119,12 +1119,12 @@ Et sous la `<Card>`, un retour vers l'écran d'où l'on vient :
 
 `from` est déjà calculé dans le composant ; `Link` est déjà importé.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Depuis `apps/web` : `npx vitest run src/pages/LoginPage.test.tsx src/i18n`
 Attendu : tout au vert, les tests d'identifiants refusés et de serveur injoignable compris.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Cocher les cases de la tâche 8, puis :
 

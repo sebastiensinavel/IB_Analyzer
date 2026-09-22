@@ -70,4 +70,13 @@ describe("LoginPage", () => {
     expect(await screen.findByLabelText(/code/i)).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+
+  it("says what a server account opens, what works without one, and that it is by invitation", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 401 }));
+    renderPage();
+    expect(await screen.findByText(/relais de votre Flex Query par le serveur/)).toBeInTheDocument();
+    expect(screen.getByText(/Tout le reste fonctionne sans/)).toBeInTheDocument();
+    expect(screen.getByText(/L'accès se fait sur invitation/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Retour" })).toHaveAttribute("href", "/");
+  });
 });
