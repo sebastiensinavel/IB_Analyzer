@@ -165,7 +165,7 @@ describe("strategyCoverageBadges", () => {
       { variant: "success", label: "used 8/8", tooltip: null },
     ]);
     const held = position({ kind: "long_stock", quantity: 100, usedQuantity: 100 });
-    expect(strategyCoverageBadges(line({ kind: "long_stock", label: "long position", quantity: 100, position: held }), "leaps")).toEqual([]);
+    expect(strategyCoverageBadges(line({ kind: "long_stock", label: "long", quantity: 100, position: held }), "leaps")).toEqual([]);
   });
 
   it("shows a sold option of Others the naked quantity only, never an allocation", () => {
@@ -196,7 +196,7 @@ describe("strategyCoverageValues", () => {
     expect(strategyCoverageBadges(wingWithoutPosition, "condors")).toEqual([]);
     expect(strategyCoverageValues(wingWithoutPosition, "condors")).toEqual([]);
     const held = position({ kind: "long_stock", quantity: 100, usedQuantity: 100 });
-    expect(strategyCoverageValues(line({ kind: "long_stock", label: "long position", quantity: 100, position: held }), "wheel")).toEqual([]);
+    expect(strategyCoverageValues(line({ kind: "long_stock", label: "long", quantity: 100, position: held }), "wheel")).toEqual([]);
   });
 });
 

@@ -312,7 +312,7 @@ describe("leapsPositions", () => {
     // The whole IB position, whatever covers it there: the 100 ZZZ shares of this snapshot come first.
     expect(optionSales[0].position).toMatchObject({ symbol: "ZZZ", strike: 20, quantity: -1 });
     // Shares count one unit each, whatever multiplier the IB row carries or lacks.
-    expect(delivered).toEqual([expect.objectContaining({ kind: "long_stock", label: "long position", quantity: 100, marketValue: 2100, unrealizedPnl: 100, decision: null })]);
+    expect(delivered).toEqual([expect.objectContaining({ kind: "long_stock", label: "long", quantity: 100, marketValue: 2100, unrealizedPnl: 100, decision: null })]);
   });
 });
 

@@ -40,7 +40,7 @@ export const KIND_LABELS: Record<PositionKind, string> = {
   short_put: "sell of put",
   long_call: "buy of call",
   long_put: "buy of put",
-  long_stock: "long position",
+  long_stock: "long",
   short_stock: "short position",
   other: "other",
 };
