@@ -1,23 +1,31 @@
 import type { Position } from "../types.ts";
 import type { ContractKey } from "./contract.ts";
 
-export const STRATEGIES = ["wheel", "leaps", "condors", "others"] as const;
+/**
+ * The strategies a user may turn on or off for an account (spec of sub-project 30, §7), in the
+ * order every list of them is shown. Others is never one of them: it is where what no active
+ * strategy takes goes.
+ */
+export const ACTIVABLE_STRATEGIES = ["wheel", "leaps", "condors"] as const;
+export type ActivableStrategy = (typeof ACTIVABLE_STRATEGIES)[number];
+export const STRATEGIES = [...ACTIVABLE_STRATEGIES, "others"] as const;
 export type Strategy = (typeof STRATEGIES)[number];
 /** Others has no statistics: it is where what fits nowhere else goes. */
-export type StatsStrategy = "wheel" | "leaps" | "condors";
+export type StatsStrategy = ActivableStrategy;
 
-/** A statistics page, or the three strategies at once for the dashboard. */
+/** A statistics page, or the active strategies at once for the dashboard. */
 export type CapitalScope = StatsStrategy | "portfolio";
+
 /**
- * The strategies whose lines a scope reads. The dashboard's figures are the same computation over
- * more lines, never a sum of the strategies' results (spec of sub-project 14, §3).
+ * The strategies whose lines a scope reads: a strategy's own while it is active, nothing once it
+ * is not, and every active one for the dashboard. The dashboard's figures are the same
+ * computation over more lines, never a sum of the strategies' results (spec of sub-project 14,
+ * §3; sub-project 30, §4).
  */
-export const SCOPE_STRATEGIES: Record<CapitalScope, readonly StatsStrategy[]> = {
-  wheel: ["wheel"],
-  leaps: ["leaps"],
-  condors: ["condors"],
-  portfolio: ["wheel", "leaps", "condors"],
-};
+export function scopeStrategies(scope: CapitalScope, active: readonly ActivableStrategy[]): readonly ActivableStrategy[] {
+  if (scope === "portfolio") return active;
+  return active.includes(scope) ? [scope] : [];
+}
 
 export type RowKind =
   | "short_put"

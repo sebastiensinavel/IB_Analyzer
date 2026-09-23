@@ -48,7 +48,7 @@ function contributions(row: JournalRow): Contribution[] {
 /**
  * `lastWhen` is the ledger's last transaction, whatever its strategy: the months run on to it,
  * so a position still open shows the months it has been open, not only the months money moved.
- * `strategies` is one strategy for its page, all three for the dashboard: the same flows, summed.
+ * `strategies` is one strategy for its page, the active ones for the dashboard: the same flows, summed.
  */
 export function computeStats(rows: readonly JournalRow[], strategies: readonly StatsStrategy[], lastWhen: string | null): StrategyStats[] {
   const scope = new Set<Strategy>(strategies);

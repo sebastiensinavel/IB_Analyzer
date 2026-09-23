@@ -121,20 +121,24 @@ function openSingle(ctx: ReplayContext, opening: Opening, state: StrategyState):
     openLot(ctx, opening, "others", null);
     return;
   }
+  const { active } = ctx;
   if (tx.right === "P") {
-    openLot(ctx, opening, opening.quantity < 0 ? "wheel" : "others", null);
+    openLot(ctx, opening, opening.quantity < 0 && active.has("wheel") ? "wheel" : "others", null);
     return;
   }
   if (opening.quantity > 0) {
-    const leaps = contract.expiry !== null && isAtLeastMonthsAway(dayOf(tx.when), contract.expiry, LEAPS_MIN_MONTHS);
+    const leaps =
+      active.has("leaps") && contract.expiry !== null && isAtLeastMonthsAway(dayOf(tx.when), contract.expiry, LEAPS_MIN_MONTHS);
     openLot(ctx, opening, leaps ? "leaps" : "others", null);
     return;
   }
   const covered = state.coveredCalls(contract);
+  // An inactive strategy offers no capacity: splitShortCall then sends the sale to whichever
+  // active cover is left, or to Others (spec of sub-project 30, §3).
   const parts = splitShortCall(
     Math.abs(opening.quantity),
-    state.wheelCapacity(contract),
-    state.leapsCapacity(contract),
+    active.has("wheel") ? state.wheelCapacity(contract) : 0,
+    active.has("leaps") ? state.leapsCapacity(contract) : 0,
     contract.strike,
     state.averageSharePrice(contract),
   );
@@ -171,9 +175,10 @@ function opensCoverOnly(group: Opening[]): boolean {
 }
 
 /**
- * Classifies the option openings of one instant (spec §3.4). Legs of one
- * underlying and one expiry opened together are a combination — a condor, or
- * Others — unless they are fills of one and the same contract.
+ * Classifies the option openings of one instant (spec §3.4), offering an opening only to the
+ * active strategies (spec of sub-project 30, §3). Legs of one underlying and one expiry opened
+ * together are a combination — a condor, or Others — unless they are fills of one and the same
+ * contract.
  */
 export function classifyOpenings(openings: Opening[], ctx: ReplayContext): void {
   const groups = new Map<string, Opening[]>();
@@ -189,7 +194,9 @@ export function classifyOpenings(openings: Opening[], ctx: ReplayContext): void 
   for (const group of [...all.filter(opensCoverOnly), ...all.filter((group) => !opensCoverOnly(group))]) {
     const contracts = new Set(group.map((opening) => contractId(contractOf(opening.tx))));
     if (contracts.size >= 2) {
-      const condor = detectCondor(group);
+      // Without the Condors, a combination goes whole to Others like any combination that is
+      // not a condor — never leg by leg into the Wheel (spec of sub-project 30, §3).
+      const condor = ctx.active.has("condors") ? detectCondor(group) : null;
       if (condor) openCondor(ctx, condor);
       else for (const opening of group) openLot(ctx, opening, "others", null);
       continue;

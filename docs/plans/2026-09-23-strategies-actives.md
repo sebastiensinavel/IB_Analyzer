@@ -112,7 +112,7 @@ Library, `fake-indexeddb`.
   - `buildJournals(transactions, snapshot?, identities = NO_IDENTITIES, active: readonly ActivableStrategy[] = ACTIVABLE_STRATEGIES): JournalsReport`
   - `SCOPE_STRATEGIES` est **supprimé** (son seul lecteur est `replay.ts`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `packages/ledger/src/journals/active.test.ts` :
 
@@ -249,13 +249,13 @@ describe("scopeStrategies", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run (depuis `packages/ledger`) : `npx vitest run active`
 Expected: FAIL — `ACTIVABLE_STRATEGIES` / `scopeStrategies` introuvables, puis attentes de
 classement fausses.
 
-- [ ] **Step 3: Declare the list once (`types.ts`)**
+- [x] **Step 3: Declare the list once (`types.ts`)**
 
 Remplacer les lignes 4-20 de `packages/ledger/src/journals/types.ts` par :
 
@@ -287,7 +287,7 @@ export function scopeStrategies(scope: CapitalScope, active: readonly ActivableS
 }
 ```
 
-- [ ] **Step 4: Carry the list in the replay context (`context.ts`)**
+- [x] **Step 4: Carry the list in the replay context (`context.ts`)**
 
 Dans `ReplayContext`, ajouter le champ, et dans `newContext` le paramètre :
 
@@ -312,7 +312,7 @@ export function newContext(
 Chercher les autres appels de `newContext` (`grep -rn "newContext(" packages/ledger/src`) : le
 défaut les laisse inchangés.
 
-- [ ] **Step 5: Offer openings to the active strategies only (`classify.ts`)**
+- [x] **Step 5: Offer openings to the active strategies only (`classify.ts`)**
 
 Dans `openSingle`, remplacer le corps après le test `opening.orphan` par :
 
@@ -353,7 +353,7 @@ Dans `classifyOpenings`, remplacer `const condor = detectCondor(group);` par :
 Mettre à jour le commentaire de `classifyOpenings` pour dire que le classement ne propose une
 ouverture qu'aux stratégies actives.
 
-- [ ] **Step 6: Pass the list through `buildJournals` (`replay.ts`)**
+- [x] **Step 6: Pass the list through `buildJournals` (`replay.ts`)**
 
 ```ts
 export function buildJournals(
@@ -377,12 +377,12 @@ Vérifier `grep -rn "SCOPE_STRATEGIES" packages apps` : plus aucune occurrence h
 à mettre à jour (le commentaire de `computeStats` « all three for the dashboard » devient « the
 active ones for the dashboard »).
 
-- [ ] **Step 7: Run the tests**
+- [x] **Step 7: Run the tests**
 
 Run (depuis `packages/ledger`) : `npx vitest run` puis `npx tsc --noEmit -p .`
 Expected: PASS, tous les tests existants inchangés, l'oracle des journaux compris.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/ledger docs/plans/2026-09-23-strategies-actives.md

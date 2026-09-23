@@ -13,7 +13,7 @@ import { NO_IDENTITIES, type ContractIdentities } from "./identities.ts";
 import { reconcile } from "./reconcile.ts";
 import { buildRow, net, share } from "./rows.ts";
 import { computeStats } from "./stats.ts";
-import { SCOPE_STRATEGIES, type CapitalScope, type CloseEvent, type JournalRow, type JournalSnapshot, type JournalsReport, type Reconciliation } from "./types.ts";
+import { ACTIVABLE_STRATEGIES, scopeStrategies, type ActivableStrategy, type CapitalScope, type CloseEvent, type JournalRow, type JournalSnapshot, type JournalsReport, type Reconciliation } from "./types.ts";
 
 function isReplayable(tx: Transaction): boolean {
   if (tx.kind !== "trade") return false;
@@ -137,12 +137,13 @@ export function buildJournals(
   transactions: readonly Transaction[],
   snapshot?: JournalSnapshot,
   identities: ContractIdentities = NO_IDENTITIES,
+  active: readonly ActivableStrategy[] = ACTIVABLE_STRATEGIES,
 ): JournalsReport {
   const named = canonicalize(sortTransactions(transactions), identities);
   const { events: paired } = pairCorporateActions(named);
   const events = paired.map((event) => resolveLegs(event, identities));
   const { transactions: sorted, ids } = mergeFills(named.filter(isReplayable));
-  const ctx = newContext(ids);
+  const ctx = newContext(ids, active);
   for (const tx of sorted) {
     if (tx.quantity !== null) continue;
     const key = `${contractId(contractOf(tx))}@${dayOf(tx.when)}`;
@@ -185,9 +186,9 @@ export function buildJournals(
   const reconciliation: Reconciliation = snapshot && atBoundary ? reconcile(atBoundary, snapshot) : { asOf: null, differences: [], orphans: [] };
   reconciliation.orphans = rows.filter((row) => row.orphan);
   const lastWhen = transactions.reduce<string | null>((latest, transaction) => (latest === null || transaction.when > latest ? transaction.when : latest), null);
-  const statsOf = (scope: CapitalScope) => computeStats(rows, SCOPE_STRATEGIES[scope], lastWhen);
+  const statsOf = (scope: CapitalScope) => computeStats(rows, scopeStrategies(scope, active), lastWhen);
   const stats = { wheel: statsOf("wheel"), leaps: statsOf("leaps"), condors: statsOf("condors"), portfolio: statsOf("portfolio") };
-  const capitalOf = (scope: CapitalScope) => computeCapital(rows, SCOPE_STRATEGIES[scope], stats[scope]);
+  const capitalOf = (scope: CapitalScope) => computeCapital(rows, scopeStrategies(scope, active), stats[scope]);
   return {
     rows,
     reconciliation,

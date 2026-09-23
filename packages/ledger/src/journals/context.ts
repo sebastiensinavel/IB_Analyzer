@@ -1,7 +1,8 @@
 import type { Transaction } from "../types.ts";
 import { LotBook, type Exit, type Lot } from "./book.ts";
 import { buildRow } from "./rows.ts";
-import type { JournalRow, RowKind } from "./types.ts";
+import type { ActivableStrategy, JournalRow, RowKind } from "./types.ts";
+import { ACTIVABLE_STRATEGIES } from "./types.ts";
 
 export interface ReplayContext {
   book: LotBook;
@@ -15,10 +16,12 @@ export interface ReplayContext {
   /** Original ids of the lines `mergeFills` folded, by folded transaction. */
   fills: Map<Transaction, string[]>;
   ids: Map<string, number>;
+  /** The strategies an opening may be offered to (spec of sub-project 30, §3). */
+  active: ReadonlySet<ActivableStrategy>;
 }
 
-export function newContext(fills: Map<Transaction, string[]> = new Map()): ReplayContext {
-  return { book: new LotBook(), rows: [], composites: [], delivered: new Map(), settlements: new Map(), fills, ids: new Map() };
+export function newContext(fills: Map<Transaction, string[]> = new Map(), active: readonly ActivableStrategy[] = ACTIVABLE_STRATEGIES): ReplayContext {
+  return { book: new LotBook(), rows: [], composites: [], delivered: new Map(), settlements: new Map(), fills, ids: new Map(), active: new Set(active) };
 }
 
 /** Every id behind a transaction: the slices it folds, or its own. */
