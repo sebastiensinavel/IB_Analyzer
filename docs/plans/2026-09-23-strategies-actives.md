@@ -1182,7 +1182,7 @@ git commit -m "Documente le sous-projet 30
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 5: Start the review instance**
+- [x] **Step 5: Start the review instance**
 
 Run (racine du worktree) : `pnpm dev:start`, puis `pnpm dev:status` pour les deux URL, à
 donner à Seb pour la relecture de la branche.
