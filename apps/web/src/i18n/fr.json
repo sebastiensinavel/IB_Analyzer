@@ -312,6 +312,11 @@
   },
   "sources": {
     "account": { "title": "Compte", "label": "Libellé", "ibAccountId": "Identifiant IB" },
+    "strategies": {
+      "title": "Stratégies actives",
+      "hint": "Ce qu'une stratégie décochée aurait pris va dans Autres ; le tableau de bord ne compte que les stratégies cochées.",
+      "names": { "wheel": "Wheel", "leaps": "LEAPS", "condors": "Condors" }
+    },
     "flexQuery": {
       "title": "Flex Query",
       "hint": "Le jeton et l'identifiant de requête de la Flex Query de ce compte, chez Interactive Brokers. Choisissez ci-dessous qui peut relayer l'appel."
@@ -582,7 +587,7 @@
     "title": "Aide",
     "app": {
       "title": "L'application",
-      "text": "IB Analyzer analyse vos portefeuilles Interactive Brokers, actions et options : couverture de vos ventes d'options et cash requis, journaux Wheel, LEAPS et Condors reconstitués depuis votre historique, historique complet, positions et statistiques par stratégie.",
+      "text": "IB Analyzer analyse vos portefeuilles Interactive Brokers, actions et options : couverture de vos ventes d'options et cash requis, journaux Wheel, LEAPS et Condors reconstitués depuis votre historique, historique complet, positions et statistiques par stratégie. Les stratégies suivies se choisissent pour chaque compte dans Sources de données.",
       "privacy": "Vos données restent dans ce navigateur : le serveur ne voit jamais vos transactions ni vos positions.",
       "sources": "L'application peut se servir de différentes sources de données, en filtrant automatiquement les doublons.",
       "tiers": [

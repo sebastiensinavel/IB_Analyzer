@@ -884,7 +884,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 - Consumes: `activeStrategies`, `setActiveStrategies` (tâche 4), `ACTIVABLE_STRATEGIES`.
 - Produces: `StrategiesCard({ account }: { account: AccountRecord })`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Dans `SourcesPage.test.tsx`, sur le modèle des tests existants (`renderSources`, compte `test`) :
 
@@ -914,12 +914,12 @@ describe("SourcesPage: active strategies", () => {
 Si `toBeChecked` ne lit pas l'état du `Checkbox` base-ui, lire `aria-checked` (voir comment les
 tests de `ColumnHeader` le font).
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run (depuis `apps/web`) : `npx vitest run SourcesPage`
 Expected: FAIL — `strategies-card` introuvable.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Clés i18n (fr ; en en miroir : « Active strategies », « What an unchecked strategy would have
 taken goes to Others; the dashboard only counts the checked strategies. ») :
@@ -982,12 +982,12 @@ export function StrategiesCard({ account }: { account: AccountRecord }) {
 La monter dans `SourcesPage.tsx` juste après la carte `sources.account`, avec le compte déjà lu
 par la page.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run (depuis `apps/web`) : `npx vitest run SourcesPage HelpPage i18n`
 Expected: PASS (un test de parité des clés fr/en, s'il existe, compris).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web docs/plans/2026-09-23-strategies-actives.md

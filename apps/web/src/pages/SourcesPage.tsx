@@ -11,6 +11,7 @@ import { useSession } from "@/api/session";
 import { useAgentPresence, useAgentSync, refreshPresence } from "@/agent/useAgentSync";
 import { FirstStepCard } from "@/components/FirstStepCard";
 import { ImportReportCard } from "@/components/ImportReportCard";
+import { StrategiesCard } from "@/components/StrategiesCard";
 import { AccountError, clearFlexCredentials, deleteAccount, setFlexCredentials, setFlexRelay, setTwsPort } from "@/db/accounts";
 import { useAccountJournals } from "@/db/AccountDataProvider";
 import { clearDerived, type ClearDerivedReport } from "@/db/clearDerived";
@@ -181,6 +182,8 @@ export function SourcesPage() {
           </dl>
         </CardContent>
       </Card>
+
+      <StrategiesCard account={account} />
 
       <Card data-testid="flex-query-card">
         <CardHeader>

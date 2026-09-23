@@ -312,6 +312,11 @@
   },
   "sources": {
     "account": { "title": "Account", "label": "Label", "ibAccountId": "IB account id" },
+    "strategies": {
+      "title": "Active strategies",
+      "hint": "What an unchecked strategy would have taken goes to Others; the dashboard only counts the checked strategies.",
+      "names": { "wheel": "Wheel", "leaps": "LEAPS", "condors": "Condors" }
+    },
     "flexQuery": {
       "title": "Flex Query",
       "hint": "The token and query id of this account's Flex Query at Interactive Brokers. Choose below who may relay the call."
@@ -582,7 +587,7 @@
     "title": "Help",
     "app": {
       "title": "The application",
-      "text": "IB Analyzer analyzes your Interactive Brokers portfolios, stocks and options: coverage of your option sales and required cash, Wheel, LEAPS and Condor journals rebuilt from your history, full history, positions and statistics per strategy.",
+      "text": "IB Analyzer analyzes your Interactive Brokers portfolios, stocks and options: coverage of your option sales and required cash, Wheel, LEAPS and Condor journals rebuilt from your history, full history, positions and statistics per strategy. The strategies followed are chosen for each account in Data sources.",
       "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
       "sources": "The application can draw on several data sources, filtering out duplicates automatically.",
       "tiers": [

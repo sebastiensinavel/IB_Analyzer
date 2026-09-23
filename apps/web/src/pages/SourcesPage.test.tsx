@@ -988,3 +988,24 @@ describe("Contract identity card", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
+
+describe("SourcesPage: active strategies", () => {
+  it("shows one box per strategy, the Wheel alone checked by default", async () => {
+    renderSources();
+    const card = await screen.findByTestId("strategies-card");
+    expect(within(card).getByRole("checkbox", { name: "Wheel" })).toBeChecked();
+    expect(within(card).getByRole("checkbox", { name: "LEAPS" })).not.toBeChecked();
+    expect(within(card).getByRole("checkbox", { name: "Condors" })).not.toBeChecked();
+  });
+
+  it("saves a box the moment it changes, and unchecking the last one leaves the list empty", async () => {
+    const user = userEvent.setup();
+    renderSources();
+    const card = await screen.findByTestId("strategies-card");
+    await user.click(within(card).getByRole("checkbox", { name: "LEAPS" }));
+    await waitFor(async () => expect((await db.accounts.get("test"))?.strategies).toEqual(["wheel", "leaps"]));
+    await user.click(within(card).getByRole("checkbox", { name: "Wheel" }));
+    await user.click(within(card).getByRole("checkbox", { name: "LEAPS" }));
+    await waitFor(async () => expect((await db.accounts.get("test"))?.strategies).toEqual([]));
+  });
+});
