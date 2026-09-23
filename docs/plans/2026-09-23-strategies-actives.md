@@ -410,7 +410,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
     `COVERED_STRATEGIES` devient `ACTIVABLE_STRATEGIES`.
   - Tous les `active` absents valent `ACTIVABLE_STRATEGIES` : comportement d'avant.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Ajouter à `packages/coverage/src/strategy.test.ts` (les helpers `row`, `opt`, `priced`,
 `option`, `alloc`, `shortsOf` existent déjà dans le fichier ; vérifier la signature de `alloc`
@@ -468,12 +468,12 @@ sur ce couple (vérifier en lançant le test), ajuster **les contrats de la fixt
 l'attente — jusqu'à ce que `snapshot.report.positions[1].allocations` porte `leaps ×1`, et le
 dire dans le commentaire de la fixture.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run (depuis `packages/coverage`) : `npx vitest run strategy`
 Expected: FAIL — `strategyCoverSources` introuvable.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Remplacer `STRATEGY_COVER_SOURCES` et `COVERED_STRATEGIES` par :
 
@@ -548,12 +548,12 @@ with every strategy active ». Importer `ACTIVABLE_STRATEGIES, type ActivableStr
 plus aucun usage hors de ce fichier ; retirer les exports correspondants de
 `packages/coverage/src/index.ts` s'ils y sont, et exporter `strategyCoverSources`.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run (depuis `packages/coverage`) : `npx vitest run` puis `npx tsc --noEmit -p .`
 Expected: PASS, tests existants inchangés.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/coverage docs/plans/2026-09-23-strategies-actives.md

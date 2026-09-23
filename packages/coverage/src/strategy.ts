@@ -1,8 +1,10 @@
 import {
+  ACTIVABLE_STRATEGIES,
   contractId,
   contractOf,
   sharesContract,
   wheelHoldings,
+  type ActivableStrategy,
   type ContractKey,
   type JournalRow,
   type Position,
@@ -40,7 +42,7 @@ export interface StrategyLine {
   /** The whole IB position; `null` when the snapshot does not hold the contract. */
   position: AnalyzedPosition | null;
   /**
-   * What of the IB position's cover belongs to the strategy (`STRATEGY_COVER_SOURCES`), for a sold
+   * What of the IB position's cover belongs to the strategy (`strategyCoverSources`), for a sold
    * option; empty for what is bought and without a position.
    */
   coverage: CoverageAllocation[];
@@ -72,43 +74,59 @@ export type PositionsStrategy = Strategy;
 /**
  * The cover each strategy owns on a sold option: the Wheel's calls lean on its shares and its puts
  * on cash, the LEAPS' calls on the LEAPS, a condor's legs on the other legs of the structure.
- * Others owns none: what is left there is precisely what nothing covers, and UNCOVERED is never an
- * allocation — the page shows it from the line's own quantity.
  */
-export const STRATEGY_COVER_SOURCES: Record<PositionsStrategy, readonly CoverSource[]> = {
+const OWN_COVER_SOURCES: Record<ActivableStrategy, readonly CoverSource[]> = {
   wheel: ["cash", "stock"],
   leaps: ["leaps"],
   condors: ["spread"],
-  others: [],
 };
 
+/**
+ * What a strategy's page reads of the IB cover. Others owns the sources of the inactive
+ * strategies, whose sales it now holds (spec of sub-project 30, §5); with every strategy active it
+ * owns none — what is left there is then precisely what nothing covers. UNCOVERED is never an
+ * allocation: the page shows it from the line's own quantity.
+ */
+export function strategyCoverSources(strategy: PositionsStrategy, active: readonly ActivableStrategy[] = ACTIVABLE_STRATEGIES): readonly CoverSource[] {
+  if (strategy !== "others") return OWN_COVER_SOURCES[strategy];
+  return ACTIVABLE_STRATEGIES.filter((s) => !active.includes(s)).flatMap((s) => OWN_COVER_SOURCES[s]);
+}
+
 /** The strategies that own a cover, in the order the pages are served when the cap bites. */
-export const COVERED_STRATEGIES: readonly PositionsStrategy[] = ["wheel", "leaps", "condors"];
+const COVERED_STRATEGIES: readonly ActivableStrategy[] = ACTIVABLE_STRATEGIES;
+
+/** Σ allocations whose source is in `sources`. */
+function ownCover(allocations: readonly CoverageAllocation[], sources: readonly CoverSource[]): number {
+  return allocations.reduce((sum, a) => (sources.includes(a.source) ? sum + a.quantity : sum), 0);
+}
 
 /**
  * How many contracts each covered strategy loses on one contract, the naked part the page Autres
  * takes over (spec of sub-project 22, §3.1). `shorts` counts the open sold contracts of each
  * strategy on that contract, unsigned, Others included.
  *
- * A strategy keeps what its own sources cover (`STRATEGY_COVER_SOURCES`), capped by its own
+ * A strategy keeps what its own sources cover (`strategyCoverSources`), capped by its own
  * quantity: the allocations describe the whole IB position, which may exceed the strategy's part.
- * The total that migrates never exceeds what the engine itself calls naked, minus what Others
- * already holds — naked by construction, `splitShortCall` having put it there at the sale. That
- * cap is what keeps the page Autres from contradicting the title bar.
+ * The total that migrates never exceeds what the engine itself calls naked, minus Others' own
+ * naked part — what its sources, the inactive strategies' covers, do not cover. That cap is what
+ * keeps the page Autres from contradicting the title bar.
  */
 export function migratedContracts(
   shorts: ReadonlyMap<PositionsStrategy, number>,
   allocations: readonly CoverageAllocation[],
   uncoveredQuantity: number,
+  active: readonly ActivableStrategy[] = ACTIVABLE_STRATEGIES,
 ): Map<PositionsStrategy, number> {
   const taken = new Map<PositionsStrategy, number>();
-  let migrable = Math.max(0, uncoveredQuantity - (shorts.get("others") ?? 0));
+  const othersHeld = shorts.get("others") ?? 0;
+  const othersNaked = othersHeld - Math.min(othersHeld, ownCover(allocations, strategyCoverSources("others", active)));
+  let migrable = Math.max(0, uncoveredQuantity - othersNaked);
   for (const strategy of COVERED_STRATEGIES) {
     if (migrable <= 0) break;
+    if (!active.includes(strategy)) continue;
     const held = shorts.get(strategy) ?? 0;
     if (held <= 0) continue;
-    const sources = STRATEGY_COVER_SOURCES[strategy];
-    const own = allocations.reduce((sum, a) => (sources.includes(a.source) ? sum + a.quantity : sum), 0);
+    const own = ownCover(allocations, strategyCoverSources(strategy, active));
     const take = Math.min(held - Math.min(held, own), migrable);
     if (take > 0) {
       taken.set(strategy, take);
@@ -274,7 +292,7 @@ function openRowsByContract(rows: readonly JournalRow[]): OpenRows {
 const isSold = (row: JournalRow) => LINE_KIND[row.kind] === "short_call" || LINE_KIND[row.kind] === "short_put";
 
 /** What each covered strategy loses on each contract, `migratedContracts` applied to the book. */
-function migratedByContract(open: OpenRows, priced: Map<string, Priced>): Map<string, Map<PositionsStrategy, number>> {
+function migratedByContract(open: OpenRows, priced: Map<string, Priced>, active: readonly ActivableStrategy[]): Map<string, Map<PositionsStrategy, number>> {
   const taken = new Map<string, Map<PositionsStrategy, number>>();
   for (const [id, byStrategy] of open) {
     const position = priced.get(id)?.analyzed;
@@ -284,7 +302,7 @@ function migratedByContract(open: OpenRows, priced: Map<string, Priced>): Map<st
       const held = rows.filter(isSold).reduce((n, r) => n + Math.abs(r.quantity as number), 0);
       if (held > 0) shorts.set(strategy, held);
     }
-    const migrated = migratedContracts(shorts, position.allocations, position.uncoveredQuantity);
+    const migrated = migratedContracts(shorts, position.allocations, position.uncoveredQuantity, active);
     if (migrated.size > 0) taken.set(id, migrated);
   }
   return taken;
@@ -327,6 +345,7 @@ function linesByGroup(
   strategy: PositionsStrategy,
   priced: Map<string, Priced>,
   taken: Map<string, Map<PositionsStrategy, number>>,
+  active: readonly ActivableStrategy[],
 ): Record<DetailGroupId, StrategyLine[]> {
   const lines: StrategyLine[] = [];
   for (const [id, byStrategy] of open) {
@@ -350,7 +369,7 @@ function linesByGroup(
           migrated,
         },
         priced.get(id) ?? null,
-        STRATEGY_COVER_SOURCES[strategy],
+        strategyCoverSources(strategy, active),
       ),
     );
   }
@@ -373,11 +392,16 @@ export interface StrategyPositions {
  * What a strategy holds open, priced from the snapshot: one line per contract, grouped as the
  * Positions page groups a portfolio (spec of sub-project 21, §4.1). Computed, never stored.
  */
-export function strategyPositions(rows: readonly JournalRow[], strategy: PositionsStrategy, snapshot: PricedSnapshot | null): StrategyPositions {
+export function strategyPositions(
+  rows: readonly JournalRow[],
+  strategy: PositionsStrategy,
+  snapshot: PricedSnapshot | null,
+  active: readonly ActivableStrategy[] = ACTIVABLE_STRATEGIES,
+): StrategyPositions {
   const priced = pricedByContract(snapshot);
   const open = openRowsByContract(rows);
-  const taken = migratedByContract(open, priced);
-  const groups = linesByGroup(open, strategy, priced, taken);
+  const taken = migratedByContract(open, priced, active);
+  const groups = linesByGroup(open, strategy, priced, taken, active);
   if (strategy !== "wheel") return { shares: [], groups };
   const covered = coveredCallsByTicker(groups.optionSells);
   const shares = wheelHoldings(rows).map((holding): WheelShareLine => {

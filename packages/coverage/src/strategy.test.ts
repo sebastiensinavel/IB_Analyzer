@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ContractKey, JournalRow, Position } from "@ib/ledger";
 import { option, stock } from "./fixtures.ts";
 import { buildRiskReport } from "./report.ts";
-import { strategyPositions, type PricedSnapshot, migratedContracts, type PositionsStrategy } from "./strategy.ts";
+import { strategyPositions, type PricedSnapshot, migratedContracts, strategyCoverSources, type PositionsStrategy } from "./strategy.ts";
 import type { CoverSource } from "./constants.ts";
 import type { CoverageAllocation } from "./types.ts";
 
@@ -471,8 +471,8 @@ describe("strategyPositions — others", () => {
     const sold = strategyPositions(rows, "others", snapshot).groups.optionSells[0];
     // The engine really allocates the stock as cover on the IB position...
     expect(sold.position!.allocations).toEqual([expect.objectContaining({ source: "stock" })]);
-    // ...but STRATEGY_COVER_SOURCES.others is empty, so Others reads none of it: the filter, not
-    // an absent allocation, is what leaves this line's own coverage empty.
+    // ...but strategyCoverSources("others") is empty with every strategy active, so Others reads
+    // none of it: the filter, not an absent allocation, is what leaves this line's coverage empty.
     expect(sold.coverage).toEqual([]);
   });
 });
@@ -522,6 +522,51 @@ describe("migratedContracts", () => {
 
   it("migrates from the condors too", () => {
     expect(migratedContracts(shortsOf([["condors", 2]]), [alloc("spread", 1)], 1)).toEqual(new Map([["condors", 1]]));
+  });
+});
+
+describe("strategyCoverSources", () => {
+  it("gives each strategy its own sources, and Others those of the inactive strategies", () => {
+    expect(strategyCoverSources("wheel")).toEqual(["cash", "stock"]);
+    expect(strategyCoverSources("leaps", ["wheel"])).toEqual(["leaps"]);
+    expect(strategyCoverSources("others")).toEqual([]);
+    expect(strategyCoverSources("others", ["wheel"])).toEqual(["leaps", "spread"]);
+    expect(strategyCoverSources("others", [])).toEqual(["cash", "stock", "leaps", "spread"]);
+  });
+});
+
+describe("migratedContracts — Others covered", () => {
+  it("only counts Others' naked part against what may migrate", () => {
+    // Wheel holds 1 naked call, Others 1 call its (inactive) LEAPS cover: the engine calls 1 naked.
+    expect(
+      migratedContracts(shortsOf([["wheel", 1], ["others", 1]]), [alloc("leaps", 1)], 1, ["wheel"]),
+    ).toEqual(new Map([["wheel", 1]]));
+  });
+
+  it("still counts every Others sale as naked when every strategy is active", () => {
+    expect(migratedContracts(shortsOf([["wheel", 1], ["others", 1]]), [alloc("leaps", 1)], 1)).toEqual(new Map());
+  });
+});
+
+describe("strategyPositions — Others reads the cover of an inactive strategy", () => {
+  const LONG = opt("MQZA", "C", 15, "2027-06-18");
+  const SHORT = opt("MQZA", "C", 20, "2026-10-16");
+  const rows = [
+    row({ id: "l#1", strategy: "others", contract: LONG, kind: "long_call", quantity: 1, openPrice: 3 }),
+    row({ id: "s#1", strategy: "others", contract: SHORT, kind: "short_call", quantity: -1, openPrice: 0.5 }),
+  ];
+  const snapshot = priced([
+    option({ symbol: "MQZA", right: "C", strike: 15, expiry: "2027-06-18", quantity: 1, avgPrice: 3, marketPrice: 4, marketValue: 400 }),
+    option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-10-16", quantity: -1, avgPrice: 0.5, marketPrice: 0.4, marketValue: -40 }),
+  ]);
+
+  it("puts the leaps allocation on the sold call once the LEAPS are inactive", () => {
+    const sold = strategyPositions(rows, "others", snapshot, ["wheel"]).groups.optionSells[0];
+    expect(sold.coverage.map((allocation) => [allocation.source, allocation.quantity])).toEqual([["leaps", 1]]);
+  });
+
+  it("puts none on it while the LEAPS are active", () => {
+    expect(strategyPositions(rows, "others", snapshot).groups.optionSells[0].coverage).toEqual([]);
   });
 });
 
