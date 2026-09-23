@@ -19,6 +19,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionMenuItem } from "@/components/SessionMenuItem";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NAV_SECTIONS } from "@/lib/navigation";
+import { activeStrategies } from "@/lib/strategies";
 import type { AccountRecord } from "@/db/schema";
 
 interface AppSidebarProps {
@@ -32,13 +33,20 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
   const { t } = useTranslation();
   const location = useLocation();
 
+  // The sidebar lives outside AccountDataProvider (CLAUDE.md), so it reads the account's chosen
+  // strategies straight from the record it already has, through the same reader as everywhere
+  // else. A section with no `strategy` (Overview, Others, Configuration) always shows.
+  const active = activeStrategies(accounts.find((account) => account.id === accountId));
+
   // Every account-scoped entry needs a real accountId to link to; without one they are simply
   // not rendered rather than pointing nowhere or being disabled. Sections left empty by the
   // filter (every section but Configuration) are dropped too, so no empty group header shows.
-  const visibleSections = NAV_SECTIONS.map((section) => ({
-    ...section,
-    items: section.items.filter((item) => accountId !== null || !item.accountScoped),
-  })).filter((section) => section.items.length > 0);
+  const visibleSections = NAV_SECTIONS.filter((section) => section.strategy === undefined || active.includes(section.strategy))
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => accountId !== null || !item.accountScoped),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <Sidebar>

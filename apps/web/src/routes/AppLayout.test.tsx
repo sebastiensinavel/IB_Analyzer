@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
+import { ACTIVABLE_STRATEGIES } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
@@ -73,6 +74,7 @@ describe("AppLayout", () => {
   });
 
   it("shows the nav entry for every screen, scoped to the current account", async () => {
+    await db.accounts.update("beta", { strategies: [...ACTIVABLE_STRATEGIES] });
     renderAt("/accounts/beta/dashboard");
     expect(await screen.findByText("dashboard content")).toBeInTheDocument();
     expect(navHrefs()).toEqual([
@@ -139,6 +141,37 @@ describe("AppLayout", () => {
     renderAt("/settings");
     await screen.findByText("settings content");
     expect(navHrefs()).toEqual(["/settings", "/help"]);
+  });
+});
+
+describe("AppLayout: menu of the active strategies", () => {
+  it("shows the Wheel and Others only for an account that never chose", async () => {
+    await db.accounts.put(account("alpha", "U0000001"));
+    renderAt("/accounts/alpha/dashboard");
+    await screen.findByText("dashboard content");
+    const hrefs = navHrefs();
+    expect(hrefs).toContain("/accounts/alpha/journal/wheel");
+    expect(hrefs).toContain("/accounts/alpha/journal/others");
+    expect(hrefs.some((href) => href?.includes("leaps") || href?.includes("condors"))).toBe(false);
+  });
+
+  it("shows each account's own strategies", async () => {
+    await db.accounts.bulkPut([
+      { ...account("alpha", "U0000001"), strategies: ["leaps"] },
+      { ...account("beta", "U0000002"), strategies: ["condors"] },
+    ]);
+    renderAt("/accounts/beta/dashboard");
+    await screen.findByText("dashboard content");
+    const hrefs = navHrefs();
+    expect(hrefs).toContain("/accounts/beta/journal/condors");
+    expect(hrefs.some((href) => href?.includes("wheel") || href?.includes("leaps"))).toBe(false);
+  });
+
+  it("keeps Others with no strategy active", async () => {
+    await db.accounts.put({ ...account("alpha", "U0000001"), strategies: [] });
+    renderAt("/accounts/alpha/dashboard");
+    await screen.findByText("dashboard content");
+    expect(navHrefs().filter((href) => href?.includes("/journal/"))).toEqual(["/accounts/alpha/journal/others"]);
   });
 });
 

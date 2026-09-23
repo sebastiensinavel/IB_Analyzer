@@ -14,6 +14,7 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
+import type { ActivableStrategy } from "@ib/ledger";
 
 export interface NavItem {
   labelKey: string;
@@ -26,6 +27,8 @@ export interface NavItem {
 
 export interface NavSection {
   labelKey: string;
+  /** The strategy the section serves: hidden while it is inactive (sub-project 30). Others has none, and always shows. */
+  strategy?: ActivableStrategy;
   items: readonly NavItem[];
 }
 
@@ -45,6 +48,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   // One section per strategy: its journal first, then its open positions and its statistics when the strategy has them.
   {
     labelKey: "nav.sections.strategyWheel",
+    strategy: "wheel",
     items: [
       { labelKey: "nav.journal", icon: Coins, accountScoped: true, to: accountPath("journal/wheel") },
       { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/wheel") },
@@ -53,6 +57,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     labelKey: "nav.sections.strategyLeaps",
+    strategy: "leaps",
     items: [
       { labelKey: "nav.journal", icon: CalendarRange, accountScoped: true, to: accountPath("journal/leaps") },
       { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/leaps") },
@@ -61,6 +66,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   },
   {
     labelKey: "nav.sections.strategyCondors",
+    strategy: "condors",
     items: [
       { labelKey: "nav.journal", icon: Bird, accountScoped: true, to: accountPath("journal/condors") },
       { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/condors") },

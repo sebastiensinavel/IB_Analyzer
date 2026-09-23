@@ -15,6 +15,7 @@ import { SettingsPage } from "@/pages/SettingsPage";
 import { SourcesPage } from "@/pages/SourcesPage";
 import { StatsPage } from "@/pages/StatsPage";
 import { StrategyPositionsPage } from "@/pages/StrategyPositionsPage";
+import { StrategyRoute } from "@/routes/StrategyRoute";
 
 // Neither /login nor /invitation/:token sit under an account or under AppLayout: signing in
 // is never required to reach any other route (spec §2), and an invitation link may be the
@@ -32,17 +33,94 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <DashboardPage /> },
       { path: "positions", element: <PositionsPage /> },
       { path: "history", element: <HistoryPage /> },
-      { path: "journal/wheel", element: <JournalPage strategy="wheel" /> },
-      { path: "journal/leaps", element: <JournalPage strategy="leaps" /> },
-      { path: "journal/condors", element: <JournalPage strategy="condors" /> },
-      { path: "journal/others", element: <JournalPage strategy="others" /> },
-      { path: "positions/wheel", element: <StrategyPositionsPage strategy="wheel" /> },
-      { path: "positions/leaps", element: <StrategyPositionsPage strategy="leaps" /> },
-      { path: "positions/condors", element: <StrategyPositionsPage strategy="condors" /> },
-      { path: "positions/others", element: <StrategyPositionsPage strategy="others" /> },
-      { path: "stats/wheel", element: <StatsPage strategy="wheel" /> },
-      { path: "stats/leaps", element: <StatsPage strategy="leaps" /> },
-      { path: "stats/condors", element: <StatsPage strategy="condors" /> },
+      {
+        path: "journal/wheel",
+        element: (
+          <StrategyRoute strategy="wheel">
+            <JournalPage strategy="wheel" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "journal/leaps",
+        element: (
+          <StrategyRoute strategy="leaps">
+            <JournalPage strategy="leaps" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "journal/condors",
+        element: (
+          <StrategyRoute strategy="condors">
+            <JournalPage strategy="condors" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "journal/others",
+        element: (
+          <StrategyRoute strategy="others">
+            <JournalPage strategy="others" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "positions/wheel",
+        element: (
+          <StrategyRoute strategy="wheel">
+            <StrategyPositionsPage strategy="wheel" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "positions/leaps",
+        element: (
+          <StrategyRoute strategy="leaps">
+            <StrategyPositionsPage strategy="leaps" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "positions/condors",
+        element: (
+          <StrategyRoute strategy="condors">
+            <StrategyPositionsPage strategy="condors" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "positions/others",
+        element: (
+          <StrategyRoute strategy="others">
+            <StrategyPositionsPage strategy="others" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "stats/wheel",
+        element: (
+          <StrategyRoute strategy="wheel">
+            <StatsPage strategy="wheel" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "stats/leaps",
+        element: (
+          <StrategyRoute strategy="leaps">
+            <StatsPage strategy="leaps" />
+          </StrategyRoute>
+        ),
+      },
+      {
+        path: "stats/condors",
+        element: (
+          <StrategyRoute strategy="condors">
+            <StatsPage strategy="condors" />
+          </StrategyRoute>
+        ),
+      },
       { path: "sources", element: <SourcesPage /> },
       // Under the account although the table is shared by every account: the shell — title
       // bar verdicts, Flex auto-sync, agent polling — stays alive while the user edits it.

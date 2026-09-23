@@ -1011,7 +1011,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 - Consumes: `activeStrategies` (tâche 4), `useAccountStrategies` (tâche 4).
 - Produces: `NavSection.strategy?: ActivableStrategy` ; `StrategyRoute({ strategy, children }: { strategy: Strategy; children: ReactNode })`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `AppLayout.test.tsx` (helpers `renderAt`, `navHrefs`, `account` existants) :
 
@@ -1063,12 +1063,12 @@ Les tests existants de `navHrefs` qui listent toutes les sections : donner au co
    `["leaps"]`), le test aboutit sur « leaps journal », preuve qu'aucune redirection n'est partie
    avant que la fiche soit lue.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run (depuis `apps/web`) : `npx vitest run AppLayout StrategyRoute navigation`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `navigation.ts` :
 
@@ -1123,12 +1123,12 @@ export function StrategyRoute({ strategy, children }: { strategy: Strategy; chil
 La redirection `premiums` → `../journal/wheel` reste ; si la Wheel est inactive, le garde
 renvoie ensuite au tableau de bord.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run (depuis `apps/web`) : `npx vitest run AppLayout StrategyRoute navigation router`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web docs/plans/2026-09-23-strategies-actives.md
