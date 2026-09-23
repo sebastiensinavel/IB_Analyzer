@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { AccountError, clearFlexCredentials, createAccount, deleteAccount, setActiveStrategies, setFlexRelay, slugify } from "@/db/accounts";
+import {
+  AccountError,
+  clearFlexCredentials,
+  createAccount,
+  deleteAccount,
+  setActiveStrategies,
+  setFlexRelay,
+  slugify,
+  toggleActiveStrategy,
+} from "@/db/accounts";
 import { AppDatabase } from "@/db/schema";
 import { getLastAccountId, setLastAccountId } from "@/lib/accountStorage";
 import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
@@ -124,6 +133,23 @@ describe("setActiveStrategies", () => {
     expect((await db.accounts.get("beta"))?.strategies).toEqual(["wheel", "condors"]);
 
     await setActiveStrategies(db, "beta", []);
+    expect((await db.accounts.get("beta"))?.strategies).toEqual([]);
+  });
+});
+
+describe("toggleActiveStrategy", () => {
+  it("composes two un-awaited toggles, each reading and writing inside one transaction", async () => {
+    await createAccount(db, { label: "Beta", ibAccountId: "U1234567" });
+    // Neither call is awaited before the other starts: a read-modify-write that read the
+    // account outside a transaction would have both read the same pre-write list (the
+    // default, wheel alone) and the second write would have clobbered the first.
+    await Promise.all([toggleActiveStrategy(db, "beta", "leaps", true), toggleActiveStrategy(db, "beta", "condors", true)]);
+    expect((await db.accounts.get("beta"))?.strategies).toEqual(["wheel", "leaps", "condors"]);
+  });
+
+  it("removes a strategy that was active", async () => {
+    await createAccount(db, { label: "Beta", ibAccountId: "U1234567" });
+    await toggleActiveStrategy(db, "beta", "wheel", false);
     expect((await db.accounts.get("beta"))?.strategies).toEqual([]);
   });
 });

@@ -1008,4 +1008,18 @@ describe("SourcesPage: active strategies", () => {
     await user.click(within(card).getByRole("checkbox", { name: "LEAPS" }));
     await waitFor(async () => expect((await db.accounts.get("test"))?.strategies).toEqual([]));
   });
+
+  it("picks up a write made elsewhere (another tab) while it is mounted", async () => {
+    const user = userEvent.setup();
+    renderSources();
+    const card = await screen.findByTestId("strategies-card");
+
+    // Simulates another tab writing to the same account record: not this component's own
+    // write, so it must reach the checkboxes through the account's live query alone.
+    await db.accounts.update("test", { strategies: ["wheel", "leaps"] });
+    await waitFor(() => expect(within(card).getByRole("checkbox", { name: "LEAPS" })).toBeChecked());
+
+    await user.click(within(card).getByRole("checkbox", { name: "Condors" }));
+    await waitFor(async () => expect((await db.accounts.get("test"))?.strategies).toEqual(["wheel", "leaps", "condors"]));
+  });
 });

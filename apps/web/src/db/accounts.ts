@@ -1,6 +1,7 @@
 import { ACTIVABLE_STRATEGIES, type ActivableStrategy } from "@ib/ledger";
 import type { FlexRelayMode } from "@/flex/relay";
 import { clearLastAccountId, getLastAccountId } from "@/lib/accountStorage";
+import { activeStrategies } from "@/lib/strategies";
 import { clearTableViews } from "@/lib/tableViewStorage";
 import type { AccountRecord, AppDatabase } from "./schema";
 
@@ -86,9 +87,34 @@ export async function setFlexRelay(db: AppDatabase, accountId: string, relay: Fl
   await db.accounts.update(accountId, { flexRelay: relay });
 }
 
+/** The canonical order, no duplicate — the only shape ever written to `strategies`. */
+function canonicalStrategies(strategies: readonly ActivableStrategy[]): ActivableStrategy[] {
+  return ACTIVABLE_STRATEGIES.filter((strategy) => strategies.includes(strategy));
+}
+
 /** Saved on its own, the moment a box changes; always the whole list, never an absent field. */
 export async function setActiveStrategies(db: AppDatabase, accountId: string, strategies: readonly ActivableStrategy[]): Promise<void> {
-  await db.accounts.update(accountId, { strategies: ACTIVABLE_STRATEGIES.filter((strategy) => strategies.includes(strategy)) });
+  await db.accounts.update(accountId, { strategies: canonicalStrategies(strategies) });
+}
+
+/**
+ * Read-modify-write of a single box (spec of sub-project 30, §6.1): reads the account's
+ * current list inside the same read-write transaction as the write, so two rapid,
+ * un-awaited toggles compose in IndexedDB's own serialization of read-write transactions on
+ * one store — unlike a caller-held list, which the second call would still see stale.
+ */
+export async function toggleActiveStrategy(
+  db: AppDatabase,
+  accountId: string,
+  strategy: ActivableStrategy,
+  on: boolean,
+): Promise<void> {
+  await db.transaction("rw", db.accounts, async () => {
+    const current = await db.accounts.get(accountId);
+    const active = activeStrategies(current);
+    const next = on ? [...active, strategy] : active.filter((s) => s !== strategy);
+    await db.accounts.update(accountId, { strategies: canonicalStrategies(next) });
+  });
 }
 
 /** `null` clears the port, which is the one way to stop calling the agent for this account. */
