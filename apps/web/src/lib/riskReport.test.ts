@@ -144,6 +144,28 @@ describe("allocationBadges", () => {
   });
 });
 
+/** A sold call of `quantity` contracts, its strategy's cover already on it. */
+function soldCall(quantity: number, coverage: StrategyLine["coverage"]): StrategyLine {
+  return {
+    contract: { ticker: "MQZA", secType: "OPT", right: "C", strike: 20, expiry: "2026-10-16", currency: "USD" },
+    kind: "short_call",
+    label: "Short Call",
+    quantity,
+    avgPrice: 0.5,
+    lastPrice: 0.4,
+    marketValue: -40 * Math.abs(quantity),
+    unrealizedPnl: null,
+    dailyPnl: null,
+    dayChange: null,
+    decision: null,
+    position: null,
+    coverage,
+    used: null,
+  };
+}
+
+const leaps = (quantity: number) => ({ source: "leaps" as const, quantity, detail: "" });
+
 describe("strategyCoverageBadges", () => {
   it("shows a sold option the strategy's cover only, never an UNCOVERED badge", () => {
     const whole = position({
@@ -169,10 +191,18 @@ describe("strategyCoverageBadges", () => {
     expect(strategyCoverageBadges(line({ kind: "long_stock", label: "long", quantity: 100, position: held }), "leaps")).toEqual([]);
   });
 
-  it("shows a sold option of Others the naked quantity only, never an allocation", () => {
-    expect(strategyCoverageBadges(line({ kind: "short_call", quantity: -3, coverage: [{ source: "stock", quantity: 3, detail: "" }] }), "others")).toEqual(
-      [{ variant: "destructive", label: "UNCOVERED ×3", tooltip: null }],
-    );
+  describe("Others", () => {
+    it("shows the cover Others holds, then UNCOVERED for the rest only", () => {
+      expect(strategyCoverageBadges(soldCall(-3, [leaps(2)]), "others").map((b) => b.label)).toEqual(["leaps ×2", "UNCOVERED ×1"]);
+    });
+
+    it("shows no UNCOVERED badge when Others' cover holds the whole line", () => {
+      expect(strategyCoverageBadges(soldCall(-2, [leaps(2)]), "others").map((b) => b.label)).toEqual(["leaps ×2"]);
+    });
+
+    it("keeps UNCOVERED ×n on a line without any cover, as before", () => {
+      expect(strategyCoverageBadges(soldCall(-2, []), "others").map((b) => b.label)).toEqual(["UNCOVERED ×2"]);
+    });
   });
 });
 
@@ -187,7 +217,6 @@ describe("strategyCoverageValues", () => {
       uncoveredQuantity: 1,
     });
     expect(strategyCoverageValues(line({ position: whole, coverage: [{ source: "stock", quantity: 1, detail: "" }] }), "wheel")).toEqual(["stock"]);
-    expect(strategyCoverageValues(line({ kind: "short_call", quantity: -3, coverage: [] }), "others")).toEqual(["UNCOVERED"]);
     const bought = position({ kind: "long_call", quantity: 8, usedQuantity: 8 });
     expect(strategyCoverageValues(line({ kind: "long_call", label: "buy of call", quantity: 8, position: bought, used: 8 }), "leaps")).toEqual(["used"]);
     // No position at all — the journal reads the wing open, the snapshot does not carry it — so
@@ -198,6 +227,20 @@ describe("strategyCoverageValues", () => {
     expect(strategyCoverageValues(wingWithoutPosition, "condors")).toEqual([]);
     const held = position({ kind: "long_stock", quantity: 100, usedQuantity: 100 });
     expect(strategyCoverageValues(line({ kind: "long_stock", label: "long", quantity: 100, position: held }), "wheel")).toEqual([]);
+  });
+
+  describe("Others", () => {
+    it("shows sources from coverage, then UNCOVERED for the rest only", () => {
+      expect(strategyCoverageValues(soldCall(-3, [leaps(2)]), "others")).toEqual(["leaps", "UNCOVERED"]);
+    });
+
+    it("shows no UNCOVERED when Others' cover holds the whole line", () => {
+      expect(strategyCoverageValues(soldCall(-2, [leaps(2)]), "others")).toEqual(["leaps"]);
+    });
+
+    it("keeps UNCOVERED on a line without any cover, as before", () => {
+      expect(strategyCoverageValues(soldCall(-2, []), "others")).toEqual(["UNCOVERED"]);
+    });
   });
 });
 

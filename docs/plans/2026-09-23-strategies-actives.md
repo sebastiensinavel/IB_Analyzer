@@ -577,7 +577,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 - Produces: signatures inchangées — `strategyCoverageBadges(line, strategy)`,
   `strategyCoverageValues(line, strategy)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -616,12 +616,12 @@ describe("strategyCoverageBadges — Others", () => {
 Adapter la forme de `CoverageAllocation` (`detail` et tout autre champ requis) à son type réel
 dans `packages/coverage/src/types.ts`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run (depuis `apps/web`) : `npx vitest run riskReport`
 Expected: FAIL — la première attente rend `["UNCOVERED ×3"]`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 /** What of a sold line its strategy's cover leaves naked. */
@@ -653,12 +653,12 @@ export function strategyCoverageValues(line: StrategyLine, strategy: PositionsSt
 Réécrire le paragraphe « Others is the exception » du commentaire : Autres montre la couverture
 de ses sources — celles des stratégies inactives — puis `UNCOVERED` pour le reste.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run (depuis `apps/web`) : `npx vitest run riskReport StrategyPositions`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib docs/plans/2026-09-23-strategies-actives.md
