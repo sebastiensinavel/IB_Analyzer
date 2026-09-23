@@ -1,6 +1,6 @@
 # Sous-projet 30 — Les stratégies actives d'un compte
 
-Statut : conçu (2026-09-23).
+Statut : livré (2026-09-23).
 
 L'application reconstitue trois stratégies (Wheel, LEAPS, Condors) plus Autres, et le menu
 porte une section pour chacune. Un utilisateur qui ne pratique que la Wheel voit pourtant trois
@@ -45,7 +45,11 @@ permise et veut dire « tout dans Autres ». La fonction rend la liste dans l'or
 récent aurait écrite et que celui-ci ne connaît pas est ignorée, jamais une erreur.
 
 L'écriture passe par `setActiveStrategies(db, accountId, strategies)` (`db/accounts.ts`, qui écrit
-déjà la fiche), qui écrit toujours la liste complète, jamais un champ absent.
+déjà la fiche), qui écrit toujours la liste complète, jamais un champ absent. La carte « Stratégies
+actives » (§6.1) écrit par `toggleActiveStrategy(db, accountId, strategy, on)`, qui lit la liste
+courante et l'écrit dans une seule transaction Dexie — une lecture-modification-écriture atomique,
+pour que deux cases cochées coup sur coup composent au lieu de perdre l'une des deux sur une
+liste tenue côté appelant.
 
 La sauvegarde chiffrée emporte la fiche du compte, donc le réglage, sans rien changer. L'export
 local `.json.gz` aussi.
@@ -144,11 +148,13 @@ aurait pris va dans Autres, et le tableau de bord ne compte que les stratégies 
 
 ### 6.2 Le calcul
 
-`useJournals(accountId)` lit la fiche du compte et passe `activeStrategies(account)` à
-`buildJournals` ; la liste entre dans les dépendances du `useMemo`, donc cocher recalcule tout.
-`AccountDataProvider` expose la liste active à côté des journaux, par un `useAccountStrategies`
-qui lève hors du fournisseur comme les deux autres.
-Aucune page ne relit la fiche pour la recalculer elle-même.
+`AccountDataProvider` lit la fiche du compte une seule fois, par `useActiveStrategies(accountId)`,
+et passe la liste rendue à `useJournals(accountId, active)`, qui l'entre dans les dépendances de
+son `useMemo` : cocher une case recalcule donc tout. Il expose cette même liste à côté des
+journaux par `useAccountStrategies`, qui lève hors du fournisseur comme les deux autres. Aucune
+page ne relit la fiche pour recalculer elle-même la liste passée à `useJournals` : seuls
+`useActiveStrategies`, la carte « Stratégies actives » et la barre latérale, qui lisent la fiche
+pour leurs propres besoins (§6.1, §6.3), appellent `activeStrategies` directement.
 
 ### 6.3 Le menu et les routes
 

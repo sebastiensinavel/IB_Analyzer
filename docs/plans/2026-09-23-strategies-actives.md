@@ -1145,7 +1145,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 - Modify: `CLAUDE.md`
 - Modify: `docs/specs/2026-09-23-strategies-actives-design.md` (statut)
 
-- [ ] **Step 1: Update `CLAUDE.md`**
+- [x] **Step 1: Update `CLAUDE.md`**
 
 - Règle « Le tableau de bord est la portée `portfolio`… » : `scopeStrategies(scope, active)`
   remplace `SCOPE_STRATEGIES[scope]` ; la portée `portfolio` est la liste **active**, jamais les
@@ -1164,16 +1164,16 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
   et ses libellés.
 - Registre : ligne `| 30 | Les stratégies actives d'un compte | fait (<date>) |`.
 
-- [ ] **Step 2: Mark the spec delivered**
+- [x] **Step 2: Mark the spec delivered**
 
 `Statut : livré (<date>).` en tête de la spec.
 
-- [ ] **Step 3: Run the whole check once**
+- [x] **Step 3: Run the whole check once**
 
 Run (racine du worktree) : `pnpm check`
 Expected: lint, typage, build et tous les tests verts.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add CLAUDE.md docs

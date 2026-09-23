@@ -44,6 +44,24 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   --origin`, la page Aide le lit dans `window.location.origin`, jamais dans le code.
 - **Comptes jamais combinés** : chaque vue est scopée `/accounts/:accountId/...`. Les comptes
   vivent en IndexedDB, rien n'est codé en dur.
+- **Les stratégies actives sont un réglage du compte** : `AccountRecord.strategies?:
+  ActivableStrategy[]`, lu par **`activeStrategies` seul** (`apps/web/src/lib/strategies.ts`),
+  jamais en relisant `account.strategies` ailleurs — absent vaut `["wheel"]`
+  (`DEFAULT_ACTIVE_STRATEGIES`, un choix de l'application, jamais du moteur) ; le moteur appelé
+  sans liste (`buildJournals`, `strategyPositions`…) garde les trois stratégies. L'écriture passe
+  par `setActiveStrategies` (toute la liste) ou `toggleActiveStrategy` — la carte « Stratégies
+  actives » de Sources de données appelle ce dernier, une lecture-modification-écriture atomique
+  dans une seule transaction Dexie, pour que deux cases cochées coup sur coup composent au lieu
+  de se marcher dessus. Dans `classify.ts`, une ouverture n'est proposée qu'aux stratégies
+  actives, sinon Autres : un groupe de plusieurs contrats ouvert au même instant sans les Condors
+  actifs va **tout entier** dans Autres, jamais jambe par jambe dans la Wheel ou les LEAPS. Le
+  menu (`NavSection.strategy`) masque les sections des stratégies inactives, Autres toujours
+  visible ; `StrategyRoute` (`apps/web/src/routes/StrategyRoute.tsx`) renvoie une route de
+  stratégie inactive au tableau de bord du compte, sans redirection tant que la fiche du compte
+  n'est pas chargée. Les graphes de Positions et de Suggestion de position dessinent les
+  stratégies actives plus Autres, jamais `STRATEGIES` en dur. Ajouter une stratégie demande son
+  entrée dans `ACTIVABLE_STRATEGIES`, sa règle dans `classify.ts`, ses sources de couverture
+  (`strategyCoverSources`), sa section de menu, ses routes et ses libellés.
 - **La base locale appartient au navigateur, jamais à un compte** : une seule base
   `ib-analyzer` par origine, connecté ou non. Le compte Django n'ouvre que deux portes, le
   proxy Flex et la sauvegarde chiffrée, et ne touche jamais aux données. Un `DbProvider` qui
@@ -205,10 +223,13 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   en perte avant la fin du mois garde ainsi son rendement négatif ; `returnRate` n'est `null` que
   pour un mois sans rien d'immobilisé. Les courbes de capital, elles, restent en fin de mois.
 - **Le tableau de bord est la portée `portfolio`, jamais une addition** : `buildJournals` appelle
-  `computeStats` et `computeCapital` sur `SCOPE_STRATEGIES[scope]` pour `wheel`, `leaps`,
-  `condors` et `portfolio`, les trois stratégies à la fois. Le profit/perte total du tableau de
-  bord est donc la somme des trois totaux et son rendement la somme des profits/pertes sur la
-  somme des montants alloués, sans qu'aucune fonction ne combine des résultats par stratégie.
+  `computeStats` et `computeCapital` sur `scopeStrategies(scope, active)` pour `wheel`, `leaps`,
+  `condors` et `portfolio` ; `scopeStrategies` (`packages/ledger/src/journals/types.ts`) rend
+  `[scope]` pour une stratégie et **la liste active** — jamais les trois stratégies d'office —
+  pour `portfolio`, Autres n'y entrant jamais. Le profit/perte total du tableau de bord est donc
+  la somme des totaux des stratégies actives et son rendement la somme de leurs profits/pertes
+  sur la somme des montants alloués, sans qu'aucune fonction ne combine des résultats par
+  stratégie.
 - **Journaux et rapport de risque se calculent une fois, dans la coquille** :
   `AccountDataProvider` (`db/AccountDataProvider.tsx`), monté par `AppLayout` pour le compte
   affiché, appelle `useJournals` et `useRiskReport` ; la barre de titre et toutes les pages les
@@ -302,9 +323,10 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   (`packages/coverage/src/strategy.ts`) lit les lignes de journal ouvertes (`endWhen === null`) et
   les apparie au snapshot par `contractId(row.contract)`, la clé de la réconciliation. Une ligne
   montre la part de la stratégie — quantité et prix d'entrée du journal, dernier prix d'IB — et, de
-  la couverture IB, seulement celle de la stratégie (`STRATEGY_COVER_SOURCES`) : `cash` et `stock`
-  pour une vente Wheel, `leaps` pour une vente LEAPS, jamais `UNCOVERED`, la part nue d'un call
-  relevant d'Autres ; un LEAPS acheté garde son « used x/y », des actions LEAPS n'ont aucun badge.
+  la couverture IB, seulement celle de la stratégie (`strategyCoverSources(strategy, active)`) :
+  `cash` et `stock` pour une vente Wheel, `leaps` pour une vente LEAPS, jamais `UNCOVERED` pour une
+  stratégie active, la part nue d'un call relevant d'Autres ; un LEAPS acheté garde son « used
+  x/y », des actions LEAPS n'ont aucun badge.
   Le badge et le filtre Couverture d'une option achetée se lisent sur `StrategyLine.used`
   (`apps/web/src/lib/riskReport.ts`), plafonné par la ligne, ailes de Condor comprises.
   Les actions Wheel ont leur propre couverture, `coveredShares` (`wheelHoldings`,
@@ -313,13 +335,17 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   encadrés sont déclarés dans `STRATEGY_BOXES` (`apps/web/src/lib/strategyBoxes.ts`) et un encadré
   sans ligne ne se rend pas. **Un condor se lit sur ses jambes** — son composite n'a ni right ni
   strike, donc rien ne le valorise — et les actions de la Wheel restent dans leur table propre,
-  jamais aussi dans le groupe des positions longues. `STRATEGY_COVER_SOURCES` donne `spread` aux
-  Condors et rien à Autres, dont une vente porte `UNCOVERED ×|quantité|` lu sur la ligne elle-même.
-  **Une page de stratégie ne montre que sa part couverte** : `migratedContracts`
-  (`packages/coverage/src/strategy.ts`) retranche d'une vente d'options les contrats que la
-  couverture du snapshot ne porte plus, et la page Autres les reprend, fondus par contrat et sans
-  badge d'origine — une position nue n'appartient à aucune stratégie. Le total repris ne dépasse
-  jamais l'`uncoveredQuantity` du moteur, moins ce qu'Autres détient déjà, donc la part migrée ne
+  jamais aussi dans le groupe des positions longues. `strategyCoverSources(strategy, active)` donne
+  `spread` aux Condors ; **Autres possède les sources des stratégies inactives** — un call vendu
+  contre un LEAPS inactif y porte le badge `leaps`, pas `UNCOVERED` — et rien quand les trois sont
+  actives, son ancien comportement : une vente d'Autres porte alors `UNCOVERED ×|quantité|` lu sur
+  la ligne elle-même. **Une page de stratégie ne montre que sa part couverte** :
+  `migratedContracts` (`packages/coverage/src/strategy.ts`) retranche d'une vente d'options les
+  contrats que la couverture du snapshot ne porte plus, et la page Autres les reprend, fondus par
+  contrat et sans badge d'origine — une position nue n'appartient à aucune stratégie ; il ne
+  retranche que **la part nue d'Autres** — ses ventes moins ce que ses propres sources (celles des
+  stratégies inactives) couvrent —, jamais sa part déjà couverte. Le total repris ne dépasse
+  jamais l'`uncoveredQuantity` du moteur, moins la part nue d'Autres, donc la part migrée ne
   peut pas contredire la barre de titre ; sans snapshot rien ne migre. La quantité d'une telle
   ligne ne vaut alors plus celle du Journal de la stratégie, qui reste le registre des lots : la
   classification se fait une fois, à la vente. Les cartes d'actions assignées de la Wheel ne
@@ -425,6 +451,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 27 | Les graphes de cours dans les tableaux de positions | fait (2026-09-21) |
 | 28 | Premiers pas : accueil, compte serveur facultatif, première étape, Aide | fait (2026-09-22) |
 | 29 | Les tableaux de la Wheel et des LEAPS rangés par point de contrôle | fait (2026-09-22) |
+| 30 | Les stratégies actives d'un compte | fait (2026-09-23) |
 
 ## Outillage
 
