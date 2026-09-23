@@ -73,7 +73,8 @@ test("the corpus imports, contracts get identified, and no ghost short survives 
   // (corpus.oracle.test.ts's own comment says so), so three statement-only imports must leave
   // Positions exactly where a fresh account with no Flex/agent snapshot always sits — its
   // empty state, not an error and not a stale render from the sources page.
-  // Three nav links read "Positions" (overview, Wheel, LEAPS): the href names the overview's.
+  // Three nav links read "Positions" (overview, Wheel, Others — the Wheel-only default of a
+  // fresh account): the href names the overview's.
   await page.locator('a[href$="/positions"]').click();
   await expect(page).toHaveURL(/\/positions$/);
   await expect(page.getByText(fr.positions.empty)).toBeVisible();

@@ -33,8 +33,8 @@ export function DashboardPage() {
     return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
   }
 
-  // The three strategies at once: the same statistics and capital as their own pages, computed
-  // over more lines, never a sum of their results (spec of sub-project 14, §3).
+  // The account's active strategies at once: the same statistics and capital as their own pages,
+  // computed over more lines, never a sum of their results (spec of sub-project 14, §3).
   const all = view.report.stats.portfolio;
   const stats: StrategyStats | undefined = all.find((s) => s.currency === chosen) ?? all[0];
   const capital = stats ? view.report.capital.portfolio.find((c) => c.currency === stats.currency) : undefined;

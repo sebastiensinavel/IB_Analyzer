@@ -430,4 +430,33 @@ describe("StrategyPositionsPage — Others", () => {
     await screen.findByLabelText("Positions longues");
     expect(screen.queryByLabelText("Cash")).not.toBeInTheDocument();
   });
+
+  it("passes the account's active strategies through: a call sold against a LEAPS gets the leaps badge, not UNCOVERED, when LEAPS is inactive", async () => {
+    // LEAPS inactive: the ZZZ LEAPS buy and the call sold against it (SAMPLE_JOURNAL_TRANSACTIONS,
+    // "LEAPS avec call vendu" in the LEAPS describe block above) fall into Others, and the sold
+    // call keeps the leaps cover the snapshot already gives it — regressing to the portfolio's
+    // three-strategy default (dropping the 4th `active` argument to strategyPositions) would leave
+    // it UNCOVERED instead, since Others would then have no inactive strategy to borrow from.
+    await db.accounts.put({ id: "beta", label: "beta", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: ["wheel"] });
+    await seed();
+    renderPage("others");
+    const call = await rowIn("Ventes d'options", "ZZZ Sep18'26 20 Call");
+    expect(within(call).getByText("leaps ×1")).toBeInTheDocument();
+    expect(within(call).queryByText(/UNCOVERED/)).not.toBeInTheDocument();
+
+    const box = screen.getByLabelText("Ventes d'options");
+    const user = userEvent.setup();
+    const header = within(box).getByRole("columnheader", { name: /^Couverture/ });
+    await user.click(within(header).getByRole("button", { name: /^Couverture/ }));
+    expect(await screen.findByRole("checkbox", { name: /leaps/ })).toBeInTheDocument();
+  });
+
+  it("mirrors it: with every strategy active, that same call is on LEAPS, not on Others", async () => {
+    await db.accounts.put({ id: "beta", label: "beta", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: [...ACTIVABLE_STRATEGIES] });
+    await seed();
+    renderPage("others");
+    await screen.findByLabelText("Positions longues");
+    expect(screen.queryByText("ZZZ Sep18'26 20 Call")).not.toBeInTheDocument();
+    expect(screen.queryByText("ZZZ Jun18'27 15 Call")).not.toBeInTheDocument();
+  });
 });

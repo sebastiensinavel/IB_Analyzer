@@ -52,7 +52,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   par `setActiveStrategies` (toute la liste) ou `toggleActiveStrategy` — la carte « Stratégies
   actives » de Sources de données appelle ce dernier, une lecture-modification-écriture atomique
   dans une seule transaction Dexie, pour que deux cases cochées coup sur coup composent au lieu
-  de se marcher dessus. Dans `classify.ts`, une ouverture n'est proposée qu'aux stratégies
+  de se marcher dessus. Dans `packages/ledger/src/journals/classify.ts`, une ouverture n'est proposée qu'aux stratégies
   actives, sinon Autres : un groupe de plusieurs contrats ouvert au même instant sans les Condors
   actifs va **tout entier** dans Autres, jamais jambe par jambe dans la Wheel ou les LEAPS. Le
   menu (`NavSection.strategy`) masque les sections des stratégies inactives, Autres toujours
