@@ -3,7 +3,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
-import type { Strategy, Transaction } from "@ib/ledger";
+import { ACTIVABLE_STRATEGIES, type Strategy, type Transaction } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
 import { JournalPage } from "@/pages/JournalPage";
@@ -63,6 +63,8 @@ function cells(row: HTMLTableRowElement): string[] {
 beforeEach(async () => {
   window.localStorage.clear();
   await Promise.all([db.transactions.clear(), db.snapshots.clear()]);
+  // Every strategy on: these tests read the LEAPS and the condors (the default is the Wheel alone).
+  await db.accounts.put({ id: "beta", label: "beta", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: [...ACTIVABLE_STRATEGIES] });
   await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
   await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);
 });

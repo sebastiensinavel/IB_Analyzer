@@ -2,11 +2,12 @@ import { Fragment, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { MAX_SUGGESTIONS, MAX_SUGGESTION_TICKER_SHARE, MIN_SUGGESTION_SCORE, positionSuggestions, type RiskReport } from "@ib/coverage";
-import { STRATEGIES } from "@ib/ledger";
+import type { Strategy } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@ib/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
 import { PositionChartRow } from "@/components/PositionChartRow";
+import { useAccountStrategies } from "@/db/AccountDataProvider";
 import { useSectors } from "@/db/hooks";
 import { useOpenChart } from "@/hooks/useOpenChart";
 import { formatPercent, formatRate } from "@/lib/format";
@@ -31,6 +32,9 @@ export function PositionSuggestionsCard({ accountId, report }: { accountId: stri
   // this value is ever read in that state, so the render needs no third case.
   const suggestions = useMemo(() => (sectors ? positionSuggestions([...sectors.values()], report) : []), [sectors, report]);
   const chart = useOpenChart();
+  const active = useAccountStrategies();
+  // Stable, never a literal per render: PositionChartRow memoizes its levels on it.
+  const chartStrategies = useMemo<readonly Strategy[]>(() => [...(active ?? []), "others"], [active]);
   const title = t("dashboard.suggestions.title");
 
   // Nothing to suggest from, and nothing to say about it: a sector table where no ticker has
@@ -86,7 +90,7 @@ export function PositionSuggestionsCard({ accountId, report }: { accountId: stri
                       <TableCell className={NUMERIC}>{formatRate(suggestion.tickerShare)}</TableCell>
                     </TableRow>
                     {chart.isOpen(key) && (
-                      <PositionChartRow ticker={suggestion.ticker} strategies={STRATEGIES} columnCount={COLUMNS.length} />
+                      <PositionChartRow ticker={suggestion.ticker} strategies={chartStrategies} columnCount={COLUMNS.length} />
                     )}
                   </Fragment>
                 );

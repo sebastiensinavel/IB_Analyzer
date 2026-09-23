@@ -5,12 +5,14 @@ import {
   buildJournals,
   pairCorporateActions,
   sortTransactions,
+  type ActivableStrategy,
   type IdentityInput,
   type IdentityIssue,
   type JournalsReport,
   type Transaction,
 } from "@ib/ledger";
 import { buildRiskReport, type RiskReport } from "@ib/coverage";
+import { activeStrategies } from "@/lib/strategies";
 import { readIdentityInputs } from "./contracts";
 import { useDb } from "./DbProvider";
 import { heldTickers } from "./sectors";
@@ -139,13 +141,23 @@ export type JournalsView =
   | { status: "loading" }
   | { status: "ready"; report: JournalsReport; identityIssues: IdentityIssue[] };
 
-/** The journals of one account, recomputed from its ledger, snapshot and contracts; never stored. */
-export function useJournals(accountId: string): JournalsView {
+/** The account's active strategies, one stable array per distinct choice; `undefined` while loading. */
+export function useActiveStrategies(accountId: string): readonly ActivableStrategy[] | undefined {
+  const account = useAccount(accountId);
+  const key = account === undefined ? null : activeStrategies(account).join(",");
+  return useMemo(() => (key === null ? undefined : key === "" ? [] : (key.split(",") as ActivableStrategy[])), [key]);
+}
+
+/**
+ * The journals of one account, recomputed from its ledger, snapshot, contracts and active
+ * strategies; never stored. `active` undefined (still loading) keeps the view loading.
+ */
+export function useJournals(accountId: string, active: readonly ActivableStrategy[] | undefined): JournalsView {
   const ledger = useLedger(accountId);
   const snapshot = useSnapshot(accountId);
   const inputs = useContractIdentities(accountId);
   return useMemo<JournalsView>(() => {
-    if (ledger === undefined || snapshot === undefined || inputs === undefined) return { status: "loading" };
+    if (ledger === undefined || snapshot === undefined || inputs === undefined || active === undefined) return { status: "loading" };
     // The events date the ambiguous tickers, and the same events are paired
     // again inside `buildJournals`: pairing is pure and cheap, and passing a
     // pre-built list in would make the engine's own input ambiguous.
@@ -153,8 +165,8 @@ export function useJournals(accountId: string): JournalsView {
     const identities = buildIdentities(inputs, events);
     return {
       status: "ready",
-      report: buildJournals(ledger, snapshot ? { asOf: snapshot.asOf, positions: snapshot.positions } : undefined, identities),
+      report: buildJournals(ledger, snapshot ? { asOf: snapshot.asOf, positions: snapshot.positions } : undefined, identities, active),
       identityIssues: [...identities.issues, ...actionIssues],
     };
-  }, [ledger, snapshot, inputs]);
+  }, [ledger, snapshot, inputs, active]);
 }

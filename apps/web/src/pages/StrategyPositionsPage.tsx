@@ -23,7 +23,7 @@ import { PositionChartRow } from "@/components/PositionChartRow";
 import { NUMERIC, PositionRow, toneOf } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
 import { PageSearchInput } from "@/components/table/PageSearchInput";
-import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
+import { useAccountJournals, useAccountRiskReport, useAccountStrategies } from "@/db/AccountDataProvider";
 import type { SnapshotRecord } from "@/db/schema";
 import { useOpenChart, type OpenChart } from "@/hooks/useOpenChart";
 import { useStrategyBoxViews } from "@/hooks/useStrategyBoxViews";
@@ -58,6 +58,7 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   const { accountId = "" } = useParams<{ accountId: string }>();
   const { t } = useTranslation();
   const journals = useAccountJournals();
+  const active = useAccountStrategies();
   const { snapshot, report, sectorOf } = useAccountRiskReport();
   const lineSpecs = useMemo(() => strategyColumnSpecs(sectorOf, strategy), [sectorOf, strategy]);
   const shareSpecs = useMemo(() => wheelShareColumnSpecs(sectorOf), [sectorOf]);
@@ -68,11 +69,14 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   // levels directly on `strategies`, never wants a new reference for the same scope.
   const scope = useMemo(() => [strategy], [strategy]);
   const defs = STRATEGY_BOXES[strategy];
-  const ready = journals.status === "ready" && snapshot !== undefined && report !== undefined;
+  const ready = journals.status === "ready" && snapshot !== undefined && report !== undefined && active !== undefined;
   const rows = journals.status === "ready" ? journals.report.rows : NO_ROWS;
   const boxes = useMemo(
-    () => (ready ? strategyBoxContents(strategyPositions(rows, strategy, pricedSnapshot(snapshot, report)), strategy) : null),
-    [ready, rows, strategy, snapshot, report],
+    () =>
+      ready && active !== undefined
+        ? strategyBoxContents(strategyPositions(rows, strategy, pricedSnapshot(snapshot, report), active), strategy)
+        : null,
+    [ready, rows, strategy, snapshot, report, active],
   );
   const setExpiry = useCallback(
     (label: string | null) => defs.forEach((def) => views[def.id].setCriterion("position", label)),

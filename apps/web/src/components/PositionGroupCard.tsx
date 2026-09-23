@@ -1,8 +1,9 @@
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import type { AnalyzedPosition } from "@ib/coverage";
-import { STRATEGIES } from "@ib/ledger";
+import type { Strategy } from "@ib/ledger";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { PositionRow } from "@/components/PositionRow";
+import { useAccountStrategies } from "@/db/AccountDataProvider";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
 import type { OpenChart } from "@/hooks/useOpenChart";
 import type { TableViewState } from "@/hooks/useTableView";
@@ -38,6 +39,9 @@ export function PositionGroupCard({
   chart,
   boxId,
 }: PositionGroupCardProps) {
+  const active = useAccountStrategies();
+  // Stable, never a literal per render: PositionChartRow memoizes its levels on it.
+  const chartStrategies = useMemo<readonly Strategy[]>(() => [...(active ?? []), "others"], [active]);
   return (
     <FilteredTableBox
       title={title}
@@ -75,7 +79,7 @@ export function PositionGroupCard({
             {chart.isOpen(key) && (
               <PositionChartRow
                 ticker={position.symbol}
-                strategies={STRATEGIES}
+                strategies={chartStrategies}
                 columnCount={POSITION_COLUMNS.length}
                 currency={position.currency}
               />

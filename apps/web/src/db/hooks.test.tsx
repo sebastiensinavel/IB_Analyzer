@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import type { JournalsReport, Transaction } from "@ib/ledger";
+import { ACTIVABLE_STRATEGIES, type JournalsReport, type Transaction } from "@ib/ledger";
 import { db, type AccountRecord } from "@/db/schema";
 import { useAccount, useImports, useJournals, useLedger, useNeverFed, useRiskReport, useSectors, useSnapshot, useStatements } from "@/db/hooks";
 import { SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
@@ -165,7 +165,7 @@ describe("useJournals", () => {
       updatedAt: "2026-09-09T10:00:00.000Z",
     });
 
-    const { result } = renderHook(() => useJournals(account.id), { wrapper });
+    const { result } = renderHook(() => useJournals(account.id, ACTIVABLE_STRATEGIES), { wrapper });
     await waitFor(() => expect(result.current.status).toBe("ready"));
     const view = result.current as { status: "ready"; report: JournalsReport };
     expect(view.report.rows.filter((r) => r.ongoing)).toEqual([]);
@@ -173,7 +173,7 @@ describe("useJournals", () => {
 
   it("stays in loading until the contracts store has answered", async () => {
     const account = await seedAccount();
-    const { result } = renderHook(() => useJournals(account.id), { wrapper });
+    const { result } = renderHook(() => useJournals(account.id, ACTIVABLE_STRATEGIES), { wrapper });
     expect(result.current.status).toBe("loading");
     await waitFor(() => expect(result.current.status).toBe("ready"));
   });

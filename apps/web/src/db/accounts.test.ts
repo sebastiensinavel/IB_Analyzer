@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { AccountError, clearFlexCredentials, createAccount, deleteAccount, setFlexRelay, slugify } from "@/db/accounts";
+import { AccountError, clearFlexCredentials, createAccount, deleteAccount, setActiveStrategies, setFlexRelay, slugify } from "@/db/accounts";
 import { AppDatabase } from "@/db/schema";
 import { getLastAccountId, setLastAccountId } from "@/lib/accountStorage";
 import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
@@ -112,5 +112,18 @@ describe("setFlexRelay", () => {
     await setFlexRelay(db, "beta", "agent-and-server");
     await clearFlexCredentials(db, "beta");
     expect((await db.accounts.get("beta"))?.flexRelay).toBe("agent-and-server");
+  });
+});
+
+describe("setActiveStrategies", () => {
+  it("writes the whole list of active strategies, in canonical order", async () => {
+    await createAccount(db, { label: "Beta", ibAccountId: "U1234567" });
+    expect((await db.accounts.get("beta"))?.strategies).toBeUndefined();
+
+    await setActiveStrategies(db, "beta", ["condors", "wheel"]);
+    expect((await db.accounts.get("beta"))?.strategies).toEqual(["wheel", "condors"]);
+
+    await setActiveStrategies(db, "beta", []);
+    expect((await db.accounts.get("beta"))?.strategies).toEqual([]);
   });
 });

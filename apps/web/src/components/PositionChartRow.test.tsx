@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { createChart } from "lightweight-charts";
-import type { ChartLevel, Strategy } from "@ib/ledger";
+import { ACTIVABLE_STRATEGIES, type ChartLevel, type Strategy } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
 import * as agent from "@/agent/client";
@@ -208,6 +208,7 @@ describe("PositionChartRow", () => {
       createdAt: "",
       warnedDroppedKinds: [],
       twsPort: 7501,
+      strategies: [...ACTIVABLE_STRATEGIES],
     });
     await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
     await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);

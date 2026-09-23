@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
-import type { Position, Transaction } from "@ib/ledger";
+import { ACTIVABLE_STRATEGIES, type Position, type Transaction } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db, type SnapshotRecord } from "@/db/schema";
 import { StrategyPositionsPage, type PositionsStrategy } from "@/pages/StrategyPositionsPage";
@@ -76,6 +76,8 @@ const SNAPSHOT: SnapshotRecord = {
 beforeEach(async () => {
   window.localStorage.clear();
   await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.sectors.clear(), db.contracts.clear()]);
+  // Every strategy on: these tests read the LEAPS and the condors (the default is the Wheel alone).
+  await db.accounts.put({ id: "beta", label: "beta", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: [...ACTIVABLE_STRATEGIES] });
 });
 
 async function seed() {

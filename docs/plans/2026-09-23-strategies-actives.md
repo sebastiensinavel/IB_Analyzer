@@ -693,7 +693,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
   - `useJournals(accountId: string, active: readonly ActivableStrategy[] | undefined): JournalsView`
   - `useAccountStrategies(): readonly ActivableStrategy[] | undefined` (lève hors du fournisseur)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `apps/web/src/lib/strategies.test.ts` :
 
@@ -741,12 +741,12 @@ de `useAccountJournals()`, et vérifie :
    et `condors` apparaissent **sans remonter le composant** (`findByText`) ;
 3. `useAccountStrategies()` rend `["wheel"]` puis `["wheel", "leaps", "condors"]`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run (depuis `apps/web`) : `npx vitest run strategies accounts hooks AccountDataProvider`
 Expected: FAIL — modules et fonctions introuvables.
 
-- [ ] **Step 3: Implement the setting**
+- [x] **Step 3: Implement the setting**
 
 `schema.ts`, dans `AccountRecord` :
 
@@ -784,7 +784,7 @@ export async function setActiveStrategies(db: AppDatabase, accountId: string, st
 }
 ```
 
-- [ ] **Step 4: Feed the engine and expose the list**
+- [x] **Step 4: Feed the engine and expose the list**
 
 `hooks.ts` :
 
@@ -821,7 +821,7 @@ export function useAccountStrategies(): readonly ActivableStrategy[] | undefined
 
 Corriger tout autre appel de `useJournals` (`grep -rn "useJournals(" apps/web/src`).
 
-- [ ] **Step 5: Use the list in the pages and charts**
+- [x] **Step 5: Use the list in the pages and charts**
 
 `StrategyPositionsPage.tsx` : `const active = useAccountStrategies();` ; le `useMemo` des
 encadrés attend `active !== undefined` dans `ready` et appelle
@@ -847,7 +847,7 @@ par une portée stable :
 
 (si la version de Dexie n'a pas `bulkUpdate`, deux `db.accounts.update`).
 
-- [ ] **Step 6: Fix the web tests the default changes — by the seeded account, never the expectations**
+- [x] **Step 6: Fix the web tests the default changes — by the seeded account, never the expectations**
 
 Run (depuis `apps/web`) : `npx vitest run`
 Chaque test qui échoue parce qu'il attend des lignes, pages ou chiffres LEAPS ou Condors (ou un
@@ -856,12 +856,12 @@ tableau de bord qui les compte) sur un compte semé sans `strategies` : ajouter
 du fichier). Ne jamais modifier une valeur attendue ; un test dont l'échec ne s'explique pas par
 ce défaut est un vrai bug, à signaler. Lister dans le message de commit les fichiers touchés.
 
-- [ ] **Step 7: Run the tests**
+- [x] **Step 7: Run the tests**
 
 Run (depuis `apps/web`) : `npx vitest run` puis `npx tsc --noEmit -p .`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/web docs/plans/2026-09-23-strategies-actives.md

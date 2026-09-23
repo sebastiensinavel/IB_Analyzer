@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import type * as ECharts from "echarts";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
-import type { StatsStrategy } from "@ib/ledger";
+import { ACTIVABLE_STRATEGIES, type StatsStrategy } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
 import { StatsPage } from "@/pages/StatsPage";
@@ -32,6 +32,8 @@ function renderStats(strategy: StatsStrategy) {
 
 beforeEach(async () => {
   await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.sectors.clear()]);
+  // Every strategy on: these tests read the LEAPS and the condors (the default is the Wheel alone).
+  await db.accounts.put({ id: "beta", label: "beta", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: [...ACTIVABLE_STRATEGIES] });
   await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
 });
 

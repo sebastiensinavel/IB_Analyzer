@@ -1,4 +1,4 @@
-import { dayOf, runningBalances, type Transaction } from "@ib/ledger";
+import { ACTIVABLE_STRATEGIES, dayOf, runningBalances, type Transaction } from "@ib/ledger";
 import { db, type CashPointRecord } from "@/db/schema";
 import { DEMO_POSITIONS, DEMO_SECTORS, DEMO_TRANSACTIONS, SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 import { SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
@@ -45,4 +45,6 @@ export async function seedDemo(): Promise<void> {
   await db.transactions.bulkPut(beta);
   await db.snapshots.put({ ...SAMPLE_JOURNAL_SNAPSHOT, positions: [...SAMPLE_JOURNAL_SNAPSHOT.positions, ...DEMO_POSITIONS] });
   await db.cashPoints.bulkPut([...demoCashPoints("alpha", SAMPLE_TRANSACTIONS), ...demoCashPoints("beta", beta)]);
+  // The demo shows every strategy; a first visit (`seedAccounts` alone) keeps the default.
+  await db.accounts.bulkUpdate(["alpha", "beta"].map((key) => ({ key, changes: { strategies: [...ACTIVABLE_STRATEGIES] } })));
 }

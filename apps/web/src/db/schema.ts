@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
-import type { DroppedCount, Position, Transaction, TransactionKind, TransactionSource } from "@ib/ledger";
+import type { ActivableStrategy, DroppedCount, Position, Transaction, TransactionKind, TransactionSource } from "@ib/ledger";
 import { toReportTime, type ParseIssue } from "@ib/ib-parsers";
 import type { BackupFailure } from "@/api/backup";
 import type { FlexRelay, FlexRelayMode } from "@/flex/relay";
@@ -32,6 +32,8 @@ export interface AccountRecord {
   lastAgentSyncAt?: string;
   /** Outcome of the last agent pass, for the Sources page and the pages' status badge. */
   lastAgentSyncStatus?: { at: string; ok: boolean; code?: AgentSyncCode };
+  /** The strategies this account follows (sub-project 30). Absent: the Wheel alone — read it through `activeStrategies`. */
+  strategies?: ActivableStrategy[];
 }
 
 export interface ImportRecord {

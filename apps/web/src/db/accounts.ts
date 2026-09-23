@@ -1,3 +1,4 @@
+import { ACTIVABLE_STRATEGIES, type ActivableStrategy } from "@ib/ledger";
 import type { FlexRelayMode } from "@/flex/relay";
 import { clearLastAccountId, getLastAccountId } from "@/lib/accountStorage";
 import { clearTableViews } from "@/lib/tableViewStorage";
@@ -83,6 +84,11 @@ export async function clearFlexCredentials(db: AppDatabase, accountId: string): 
 /** Saved on its own, the moment it changes: it is not part of the credentials form. */
 export async function setFlexRelay(db: AppDatabase, accountId: string, relay: FlexRelayMode): Promise<void> {
   await db.accounts.update(accountId, { flexRelay: relay });
+}
+
+/** Saved on its own, the moment a box changes; always the whole list, never an absent field. */
+export async function setActiveStrategies(db: AppDatabase, accountId: string, strategies: readonly ActivableStrategy[]): Promise<void> {
+  await db.accounts.update(accountId, { strategies: ACTIVABLE_STRATEGIES.filter((strategy) => strategies.includes(strategy)) });
 }
 
 /** `null` clears the port, which is the one way to stop calling the agent for this account. */

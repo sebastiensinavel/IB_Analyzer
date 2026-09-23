@@ -3,7 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { uncovered } from "@ib/coverage";
 import { db } from "@/db/schema";
-import { AccountDataProvider, useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
+import { setActiveStrategies } from "@/db/accounts";
+import {
+  AccountDataProvider,
+  useAccountJournals,
+  useAccountRiskReport,
+  useAccountStrategies,
+} from "@/db/AccountDataProvider";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
 
@@ -28,6 +34,20 @@ function RiskOnly() {
   return null;
 }
 
+function StrategiesOnly() {
+  useAccountStrategies();
+  return null;
+}
+
+/** The account's active strategies, then the strategies its journal rows landed in. */
+function StrategiesProbe() {
+  const journals = useAccountJournals();
+  const active = useAccountStrategies();
+  if (journals.status === "loading" || active === undefined) return <p>loading</p>;
+  const landed = [...new Set(journals.report.rows.map((row) => row.strategy))].sort();
+  return <p>{`active: ${active.join(",")} / rows: ${landed.join(",")}`}</p>;
+}
+
 function Probe() {
   const journals = useAccountJournals();
   const { report } = useAccountRiskReport();
@@ -38,7 +58,7 @@ function Probe() {
 }
 
 beforeEach(async () => {
-  await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.contracts.clear()]);
+  await Promise.all([db.accounts.clear(), db.transactions.clear(), db.snapshots.clear(), db.contracts.clear()]);
 });
 
 describe("AccountDataProvider", () => {
@@ -52,6 +72,9 @@ describe("AccountDataProvider", () => {
         <Catch>
           <RiskOnly />
         </Catch>
+        <Catch>
+          <StrategiesOnly />
+        </Catch>
       </>,
     );
     // Both `Catch` instances render a bare string, so their text nodes land as direct
@@ -60,6 +83,7 @@ describe("AccountDataProvider", () => {
     // A substring match still proves each hook threw its own distinct message.
     expect(screen.getByText("useAccountJournals must be used inside <AccountDataProvider>", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("useAccountRiskReport must be used inside <AccountDataProvider>", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("useAccountStrategies must be used inside <AccountDataProvider>", { exact: false })).toBeInTheDocument();
     quiet.mockRestore();
   });
 
@@ -75,5 +99,21 @@ describe("AccountDataProvider", () => {
     expect(await screen.findByText(/^no snapshot \/ [1-9]\d* rows \/ no report$/)).toBeInTheDocument();
     await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);
     expect(await screen.findByText(/^2026-09-02 \/ [1-9]\d* rows \/ 0 uncovered$/)).toBeInTheDocument();
+  });
+
+  it("replays the journals with the account's active strategies, the Wheel alone until it chooses", async () => {
+    await db.accounts.add({ id: "beta", label: "Beta", ibAccountId: "U1234567", createdAt: "2026-09-01T00:00:00.000Z", warnedDroppedKinds: [] });
+    await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
+    render(
+      <AccountDataProvider accountId="beta">
+        <StrategiesProbe />
+      </AccountDataProvider>,
+    );
+    // The LEAPS and the condor open nowhere else than in Others.
+    expect(await screen.findByText("active: wheel / rows: others,wheel")).toBeInTheDocument();
+
+    await setActiveStrategies(db, "beta", ["wheel", "leaps", "condors"]);
+    // Same component, never remounted: the journals follow the setting.
+    expect(await screen.findByText("active: wheel,leaps,condors / rows: condors,leaps,others,wheel")).toBeInTheDocument();
   });
 });

@@ -1,9 +1,11 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import { useJournals, useRiskReport, type JournalsView, type RiskReportView } from "./hooks";
+import type { ActivableStrategy } from "@ib/ledger";
+import { useActiveStrategies, useJournals, useRiskReport, type JournalsView, type RiskReportView } from "./hooks";
 
 interface AccountData {
   journals: JournalsView;
   risk: RiskReportView;
+  strategies: readonly ActivableStrategy[] | undefined;
 }
 
 const AccountDataContext = createContext<AccountData | null>(null);
@@ -14,11 +16,12 @@ const AccountDataContext = createContext<AccountData | null>(null);
  * change of the ledger replays it once, whatever the page.
  */
 export function AccountDataProvider({ accountId, children }: { accountId: string; children: ReactNode }) {
-  const journals = useJournals(accountId);
+  const strategies = useActiveStrategies(accountId);
+  const journals = useJournals(accountId, strategies);
   const { snapshot, report, sectorOf } = useRiskReport(accountId);
   const value = useMemo(
-    () => ({ journals, risk: { snapshot, report, sectorOf } }),
-    [journals, snapshot, report, sectorOf],
+    () => ({ journals, risk: { snapshot, report, sectorOf }, strategies }),
+    [journals, snapshot, report, sectorOf, strategies],
   );
   return <AccountDataContext.Provider value={value}>{children}</AccountDataContext.Provider>;
 }
@@ -36,4 +39,9 @@ export function useAccountJournals(): JournalsView {
 
 export function useAccountRiskReport(): RiskReportView {
   return useAccountData("useAccountRiskReport").risk;
+}
+
+/** The account's active strategies, the list its journals were built with; `undefined` while loading. */
+export function useAccountStrategies(): readonly ActivableStrategy[] | undefined {
+  return useAccountData("useAccountStrategies").strategies;
 }
