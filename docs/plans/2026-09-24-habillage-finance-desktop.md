@@ -681,7 +681,7 @@ git commit -m "Habillage finance-desktop : graphe de cours et étiquettes du Jou
 **Files:**
 - Modify: `CLAUDE.md`, `docs/specs/2026-09-24-habillage-finance-desktop-design.md` (statut)
 
-- [ ] **Step 1 : `CLAUDE.md`**
+- [x] **Step 1 : `CLAUDE.md`**
 
 1. Dans la règle de la table sectorielle, « sur le vert des puts en cours du journal Wheel »
    devient « sur le teal des puts en cours du journal Wheel ».
@@ -702,12 +702,12 @@ git commit -m "Habillage finance-desktop : graphe de cours et étiquettes du Jou
    `| 31 | Habillage « finance-desktop » : tokens, polices, tableaux, graphes, barres de défilement | fait (2026-09-24) |`.
 4. Spec : `Statut : conçu (2026-09-24).` → `Statut : livré (2026-09-24).`
 
-- [ ] **Step 2 : `pnpm check`** (une seule fois)
+- [x] **Step 2 : `pnpm check`** (une seule fois)
 
 Run : `pnpm check` depuis la racine du worktree. Attendu : lint, typage, build, tests PASS.
 Corriger ce qui échoue, relancer seulement les tests ciblés, puis `pnpm check` une dernière fois.
 
-- [ ] **Step 3 : Captures, une passe**
+- [x] **Step 3 : Captures, une passe**
 
 Avec le skill `run-frontend` (depuis la racine du worktree, graine `--seed`), capturer en
 thème clair puis sombre : tableau de bord, Positions, Historique, Journal Wheel, Paramètres
@@ -717,7 +717,7 @@ thème clair puis sombre : tableau de bord, Positions, Historique, Journal Wheel
   en a, ne rien élargir : le noter dans le rapport avec la capture ;
 - les trois étiquettes du Journal Wheel distinctes.
 
-- [ ] **Step 4 : Commit** (cases cochées)
+- [x] **Step 4 : Commit** (cases cochées)
 
 ```bash
 git add -A CLAUDE.md docs

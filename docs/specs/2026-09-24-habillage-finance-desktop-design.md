@@ -1,6 +1,6 @@
 # Sous-projet 31 — Habillage « finance-desktop »
 
-Statut : conçu (2026-09-24).
+Statut : livré (2026-09-24).
 
 L'application porte aujourd'hui l'habillage shadcn par défaut : primaire bleu, Geist, cartes
 cerclées d'un `ring`, barres de défilement natives du système. Deux maquettes fournies par

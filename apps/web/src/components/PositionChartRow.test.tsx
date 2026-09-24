@@ -21,6 +21,7 @@ vi.mock("lightweight-charts", () => {
   };
   return {
     CandlestickSeries: {},
+    LineStyle: { SparseDotted: 4 },
     createChart: vi.fn(() => ({
       addSeries: vi.fn(() => series),
       timeScale: vi.fn(() => ({ setVisibleLogicalRange: vi.fn(), timeToCoordinate: vi.fn(() => 10) })),

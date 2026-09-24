@@ -174,12 +174,28 @@ try {
       }
     }
 
+    if (has("dark")) {
+      // The app stores its theme itself; Playwright's colorScheme does nothing. Since
+      // sub-project 28 the toggle only lives on the Settings page (the "Affichage" card),
+      // not in a global menu footer any more, so flip it there first: the flag persists in
+      // localStorage, and the target route below picks it up on its own fresh navigation.
+      await page.goto(`${BASE}/settings`, { waitUntil: "networkidle" });
+      await page.getByRole("button", { name: /thème|theme/i }).first().click();
+      await page.waitForTimeout(400);
+    }
+
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle" });
 
     if (has("dark")) {
-      // The app stores its theme itself; Playwright's colorScheme does nothing.
-      await page.getByRole("button", { name: /thème|theme/i }).first().click();
-      await page.waitForTimeout(400);
+      // useTheme() only mirrors localStorage onto <html class="dark"> as a side effect of
+      // its own hook running (Dashboard/Stats' charts, an open price chart, or the Settings
+      // toggle) — nothing does it at the app root. A route whose page never calls the hook
+      // (Positions, History, a Journal) would otherwise land on this fresh navigation still
+      // showing the light class list even though localStorage says dark. Sync it by hand
+      // instead of hoping some component on the page happens to call the hook.
+      await page.evaluate(() => {
+        document.documentElement.classList.toggle("dark", localStorage.getItem("ib2:theme") === "dark");
+      });
     }
 
     // An ECharts chart animates its entry for about a second: shot at networkidle, its lines

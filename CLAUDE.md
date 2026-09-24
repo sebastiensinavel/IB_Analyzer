@@ -203,6 +203,14 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   stratégie proratise `dailyPnl` et reprend `dayChange` tel quel, et abandonne les deux dès que
   `dayChange` de la position est `null` (`dayShare`, `packages/coverage/src/strategy.ts`).
   L'étape PnL de l'agent (`collect_pnl`, `PNL_TIMEOUT_S`) ne fait jamais échouer `/snapshot`.
+- **Les couleurs vivent dans les tokens de `apps/web/src/index.css`**, reprises des maquettes
+  finance-desktop (sous-projet 31) : `primary` et `success` sont tous deux teal, si bien
+  qu'aucune étiquette ne s'appuie sur leur différence (`journalTone.ts` prend les teintes des
+  séries). Ce qui ne lit pas le CSS — ECharts, lightweight-charts — lit `lib/chartColors.ts`
+  seul, que `chartColors.test.ts` tient en phase avec `index.css`. L'index d'une série porte
+  un rôle (0 actions, 1 calls vendus, 2 puts vendus et ouvert, 3 LEAPS) : ne jamais le
+  réordonner. Les barres de défilement sont dessinées en CSS seul ; aucun `scrollbar-width`
+  hors du `@supports` d'`index.css`, qui désactiverait leur style dans Chrome.
 - **Il n'y a pas de page Aujourd'hui** : Historique, Positions et Dashboard portent les
   données intraday.
 - **Les journaux sont une vue calculée du ledger, jamais stockée** : `buildJournals` dans
@@ -315,7 +323,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   tickers `STK`/`OPT` nouveaux, jamais un `.OLD`, et **ne modifie jamais une ligne existante**.
   Toute écriture passe par `db/sectors.ts` et réécrit `updatedAt`. La page Secteur et Score vit
   sous `/accounts/:accountId/sectors` pour garder la coquille active, mais la table reste commune
-  à tous les comptes. Sa colonne **« En cours » est calculée, jamais stockée** : 1, sur le vert
+  à tous les comptes. Sa colonne **« En cours » est calculée, jamais stockée** : 1, sur le teal
   des puts en cours du journal Wheel (`LABEL_TONE_CLASS.open`), quand le snapshot de **n'importe
   quel compte** détient une action ou une option du ticker (`heldTickers`, même lecture que
   l'ajout par import) ; 0 sinon, y compris sans aucun snapshot.
@@ -452,6 +460,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 28 | Premiers pas : accueil, compte serveur facultatif, première étape, Aide | fait (2026-09-22) |
 | 29 | Les tableaux de la Wheel et des LEAPS rangés par point de contrôle | fait (2026-09-22) |
 | 30 | Les stratégies actives d'un compte | fait (2026-09-23) |
+| 31 | Habillage « finance-desktop » : tokens, polices, tableaux, graphes, barres de défilement | fait (2026-09-24) |
 
 ## Outillage
 
