@@ -215,7 +215,7 @@ describe("HistoryPage", () => {
     const table = screen.getByRole("table");
     expect([...table.querySelectorAll("col")].map((col) => col.style.width)).toEqual(HISTORY_COLUMNS.map((column) => column.width));
     expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
-      "Date/Heure", "Type", "Symbole", "Qté", "Prix", "Prix total", "Frais", "Cash", "Dev.", "Cash USD", "Cash EUR",
+      "Date/Heure", "Type", "Symbole", "Qté", "Prix", "Total", "Com.", "Cash", "Dev.", "Cash USD", "Cash EUR",
     ]);
   });
 
@@ -329,13 +329,13 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await sortBy(user, "Prix total", "Croissant");
+    await sortBy(user, "Total", "Croissant");
     // Amounts: AAPL -18050, TSLA -1100, MSFT 610, deposit 10000.
     await waitFor(() => expect(rowSymbols()).toEqual(["AAPL", "TSLA", "MSFT", "ELECTRONIC FUND TRANSFER"]));
-    expect(screen.getByRole("columnheader", { name: /^Prix total/ })).toHaveAttribute("aria-sort", "ascending");
-    await sortBy(user, "Prix total", "Décroissant");
+    expect(screen.getByRole("columnheader", { name: /^Total/ })).toHaveAttribute("aria-sort", "ascending");
+    await sortBy(user, "Total", "Décroissant");
     await waitFor(() => expect(rowSymbols()).toEqual(["ELECTRONIC FUND TRANSFER", "MSFT", "TSLA", "AAPL"]));
-    await sortBy(user, "Prix total", "Réinitialiser le tri");
+    await sortBy(user, "Total", "Réinitialiser le tri");
     await waitFor(() => expect(rowSymbols()).toEqual(["AAPL", "MSFT", "TSLA", "ELECTRONIC FUND TRANSFER"]));
   });
 
@@ -344,9 +344,9 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await sortBy(user, "Frais", "Croissant");
+    await sortBy(user, "Com.", "Croissant");
     await waitFor(() => expect(rowSymbols().at(-1)).toBe("ELECTRONIC FUND TRANSFER"));
-    await sortBy(user, "Frais", "Décroissant");
+    await sortBy(user, "Com.", "Décroissant");
     await waitFor(() => expect(rowSymbols().at(-1)).toBe("ELECTRONIC FUND TRANSFER"));
   });
 
@@ -355,11 +355,11 @@ describe("HistoryPage", () => {
     renderHistory();
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await openPanel(user, "Prix total");
-    await user.type(await screen.findByRole("textbox", { name: "Critère pour Prix total" }), ">0");
+    await openPanel(user, "Total");
+    await user.type(await screen.findByRole("textbox", { name: "Critère pour Total" }), ">0");
     await waitFor(() => expect(rowSymbols()).toEqual(["MSFT", "ELECTRONIC FUND TRANSFER"]));
     expect(within(await rowFor("MSFT")).getAllByRole("cell")[USD_CASH_CELL]).toHaveTextContent("-491.65");
-    expect(screen.getByText("Prix total : >0")).toBeInTheDocument();
+    expect(screen.getByText("Total : >0")).toBeInTheDocument();
   });
 
   it("shows an invalid criterion in red and does not filter on it", async () => {
@@ -452,16 +452,16 @@ describe("HistoryPage", () => {
     const first = renderHistory("alpha");
     await screen.findByText("AAPL");
     const user = userEvent.setup();
-    await sortBy(user, "Prix total", "Croissant");
+    await sortBy(user, "Total", "Croissant");
     await waitFor(() => expect(rowSymbols()[0]).toBe("AAPL"));
     first.unmount();
     renderHistory("beta");
     await screen.findByText("BETA");
-    expect(screen.getByRole("columnheader", { name: /^Prix total/ })).not.toHaveAttribute("aria-sort");
+    expect(screen.getByRole("columnheader", { name: /^Total/ })).not.toHaveAttribute("aria-sort");
     cleanup();
     renderHistory("alpha");
     await screen.findByText("AAPL");
-    expect(screen.getByRole("columnheader", { name: /^Prix total/ })).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("columnheader", { name: /^Total/ })).toHaveAttribute("aria-sort", "ascending");
     expect(rowSymbols()).toEqual(["AAPL", "TSLA", "MSFT", "ELECTRONIC FUND TRANSFER"]);
   });
 
