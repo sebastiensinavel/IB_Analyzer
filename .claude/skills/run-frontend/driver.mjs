@@ -186,18 +186,6 @@ try {
 
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle" });
 
-    if (has("dark")) {
-      // useTheme() only mirrors localStorage onto <html class="dark"> as a side effect of
-      // its own hook running (Dashboard/Stats' charts, an open price chart, or the Settings
-      // toggle) — nothing does it at the app root. A route whose page never calls the hook
-      // (Positions, History, a Journal) would otherwise land on this fresh navigation still
-      // showing the light class list even though localStorage says dark. Sync it by hand
-      // instead of hoping some component on the page happens to call the hook.
-      await page.evaluate(() => {
-        document.documentElement.classList.toggle("dark", localStorage.getItem("ib2:theme") === "dark");
-      });
-    }
-
     // An ECharts chart animates its entry for about a second: shot at networkidle, its lines
     // stop short and their end labels sit halfway. --wait overrides the guess either way.
     const charts = await page.locator("[_echarts_instance_]").count();
