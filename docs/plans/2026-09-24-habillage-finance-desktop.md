@@ -724,7 +724,7 @@ git add -A CLAUDE.md docs
 git commit -m "Documente le sous-projet 31"
 ```
 
-- [ ] **Step 5 : Instance de relecture**
+- [x] **Step 5 : Instance de relecture**
 
 `pnpm dev:start` dans le worktree ; donner à Seb les deux URL (`pnpm dev:status`). La laisser
 tourner jusqu'à sa décision de merge.
