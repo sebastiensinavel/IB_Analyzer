@@ -88,7 +88,7 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
   );
 
   return (
-    <TableRow data-testid="position-chart-row" className="hover:bg-transparent">
+    <TableRow data-testid="position-chart-row" className="hover:bg-transparent [&:hover>td:first-child]:shadow-none">
       <TableCell colSpan={columnCount} className="bg-muted/30 p-4">
         {state.status === "bars" ? (
           <>

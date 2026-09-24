@@ -49,7 +49,7 @@ export default function InvitationPage() {
     <div className="mx-auto flex max-w-sm flex-col gap-4 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary font-heading text-sm font-bold text-primary-foreground">
+          <div className="flex size-7 items-center justify-center rounded-md bg-linear-135 from-(--logo-from) to-(--logo-to) font-heading text-sm font-bold text-(--logo-foreground) shadow-(--logo-shadow)">
             IB
           </div>
           <span className="font-heading text-sm font-semibold tracking-tight">IB Analyzer</span>
