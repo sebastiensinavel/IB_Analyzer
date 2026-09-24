@@ -5,7 +5,7 @@ Statut : livré (2026-09-24).
 L'application porte aujourd'hui l'habillage shadcn par défaut : primaire bleu, Geist, cartes
 cerclées d'un `ring`, barres de défilement natives du système. Deux maquettes fournies par
 l'utilisateur, `dark-finance-desktop.html` (thème sombre) et `white-finance-desktop.html`
-(thème clair), à la racine du dépôt et non versionnées, fixent la direction : fond bleu nuit ou
+(thème clair), versionnées dans `docs/style/`, fixent la direction : fond bleu nuit ou
 gris clair, accent teal, trois niveaux de texte, cartes de 14 px, Inter et JetBrains Mono en
 chiffres tabulaires, en-têtes de tableau en petites capitales espacées, liseré teal sur
 l'élément actif, curseurs de défilement fins et arrondis.

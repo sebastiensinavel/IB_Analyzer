@@ -204,7 +204,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `dayChange` de la position est `null` (`dayShare`, `packages/coverage/src/strategy.ts`).
   L'étape PnL de l'agent (`collect_pnl`, `PNL_TIMEOUT_S`) ne fait jamais échouer `/snapshot`.
 - **Les couleurs vivent dans les tokens de `apps/web/src/index.css`**, reprises des maquettes
-  finance-desktop (sous-projet 31) : `primary` et `success` sont tous deux teal, si bien
+  `docs/style/{dark,white}-finance-desktop.html` (sous-projet 31) : `primary` et `success` sont tous deux teal, si bien
   qu'aucune étiquette ne s'appuie sur leur différence (`journalTone.ts` prend les teintes des
   séries). Ce qui ne lit pas le CSS — ECharts, lightweight-charts — lit `lib/chartColors.ts`
   seul, que `chartColors.test.ts` tient en phase avec `index.css`. L'index d'une série porte

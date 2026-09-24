@@ -15,8 +15,8 @@ Journal — lit `apps/web/src/lib/chartColors.ts`, tenu en phase avec `index.css
 ECharts, lightweight-charts, Vitest.
 
 **Spec :** `docs/specs/2026-09-24-habillage-finance-desktop-design.md` — à lire en entier avant
-toute tâche. Les maquettes sont à la racine du dépôt principal (`/home/seb/IA/IB_Analyzer/`,
-non versionnées) : `dark-finance-desktop.html`, `white-finance-desktop.html`.
+toute tâche. Les maquettes sont dans `docs/style/` : `dark-finance-desktop.html`,
+`white-finance-desktop.html`.
 
 ## Global Constraints
 
