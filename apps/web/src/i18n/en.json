@@ -530,6 +530,8 @@
   },
   "settings": {
     "title": "Settings",
+    "display": "Display",
+    "theme": "Theme",
     "account": "Account",
     "signedInAs": "Signed in as {{email}}",
     "signedOut": "Not signed in.",

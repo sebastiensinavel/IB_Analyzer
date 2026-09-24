@@ -530,6 +530,8 @@
   },
   "settings": {
     "title": "Paramètres",
+    "display": "Affichage",
+    "theme": "Thème",
     "account": "Compte",
     "signedInAs": "Connecté en tant que {{email}}",
     "signedOut": "Non connecté.",

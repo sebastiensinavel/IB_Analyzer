@@ -15,9 +15,7 @@ import {
   SidebarSeparator,
 } from "@ib/ui/sidebar";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionMenuItem } from "@/components/SessionMenuItem";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { NAV_SECTIONS } from "@/lib/navigation";
 import { activeStrategies } from "@/lib/strategies";
 import type { AccountRecord } from "@/db/schema";
@@ -93,10 +91,6 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter className="gap-2">
         <SessionMenuItem />
-        <div className="flex items-center justify-between gap-2">
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
       </SidebarFooter>
     </Sidebar>
   );

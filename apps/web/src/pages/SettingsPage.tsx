@@ -16,7 +16,9 @@ import {
   type TotpStatus,
 } from "@/api/allauth";
 import { useSession, useSessionActions } from "@/api/session";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { BackupCard } from "@/components/settings/BackupCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 /**
  * The server is optional (spec §2): every card below except "Compte" only makes sense once
@@ -67,6 +69,8 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
+      <DisplayCard />
+
       <BackupCard />
 
       {session.status === "authenticated" && (
@@ -77,6 +81,28 @@ export function SettingsPage() {
         </>
       )}
     </div>
+  );
+}
+
+function DisplayCard() {
+  const { t } = useTranslation();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.display")}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm">{t("languageSwitcher.label")}</p>
+          <LanguageSwitcher />
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm">{t("settings.theme")}</p>
+          <ThemeToggle />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

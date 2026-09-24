@@ -38,6 +38,19 @@ describe("SettingsPage", () => {
     expect(screen.queryByText("Authentification à deux facteurs")).not.toBeInTheDocument();
   });
 
+  it("carries the language and theme switchers in a Display card placed just before the backup", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({}, 401));
+
+    renderPage();
+
+    expect(await screen.findByText("Non connecté.")).toBeInTheDocument();
+    const display = screen.getByText("Affichage");
+    expect(screen.getByRole("combobox", { name: "Langue" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Changer de thème" })).toBeInTheDocument();
+    const backup = screen.getByText("Sauvegarde");
+    expect(display.compareDocumentPosition(backup) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("greys out account management with a discreet note when the server is unreachable, never an alarm", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
 
