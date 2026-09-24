@@ -16,6 +16,12 @@ export interface ChartColors {
   series: readonly string[];
   /** A slice that folds several sectors together. */
   other: string;
+  /** Grille en pointillés du graphe de cours (`.dashed` de la maquette). */
+  grid: string;
+  /** Texte des axes du graphe de cours : `--subtle-foreground`. */
+  axisText: string;
+  /** Bordure des échelles du graphe de cours : `--border`. */
+  axisBorder: string;
 }
 
 export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
@@ -27,6 +33,9 @@ export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
     surface: "#ffffff",
     series: ["#3b78e7", "#d08a10", "#0e9f90", "#7b5ce5", "#e0473f"],
     other: "#7a8c93",
+    grid: "#e7ecf0",
+    axisText: "#8795a0",
+    axisBorder: "#e3e8ec",
   },
   dark: {
     success: "#2bc4b4",
@@ -36,6 +45,9 @@ export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
     surface: "#0e151c",
     series: ["#6c9ef8", "#e6b04a", "#2bc4b4", "#a28bf5", "#f0716a"],
     other: "#7a8c93",
+    grid: "#1a252e",
+    axisText: "#63727d",
+    axisBorder: "#1c2731",
   },
 };
 

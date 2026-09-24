@@ -39,6 +39,11 @@ describe.each([
   it("gives chart-1…5 the series, in order", () => {
     expect(c.series).toEqual([1, 2, 3, 4, 5].map((i) => t[`chart-${i}`]));
   });
+
+  it("draws the price chart's axes in the subtle text and border tokens", () => {
+    expect(c.axisText).toBe(t["subtle-foreground"]);
+    expect(c.axisBorder).toBe(t.border);
+  });
 });
 
 describe("CHART_COLORS", () => {
@@ -50,5 +55,10 @@ describe("CHART_COLORS", () => {
 
   it("draws its figures in the app's mono font", () => {
     expect(CHART_FONT).toContain("JetBrains Mono Variable");
+  });
+
+  it("dots the price chart grid like the mockup", () => {
+    expect(CHART_COLORS.light.grid).toBe("#e7ecf0");
+    expect(CHART_COLORS.dark.grid).toBe("#1a252e");
   });
 });

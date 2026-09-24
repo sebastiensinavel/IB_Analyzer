@@ -558,7 +558,7 @@ git commit -m "Habillage finance-desktop : cartes, boutons, badges, tableaux et 
 - Consumes : `CHART_COLORS` de la tâche 1.
 - Produces : `ChartColors` gagne `grid: string`, `axisText: string`, `axisBorder: string`.
 
-- [ ] **Step 1 : Tests (échouent)**
+- [x] **Step 1 : Tests (échouent)**
 
 Dans `chartColors.test.ts`, dans le `describe.each`, ajouter :
 
@@ -616,7 +616,7 @@ describe("LABEL_TONE_CLASS", () => {
 Run : `cd apps/web && npx vitest run src/lib/chartColors.test.ts src/lib/journalTone.test.ts`
 Attendu : FAIL.
 
-- [ ] **Step 2 : `chartColors.ts`** — ajouter à `ChartColors` :
+- [x] **Step 2 : `chartColors.ts`** — ajouter à `ChartColors` :
 
 ```ts
   /** Grille en pointillés du graphe de cours (`.dashed` de la maquette). */
@@ -630,7 +630,7 @@ Attendu : FAIL.
 et aux valeurs : clair `grid: "#e7ecf0", axisText: "#8795a0", axisBorder: "#e3e8ec"` ;
 sombre `grid: "#1a252e", axisText: "#63727d", axisBorder: "#1c2731"`.
 
-- [ ] **Step 3 : `PriceChart.tsx`** — supprimer les constantes `UP` et `DOWN` ; dans l'effet,
+- [x] **Step 3 : `PriceChart.tsx`** — supprimer les constantes `UP` et `DOWN` ; dans l'effet,
 `const colors = chartColors(isDark);` (import depuis `@/lib/chartColors`), puis :
 
 ```ts
@@ -648,7 +648,7 @@ colors.success, wickDownColor: colors.destructive`. `LineStyle` s'importe de
 `lightweight-charts`. Vérifier qu'aucun littéral de couleur ne reste :
 `grep -n "#[0-9a-fA-F]\{6\}" apps/web/src/components/PriceChart.tsx` → rien.
 
-- [ ] **Step 4 : `journalTone.ts`** — remplacer le commentaire et `LABEL_TONE_CLASS` :
+- [x] **Step 4 : `journalTone.ts`** — remplacer le commentaire et `LABEL_TONE_CLASS` :
 
 ```ts
 // primary et success sont tous deux teal (sous-projet 31) : chaque ton prend la teinte de la
@@ -662,12 +662,12 @@ export const LABEL_TONE_CLASS: Record<LabelTone, string> = {
 };
 ```
 
-- [ ] **Step 5 : Tests**
+- [x] **Step 5 : Tests**
 
 Run : `cd apps/web && npx vitest run src/lib src/components/PriceChart.test.tsx src/pages`
 Attendu : PASS (la page Secteur et Score lit `LABEL_TONE_CLASS.open`, elle suit).
 
-- [ ] **Step 6 : Commit** (cases cochées)
+- [x] **Step 6 : Commit** (cases cochées)
 
 ```bash
 git add -A apps/web docs/plans/2026-09-24-habillage-finance-desktop.md

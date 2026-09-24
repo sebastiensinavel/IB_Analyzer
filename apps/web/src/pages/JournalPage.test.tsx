@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { ACTIVABLE_STRATEGIES, type Strategy, type Transaction } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
+import { LABEL_TONE_CLASS } from "@/lib/journalTone";
 import { JournalPage } from "@/pages/JournalPage";
 import { WithAccountData } from "@/test/WithAccountData";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
@@ -134,16 +135,16 @@ describe("JournalPage", () => {
 
   it("colours the Label cell: blue delivered shares, orange short call, green long call, nothing once closed", async () => {
     renderJournal("wheel");
-    expect(within(await rowFor("MQZA")).getAllByRole("cell")[1]).toHaveClass("bg-primary/15");
-    expect(within(await rowFor("MQZA Aug21'26 20 Call")).getAllByRole("cell")[1]).not.toHaveClass("bg-warning/25");
+    expect(within(await rowFor("MQZA")).getAllByRole("cell")[1]).toHaveClass(LABEL_TONE_CLASS.shares);
+    expect(within(await rowFor("MQZA Aug21'26 20 Call")).getAllByRole("cell")[1]).not.toHaveClass(LABEL_TONE_CLASS.shortCall);
     // Unmount the Wheel page before mounting LEAPS: without it, the stale "MQZA" labels
     // still in the DOM satisfy findAllByTestId's very first (synchronous) check, which
     // resolves the promise immediately and never waits for the ZZZ rows to actually render
     // (a real navigation between journal pages unmounts the previous one the same way).
     cleanup();
     renderJournal("leaps");
-    expect(within(await rowFor("ZZZ Jun18'27 15 Call")).getAllByRole("cell")[1]).toHaveClass("bg-success/15");
-    expect(within(await rowFor("ZZZ Sep18'26 20 Call")).getAllByRole("cell")[1]).toHaveClass("bg-warning/25");
+    expect(within(await rowFor("ZZZ Jun18'27 15 Call")).getAllByRole("cell")[1]).toHaveClass(LABEL_TONE_CLASS.open);
+    expect(within(await rowFor("ZZZ Sep18'26 20 Call")).getAllByRole("cell")[1]).toHaveClass(LABEL_TONE_CLASS.shortCall);
   });
 
   it("folds a condor into one row and unfolds its four legs on demand", async () => {

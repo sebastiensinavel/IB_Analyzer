@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import {
   CandlestickSeries,
   createChart,
+  LineStyle,
   type IChartApi,
   type ISeriesApi,
   type ISeriesPrimitive,
@@ -16,6 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { ChartLevel, ChartLevelKind } from "@ib/ledger";
 import type { PriceBar } from "@/agent/client";
+import { chartColors, CHART_FONT } from "@/lib/chartColors";
 import { levelColor, levelFill, levelLabel, levelPrice } from "@/lib/chartLevels";
 import { CHART_MARGIN_DAYS, LevelsPrimitive, timeExtent, type DrawnLevel } from "@/lib/levelsPrimitive";
 
@@ -28,8 +30,6 @@ export interface PriceChartProps {
 
 /** Several table rows tall: the chart is what the injected row is for. */
 export const CHART_HEIGHT = 650;
-const UP = "#26a69a";
-const DOWN = "#ef5350";
 
 /** Assemble couleur, prix et étiquette de chaque niveau : la couture testable de ce fichier. */
 export function drawnLevels(
@@ -72,28 +72,25 @@ export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: Pric
   useEffect(() => {
     const element = holder.current;
     if (!element) return;
+    const colors = chartColors(isDark);
     const chart = createChart(element, {
       height,
-      layout: {
-        background: { color: "transparent" },
-        textColor: isDark ? "#a1a1aa" : "#52525b",
-        attributionLogo: true,
-      },
+      layout: { background: { color: "transparent" }, textColor: colors.axisText, fontFamily: CHART_FONT, attributionLogo: true },
       grid: {
-        vertLines: { color: isDark ? "#27272a" : "#f1f5f9" },
-        horzLines: { color: isDark ? "#27272a" : "#f1f5f9" },
+        vertLines: { color: colors.grid, style: LineStyle.SparseDotted },
+        horzLines: { color: colors.grid, style: LineStyle.SparseDotted },
       },
-      rightPriceScale: { borderColor: isDark ? "#3f3f46" : "#e4e4e7" },
-      timeScale: { borderColor: isDark ? "#3f3f46" : "#e4e4e7" },
+      rightPriceScale: { borderColor: colors.axisBorder },
+      timeScale: { borderColor: colors.axisBorder },
       crosshair: { mode: 0 },
       autoSize: true,
     });
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: UP,
-      downColor: DOWN,
+      upColor: colors.success,
+      downColor: colors.destructive,
       borderVisible: false,
-      wickUpColor: UP,
-      wickDownColor: DOWN,
+      wickUpColor: colors.success,
+      wickDownColor: colors.destructive,
     });
     chartRef.current = chart;
     seriesRef.current = series;
