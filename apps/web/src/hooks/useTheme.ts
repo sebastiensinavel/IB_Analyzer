@@ -45,6 +45,13 @@ function getSnapshot() {
   return isDark;
 }
 
+// Called once at startup (main.tsx), before any component renders: the class must be
+// right on the very first paint of pages that never call useTheme() themselves (Positions,
+// Historique, un Journal), not just lazily once some other page's hook happens to mount.
+export function applyStoredTheme() {
+  syncDocument();
+}
+
 // Shared across every caller (module-scoped store, not per-call useState): the
 // DOM class and every consumer's rendered colors must move together on toggle.
 export function useTheme() {

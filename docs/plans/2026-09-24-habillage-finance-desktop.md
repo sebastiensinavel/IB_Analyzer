@@ -90,7 +90,7 @@ non versionnées) : `dark-finance-desktop.html`, `white-finance-desktop.html`.
   `--logo-foreground`, `--logo-shadow` ; `CHART_COLORS.{light,dark}.series` dans l'ordre
   bleu, or, teal, violet, corail ; `CHART_FONT` en JetBrains Mono.
 
-- [ ] **Step 1 : Écrire le test de synchronisation (échoue)**
+- [x] **Step 1 : Écrire le test de synchronisation (échoue)**
 
 `apps/web/src/lib/chartColors.test.ts` :
 
@@ -144,19 +144,19 @@ describe("CHART_COLORS", () => {
 });
 ```
 
-- [ ] **Step 2 : Le lancer, vérifier qu'il échoue**
+- [x] **Step 2 : Le lancer, vérifier qu'il échoue**
 
 Run : `cd apps/web && npx vitest run src/lib/chartColors.test.ts`
 Attendu : FAIL (valeurs oklch actuelles ≠ hex, série et police anciennes).
 
-- [ ] **Step 3 : Polices**
+- [x] **Step 3 : Polices**
 
 ```bash
 cd apps/web && pnpm remove @fontsource-variable/geist @fontsource-variable/geist-mono \
   && pnpm add @fontsource-variable/inter @fontsource-variable/jetbrains-mono
 ```
 
-- [ ] **Step 4 : Réécrire `apps/web/src/index.css`**
+- [x] **Step 4 : Réécrire `apps/web/src/index.css`**
 
 Remplacer le fichier entier par (les `@import` Tailwind/shadcn et `@source` sont conservés) :
 
@@ -383,7 +383,7 @@ Remplacer le fichier entier par (les `@import` Tailwind/shadcn et `@source` sont
 }
 ```
 
-- [ ] **Step 5 : Réécrire `apps/web/src/lib/chartColors.ts`**
+- [x] **Step 5 : Réécrire `apps/web/src/lib/chartColors.ts`**
 
 Garder l'interface et `chartColors()` ; remplacer le commentaire d'en-tête, `CHART_COLORS` et
 `CHART_FONT` :
@@ -423,14 +423,14 @@ Mettre à jour le commentaire de `series` dans l'interface : « Categorical hues
 never cycled; each index carries a role (0 shares, 1 short calls, 2 short puts / open,
 3 LEAPS, 4 fifth pie slice) — spec of sub-project 31, §5.1. »
 
-- [ ] **Step 6 : Valider la palette (skill `dataviz`)**
+- [x] **Step 6 : Valider la palette (skill `dataviz`)**
 
 Charger le skill `dataviz` et passer son validateur sur `series` contre `surface`, dans chaque
 thème. Si une teinte échoue, l'ajuster **en luminance seulement** dans les deux fichiers
 (`chartColors.ts` et `chart-N` d'`index.css`) et dans l'attente du test du Step 1, puis noter
 l'écart dans le message de commit. Ne jamais changer de famille de teinte ni d'ordre.
 
-- [ ] **Step 7 : Retirer le `scrollbar-width` de l'Historique**
+- [x] **Step 7 : Retirer le `scrollbar-width` de l'Historique**
 
 `apps/web/src/components/history/HistoryTable.tsx:95` : la classe devient
 `"min-w-0 flex-1 overflow-auto"`. Puis vérifier qu'aucun autre ne reste :
@@ -438,13 +438,13 @@ l'écart dans le message de commit. Ne jamais changer de famille de teinte ni d'
 Run : `grep -rn "scrollbar-width\|scrollbar-color" apps/web/src packages/ui/src`
 Attendu : seules les deux lignes du `@supports` d'`index.css`.
 
-- [ ] **Step 8 : Tests**
+- [x] **Step 8 : Tests**
 
 Run : `cd apps/web && npx vitest run src/lib/chartColors.test.ts src/lib/chartLevels.test.ts src/lib/capitalCharts.test.ts src/components/PriceChart.test.tsx`
 Attendu : PASS. `journalTone.test.ts` peut échouer sur ses teintes sombres : c'est la tâche 3,
 le noter sans le corriger ici.
 
-- [ ] **Step 9 : Commit** (cases cochées dans ce plan)
+- [x] **Step 9 : Commit** (cases cochées dans ce plan)
 
 ```bash
 git add -A apps/web docs/plans/2026-09-24-habillage-finance-desktop.md pnpm-lock.yaml
@@ -469,18 +469,18 @@ Aucun test unitaire ne fixe des classes de style (un tel test casserait à chaqu
 rien protéger) ; le filet est la suite existante — elle ne doit pas bouger — plus les captures
 de la tâche 4. **Ne changer aucune classe de taille, marge, hauteur ou largeur.**
 
-- [ ] **Step 1 : Carte** — `card.tsx`, dans la classe de `Card`, remplacer
+- [x] **Step 1 : Carte** — `card.tsx`, dans la classe de `Card`, remplacer
   `ring-1 ring-foreground/10` par `ring-1 ring-border shadow-card`. (`ring` et non `border` :
   il ne prend pas de place, la mise en page ne bouge pas d'un pixel.) `rounded-xl` reste : il
   vaut 14 px avec `--radius: 0.625rem`.
 
-- [ ] **Step 2 : Bouton** — `button.tsx`, variante `default` :
+- [x] **Step 2 : Bouton** — `button.tsx`, variante `default` :
 
 ```ts
 default: "bg-primary font-semibold text-primary-foreground shadow-primary hover:bg-primary/85",
 ```
 
-- [ ] **Step 3 : Badge** — `badge.tsx`, variantes `secondary` et `outline` (le style `.env`) :
+- [x] **Step 3 : Badge** — `badge.tsx`, variantes `secondary` et `outline` (le style `.env`) :
 
 ```ts
 secondary:
@@ -492,7 +492,7 @@ outline:
 `Badge` passe par `cn()` (twMerge) : `rounded-md` et `text-[10.5px]` l'emportent sur
 `rounded-4xl` et `text-xs` de la base. Les autres variantes ne changent pas.
 
-- [ ] **Step 4 : Tableau** — `table.tsx` :
+- [x] **Step 4 : Tableau** — `table.tsx` :
 
 `TableRow` :
 ```ts
@@ -515,7 +515,7 @@ fichiers et dans `components/table/ColumnHeader.tsx`, retirer seulement un `text
 retirer d'autre ; si un en-tête a une raison écrite de garder sa casse, la laisser et le noter
 dans le rapport.
 
-- [ ] **Step 5 : Sidebar** — `sidebar.tsx` :
+- [x] **Step 5 : Sidebar** — `sidebar.tsx` :
 
 `SidebarGroupLabel` : dans sa classe, remplacer `text-xs font-medium text-sidebar-foreground/70`
 par `text-[10px] font-medium tracking-[.14em] text-subtle-foreground uppercase`.
@@ -524,13 +524,13 @@ par `text-[10px] font-medium tracking-[.14em] text-subtle-foreground uppercase`.
 `font-medium data-active:shadow-[inset_2px_0_0_var(--sidebar-primary)]` ; `rounded-md` reste
 (8 px). Rien d'autre.
 
-- [ ] **Step 6 : Logo** — `app-sidebar.tsx:53`, la classe du carré « IB » :
+- [x] **Step 6 : Logo** — `app-sidebar.tsx:53`, la classe du carré « IB » :
 
 ```tsx
 <div className="flex size-7 items-center justify-center rounded-md bg-linear-135 from-(--logo-from) to-(--logo-to) font-heading text-sm font-bold text-(--logo-foreground) shadow-(--logo-shadow)">
 ```
 
-- [ ] **Step 7 : Suite de tests de `apps/web` et `packages/ui`**
+- [x] **Step 7 : Suite de tests de `apps/web` et `packages/ui`**
 
 Run : `cd apps/web && npx vitest run` puis `pnpm --filter @ib/ui test` s'il existe (sinon
 l'ignorer : `ls packages/ui/package.json` et lire ses scripts).
@@ -538,7 +538,7 @@ Attendu : tout PASS, sauf éventuellement `journalTone.test.ts` (tâche 3). Un t
 une classe retirée (`text-foreground` d'un en-tête…) : adapter l'attente à la nouvelle classe,
 jamais supprimer l'assertion.
 
-- [ ] **Step 8 : Commit** (cases cochées)
+- [x] **Step 8 : Commit** (cases cochées)
 
 ```bash
 git add -A packages/ui apps/web docs/plans/2026-09-24-habillage-finance-desktop.md
@@ -558,7 +558,7 @@ git commit -m "Habillage finance-desktop : cartes, boutons, badges, tableaux et 
 - Consumes : `CHART_COLORS` de la tâche 1.
 - Produces : `ChartColors` gagne `grid: string`, `axisText: string`, `axisBorder: string`.
 
-- [ ] **Step 1 : Tests (échouent)**
+- [x] **Step 1 : Tests (échouent)**
 
 Dans `chartColors.test.ts`, dans le `describe.each`, ajouter :
 
@@ -616,7 +616,7 @@ describe("LABEL_TONE_CLASS", () => {
 Run : `cd apps/web && npx vitest run src/lib/chartColors.test.ts src/lib/journalTone.test.ts`
 Attendu : FAIL.
 
-- [ ] **Step 2 : `chartColors.ts`** — ajouter à `ChartColors` :
+- [x] **Step 2 : `chartColors.ts`** — ajouter à `ChartColors` :
 
 ```ts
   /** Grille en pointillés du graphe de cours (`.dashed` de la maquette). */
@@ -630,7 +630,7 @@ Attendu : FAIL.
 et aux valeurs : clair `grid: "#e7ecf0", axisText: "#8795a0", axisBorder: "#e3e8ec"` ;
 sombre `grid: "#1a252e", axisText: "#63727d", axisBorder: "#1c2731"`.
 
-- [ ] **Step 3 : `PriceChart.tsx`** — supprimer les constantes `UP` et `DOWN` ; dans l'effet,
+- [x] **Step 3 : `PriceChart.tsx`** — supprimer les constantes `UP` et `DOWN` ; dans l'effet,
 `const colors = chartColors(isDark);` (import depuis `@/lib/chartColors`), puis :
 
 ```ts
@@ -648,7 +648,7 @@ colors.success, wickDownColor: colors.destructive`. `LineStyle` s'importe de
 `lightweight-charts`. Vérifier qu'aucun littéral de couleur ne reste :
 `grep -n "#[0-9a-fA-F]\{6\}" apps/web/src/components/PriceChart.tsx` → rien.
 
-- [ ] **Step 4 : `journalTone.ts`** — remplacer le commentaire et `LABEL_TONE_CLASS` :
+- [x] **Step 4 : `journalTone.ts`** — remplacer le commentaire et `LABEL_TONE_CLASS` :
 
 ```ts
 // primary et success sont tous deux teal (sous-projet 31) : chaque ton prend la teinte de la
@@ -662,12 +662,12 @@ export const LABEL_TONE_CLASS: Record<LabelTone, string> = {
 };
 ```
 
-- [ ] **Step 5 : Tests**
+- [x] **Step 5 : Tests**
 
 Run : `cd apps/web && npx vitest run src/lib src/components/PriceChart.test.tsx src/pages`
 Attendu : PASS (la page Secteur et Score lit `LABEL_TONE_CLASS.open`, elle suit).
 
-- [ ] **Step 6 : Commit** (cases cochées)
+- [x] **Step 6 : Commit** (cases cochées)
 
 ```bash
 git add -A apps/web docs/plans/2026-09-24-habillage-finance-desktop.md
@@ -681,7 +681,7 @@ git commit -m "Habillage finance-desktop : graphe de cours et étiquettes du Jou
 **Files:**
 - Modify: `CLAUDE.md`, `docs/specs/2026-09-24-habillage-finance-desktop-design.md` (statut)
 
-- [ ] **Step 1 : `CLAUDE.md`**
+- [x] **Step 1 : `CLAUDE.md`**
 
 1. Dans la règle de la table sectorielle, « sur le vert des puts en cours du journal Wheel »
    devient « sur le teal des puts en cours du journal Wheel ».
@@ -702,12 +702,12 @@ git commit -m "Habillage finance-desktop : graphe de cours et étiquettes du Jou
    `| 31 | Habillage « finance-desktop » : tokens, polices, tableaux, graphes, barres de défilement | fait (2026-09-24) |`.
 4. Spec : `Statut : conçu (2026-09-24).` → `Statut : livré (2026-09-24).`
 
-- [ ] **Step 2 : `pnpm check`** (une seule fois)
+- [x] **Step 2 : `pnpm check`** (une seule fois)
 
 Run : `pnpm check` depuis la racine du worktree. Attendu : lint, typage, build, tests PASS.
 Corriger ce qui échoue, relancer seulement les tests ciblés, puis `pnpm check` une dernière fois.
 
-- [ ] **Step 3 : Captures, une passe**
+- [x] **Step 3 : Captures, une passe**
 
 Avec le skill `run-frontend` (depuis la racine du worktree, graine `--seed`), capturer en
 thème clair puis sombre : tableau de bord, Positions, Historique, Journal Wheel, Paramètres
@@ -717,14 +717,14 @@ thème clair puis sombre : tableau de bord, Positions, Historique, Journal Wheel
   en a, ne rien élargir : le noter dans le rapport avec la capture ;
 - les trois étiquettes du Journal Wheel distinctes.
 
-- [ ] **Step 4 : Commit** (cases cochées)
+- [x] **Step 4 : Commit** (cases cochées)
 
 ```bash
 git add -A CLAUDE.md docs
 git commit -m "Documente le sous-projet 31"
 ```
 
-- [ ] **Step 5 : Instance de relecture**
+- [x] **Step 5 : Instance de relecture**
 
 `pnpm dev:start` dans le worktree ; donner à Seb les deux URL (`pnpm dev:status`). La laisser
 tourner jusqu'à sa décision de merge.

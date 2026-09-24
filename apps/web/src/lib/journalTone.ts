@@ -16,10 +16,12 @@ export function labelTone(row: JournalRow): LabelTone | null {
   return null;
 }
 
-// Light: tokens from src/index.css. Dark: those barely show on the card, so a tone takes the hue
-// of a line of the dark capital chart (CHART_COLORS.dark.series) — Assigned, Cumulative P/L, Allocated.
+// primary et success sont tous deux teal (sous-projet 31) : chaque ton prend la teinte de la
+// courbe de capital de son rôle (CHART_COLORS.*.series) — actions bleu « P/L cumulé », call
+// vendu or « Assigné », ouvert teal « Alloué ». En sombre à /45 : à /70 le texte clair n'y
+// garde qu'un contraste de 3,3.
 export const LABEL_TONE_CLASS: Record<LabelTone, string> = {
-  shares: "bg-primary/15 dark:bg-[#3987e5]/70",
-  shortCall: "bg-warning/25 dark:bg-[#d95926]/70",
-  open: "bg-success/15 dark:bg-[#199e70]/70",
+  shares: "bg-[#3b78e7]/15 dark:bg-[#6c9ef8]/45",
+  shortCall: "bg-[#d08a10]/25 dark:bg-[#e6b04a]/45",
+  open: "bg-[#0e9f90]/15 dark:bg-[#2bc4b4]/45",
 };

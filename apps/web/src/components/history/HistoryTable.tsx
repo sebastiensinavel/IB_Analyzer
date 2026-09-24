@@ -92,7 +92,7 @@ export function HistoryTable({ rows, labelledBy, specs, view, facets, resetKey, 
         role="region"
         aria-labelledby={labelledBy}
         tabIndex={0}
-        className="min-w-0 flex-1 overflow-auto [scrollbar-width:thin]"
+        className="min-w-0 flex-1 overflow-auto"
       >
         <table className="w-full min-w-[64rem] table-fixed caption-bottom border-separate border-spacing-0 text-sm">
           <colgroup>

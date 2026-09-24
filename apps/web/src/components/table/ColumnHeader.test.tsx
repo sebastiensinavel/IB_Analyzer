@@ -69,6 +69,14 @@ describe("ColumnHeader", () => {
     expect(indicator).not.toHaveClass("hidden");
   });
 
+  it("keeps a sortable header's label uppercase, like a plain TableHead", () => {
+    // Browsers force `text-transform: none` on form controls (the trigger is a <button>),
+    // which Tailwind's `font: inherit` preflight reset does not cover: without an explicit
+    // `uppercase` class the button would fall back to sentence case under an uppercase header.
+    renderHeader();
+    expect(screen.getByRole("button", { name: /^Montant/ })).toHaveClass("uppercase");
+  });
+
   it("gives a non-sortable column no indicator at all", () => {
     renderHeader({ meta: { key: "coverage", type: "enum", sortable: false }, label: "Couverture" });
     expect(screen.queryByTestId("sort-indicator")).not.toBeInTheDocument();

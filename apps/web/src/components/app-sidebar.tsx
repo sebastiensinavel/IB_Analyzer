@@ -50,7 +50,7 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
     <Sidebar>
       <SidebarHeader className="gap-3 px-2 pt-3">
         <div className="flex items-center gap-2 px-1">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary font-heading text-sm font-bold text-primary-foreground">
+          <div className="flex size-7 items-center justify-center rounded-md bg-linear-135 from-(--logo-from) to-(--logo-to) font-heading text-sm font-bold text-(--logo-foreground) shadow-(--logo-shadow)">
             IB
           </div>
           <span className="font-heading text-sm font-semibold tracking-tight">IB Analyzer</span>

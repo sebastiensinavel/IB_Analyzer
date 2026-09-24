@@ -1,6 +1,6 @@
 # Sous-projet 31 — Habillage « finance-desktop »
 
-Statut : conçu (2026-09-24).
+Statut : livré (2026-09-24).
 
 L'application porte aujourd'hui l'habillage shadcn par défaut : primaire bleu, Geist, cartes
 cerclées d'un `ring`, barres de défilement natives du système. Deux maquettes fournies par
@@ -157,8 +157,10 @@ Bougies `UP` teal et `DOWN` rouge, aux valeurs de `success`/`destructive` du th�
 pointillés comme la maquette (`#1A252E` en sombre, `#E7ECF0` en clair), texte des axes en
 `subtle-foreground` (`#63727D` / `#8795A0`), bordures d'échelle en `border`. Ces valeurs vivent
 avec les autres dans `chartColors.ts` (champs `grid`, `axisText`, `axisBorder`), plus aucune
-couleur n'est écrite dans `PriceChart.tsx`. `levelsPrimitive.ts` garde son texte blanc sur les
-étiquettes de niveau.
+couleur n'est écrite dans `PriceChart.tsx`. Le texte des étiquettes de niveau prend le blanc ou
+l'encre sombre `#0d1a22`, celui des deux dont le contraste WCAG contre la couleur de la boîte
+est le plus haut (`labelInk`, `chartLevels.ts`) : les teintes vives de la palette ne portent
+plus toutes un contraste suffisant en blanc seul.
 
 ### 5.3 Étiquettes du Journal (`journalTone.ts`)
 

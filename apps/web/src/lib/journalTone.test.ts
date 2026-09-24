@@ -46,18 +46,32 @@ describe("labelTone", () => {
 });
 
 describe("LABEL_TONE_CLASS", () => {
-  // The theme tokens barely show on the dark card: there, a tone takes the hue of a capital line.
-  const darkHue = (className: string) => className.match(/dark:bg-\[(#[0-9a-f]{6})\]/)?.[1];
+  // primary et success sont tous deux teal (sous-projet 31) : une étiquette ne peut plus
+  // s'appuyer sur eux, elle prend la teinte de la série de son rôle, dans les deux thèmes.
+  const hue = (className: string, dark: boolean) =>
+    className.match(dark ? /dark:bg-\[(#[0-9a-f]{6})\]/ : /(?:^|\s)bg-\[(#[0-9a-f]{6})\]/)?.[1];
 
-  it("borrows the dark capital chart's hues: orange Assigned for a short call, blue Cumulative P/L for shares, green Allocated for an open put", () => {
-    expect(darkHue(LABEL_TONE_CLASS.shortCall)).toBe(seriesColor("assigned", CHART_COLORS.dark));
-    expect(darkHue(LABEL_TONE_CLASS.shares)).toBe(seriesColor("cumulativePnl", CHART_COLORS.dark));
-    expect(darkHue(LABEL_TONE_CLASS.open)).toBe(seriesColor("allocated", CHART_COLORS.dark));
+  it.each([
+    [false, CHART_COLORS.light],
+    [true, CHART_COLORS.dark],
+  ] as const)("takes the hue of its capital line (dark: %s)", (dark, colors) => {
+    expect(hue(LABEL_TONE_CLASS.shortCall, dark)).toBe(seriesColor("assigned", colors));
+    expect(hue(LABEL_TONE_CLASS.shares, dark)).toBe(seriesColor("cumulativePnl", colors));
+    expect(hue(LABEL_TONE_CLASS.open, dark)).toBe(seriesColor("allocated", colors));
   });
 
-  it("keeps the light theme's tokens", () => {
-    expect(LABEL_TONE_CLASS.shares).toContain("bg-primary/15");
-    expect(LABEL_TONE_CLASS.shortCall).toContain("bg-warning/25");
-    expect(LABEL_TONE_CLASS.open).toContain("bg-success/15");
+  it("keeps the three tones apart", () => {
+    for (const dark of [false, true]) {
+      const hues = Object.values(LABEL_TONE_CLASS).map((c) => hue(c, dark));
+      expect(new Set(hues).size).toBe(3);
+    }
+  });
+
+  it("never leans on the primary or success tokens, both teal now", () => {
+    for (const c of Object.values(LABEL_TONE_CLASS)) expect(c).not.toMatch(/bg-(primary|success)/);
+  });
+
+  it("stays light enough under the dark theme's text: /45, not /70", () => {
+    for (const c of Object.values(LABEL_TONE_CLASS)) expect(c).toMatch(/dark:bg-\[#[0-9a-f]{6}\]\/45/);
   });
 });

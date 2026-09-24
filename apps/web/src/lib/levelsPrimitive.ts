@@ -9,6 +9,7 @@
 import type { IChartApi, ISeriesApi, Time } from "lightweight-charts";
 import type { ChartLevel } from "@ib/ledger";
 import type { PriceBar } from "@/agent/client";
+import { labelInk } from "@/lib/chartLevels";
 
 export interface DrawnLevel {
   level: ChartLevel;
@@ -174,7 +175,9 @@ export class LevelsRenderer {
     const height = LABEL_HEIGHT * vr;
     ctx.fillStyle = color;
     ctx.fillRect(0, y - height / 2, width, height);
-    ctx.fillStyle = "#ffffff";
+    // Le blanc ne porte plus un contraste suffisant sur les teintes claires de la palette
+    // (l'or, ~2) : `labelInk` choisit le blanc ou l'encre sombre selon le contraste WCAG réel.
+    ctx.fillStyle = labelInk(color);
     ctx.textBaseline = "middle";
     ctx.fillText(text, LABEL_PADDING * hr, y);
   }
@@ -239,7 +242,7 @@ export class LevelsPrimitive {
             // replacerait sinon l'étiquette au bord, et une date absente s'afficherait.
             visible: () => at() !== null,
             text: () => day.slice(5),
-            textColor: () => "#ffffff",
+            textColor: () => labelInk(drawn.color),
             backColor: () => drawn.color,
             tickVisible: () => true,
           };

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { createChart } from "lightweight-charts";
@@ -21,6 +21,7 @@ vi.mock("lightweight-charts", () => {
   };
   return {
     CandlestickSeries: {},
+    LineStyle: { SparseDotted: 4 },
     createChart: vi.fn(() => ({
       addSeries: vi.fn(() => series),
       timeScale: vi.fn(() => ({ setVisibleLogicalRange: vi.fn(), timeToCoordinate: vi.fn(() => 10) })),
@@ -219,8 +220,10 @@ describe("PositionChartRow", () => {
 
     renderRow({ accountId: "beta", ticker: "ZZZ", strategies: ["leaps"] });
 
-    const kinds = (await lastDrawnLevels()).map((level) => level.kind).sort();
-    expect(kinds).toEqual(["leapsBuy", "shortCall"]);
+    // Les journaux se calculent après le premier dessin : les niveaux arrivent par un second.
+    await waitFor(async () =>
+      expect((await lastDrawnLevels()).map((level) => level.kind).sort()).toEqual(["leapsBuy", "shortCall"]),
+    );
   });
 
   it("demande son substitut pour un ticker qu'IB ne sert pas, et dit lequel il montre", async () => {
@@ -288,6 +291,6 @@ describe("PositionChartRow", () => {
 
     renderRow({ accountId: "beta", ticker: "XSP", strategies: ["wheel"] });
 
-    expect((await lastDrawnLevels()).map((level) => level.kind)).toEqual(["shortPut"]);
+    await waitFor(async () => expect((await lastDrawnLevels()).map((level) => level.kind)).toEqual(["shortPut"]));
   });
 });

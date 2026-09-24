@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IB Options Analyzer</title>
+    <script>
+      // Applies the stored theme before the stylesheet or the module script runs, to avoid a
+      // light-theme flash on a dark reload: the CSS and `main.tsx` (whose `applyStoredTheme()`,
+      // `hooks/useTheme.ts`, does the same thing on every load) can only paint once fetched and
+      // executed, while this synchronous script runs immediately as the head is parsed. Storage
+      // key: `STORAGE_KEY` in `hooks/useTheme.ts` (`ib2:theme`), read the same way, wrapped the
+      // same way against a private window or blocked storage.
+      try {
+        if (localStorage.getItem("ib2:theme") === "dark") document.documentElement.classList.add("dark");
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

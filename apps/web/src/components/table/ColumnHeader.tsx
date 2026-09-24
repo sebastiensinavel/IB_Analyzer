@@ -59,7 +59,12 @@ export function ColumnHeader({ meta, label, view, facets = [], numeric = false, 
               <button
                 type="button"
                 className={cn(
-                  "-mx-1 inline-flex min-w-0 cursor-pointer items-center rounded px-1 py-0.5 outline-none",
+                  // `font`, `letter-spacing` and `color` inherit from TableHead by Tailwind's
+                  // preflight (`button { font: inherit; letter-spacing: inherit; color: inherit }`),
+                  // but browsers force `text-transform: none` on form controls outside that
+                  // shorthand: without `uppercase` here, a sortable header falls back to sentence
+                  // case while every non-sortable header (a plain TableHead) stays uppercase.
+                  "-mx-1 inline-flex min-w-0 cursor-pointer items-center rounded px-1 py-0.5 uppercase outline-none",
                   "hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-muted data-popup-open:text-foreground",
                 )}
               />

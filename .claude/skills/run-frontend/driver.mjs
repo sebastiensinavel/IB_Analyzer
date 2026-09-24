@@ -174,13 +174,17 @@ try {
       }
     }
 
-    await page.goto(`${BASE}${route}`, { waitUntil: "networkidle" });
-
     if (has("dark")) {
-      // The app stores its theme itself; Playwright's colorScheme does nothing.
+      // The app stores its theme itself; Playwright's colorScheme does nothing. Since
+      // sub-project 28 the toggle only lives on the Settings page (the "Affichage" card),
+      // not in a global menu footer any more, so flip it there first: the flag persists in
+      // localStorage, and the target route below picks it up on its own fresh navigation.
+      await page.goto(`${BASE}/settings`, { waitUntil: "networkidle" });
       await page.getByRole("button", { name: /thème|theme/i }).first().click();
       await page.waitForTimeout(400);
     }
+
+    await page.goto(`${BASE}${route}`, { waitUntil: "networkidle" });
 
     // An ECharts chart animates its entry for about a second: shot at networkidle, its lines
     // stop short and their end labels sit halfway. --wait overrides the guess either way.
