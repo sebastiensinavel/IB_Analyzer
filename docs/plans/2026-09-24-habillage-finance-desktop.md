@@ -469,18 +469,18 @@ Aucun test unitaire ne fixe des classes de style (un tel test casserait à chaqu
 rien protéger) ; le filet est la suite existante — elle ne doit pas bouger — plus les captures
 de la tâche 4. **Ne changer aucune classe de taille, marge, hauteur ou largeur.**
 
-- [ ] **Step 1 : Carte** — `card.tsx`, dans la classe de `Card`, remplacer
+- [x] **Step 1 : Carte** — `card.tsx`, dans la classe de `Card`, remplacer
   `ring-1 ring-foreground/10` par `ring-1 ring-border shadow-card`. (`ring` et non `border` :
   il ne prend pas de place, la mise en page ne bouge pas d'un pixel.) `rounded-xl` reste : il
   vaut 14 px avec `--radius: 0.625rem`.
 
-- [ ] **Step 2 : Bouton** — `button.tsx`, variante `default` :
+- [x] **Step 2 : Bouton** — `button.tsx`, variante `default` :
 
 ```ts
 default: "bg-primary font-semibold text-primary-foreground shadow-primary hover:bg-primary/85",
 ```
 
-- [ ] **Step 3 : Badge** — `badge.tsx`, variantes `secondary` et `outline` (le style `.env`) :
+- [x] **Step 3 : Badge** — `badge.tsx`, variantes `secondary` et `outline` (le style `.env`) :
 
 ```ts
 secondary:
@@ -492,7 +492,7 @@ outline:
 `Badge` passe par `cn()` (twMerge) : `rounded-md` et `text-[10.5px]` l'emportent sur
 `rounded-4xl` et `text-xs` de la base. Les autres variantes ne changent pas.
 
-- [ ] **Step 4 : Tableau** — `table.tsx` :
+- [x] **Step 4 : Tableau** — `table.tsx` :
 
 `TableRow` :
 ```ts
@@ -515,7 +515,7 @@ fichiers et dans `components/table/ColumnHeader.tsx`, retirer seulement un `text
 retirer d'autre ; si un en-tête a une raison écrite de garder sa casse, la laisser et le noter
 dans le rapport.
 
-- [ ] **Step 5 : Sidebar** — `sidebar.tsx` :
+- [x] **Step 5 : Sidebar** — `sidebar.tsx` :
 
 `SidebarGroupLabel` : dans sa classe, remplacer `text-xs font-medium text-sidebar-foreground/70`
 par `text-[10px] font-medium tracking-[.14em] text-subtle-foreground uppercase`.
@@ -524,13 +524,13 @@ par `text-[10px] font-medium tracking-[.14em] text-subtle-foreground uppercase`.
 `font-medium data-active:shadow-[inset_2px_0_0_var(--sidebar-primary)]` ; `rounded-md` reste
 (8 px). Rien d'autre.
 
-- [ ] **Step 6 : Logo** — `app-sidebar.tsx:53`, la classe du carré « IB » :
+- [x] **Step 6 : Logo** — `app-sidebar.tsx:53`, la classe du carré « IB » :
 
 ```tsx
 <div className="flex size-7 items-center justify-center rounded-md bg-linear-135 from-(--logo-from) to-(--logo-to) font-heading text-sm font-bold text-(--logo-foreground) shadow-(--logo-shadow)">
 ```
 
-- [ ] **Step 7 : Suite de tests de `apps/web` et `packages/ui`**
+- [x] **Step 7 : Suite de tests de `apps/web` et `packages/ui`**
 
 Run : `cd apps/web && npx vitest run` puis `pnpm --filter @ib/ui test` s'il existe (sinon
 l'ignorer : `ls packages/ui/package.json` et lire ses scripts).
@@ -538,7 +538,7 @@ Attendu : tout PASS, sauf éventuellement `journalTone.test.ts` (tâche 3). Un t
 une classe retirée (`text-foreground` d'un en-tête…) : adapter l'attente à la nouvelle classe,
 jamais supprimer l'assertion.
 
-- [ ] **Step 8 : Commit** (cases cochées)
+- [x] **Step 8 : Commit** (cases cochées)
 
 ```bash
 git add -A packages/ui apps/web docs/plans/2026-09-24-habillage-finance-desktop.md
