@@ -137,10 +137,15 @@ le flou translucide de la maquette est hors périmètre.
 | `track` | `#16212A` | `#E9EEF1` |
 | `foreground` | `#E7EEF2` | `#0D1A22` |
 | `surface` | `#0E151C` | `#FFFFFF` |
-| `series` | `#2BC4B4`, `#6C9EF8`, `#E6B04A`, `#A28BF5`, `#7FD3CF` | `#0E9F90`, `#3B78E7`, `#D08A10`, `#7B5CE5`, `#4CC6BC` |
+| `series` | `#6C9EF8`, `#E6B04A`, `#2BC4B4`, `#A28BF5`, `#F0716A` | `#3B78E7`, `#D08A10`, `#0E9F90`, `#7B5CE5`, `#E0473F` |
 | `other` | `#7A8C93` | `#7A8C93` |
 
-L'ordre est celui du donut de la maquette (teal, bleu, or, violet), complété par la menthe.
+**L'index d'une série porte un rôle, que l'ordre préserve** : 0 les actions (niveaux `shares`,
+courbe « P/L cumulé »), 1 les calls vendus (`shortCall`, « Assigné »), 2 les puts vendus et ce
+qui est ouvert (`shortPut`, « Alloué »), 3 les achats LEAPS (`leapsBuy`, « Investi »), 4 le
+cinquième secteur du camembert seulement. Chaque rôle prend la teinte de la maquette la plus
+proche de l'ancienne : bleu, or (ex-orange), teal (ex-vert), violet (ex-ambre, pour rester
+distinct de l'or), corail (ex-rose).
 Avant de figer la palette, elle passe le validateur du skill `dataviz` contre `surface` dans
 chaque thème ; une teinte qui échoue est ajustée en luminance, jamais remplacée par une autre
 famille. `CHART_FONT` passe à `'JetBrains Mono Variable'`. `chart-1…5` de `index.css` reprennent
@@ -160,7 +165,8 @@ couleur n'est écrite dans `PriceChart.tsx`. `levelsPrimitive.ts` garde son text
 Aujourd'hui `shares` est teinté `primary` (bleu) et `open` `success` (vert) : avec les deux en
 teal, ils se confondraient. `LABEL_TONE_CLASS` prend donc les teintes de `series`, dans les
 deux thèmes : `shares` bleu, `shortCall` or, `open` teal — en clair aux opacités actuelles
-(`/15`, `/25`, `/15`), en sombre à `/70` comme aujourd'hui. La
+(`/15`, `/25`, `/15`), en sombre à `/45`. L'actuel `/70` poserait le texte `#E7EEF2` sur un
+teal mélangé de contraste 3,3 ; à `/45` les trois teintes dépassent 5,5 sur la carte sombre. La
 colonne « En cours » de Secteur et Score, qui reprend `LABEL_TONE_CLASS.open`, suit sans
 changement de code.
 
