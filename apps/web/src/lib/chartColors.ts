@@ -1,5 +1,6 @@
-// Must stay in sync with the success/destructive/border/card tokens in src/index.css —
-// ECharts renders to SVG directly and can't read CSS custom properties itself.
+// Reprend les tokens de src/index.css (sous-projet 31, maquettes finance-desktop) : ECharts et
+// lightweight-charts dessinent eux-mêmes et ne lisent pas les variables CSS.
+// chartColors.test.ts échoue si l'un des deux fichiers change seul.
 export interface ChartColors {
   success: string;
   destructive: string;
@@ -8,8 +9,9 @@ export interface ChartColors {
   /** The card behind the chart (`--card`): the gap between two pie slices. */
   surface: string;
   /**
-   * Categorical hues in fixed order, never cycled: the dataviz reference palette, validated
-   * against the card surface of each theme (spec of sub-project 13, §4.5).
+   * Categorical hues in fixed order, never cycled; each index carries a role (0 shares,
+   * 1 short calls, 2 short puts / open, 3 LEAPS, 4 fifth pie slice) — spec of sub-project 31,
+   * §5.1.
    */
   series: readonly string[];
   /** A slice that folds several sectors together. */
@@ -18,26 +20,26 @@ export interface ChartColors {
 
 export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
   light: {
-    success: "oklch(0.6 0.14 152)",
-    destructive: "oklch(0.577 0.245 27.325)",
-    track: "oklch(0.9 0.006 250)",
-    foreground: "oklch(0.145 0.01 250)",
-    surface: "oklch(1 0 0)",
-    series: ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"],
-    other: "#898781",
+    success: "#0e9f90",
+    destructive: "#e0473f",
+    track: "#e9eef1",
+    foreground: "#0d1a22",
+    surface: "#ffffff",
+    series: ["#3b78e7", "#d08a10", "#0e9f90", "#7b5ce5", "#e0473f"],
+    other: "#7a8c93",
   },
   dark: {
-    success: "oklch(0.72 0.16 152)",
-    destructive: "oklch(0.704 0.191 22.216)",
-    track: "oklch(1 0 0 / 12%)",
-    foreground: "oklch(0.96 0.003 250)",
-    surface: "oklch(0.16 0.008 250)",
-    series: ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181"],
-    other: "#898781",
+    success: "#2bc4b4",
+    destructive: "#f0716a",
+    track: "#16212a",
+    foreground: "#e7eef2",
+    surface: "#0e151c",
+    series: ["#5c8de6", "#b98508", "#00a798", "#927be3", "#df625c"],
+    other: "#7a8c93",
   },
 };
 
-export const CHART_FONT = "'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace";
+export const CHART_FONT = "'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace";
 
 export function chartColors(isDark: boolean): ChartColors {
   return isDark ? CHART_COLORS.dark : CHART_COLORS.light;

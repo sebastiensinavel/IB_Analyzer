@@ -90,7 +90,7 @@ non versionnées) : `dark-finance-desktop.html`, `white-finance-desktop.html`.
   `--logo-foreground`, `--logo-shadow` ; `CHART_COLORS.{light,dark}.series` dans l'ordre
   bleu, or, teal, violet, corail ; `CHART_FONT` en JetBrains Mono.
 
-- [ ] **Step 1 : Écrire le test de synchronisation (échoue)**
+- [x] **Step 1 : Écrire le test de synchronisation (échoue)**
 
 `apps/web/src/lib/chartColors.test.ts` :
 
@@ -144,19 +144,19 @@ describe("CHART_COLORS", () => {
 });
 ```
 
-- [ ] **Step 2 : Le lancer, vérifier qu'il échoue**
+- [x] **Step 2 : Le lancer, vérifier qu'il échoue**
 
 Run : `cd apps/web && npx vitest run src/lib/chartColors.test.ts`
 Attendu : FAIL (valeurs oklch actuelles ≠ hex, série et police anciennes).
 
-- [ ] **Step 3 : Polices**
+- [x] **Step 3 : Polices**
 
 ```bash
 cd apps/web && pnpm remove @fontsource-variable/geist @fontsource-variable/geist-mono \
   && pnpm add @fontsource-variable/inter @fontsource-variable/jetbrains-mono
 ```
 
-- [ ] **Step 4 : Réécrire `apps/web/src/index.css`**
+- [x] **Step 4 : Réécrire `apps/web/src/index.css`**
 
 Remplacer le fichier entier par (les `@import` Tailwind/shadcn et `@source` sont conservés) :
 
@@ -383,7 +383,7 @@ Remplacer le fichier entier par (les `@import` Tailwind/shadcn et `@source` sont
 }
 ```
 
-- [ ] **Step 5 : Réécrire `apps/web/src/lib/chartColors.ts`**
+- [x] **Step 5 : Réécrire `apps/web/src/lib/chartColors.ts`**
 
 Garder l'interface et `chartColors()` ; remplacer le commentaire d'en-tête, `CHART_COLORS` et
 `CHART_FONT` :
@@ -423,14 +423,14 @@ Mettre à jour le commentaire de `series` dans l'interface : « Categorical hues
 never cycled; each index carries a role (0 shares, 1 short calls, 2 short puts / open,
 3 LEAPS, 4 fifth pie slice) — spec of sub-project 31, §5.1. »
 
-- [ ] **Step 6 : Valider la palette (skill `dataviz`)**
+- [x] **Step 6 : Valider la palette (skill `dataviz`)**
 
 Charger le skill `dataviz` et passer son validateur sur `series` contre `surface`, dans chaque
 thème. Si une teinte échoue, l'ajuster **en luminance seulement** dans les deux fichiers
 (`chartColors.ts` et `chart-N` d'`index.css`) et dans l'attente du test du Step 1, puis noter
 l'écart dans le message de commit. Ne jamais changer de famille de teinte ni d'ordre.
 
-- [ ] **Step 7 : Retirer le `scrollbar-width` de l'Historique**
+- [x] **Step 7 : Retirer le `scrollbar-width` de l'Historique**
 
 `apps/web/src/components/history/HistoryTable.tsx:95` : la classe devient
 `"min-w-0 flex-1 overflow-auto"`. Puis vérifier qu'aucun autre ne reste :
@@ -438,13 +438,13 @@ l'écart dans le message de commit. Ne jamais changer de famille de teinte ni d'
 Run : `grep -rn "scrollbar-width\|scrollbar-color" apps/web/src packages/ui/src`
 Attendu : seules les deux lignes du `@supports` d'`index.css`.
 
-- [ ] **Step 8 : Tests**
+- [x] **Step 8 : Tests**
 
 Run : `cd apps/web && npx vitest run src/lib/chartColors.test.ts src/lib/chartLevels.test.ts src/lib/capitalCharts.test.ts src/components/PriceChart.test.tsx`
 Attendu : PASS. `journalTone.test.ts` peut échouer sur ses teintes sombres : c'est la tâche 3,
 le noter sans le corriger ici.
 
-- [ ] **Step 9 : Commit** (cases cochées dans ce plan)
+- [x] **Step 9 : Commit** (cases cochées dans ce plan)
 
 ```bash
 git add -A apps/web docs/plans/2026-09-24-habillage-finance-desktop.md pnpm-lock.yaml

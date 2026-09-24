@@ -1,0 +1,58 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import { CHART_COLORS, CHART_FONT } from "./chartColors";
+
+// `new URL("../index.css", import.meta.url)` is Vite's own "asset URL" idiom (spec §6), but the
+// literal two-argument form is statically rewritten by vite:asset-import-meta-url for the
+// browser consumer, which this jsdom test environment also uses: it resolves against jsdom's
+// default `http://localhost:3000/` origin instead of the real file path. Reading `import.meta.url`
+// on its own dodges that rewrite (the plugin only matches the two-argument call).
+const here = fileURLToPath(import.meta.url);
+const css = readFileSync(path.join(path.dirname(here), "../index.css"), "utf8");
+
+/** Les déclarations `--x: valeur;` du premier bloc `selector { … }`, valeurs en minuscules. */
+function tokens(selector: string): Record<string, string> {
+  const start = css.indexOf(`${selector} {`);
+  if (start < 0) throw new Error(`bloc ${selector} introuvable`);
+  const body = css.slice(start, css.indexOf("}", start));
+  return Object.fromEntries(
+    [...body.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim().toLowerCase()]),
+  );
+}
+
+describe.each([
+  ["light", ":root"],
+  ["dark", ".dark"],
+] as const)("CHART_COLORS.%s follows index.css %s", (theme, selector) => {
+  const t = tokens(selector);
+  const c = CHART_COLORS[theme];
+
+  it("uses the theme tokens ECharts cannot read", () => {
+    expect(c.success).toBe(t.success);
+    expect(c.destructive).toBe(t.destructive);
+    expect(c.foreground).toBe(t.foreground);
+    expect(c.surface).toBe(t.card);
+  });
+
+  it("gives chart-1…5 the series, in order", () => {
+    expect(c.series).toEqual([1, 2, 3, 4, 5].map((i) => t[`chart-${i}`]));
+  });
+});
+
+describe("CHART_COLORS", () => {
+  it("keeps each series role on the mockup hue closest to its former one", () => {
+    // 0 actions (bleu), 1 calls vendus (or), 2 puts vendus / ouvert (teal), 3 LEAPS (violet), 4 corail.
+    expect(CHART_COLORS.light.series).toEqual(["#3b78e7", "#d08a10", "#0e9f90", "#7b5ce5", "#e0473f"]);
+    // Adjusted in luminance only from the mockup's dark #6c9ef8/#e6b04a/#2bc4b4/#a28bf5/#f0716a:
+    // the dataviz skill's validator (step 6) failed the mockup's dark hues on the OKLCH lightness
+    // band for a dark surface (L up to 0.789, band is 0.48–0.67); each hue is re-lightened to
+    // OKLCH L≈0.65 at its own chroma and hue, which the validator then passes on every check.
+    expect(CHART_COLORS.dark.series).toEqual(["#5c8de6", "#b98508", "#00a798", "#927be3", "#df625c"]);
+  });
+
+  it("draws its figures in the app's mono font", () => {
+    expect(CHART_FONT).toContain("JetBrains Mono Variable");
+  });
+});

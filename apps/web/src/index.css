@@ -2,15 +2,21 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @source "../../../packages/ui/src";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Habillage « finance-desktop » (sous-projet 31) : valeurs reprises des maquettes
+ * dark-finance-desktop.html et white-finance-desktop.html. Ce qui ne lit pas le CSS (ECharts,
+ * lightweight-charts) reprend ces valeurs dans src/lib/chartColors.ts, tenu en phase par
+ * chartColors.test.ts.
+ */
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
-    --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;
+    --font-sans: 'Inter Variable', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -27,6 +33,8 @@
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
+    --color-line-2: var(--line-2);
+    --color-sep: var(--sep);
     --color-warning-foreground: var(--warning-foreground);
     --color-warning: var(--warning);
     --color-success-foreground: var(--success-foreground);
@@ -34,6 +42,7 @@
     --color-destructive: var(--destructive);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
+    --color-subtle-foreground: var(--subtle-foreground);
     --color-muted-foreground: var(--muted-foreground);
     --color-muted: var(--muted);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -46,6 +55,8 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    --shadow-card: var(--card-shadow);
+    --shadow-primary: var(--primary-shadow);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -56,80 +67,106 @@
 }
 
 :root {
-    --background: oklch(0.99 0.003 250);
-    --foreground: oklch(0.145 0.01 250);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0.01 250);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0.01 250);
-    --primary: oklch(0.55 0.18 258);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.96 0.005 250);
-    --secondary-foreground: oklch(0.205 0.01 250);
-    --muted: oklch(0.96 0.005 250);
-    --muted-foreground: oklch(0.5 0.02 250);
-    --accent: oklch(0.94 0.03 258);
-    --accent-foreground: oklch(0.35 0.15 258);
-    --destructive: oklch(0.577 0.245 27.325);
-    --success: oklch(0.6 0.14 152);
-    --success-foreground: oklch(0.985 0 0);
-    --warning: oklch(0.75 0.15 80);
-    --warning-foreground: oklch(0.25 0.05 80);
-    --border: oklch(0.9 0.006 250);
-    --input: oklch(0.9 0.006 250);
-    --ring: oklch(0.55 0.18 258);
-    --chart-1: oklch(0.55 0.18 258);
-    --chart-2: oklch(0.6 0.14 152);
-    --chart-3: oklch(0.75 0.15 80);
-    --chart-4: oklch(0.577 0.245 27.325);
-    --chart-5: oklch(0.5 0.02 250);
-    --radius: 0.5rem;
-    --sidebar: oklch(0.98 0.003 250);
-    --sidebar-foreground: oklch(0.145 0.01 250);
-    --sidebar-primary: oklch(0.55 0.18 258);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.94 0.03 258);
-    --sidebar-accent-foreground: oklch(0.35 0.15 258);
-    --sidebar-border: oklch(0.9 0.006 250);
-    --sidebar-ring: oklch(0.55 0.18 258);
+    color-scheme: light;
+    --background: #f3f5f8;
+    --foreground: #0d1a22;
+    --card: #ffffff;
+    --card-foreground: #0d1a22;
+    --popover: #ffffff;
+    --popover-foreground: #0d1a22;
+    --primary: #0e9f90;
+    --primary-foreground: #ffffff;
+    --secondary: #f8fafb;
+    --secondary-foreground: #0d1a22;
+    --muted: #f8fafb;
+    --muted-foreground: #52616b;
+    --subtle-foreground: #8795a0;
+    --accent: #edf6f5;
+    --accent-foreground: #0d1a22;
+    --destructive: #e0473f;
+    --success: #0e9f90;
+    --success-foreground: #ffffff;
+    --warning: #d08a10;
+    --warning-foreground: #ffffff;
+    --border: #e3e8ec;
+    --input: #e3e8ec;
+    --line-2: #d5dde3;
+    --sep: #e7ecf0;
+    --ring: #0e9f90;
+    --chart-1: #3b78e7;
+    --chart-2: #d08a10;
+    --chart-3: #0e9f90;
+    --chart-4: #7b5ce5;
+    --chart-5: #e0473f;
+    --radius: 0.625rem;
+    --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px -8px rgba(16, 24, 40, 0.06);
+    --primary-shadow: 0 1px 2px rgba(11, 124, 113, 0.25), 0 4px 12px -4px rgba(14, 159, 144, 0.5);
+    --logo-from: #4cc6bc;
+    --logo-to: #0b7c71;
+    --logo-foreground: #ffffff;
+    --logo-shadow: 0 4px 10px -3px rgba(14, 159, 144, 0.45);
+    --scrollbar-thumb: rgba(82, 97, 107, 0.26);
+    --scrollbar-thumb-hover: rgba(82, 97, 107, 0.42);
+    --scrollbar-grab-from: #4cc6bc;
+    --sidebar: #fbfcfd;
+    --sidebar-foreground: #52616b;
+    --sidebar-primary: #0e9f90;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e9f6f4;
+    --sidebar-accent-foreground: #0d1a22;
+    --sidebar-border: #e3e8ec;
+    --sidebar-ring: #0e9f90;
 }
 
 .dark {
-    --background: oklch(0.12 0.006 250);
-    --foreground: oklch(0.96 0.003 250);
-    --card: oklch(0.16 0.008 250);
-    --card-foreground: oklch(0.96 0.003 250);
-    --popover: oklch(0.16 0.008 250);
-    --popover-foreground: oklch(0.96 0.003 250);
-    --primary: oklch(0.68 0.18 258);
-    --primary-foreground: oklch(0.12 0.01 258);
-    --secondary: oklch(0.22 0.01 250);
-    --secondary-foreground: oklch(0.96 0.003 250);
-    --muted: oklch(0.2 0.008 250);
-    --muted-foreground: oklch(0.65 0.02 250);
-    --accent: oklch(0.24 0.04 258);
-    --accent-foreground: oklch(0.85 0.08 258);
-    --destructive: oklch(0.704 0.191 22.216);
-    --success: oklch(0.72 0.16 152);
-    --success-foreground: oklch(0.12 0.02 152);
-    --warning: oklch(0.8 0.15 80);
-    --warning-foreground: oklch(0.18 0.03 80);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.68 0.18 258);
-    --chart-1: oklch(0.68 0.18 258);
-    --chart-2: oklch(0.72 0.16 152);
-    --chart-3: oklch(0.8 0.15 80);
-    --chart-4: oklch(0.704 0.191 22.216);
-    --chart-5: oklch(0.65 0.02 250);
-    --sidebar: oklch(0.1 0.006 250);
-    --sidebar-foreground: oklch(0.96 0.003 250);
-    --sidebar-primary: oklch(0.68 0.18 258);
-    --sidebar-primary-foreground: oklch(0.12 0.01 258);
-    --sidebar-accent: oklch(0.24 0.04 258);
-    --sidebar-accent-foreground: oklch(0.85 0.08 258);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.68 0.18 258);
+    color-scheme: dark;
+    --background: #080d12;
+    --foreground: #e7eef2;
+    --card: #0e151c;
+    --card-foreground: #e7eef2;
+    --popover: #0e151c;
+    --popover-foreground: #e7eef2;
+    --primary: #2bc4b4;
+    --primary-foreground: #04201d;
+    --secondary: #121b23;
+    --secondary-foreground: #e7eef2;
+    --muted: #121b23;
+    --muted-foreground: #9aa9b3;
+    --subtle-foreground: #63727d;
+    --accent: #182731;
+    --accent-foreground: #e7eef2;
+    --destructive: #f0716a;
+    --success: #2bc4b4;
+    --success-foreground: #04201d;
+    --warning: #e6b04a;
+    --warning-foreground: #1b1204;
+    --border: #1c2731;
+    --input: #1c2731;
+    --line-2: #24313c;
+    --sep: #1d2934;
+    --ring: #2bc4b4;
+    --chart-1: #5c8de6;
+    --chart-2: #b98508;
+    --chart-3: #00a798;
+    --chart-4: #927be3;
+    --chart-5: #df625c;
+    --card-shadow: none;
+    --primary-shadow: none;
+    --logo-from: #2bc4b4;
+    --logo-to: #136e6a;
+    --logo-foreground: #04201d;
+    --logo-shadow: none;
+    --scrollbar-thumb: rgba(154, 169, 179, 0.34);
+    --scrollbar-thumb-hover: rgba(154, 169, 179, 0.5);
+    --scrollbar-grab-from: #7fd3cf;
+    --sidebar: #0a1016;
+    --sidebar-foreground: #9aa9b3;
+    --sidebar-primary: #2bc4b4;
+    --sidebar-primary-foreground: #04201d;
+    --sidebar-accent: #13212a;
+    --sidebar-accent-foreground: #e7eef2;
+    --sidebar-border: #1c2731;
+    --sidebar-ring: #2bc4b4;
 }
 
 @layer base {
@@ -138,8 +175,46 @@
     }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     }
   html {
     @apply font-sans;
+    }
+
+  /*
+   * Barres de défilement de la maquette, en CSS seul (spec §6). Elles n'apparaissent que là où
+   * le contenu déborde (overflow-auto partout). Aucun `scrollbar-width` hors du @supports :
+   * depuis Chrome 121 il désactive les pseudo-éléments ci-dessous.
+   */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+    }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 99px;
+    }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+    }
+  ::-webkit-scrollbar-thumb:vertical:active {
+    background-image: linear-gradient(180deg, var(--scrollbar-grab-from), var(--primary));
+    }
+  ::-webkit-scrollbar-thumb:horizontal:active {
+    background-image: linear-gradient(90deg, var(--scrollbar-grab-from), var(--primary));
+    }
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) transparent;
+      }
     }
 }
