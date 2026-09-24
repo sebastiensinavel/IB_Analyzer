@@ -147,11 +147,10 @@ describe("DashboardPage", () => {
     expect(await screen.findByLabelText("Couverture en Cash")).toBeInTheDocument();
     expect(screen.getByTestId("monthly-chart")).toBeInTheDocument();
     const card = screen.getByText("Exposition par secteur").closest("[data-slot=card]") as HTMLElement;
-    // 3,400 of MQZA shares assigned to the Wheel and a ZZZ LEAPS bought for 300, neither sector known.
-    const unclassified = within(card).getByRole("row", { name: /Non classé/ });
-    expect(within(unclassified).getByText("3,700.00")).toBeInTheDocument();
-    expect(within(unclassified).getByText("100.0%")).toBeInTheDocument();
-    expect(within(card).queryByText("Assigné")).not.toBeInTheDocument();
+    // The dashboard draws the pie alone: its legend table lives on the statistics pages only.
+    expect(within(card).getByTestId("exposure-chart")).toBeInTheDocument();
+    expect(within(card).queryByTestId("exposure-table")).not.toBeInTheDocument();
+    expect(within(card).queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("Capital de toutes les stratégies")).toBeInTheDocument();
     expect(screen.getByTestId("capital-chart")).toBeInTheDocument();
     expect(screen.getByTestId("return-chart")).toBeInTheDocument();

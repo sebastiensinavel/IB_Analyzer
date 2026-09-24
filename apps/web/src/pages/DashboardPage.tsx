@@ -77,7 +77,7 @@ export function DashboardPage() {
           {stats && <PnlTotalCard stats={stats} />}
           {report === null ? noPositions : <CashCoverageCard report={report} isDark={isDark} />}
         </div>
-        {capital && <ExposureCard capital={capital} detailed={false} empty={t("stats.exposure.empty.portfolio")} sectorOf={sectorOf} isDark={isDark} />}
+        {capital && <ExposureCard capital={capital} detailed={false} empty={t("stats.exposure.empty.portfolio")} sectorOf={sectorOf} isDark={isDark} withTable={false} />}
       </div>
       {stats && capital && (
         <>
