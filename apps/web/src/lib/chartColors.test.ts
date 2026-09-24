@@ -45,11 +45,7 @@ describe("CHART_COLORS", () => {
   it("keeps each series role on the mockup hue closest to its former one", () => {
     // 0 actions (bleu), 1 calls vendus (or), 2 puts vendus / ouvert (teal), 3 LEAPS (violet), 4 corail.
     expect(CHART_COLORS.light.series).toEqual(["#3b78e7", "#d08a10", "#0e9f90", "#7b5ce5", "#e0473f"]);
-    // Adjusted in luminance only from the mockup's dark #6c9ef8/#e6b04a/#2bc4b4/#a28bf5/#f0716a:
-    // the dataviz skill's validator (step 6) failed the mockup's dark hues on the OKLCH lightness
-    // band for a dark surface (L up to 0.789, band is 0.48–0.67); each hue is re-lightened to
-    // OKLCH L≈0.65 at its own chroma and hue, which the validator then passes on every check.
-    expect(CHART_COLORS.dark.series).toEqual(["#5c8de6", "#b98508", "#00a798", "#927be3", "#df625c"]);
+    expect(CHART_COLORS.dark.series).toEqual(["#6c9ef8", "#e6b04a", "#2bc4b4", "#a28bf5", "#f0716a"]);
   });
 
   it("draws its figures in the app's mono font", () => {

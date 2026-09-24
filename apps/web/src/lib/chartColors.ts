@@ -34,7 +34,7 @@ export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
     track: "#16212a",
     foreground: "#e7eef2",
     surface: "#0e151c",
-    series: ["#5c8de6", "#b98508", "#00a798", "#927be3", "#df625c"],
+    series: ["#6c9ef8", "#e6b04a", "#2bc4b4", "#a28bf5", "#f0716a"],
     other: "#7a8c93",
   },
 };
