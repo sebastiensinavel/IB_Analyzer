@@ -644,7 +644,7 @@
     },
     "configure": {
       "title": "3. Configure and start it",
-      "text": "The first command records this site's address, the only one the agent will answer. The second starts it; leave it running while you use the site."
+      "text": "The first command adds this site's address to those the agent answers; for another site, add its address too, then restart the agent. ib-tws-agent origin list shows them, ib-tws-agent origin remove drops one. The second command starts the agent; leave it running while you use the site."
     },
     "tws": {
       "title": "4. Set up the TWS API",

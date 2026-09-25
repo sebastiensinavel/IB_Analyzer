@@ -135,7 +135,7 @@ export function HelpPage() {
 
         <Step title={t("help.configure.title")}>
           <p className="text-muted-foreground">{t("help.configure.text")}</p>
-          <Command>{`ib-tws-agent init --origin ${origin}`}</Command>
+          <Command>{`ib-tws-agent origin add ${origin}`}</Command>
           <Command>ib-tws-agent</Command>
         </Step>
 

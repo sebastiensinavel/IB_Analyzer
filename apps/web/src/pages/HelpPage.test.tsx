@@ -158,11 +158,11 @@ describe("HelpPage", () => {
     }
   });
 
-  it("builds the install and init commands from the current origin and the served index", async () => {
+  it("builds the install and origin commands from the current origin and the served index", async () => {
     mockIndex(new Response(JSON.stringify({ version: "0.1.0", filename: "ib_tws_agent-0.1.0-py3-none-any.whl" }), { status: 200 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);
     expect(await screen.findByText(`uv tool install ${ORIGIN}/agent/ib_tws_agent-0.1.0-py3-none-any.whl`)).toBeInTheDocument();
-    expect(screen.getByText(`ib-tws-agent init --origin ${ORIGIN}`)).toBeInTheDocument();
+    expect(screen.getByText(`ib-tws-agent origin add ${ORIGIN}`)).toBeInTheDocument();
     expect(screen.getByText("ib-tws-agent", { selector: "code" })).toBeInTheDocument();
   });
 

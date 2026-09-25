@@ -8,8 +8,12 @@ ne répond qu'aux origines de son `config.toml`. Spec : `docs/specs/2026-09-06-a
 La page Aide du site donne les commandes exactes. En résumé :
 
     uv tool install <origine>/agent/<roue>
-    ib-tws-agent init --origin <origine>
+    ib-tws-agent origin add <origine>
     ib-tws-agent
+
+L'agent répond à plusieurs sites (une prod et sa dev, par exemple) : `origin add` en ajoute
+un, `origin list` les affiche, `origin remove <origine>` en retire un. Relancer l'agent après
+chaque changement.
 
 Réglages TWS : Enable ActiveX and Socket Clients, un port par compte, `127.0.0.1` dans Trusted
 IPs, Read-Only API acceptée. Le port se renseigne ensuite dans Sources de données.
@@ -17,7 +21,7 @@ IPs, Read-Only API acceptée. Le port se renseigne ensuite dans Sources de donn�
 ## Développeur
 
     pnpm test:agent                       # pytest sur un FakeIB, jamais un vrai TWS
-    uv run --project apps/tws-agent ib-tws-agent init --origin http://localhost:5173
+    uv run --project apps/tws-agent ib-tws-agent origin add http://localhost:5173
     uv run --project apps/tws-agent ib-tws-agent
     pnpm build:agent                      # roue + index.json dans apps/web/public/agent/
 

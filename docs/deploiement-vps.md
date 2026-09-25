@@ -258,11 +258,12 @@ moitié chargée.
 
 ## 8. L'agent local
 
-`ib-tws-agent init --origin https://<domaine-prod>` n'écrit qu'une origine. Pour utiliser les
-deux sites, ajouter la dev à la main dans `config.toml` (sous
-`platformdirs.user_config_dir("ib-tws-agent")`), puis relancer l'agent :
+Pour utiliser les deux sites, ajouter les deux origines, puis relancer l'agent :
 
-    origins = ["https://<domaine-prod>", "https://<domaine-dev>"]
+    ib-tws-agent origin add https://<domaine-prod>
+    ib-tws-agent origin add https://<domaine-dev>
+    ib-tws-agent origin list                        # vérifier
+    ib-tws-agent origin remove https://<domaine-dev>   # pour n'en garder qu'une
 
 Un testeur externe n'a besoin que de l'origine de la dev.
 

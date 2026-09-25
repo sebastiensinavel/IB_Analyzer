@@ -40,8 +40,8 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   SPA n'est protégée : un serveur injoignable grise la synchro, jamais le reste de
   l'application.
 - **Aucun nom de domaine dans un fichier versionné.** Il vit dans les `.env` du VPS et dans
-  `/srv/infra`, hors du dépôt, jamais dans le dépôt. L'agent le reçoit par `ib-tws-agent init
-  --origin`, la page Aide le lit dans `window.location.origin`, jamais dans le code.
+  `/srv/infra`, hors du dépôt, jamais dans le dépôt. L'agent le reçoit par `ib-tws-agent origin
+  add`, la page Aide le lit dans `window.location.origin`, jamais dans le code.
 - **Comptes jamais combinés** : chaque vue est scopée `/accounts/:accountId/...`. Les comptes
   vivent en IndexedDB, rien n'est codé en dur.
 - **Les stratégies actives sont un réglage du compte** : `AccountRecord.strategies?:
@@ -481,8 +481,8 @@ un port en dur dans ces outils. **L'agent local, lui, ne suit pas cette règle**
 `127.0.0.1:8100` pour tous les checkouts, mais ne répond qu'aux origines de sa configuration
 (`origins` dans `config.toml`, sous `platformdirs.user_config_dir("ib-tws-agent")`). Un
 worktree servi sur `5174` est refusé en 403 sans en-tête CORS, et l'app le voit absent :
-ajouter `http://127.0.0.1:5174` à la liste à la main — `ib-tws-agent init` la réécrit avec
-une seule origine — puis relancer l'agent. `pnpm check` avant tout
+`ib-tws-agent origin add http://127.0.0.1:5174` (`origin list`, `origin remove` pour le reste),
+puis relancer l'agent. `pnpm check` avant tout
 merge ; il vérifie la fraîcheur d'`apps/web/src/api/schema.d.ts` contre `openapi.json` mais
 **ne lance jamais Python**, ni Django, ni pytest. Turborepo n'est pas installé tant que le
 besoin n'existe pas. Deux écarts délibérés à la lettre du spec, à ne pas « corriger » :

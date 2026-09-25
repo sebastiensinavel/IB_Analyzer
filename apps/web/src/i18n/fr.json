@@ -644,7 +644,7 @@
     },
     "configure": {
       "title": "3. Le configurer et le lancer",
-      "text": "La première commande enregistre l'adresse de ce site, la seule à laquelle l'agent répondra. La seconde le lance ; laissez-la tourner pendant que vous utilisez le site."
+      "text": "La première commande ajoute l'adresse de ce site à celles auxquelles l'agent répond ; pour un autre site, ajoutez aussi la sienne, puis relancez l'agent. ib-tws-agent origin list les affiche, ib-tws-agent origin remove en retire une. La seconde commande lance l'agent ; laissez-la tourner pendant que vous utilisez le site."
     },
     "tws": {
       "title": "4. Régler l'API de TWS",

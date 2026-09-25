@@ -1,6 +1,6 @@
 [project]
 name = "ib-tws-agent"
-version = "0.3.0"
+version = "0.4.0"
 license = "MIT"
 description = "Agent local d'IB Options Analyzer 2 : lit TWS sur cette machine, ne stocke rien, ne parle qu'au site et à Interactive Brokers."
 requires-python = ">=3.14"
