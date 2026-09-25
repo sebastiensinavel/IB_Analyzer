@@ -732,7 +732,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   `letsencrypt`, que la pile de la tâche 1 référence ; l'unité `infra-traefik.service` que
   `iba-prod.service` attend.
 
-- [ ] **Step 1 : constater la version de Traefik**
+- [x] **Step 1 : constater la version de Traefik**
 
 ```bash
 docker pull traefik:v3 >/dev/null && docker run --rm traefik:v3 version | sed -n 's/^Version: *//p'
@@ -741,7 +741,7 @@ docker pull traefik:v3 >/dev/null && docker run --rm traefik:v3 version | sed -n
 Noter la version exacte (par exemple `3.7.2`) : elle s'écrit en toutes lettres dans l'image
 (`traefik:v3.7.2`), jamais `v3` ni `latest`.
 
-- [ ] **Step 2 : `traefik/`**
+- [x] **Step 2 : `traefik/`**
 
 `~/infra-staging/traefik/docker-compose.yml` (remplacer `<version>` par celle du Step 1) :
 
@@ -799,7 +799,7 @@ networks:
 ACME_EMAIL=<email>
 ```
 
-- [ ] **Step 3 : `vitrine/`**
+- [x] **Step 3 : `vitrine/`**
 
 `~/infra-staging/vitrine/nginx.conf` — reproduit la liste blanche de `/etc/caddy/Caddyfile` :
 
@@ -886,7 +886,7 @@ services:
 networks: !reset {}
 ```
 
-- [ ] **Step 4 : vérifier la vitrine contre sa liste blanche**
+- [x] **Step 4 : vérifier la vitrine contre sa liste blanche**
 
 ```bash
 cd ~/infra-staging/vitrine
@@ -905,7 +905,7 @@ complète : `docker compose config >/dev/null` dans `traefik/` (avec un `.env` c
 `ACME_EMAIL` factice, supprimé ensuite) et dans `vitrine/` — aucune erreur. Le réseau externe
 `traefik` n'existe pas encore : `config` ne le vérifie pas, c'est attendu.
 
-- [ ] **Step 5 : `systemd/`**
+- [x] **Step 5 : `systemd/`**
 
 `~/infra-staging/systemd/infra-traefik.service` :
 
@@ -935,7 +935,7 @@ WantedBy=multi-user.target
 Vérifier : `systemd-analyze verify ~/infra-staging/systemd/*.service` — pas d'erreur de
 syntaxe (les avertissements d'utilisateur ou de dossier absents sont attendus).
 
-- [ ] **Step 6 : `README.md` et `.gitignore`**
+- [x] **Step 6 : `README.md` et `.gitignore`**
 
 `~/infra-staging/.gitignore` :
 
@@ -974,7 +974,7 @@ Les applications vivent chacune sous leur propre utilisateur (`/srv/iba` pour IB
 - Rien n'est publié hors de 80, 443 et `127.0.0.1`.
 ```
 
-- [ ] **Step 7 : commit (le plan seul)**
+- [x] **Step 7 : commit (le plan seul)**
 
 Vérifier d'abord que rien de `~/infra-staging` n'est entré dans le worktree :
 `git status --short` ne montre que le plan.
