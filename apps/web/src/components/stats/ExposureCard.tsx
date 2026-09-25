@@ -15,16 +15,17 @@ interface ExposureCardProps {
   empty: string;
   sectorOf: (ticker: string) => string | null;
   isDark: boolean;
-  /** The legend table beside the donut; the dashboard shows the donut alone. */
-  withTable?: boolean;
+  /** The dashboard's legend table: sector and share only, no amounts. */
+  shareOnly?: boolean;
 }
 
 /**
- * What a scope ties up per sector now: a donut on the left, 18 rem at most, and its legend table taking the rest on the right,
- * scrolling within the donut's height under a sticky header — the same card fills a statistics page
- * and the dashboard, which shows the donut alone. Only a very narrow card puts the table under the donut.
+ * What a scope ties up per sector now: its legend table on the right at its own width, scrolling
+ * within the donut's height under a sticky header, and the donut on the left in the rest, 13 rem at
+ * least. The same card fills a statistics page and the dashboard, whose table keeps the sector and
+ * its share alone. Only a very narrow card puts the table under the donut.
  */
-export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, withTable = true }: ExposureCardProps) {
+export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, shareOnly = false }: ExposureCardProps) {
   const { t } = useTranslation();
   const colors = chartColors(isDark);
   const slices = sectorSlices(capital.exposure, sectorOf, t("stats.exposure.unclassified"));
@@ -34,11 +35,11 @@ export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, withT
       <CardHeader>
         <CardTitle>{t("stats.exposure.title")}</CardTitle>
       </CardHeader>
-      <CardContent className={withTable ? "@container" : "@container flex flex-1 flex-col justify-center"}>
+      <CardContent className="@container">
         {slices.length === 0 ? (
           <p className="text-sm text-muted-foreground">{empty}</p>
         ) : (
-          <div className={withTable ? "grid items-center gap-6 @md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]" : undefined}>
+          <div className="grid items-center gap-6 @md:grid-cols-[minmax(13rem,1fr)_auto]">
             <div data-testid="exposure-chart" className="relative w-full">
               <ReactECharts
                 option={exposureOption(slices, t("stats.exposure.other"), colors, capital.currency)}
@@ -53,48 +54,46 @@ export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, withT
                 </div>
               </div>
             </div>
-            {withTable && (
-              <div
-                data-testid="exposure-table"
-                className="max-h-[260px] overflow-y-auto [&_[data-slot=table-container]]:overflow-visible"
-              >
-                <Table>
-                  <TableHeader className="sticky top-0 z-10 bg-card">
-                    <TableRow>
-                      <TableHead>{t("stats.exposure.sector")}</TableHead>
+            <div
+              data-testid="exposure-table"
+              className="max-h-[260px] overflow-y-auto [&_[data-slot=table-container]]:overflow-visible"
+            >
+              <Table>
+                <TableHeader className="sticky top-0 z-10 bg-card">
+                  <TableRow>
+                    <TableHead>{t("stats.exposure.sector")}</TableHead>
+                    {detailed && (
+                      <>
+                        <TableHead className="text-right">{t("stats.exposure.assigned")}</TableHead>
+                        <TableHead className="text-right">{t("stats.exposure.putCash")}</TableHead>
+                      </>
+                    )}
+                    {!shareOnly && <TableHead className="text-right">{t("stats.exposure.total")}</TableHead>}
+                    <TableHead className="text-right">{t("stats.exposure.share")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {slices.map((slice, index) => (
+                    <TableRow key={slice.sector}>
+                      <TableCell className="font-medium">
+                        <span className="inline-flex items-center gap-2">
+                          <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: swatchColor(slice, index, colors) }} />
+                          {slice.sector}
+                        </span>
+                      </TableCell>
                       {detailed && (
                         <>
-                          <TableHead className="text-right">{t("stats.exposure.assigned")}</TableHead>
-                          <TableHead className="text-right">{t("stats.exposure.putCash")}</TableHead>
+                          <TableCell className="text-right font-mono tabular-nums">{formatAmount(slice.assigned)}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">{formatAmount(slice.putCash)}</TableCell>
                         </>
                       )}
-                      <TableHead className="text-right">{t("stats.exposure.total")}</TableHead>
-                      <TableHead className="text-right">{t("stats.exposure.share")}</TableHead>
+                      {!shareOnly && <TableCell className="text-right font-mono tabular-nums">{formatAmount(slice.total)}</TableCell>}
+                      <TableCell className="text-right font-mono tabular-nums text-subtle-foreground">{formatRate(slice.share)}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {slices.map((slice, index) => (
-                      <TableRow key={slice.sector}>
-                        <TableCell className="font-medium">
-                          <span className="inline-flex items-center gap-2">
-                            <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: swatchColor(slice, index, colors) }} />
-                            {slice.sector}
-                          </span>
-                        </TableCell>
-                        {detailed && (
-                          <>
-                            <TableCell className="text-right font-mono tabular-nums">{formatAmount(slice.assigned)}</TableCell>
-                            <TableCell className="text-right font-mono tabular-nums">{formatAmount(slice.putCash)}</TableCell>
-                          </>
-                        )}
-                        <TableCell className="text-right font-mono tabular-nums">{formatAmount(slice.total)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums text-subtle-foreground">{formatRate(slice.share)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </CardContent>

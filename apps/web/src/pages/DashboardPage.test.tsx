@@ -147,10 +147,11 @@ describe("DashboardPage", () => {
     expect(await screen.findByLabelText("Couverture en Cash")).toBeInTheDocument();
     expect(screen.getByTestId("monthly-chart")).toBeInTheDocument();
     const card = screen.getByText("Exposition par secteur").closest("[data-slot=card]") as HTMLElement;
-    // The dashboard draws the pie alone: its legend table lives on the statistics pages only.
+    // The dashboard's legend table names each sector and its share, never an amount.
     expect(within(card).getByTestId("exposure-chart")).toBeInTheDocument();
-    expect(within(card).queryByTestId("exposure-table")).not.toBeInTheDocument();
-    expect(within(card).queryByRole("table")).not.toBeInTheDocument();
+    const table = within(card).getByTestId("exposure-table");
+    expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Secteur", "Part"]);
+    expect(within(table).getAllByRole("row").length).toBeGreaterThan(1);
     expect(screen.getByText("Capital de toutes les stratégies")).toBeInTheDocument();
     expect(screen.getByTestId("capital-chart")).toBeInTheDocument();
     expect(screen.getByTestId("return-chart")).toBeInTheDocument();
