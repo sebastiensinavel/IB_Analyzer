@@ -15,6 +15,14 @@ noms vivent dans les `.env` du VPS et dans `/srv/infra`, hors de ce dépôt.
 
 ---
 
+**Amendement de la revue de branche (2026-09-25)** : l'instance se nomme par `IBA_INSTANCE`
+(`prod`, `dev`) et la pile par `name: iba-${IBA_INSTANCE}`, jamais par `COMPOSE_PROJECT_NAME`,
+que Compose remplit du nom du dossier quand il manque — une pile `prod` vide serait née à côté
+d'`iba-prod`. Partout ci-dessous, lire `iba-${IBA_INSTANCE}` pour `${COMPOSE_PROJECT_NAME}`.
+`/usr/local/bin/iba` est un lanceur installé (`deploy/iba-launcher`), pas un lien : `/srv/iba`
+en 750 rendrait le lien illisible pour un autre compte. `db` porte une sonde `pg_isready` et
+`api` l'attend, l'API une sonde rapprochée au démarrage.
+
 ## 1. Périmètre
 
 **Critère de réussite :** sur le VPS, `<domaine-prod>` et `<domaine-dev>` répondent en HTTPS

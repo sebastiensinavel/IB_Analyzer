@@ -29,18 +29,22 @@ case "$command" in up|down|status|logs|migrate|createsuperuser|backup|deploy|res
 
 home=${IBA_HOME:-/srv/iba}
 dir=$home/$instance
-[ -d "$dir" ] || fail "$dir introuvable"
 
-# Les clones, les .env et les sauvegardes appartiennent à l'utilisateur de l'application.
-owner=$(stat -c %U "$dir")
-if [ "$(id -un)" != "$owner" ]; then
-  exec sudo -u "$owner" -- env IBA_HOME="$home" "$(readlink -f "$0")" "$instance" "$command" "$@"
+# Les clones, les .env et les sauvegardes appartiennent à l'utilisateur de l'application, et
+# /srv/iba est en 750 : on lui passe la main avant même de regarder le dossier.
+user=${IBA_USER:-iba}
+if [ "$(id -un)" != "$user" ]; then
+  exec sudo -u "$user" -- env IBA_HOME="$home" "$(readlink -f "$0")" "$instance" "$command" "$@"
 fi
 
+[ -d "$dir" ] || fail "$dir introuvable"
 cd "$dir"
-project=$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' .env 2>/dev/null || true)
-[ "$project" = "iba-$instance" ] \
-  || fail "$dir/.env déclare le projet « $project », attendu « iba-$instance »"
+declared=$(sed -n 's/^IBA_INSTANCE=//p' .env 2>/dev/null || true)
+[ "$declared" = "$instance" ] \
+  || fail "$dir/.env déclare IBA_INSTANCE=« $declared », attendu « $instance »"
+# COMPOSE_PROJECT_NAME écraserait `name: iba-<instance>` de docker-compose.yml.
+! grep -q '^COMPOSE_PROJECT_NAME=' .env || fail "$dir/.env ne doit pas poser COMPOSE_PROJECT_NAME"
+project=iba-$instance
 
 migrate() { docker compose run --rm api python manage.py migrate; }
 

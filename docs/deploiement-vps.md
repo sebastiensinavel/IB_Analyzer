@@ -73,7 +73,11 @@ le site vitrine, leurs unités systemd.
     sudo chown -R infra:infra /srv/infra
     sudo -iu infra
     cd /srv/infra
-    git init && git add -A && git commit -m "Infrastructure du VPS"   # .env est ignoré
+    git init
+    git config user.name infra && git config user.email infra@localhost
+    git add -A && git commit -m "Infrastructure du VPS"
+    # .gitignore n'admet que traefik/, vitrine/, systemd/ et README.md : /srv/infra est aussi
+    # le dossier personnel d'infra (.bashrc, .ssh…), et les .env restent hors de l'historique.
     cp traefik/.env.example traefik/.env && chmod 600 traefik/.env      # ACME_EMAIL
     cat vitrine/.env                                                    # VITRINE_HOST, VITRINE_ROOT
     exit
@@ -131,7 +135,7 @@ Remplir `.env` avec les valeurs de la prod :
 
 | Variable | prod | dev |
 |---|---|---|
-| `COMPOSE_PROJECT_NAME` | `iba-prod` | `iba-dev` |
+| `IBA_INSTANCE` | `prod` | `dev` |
 | `RESTART_POLICY` | `unless-stopped` | `no` |
 | `ADMIN_PORT` | `8201` | `8211` |
 | `ROBOTS_TAG` | *(vide)* | `noindex` |
@@ -142,6 +146,9 @@ Remplir `.env` avec les valeurs de la prod :
 | `DJANGO_SECRET_KEY`, `POSTGRES_PASSWORD` | générés | **générés à nouveau** |
 | `DJANGO_DEBUG` | `0` | `0` : la dev est publique |
 
+La pile s'appelle `iba-<IBA_INSTANCE>` (`name:` de `docker-compose.yml`). **Ne jamais poser
+`COMPOSE_PROJECT_NAME`** : il écraserait ce nom, et `iba` refuse un `.env` qui le contient.
+
 `DJANGO_ALLOWED_HOSTS` garde `127.0.0.1` : la sonde de santé du service `api` appelle
 `http://127.0.0.1:8000/api/health` depuis l'intérieur du conteneur. Sans lui, Django répond 400
 et le conteneur reste `unhealthy` indéfiniment. `localhost` et l'origine
@@ -149,12 +156,13 @@ et le conteneur reste `unhealthy` indéfiniment. `localhost` et l'origine
 
 Installer la commande `iba`, démarrer, créer l'administrateur :
 
-    sudo ln -s /srv/iba/prod/deploy/iba /usr/local/bin/iba
+    sudo install -m 755 /srv/iba/prod/deploy/iba-launcher /usr/local/bin/iba
     iba prod up                  # construit, démarre, migre
     iba prod createsuperuser     # votre email, un mot de passe long et unique
 
-`iba` se relance de lui-même sous `iba` (par `sudo -u`) quand on l'appelle depuis un autre
-compte. Les migrations **ne tournent jamais au démarrage d'un conteneur** — deux répliques les
+`/srv/iba` est en 750 : un autre compte ne peut pas lire le script du clone. Le lanceur
+installé en `/usr/local/bin/iba` passe donc la main à `iba` (`sudo -u iba`) et exécute
+`/srv/iba/prod/deploy/iba` ; il ne change jamais, le script suit les déploiements de la prod. Les migrations **ne tournent jamais au démarrage d'un conteneur** — deux répliques les
 lanceraient en concurrence — : elles passent toujours par `iba … migrate`, `up` ou `deploy`.
 La première migration crée aussi la table du cache du throttling du proxy Flex
 (`core/migrations/0003_cache_table.py`) : une table `django_cache` est normale.
@@ -228,15 +236,25 @@ le lien : le transmettre soi-même. **Aucun email n'est envoyé.**
 `deploy` en prod n'accepte qu'un tag. Il sauvegarde la base d'abord et s'arrête si la
 sauvegarde échoue, puis extrait le tag, reconstruit, redémarre et migre.
 
-**Retour arrière** : `iba prod deploy <tag précédent>`. Si une migration a changé le schéma,
-restaurer aussi la sauvegarde prise juste avant :
+**Retour arrière** : `iba prod deploy <tag précédent>`. Si la livraison fautive a migré le
+schéma, il faut aussi restaurer la base. **La bonne sauvegarde est celle que la livraison
+fautive a prise avant de migrer** — son chemin s'affiche au début de `iba prod deploy`, et son
+horodatage précède la livraison. Le `deploy` du retour arrière en prend une autre, du schéma
+déjà migré : ce n'est pas celle-là.
 
+    iba prod deploy <tag précédent>
     sudo -iu iba
     cd /srv/iba/prod
+    ls -1 /srv/iba/backups/iba-prod-*.sql.gz          # repérer celle d'avant la livraison fautive
     docker compose stop api
-    docker compose exec -T db psql -U ib -d postgres -c 'DROP DATABASE ib_analyzer' -c 'CREATE DATABASE ib_analyzer OWNER ib'
-    gunzip -c /srv/iba/backups/iba-prod-<horodatage>.sql.gz | docker compose exec -T db psql -U ib ib_analyzer
+    docker compose exec -T db psql -v ON_ERROR_STOP=1 -U ib -d postgres \
+      -c 'DROP DATABASE ib_analyzer' -c 'CREATE DATABASE ib_analyzer OWNER ib'
+    gunzip -c /srv/iba/backups/iba-prod-<horodatage>.sql.gz \
+      | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U ib ib_analyzer
     docker compose start api
+
+`ON_ERROR_STOP` arrête la restauration à la première erreur au lieu de laisser une base à
+moitié chargée.
 
 ## 8. L'agent local
 

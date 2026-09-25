@@ -3,6 +3,7 @@
 The fakes log every call to a file and never touch a real container: what is checked is
 which commands the script runs, in which order, and above all which ones it refuses to run.
 """
+import getpass
 import os
 import stat
 import subprocess
@@ -12,6 +13,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = REPO_ROOT / "deploy" / "iba"
+LAUNCHER = REPO_ROOT / "deploy" / "iba-launcher"
 
 FAKE_DOCKER = """#!/usr/bin/env bash
 echo "docker $*" >> "$CALLS"
@@ -19,6 +21,11 @@ if [ "$1 $2" = "compose exec" ]; then
   [ -n "${FAKE_DUMP_FAILS:-}" ] && exit 1
   echo "-- fake dump"
 fi
+exit 0
+"""
+
+FAKE_SUDO = """#!/usr/bin/env bash
+echo "sudo $*" >> "$CALLS"
 exit 0
 """
 
@@ -40,14 +47,14 @@ exit 0
 def env(tmp_path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    for name, body in [("docker", FAKE_DOCKER), ("git", FAKE_GIT)]:
+    for name, body in [("docker", FAKE_DOCKER), ("git", FAKE_GIT), ("sudo", FAKE_SUDO)]:
         path = bin_dir / name
         path.write_text(body)
         path.chmod(path.stat().st_mode | stat.S_IEXEC)
     home = tmp_path / "srv"
     for inst in ["prod", "dev"]:
         (home / inst).mkdir(parents=True)
-        (home / inst / ".env").write_text(f"COMPOSE_PROJECT_NAME=iba-{inst}\n")
+        (home / inst / ".env").write_text(f"IBA_INSTANCE={inst}\n")
     calls = tmp_path / "calls.log"
     calls.touch()
     return {
@@ -57,6 +64,7 @@ def env(tmp_path):
         "FAKE_TAGS": "v2026.10.01",
         "FAKE_BRANCHES": "main feature-x",
         "HOME": str(tmp_path),
+        "IBA_USER": getpass.getuser(),
     }
 
 
@@ -96,10 +104,10 @@ def test_reset_on_dev_wipes_rebuilds_migrates_and_asks_for_the_admin(env):
 
 
 def test_an_env_naming_another_project_is_refused(env):
-    Path(env["IBA_HOME"], "dev", ".env").write_text("COMPOSE_PROJECT_NAME=iba-prod\n")
+    Path(env["IBA_HOME"], "dev", ".env").write_text("IBA_INSTANCE=prod\n")
     result = run(env, "dev", "up")
     assert result.returncode == 1
-    assert "iba-prod" in result.stderr
+    assert "prod" in result.stderr
     assert calls(env) == []
 
 
@@ -164,3 +172,26 @@ def test_backup_keeps_the_14_newest_of_its_own_project_only(env):
     assert "iba-prod-20260103-000000.sql.gz" not in prod
     assert "iba-prod-20260104-000000.sql.gz" in prod
     assert (backups / "iba-dev-20250101-000000.sql.gz").exists()
+
+
+def test_an_env_setting_compose_project_name_is_refused(env):
+    """It would override `name: iba-<instance>` and put the stack under another project."""
+    Path(env["IBA_HOME"], "dev", ".env").write_text("IBA_INSTANCE=dev\nCOMPOSE_PROJECT_NAME=autre\n")
+    result = run(env, "dev", "up")
+    assert result.returncode == 1
+    assert "COMPOSE_PROJECT_NAME" in result.stderr
+    assert calls(env) == []
+
+
+def test_another_user_is_handed_to_the_app_user_before_touching_the_instance(env, tmp_path):
+    """/srv/iba is 750: a caller who is not `iba` cannot even test the directory."""
+    result = run(env, "dev", "status", IBA_USER="iba", IBA_HOME=str(tmp_path / "unreadable"))
+    assert result.returncode == 0, result.stderr
+    assert calls(env) == [f"sudo -u iba -- env IBA_HOME={tmp_path / 'unreadable'} {SCRIPT} dev status"]
+
+
+def test_the_launcher_runs_the_prod_clone_script_as_iba(env):
+    """Installed as /usr/local/bin/iba, readable by all, pointing into the 750 directory."""
+    result = subprocess.run([str(LAUNCHER), "dev", "up"], env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert calls(env) == ["sudo -u iba -- /srv/iba/prod/deploy/iba dev up"]

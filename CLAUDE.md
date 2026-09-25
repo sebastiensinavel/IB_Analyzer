@@ -539,7 +539,8 @@ l'utilisateur, jamais sur le VPS.
 
 **Deux instances d'IB Analyzer**, `iba-prod` et `iba-dev`, clones du dépôt sous `/srv/iba/prod`
 et `/srv/iba/dev`, propriété de l'utilisateur `iba`. Tout ce qui les distingue vient de leur
-`.env`, `COMPOSE_PROJECT_NAME` en tête : noms des routeurs, services et middlewares Traefik,
+`.env`, `IBA_INSTANCE` en tête — la pile s'appelle `iba-${IBA_INSTANCE}` (`name:`), jamais par
+`COMPOSE_PROJECT_NAME`, que Compose remplirait du nom du dossier : noms des routeurs, services et middlewares Traefik,
 volumes, réseau interne, `RESTART_POLICY` (`unless-stopped` en prod, `no` en dev),
 `ADMIN_PORT` (8201, 8211), `ROBOTS_TAG` (vide en prod, `noindex` en dev ; Traefik retire un
 en-tête vide, vérifié en v3.7). **Ne jamais recoder un nom de routeur** dans
@@ -550,11 +551,13 @@ vérifie, comme le reste de la pile.
 de connexion de l'admin Django — : il se joint par tunnel SSH sur `127.0.0.1:<ADMIN_PORT>`.
 Tout port publié par la pile commence par `127.0.0.1:`.
 
-**`deploy/iba <prod|dev> <commande>`** (lié en `/usr/local/bin/iba`) porte l'exploitation et
+**`deploy/iba <prod|dev> <commande>`** porte l'exploitation — `deploy/iba-launcher`, installé en
+`/usr/local/bin/iba`, passe la main à `iba` parce que `/srv/iba` est en 750 — et
 ses garde-fous : la prod ne déploie que des tags et se sauvegarde avant toute migration, une
 sauvegarde échouée arrête le déploiement ; `reset` n'existe qu'en dev, après le nom du projet
 retapé ; 14 sauvegardes gardées par instance dans `/srv/iba/backups`. Les migrations ne
-tournent jamais au démarrage d'un conteneur. `deploy/systemd/iba-prod.service` démarre la
+tournent jamais au démarrage d'un conteneur ; `api` attend un `db` `healthy` (`pg_isready` par TCP,
+qui écarte le serveur temporaire d'initdb). `deploy/systemd/iba-prod.service` démarre la
 prod au boot ; la dev n'a pas d'unité. `test_iba_script.py` pilote le script sur un faux
 `docker` et un faux `git`.
 
