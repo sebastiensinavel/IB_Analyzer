@@ -9,6 +9,7 @@
 import type { IChartApi, ISeriesApi, Time } from "lightweight-charts";
 import type { ChartLevel } from "@ib/ledger";
 import type { PriceBar } from "@/agent/client";
+import { CHART_FONT } from "@/lib/chartColors";
 import { labelInk } from "@/lib/chartLevels";
 
 export interface DrawnLevel {
@@ -130,6 +131,110 @@ export function labelOffsets(boxes: readonly { y: number; width: number }[], hei
     placed.push({ y, x, width });
     return x;
   });
+}
+
+/** Le trait qui relie une date de l'axe du temps à sa verticale, puis la hauteur de son cadre. */
+const AXIS_TICK = 4;
+const AXIS_LABEL_HEIGHT = 18;
+const AXIS_LABEL_PADDING = 4;
+
+/**
+ * Le centre de chaque étiquette de l'axe du temps, dans l'ordre reçu. Des étiquettes qui se
+ * chevauchent (`x` le centre voulu) forment un groupe posé bord à bord, centré sur la moyenne de
+ * leurs centres voulus, et un groupe qu'un écartement pousse contre un voisin fusionne avec lui,
+ * jusqu'à ce que plus rien ne se touche. Aucun groupe ne sort de `[0, axisWidth]`. L'axe n'a la
+ * hauteur que d'une étiquette : on ne peut écarter qu'en largeur.
+ */
+export function spreadLabels(labels: readonly { x: number; width: number }[], gap: number, axisWidth: number): number[] {
+  type Group = { members: number[]; left: number; width: number };
+  const order = labels.map((_, index) => index).sort((a, b) => labels[a].x - labels[b].x);
+  const lay = (members: number[]): Group => {
+    const width = members.reduce((sum, index) => sum + labels[index].width, 0) + gap * (members.length - 1);
+    const center = members.reduce((sum, index) => sum + labels[index].x, 0) / members.length;
+    const left = Math.min(Math.max(center - width / 2, 0), Math.max(axisWidth - width, 0));
+    return { members, left, width };
+  };
+  let groups = order.map((index) => lay([index]));
+  for (let merged = true; merged; ) {
+    merged = false;
+    const next: Group[] = [];
+    for (const group of groups) {
+      const previous = next[next.length - 1];
+      if (previous && previous.left + previous.width + gap > group.left) {
+        next[next.length - 1] = lay([...previous.members, ...group.members]);
+        merged = true;
+      } else next.push(group);
+    }
+    groups = next;
+  }
+  const centers: number[] = new Array(labels.length);
+  for (const group of groups) {
+    let left = group.left;
+    for (const index of group.members) {
+      centers[index] = left + labels[index].width / 2;
+      left += labels[index].width + gap;
+    }
+  }
+  return centers;
+}
+
+/**
+ * Les dates des verticales, dessinées dans l'axe du temps. `timeAxisViews` de la bibliothèque
+ * pose chaque étiquette à sa coordonnée sans jamais l'écarter d'une autre (seul l'axe des prix
+ * le fait) : deux échéances proches s'y recouvraient. Ici un trait marque la date exacte et le
+ * cadre s'écarte de ses voisins (`spreadLabels`).
+ */
+export class TimeAxisRenderer {
+  private readonly placed: readonly Placed[];
+
+  constructor(placed: readonly Placed[]) {
+    this.placed = placed;
+  }
+
+  draw(target: { useBitmapCoordinateSpace: (cb: (scope: Scope) => void) => void }) {
+    target.useBitmapCoordinateSpace((scope) => {
+      const ctx = scope.context;
+      const hr = scope.horizontalPixelRatio;
+      const vr = scope.verticalPixelRatio;
+      const labels = this.placed.flatMap((item) =>
+        item.drawn.level.kind === "condor"
+          ? []
+          : datesOf(item.drawn.level).flatMap((day, index) => {
+              const x = item.xs[index];
+              return x === null || x === undefined ? [] : [{ text: day.slice(5), x: x * hr, color: item.drawn.color }];
+            }),
+      );
+      if (labels.length === 0) return;
+      ctx.save();
+      ctx.font = `${12 * vr}px ${CHART_FONT}`;
+      const widths = labels.map((label) => ctx.measureText(label.text).width + 2 * AXIS_LABEL_PADDING * hr);
+      const centers = spreadLabels(
+        labels.map((label, index) => ({ x: label.x, width: widths[index] })),
+        LABEL_GAP * hr,
+        scope.bitmapSize.width,
+      );
+      const top = AXIS_TICK * vr;
+      const height = AXIS_LABEL_HEIGHT * vr;
+      ctx.lineWidth = Math.max(1, Math.floor(hr));
+      ctx.setLineDash([]);
+      for (const label of labels) {
+        ctx.strokeStyle = label.color;
+        ctx.beginPath();
+        ctx.moveTo(Math.round(label.x) + 0.5, 0);
+        ctx.lineTo(Math.round(label.x) + 0.5, top);
+        ctx.stroke();
+      }
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      labels.forEach((label, index) => {
+        ctx.fillStyle = label.color;
+        ctx.fillRect(centers[index] - widths[index] / 2, top, widths[index], height);
+        ctx.fillStyle = labelInk(label.color);
+        ctx.fillText(label.text, centers[index], top + height / 2);
+      });
+      ctx.restore();
+    });
+  }
 }
 
 export class LevelsRenderer {
@@ -266,25 +371,9 @@ export class LevelsPrimitive {
     return [{ renderer: () => new LevelsRenderer(placed), zOrder: () => "top" as const }];
   }
 
-  /** Les dates des verticales, sous l'axe du temps, dans la couleur de leur ligne. */
-  timeAxisViews() {
-    return this.drawn.flatMap((drawn) =>
-      datesOf(drawn.level)
-        .filter(() => drawn.level.kind !== "condor")
-        .map((day) => {
-          const at = () => (this.chart ? (this.chart.timeScale().timeToCoordinate(day as Time) as number | null) : null);
-          return {
-            coordinate: () => at() ?? 0,
-            // Une date hors de la fenêtre chargée n'a pas de coordonnée : l'étiquette ne
-            // s'affiche pas du tout. `coordinate` n'étant pas nullable, la bibliothèque
-            // replacerait sinon l'étiquette au bord, et une date absente s'afficherait.
-            visible: () => at() !== null,
-            text: () => day.slice(5),
-            textColor: () => labelInk(drawn.color),
-            backColor: () => drawn.color,
-            tickVisible: () => true,
-          };
-        }),
-    );
+  /** Les dates des verticales, sous l'axe du temps : `TimeAxisRenderer`. */
+  timeAxisPaneViews() {
+    const placed = this.placed;
+    return [{ renderer: () => new TimeAxisRenderer(placed), zOrder: () => "top" as const }];
   }
 }

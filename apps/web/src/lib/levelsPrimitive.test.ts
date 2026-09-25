@@ -5,6 +5,7 @@ import {
   LevelsRenderer,
   CHART_MARGIN_DAYS,
   labelOffsets,
+  spreadLabels,
   timeExtent,
   type DrawnLevel,
   type Placed,
@@ -31,6 +32,7 @@ function fakeTarget() {
     lineWidth: 0,
     font: "",
     textBaseline: "alphabetic" as CanvasTextBaseline,
+    textAlign: "start" as CanvasTextAlign,
   };
   const target = {
     useBitmapCoordinateSpace: (cb: (scope: Scope) => void) =>
@@ -224,27 +226,68 @@ describe("LevelsRenderer", () => {
   });
 });
 
-describe("LevelsPrimitive.timeAxisViews", () => {
-  function primitiveWith(atCoordinate: number | null) {
-    const primitive = new LevelsPrimitive([drawn(put)]);
+describe("LevelsPrimitive.timeAxisPaneViews", () => {
+  const call: ChartLevel = { kind: "shortCall", price: 22, quantity: -1, expiries: ["2026-09-25"] };
+
+  function drawAxis(levels: DrawnLevel[], atCoordinate: number | null) {
+    const primitive = new LevelsPrimitive(levels);
     const chart = { timeScale: () => ({ timeToCoordinate: () => atCoordinate }) };
-    primitive.attached({ chart, series: {} } as never);
-    return primitive;
+    primitive.attached({ chart, series: { priceToCoordinate: () => 30 } } as never);
+    primitive.updateAllViews();
+    const { ctx, target } = fakeTarget();
+    primitive.timeAxisPaneViews()[0].renderer().draw(target);
+    return ctx;
   }
 
-  it("étiquette invisible quand timeToCoordinate rend null (hors de la fenêtre chargée)", () => {
-    const [view] = primitiveWith(null).timeAxisViews();
-
-    expect(view.visible()).toBe(false);
-    // `coordinate` n'est pas nullable côté bibliothèque : replié à 0, jamais lu tant qu'invisible.
-    expect(view.coordinate()).toBe(0);
+  it("n'écrit aucune date hors de la fenêtre chargée (timeToCoordinate rend null)", () => {
+    expect(drawAxis([drawn(put)], null).fillText).not.toHaveBeenCalled();
   });
 
-  it("étiquette visible avec la coordonnée rendue quand la date est dans la fenêtre", () => {
-    const [view] = primitiveWith(42).timeAxisViews();
+  it("écrit la date sous sa verticale, un trait posé à la date exacte", () => {
+    const ctx = drawAxis([drawn(put)], 42);
 
-    expect(view.visible()).toBe(true);
-    expect(view.coordinate()).toBe(42);
+    expect(ctx.fillText).toHaveBeenCalledWith("09-25", 42, expect.any(Number));
+    expect(ctx.moveTo).toHaveBeenCalledWith(42.5, 0);
+  });
+
+  it("écarte deux dates qui tomberaient l'une sur l'autre, les traits restant à la date exacte", () => {
+    const ctx = drawAxis([drawn(put), drawn(call)], 100);
+
+    // measureText rend 10 : deux cadres de 18 et 2 d'écart, centrés ensemble sur 100.
+    expect(ctx.fillText).toHaveBeenCalledWith("09-25", 90, expect.any(Number));
+    expect(ctx.fillText).toHaveBeenCalledWith("09-25", 110, expect.any(Number));
+    expect(ctx.moveTo).toHaveBeenCalledTimes(2);
+    expect(ctx.moveTo).toHaveBeenNthCalledWith(1, 100.5, 0);
+    expect(ctx.moveTo).toHaveBeenNthCalledWith(2, 100.5, 0);
+  });
+});
+
+describe("spreadLabels", () => {
+  it("laisse en place des étiquettes qui ne se touchent pas", () => {
+    expect(spreadLabels([{ x: 20, width: 20 }, { x: 80, width: 20 }], 2, 200)).toEqual([20, 80]);
+  });
+
+  it("écarte symétriquement deux étiquettes qui se chevauchent", () => {
+    expect(spreadLabels([{ x: 100, width: 20 }, { x: 104, width: 20 }], 2, 200)).toEqual([91, 113]);
+  });
+
+  it("rend les centres dans l'ordre reçu, quel que soit l'ordre des dates", () => {
+    expect(spreadLabels([{ x: 104, width: 20 }, { x: 100, width: 20 }], 2, 200)).toEqual([113, 91]);
+  });
+
+  it("fond une étiquette dans le groupe qu'un écartement vient de pousser contre elle", () => {
+    // 100 et 102 s'écartent en 90 et 112 ; 125 touche alors 112 : les trois se centrent sur 109.
+    expect(spreadLabels([{ x: 100, width: 20 }, { x: 102, width: 20 }, { x: 125, width: 20 }], 2, 300)).toEqual([
+      87, 109, 131,
+    ]);
+  });
+
+  it("ne déborde pas du bord droit de l'axe", () => {
+    expect(spreadLabels([{ x: 195, width: 20 }, { x: 196, width: 20 }], 2, 200)).toEqual([168, 190]);
+  });
+
+  it("ne déborde pas du bord gauche de l'axe", () => {
+    expect(spreadLabels([{ x: 2, width: 20 }, { x: 3, width: 20 }], 2, 200)).toEqual([10, 32]);
   });
 });
 
