@@ -4,6 +4,7 @@ import {
   LevelsPrimitive,
   LevelsRenderer,
   CHART_MARGIN_DAYS,
+  labelOffsets,
   timeExtent,
   type DrawnLevel,
   type Placed,
@@ -171,6 +172,22 @@ describe("LevelsRenderer", () => {
     expect(unlabeled.ctx.fillText).not.toHaveBeenCalled();
   });
 
+  it("pose côte à côte deux étiquettes au même prix, chacune centrée sur sa ligne", () => {
+    const call: ChartLevel = { kind: "shortCall", price: 13, quantity: -4, expiries: ["2026-09-25"] };
+    const shares: ChartLevel = { kind: "shares", price: 13, quantity: 400 };
+    const placed: Placed[] = [
+      placedItem({ drawn: drawn(shares, { price: 13, label: "13 Long: 400" }), y: 30 }),
+      placedItem({ drawn: drawn(call, { price: 13, label: "13 Call: -4" }), y: 31 }),
+    ];
+    const { ctx, target } = fakeTarget();
+
+    new LevelsRenderer(placed).draw(target);
+
+    // measureText rend 10 : chaque cadre fait 10 + 2 × 4 = 18 de large, plus 2 d'écart.
+    expect(ctx.fillText).toHaveBeenCalledWith("13 Long: 400", 4, 30);
+    expect(ctx.fillText).toHaveBeenCalledWith("13 Call: -4", 24, 31);
+  });
+
   it("peint les deux rectangles d'un condor, puts et calls appariés séparément", () => {
     // long put 30, short put 20, short call 10, long call 5 : ordonnées croissantes vers le bas.
     const placed: Placed[] = [placedItem({ drawn: drawn(condorLevel), xs: [10, 100], rect: [30, 20, 10, 5] })];
@@ -259,5 +276,37 @@ describe("LevelsPrimitive.updateAllViews", () => {
     primitive.paneViews()[0].renderer().draw(target);
 
     expect(ctx.moveTo).not.toHaveBeenCalled();
+  });
+});
+
+describe("labelOffsets", () => {
+  it("laisse au bord gauche les étiquettes qui ne se touchent pas", () => {
+    expect(labelOffsets([{ y: 10, width: 50 }, { y: 40, width: 50 }], 16, 2)).toEqual([0, 0]);
+  });
+
+  it("décale vers la droite une étiquette qui en chevaucherait une autre", () => {
+    expect(labelOffsets([{ y: 10, width: 50 }, { y: 20, width: 30 }], 16, 2)).toEqual([0, 52]);
+  });
+
+  it("enchaîne trois étiquettes superposées, et reprend le bord gauche dès qu'il est libre", () => {
+    const boxes = [
+      { y: 10, width: 50 },
+      { y: 12, width: 30 },
+      { y: 14, width: 20 },
+      { y: 60, width: 40 },
+    ];
+    expect(labelOffsets(boxes, 16, 2)).toEqual([0, 52, 84, 0]);
+  });
+
+  it("ne regarde que les étiquettes qui la touchent à sa hauteur", () => {
+    const boxes = [
+      { y: 10, width: 50 },
+      { y: 30, width: 40 },
+      { y: 30, width: 20 },
+      { y: 20, width: 10 },
+    ];
+    // B reste à 0 : 20 d'écart avec A, plus que la hauteur 16. C, au même y que B, passe à 42.
+    // La 4e (y 20) touche A (0-50), B (0-40) et C (42-62) : elle part à 64.
+    expect(labelOffsets(boxes, 16, 2)).toEqual([0, 0, 42, 64]);
   });
 });

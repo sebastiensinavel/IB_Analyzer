@@ -57,8 +57,8 @@ describe("CHART_COLORS", () => {
     expect(CHART_FONT).toContain("JetBrains Mono Variable");
   });
 
-  it("dots the price chart grid like the mockup", () => {
-    expect(CHART_COLORS.light.grid).toBe("#e7ecf0");
-    expect(CHART_COLORS.dark.grid).toBe("#1a252e");
+  it("dots the price chart grid a step above the axis border, in both themes", () => {
+    expect(CHART_COLORS.light.grid).toBe("#c8d2d9");
+    expect(CHART_COLORS.dark.grid).toBe("#2b3a46");
   });
 });

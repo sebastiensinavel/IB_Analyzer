@@ -77,8 +77,8 @@ export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: Pric
       height,
       layout: { background: { color: "transparent" }, textColor: colors.axisText, fontFamily: CHART_FONT, attributionLogo: true },
       grid: {
-        vertLines: { color: colors.grid, style: LineStyle.SparseDotted },
-        horzLines: { color: colors.grid, style: LineStyle.SparseDotted },
+        vertLines: { color: colors.grid, style: LineStyle.Dotted },
+        horzLines: { color: colors.grid, style: LineStyle.Dotted },
       },
       rightPriceScale: { borderColor: colors.axisBorder },
       timeScale: { borderColor: colors.axisBorder },

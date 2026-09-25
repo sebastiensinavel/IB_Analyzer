@@ -107,6 +107,30 @@ export interface Placed {
 
 const LABEL_PADDING = 4;
 const LABEL_HEIGHT = 16;
+/** L'écart entre deux étiquettes posées côte à côte. */
+const LABEL_GAP = 2;
+
+/**
+ * L'abscisse de chaque étiquette de gauche, dans l'ordre reçu : le bord gauche, sauf si elle y
+ * chevaucherait une étiquette déjà posée à moins d'une hauteur d'elle — elle passe alors à sa
+ * droite, jusqu'à trouver la place. Chacune reste centrée sur sa ligne : deux niveaux au même
+ * prix (`13 Long: 400`, `13 Call: -4`) se lisent l'un à côté de l'autre, jamais l'un sur l'autre.
+ */
+export function labelOffsets(boxes: readonly { y: number; width: number }[], height: number, gap: number): number[] {
+  const placed: { y: number; x: number; width: number }[] = [];
+  return boxes.map(({ y, width }) => {
+    let x = 0;
+    for (;;) {
+      const blocking = placed.find(
+        (other) => Math.abs(other.y - y) < height && other.x < x + width + gap && x < other.x + other.width + gap,
+      );
+      if (!blocking) break;
+      x = blocking.x + blocking.width + gap;
+    }
+    placed.push({ y, x, width });
+    return x;
+  });
+}
 
 export class LevelsRenderer {
   private readonly placed: readonly Placed[];
@@ -121,6 +145,7 @@ export class LevelsRenderer {
       const hr = scope.horizontalPixelRatio;
       const vr = scope.verticalPixelRatio;
       ctx.save();
+      const labels: { text: string; y: number; color: string }[] = [];
       for (const item of this.placed) {
         const color = item.drawn.color;
         if (item.drawn.level.kind === "condor") {
@@ -135,7 +160,7 @@ export class LevelsRenderer {
           ctx.moveTo(0, Math.round(item.y * vr) + 0.5);
           ctx.lineTo(scope.bitmapSize.width, Math.round(item.y * vr) + 0.5);
           ctx.stroke();
-          if (item.drawn.label !== null) this.drawLabel(ctx, item.drawn.label, item.y * vr, color, hr, vr);
+          if (item.drawn.label !== null) labels.push({ text: item.drawn.label, y: item.y * vr, color });
         }
         for (const x of item.xs) {
           if (x === null) continue;
@@ -148,6 +173,8 @@ export class LevelsRenderer {
           ctx.stroke();
         }
       }
+      // Les étiquettes après toutes les lignes, pour qu'aucune ligne ne les barre.
+      this.drawLabels(ctx, labels, hr, vr);
       ctx.restore();
     });
   }
@@ -167,19 +194,30 @@ export class LevelsRenderer {
     }
   }
 
-  /** Le cadre de gauche, à la manière de l'étiquette de dernier cours. */
-  private drawLabel(ctx: CanvasRenderingContext2D, text: string, y: number, color: string, hr: number, vr: number) {
+  /** Les cadres de gauche, à la manière de l'étiquette de dernier cours, côte à côte s'ils se touchent. */
+  private drawLabels(
+    ctx: CanvasRenderingContext2D,
+    labels: readonly { text: string; y: number; color: string }[],
+    hr: number,
+    vr: number,
+  ) {
     ctx.font = `${11 * vr}px ui-monospace, SFMono-Regular, monospace`;
-
-    const width = ctx.measureText(text).width + 2 * LABEL_PADDING * hr;
-    const height = LABEL_HEIGHT * vr;
-    ctx.fillStyle = color;
-    ctx.fillRect(0, y - height / 2, width, height);
-    // Le blanc ne porte plus un contraste suffisant sur les teintes claires de la palette
-    // (l'or, ~2) : `labelInk` choisit le blanc ou l'encre sombre selon le contraste WCAG réel.
-    ctx.fillStyle = labelInk(color);
     ctx.textBaseline = "middle";
-    ctx.fillText(text, LABEL_PADDING * hr, y);
+    const height = LABEL_HEIGHT * vr;
+    const widths = labels.map((label) => ctx.measureText(label.text).width + 2 * LABEL_PADDING * hr);
+    const xs = labelOffsets(
+      labels.map((label, index) => ({ y: label.y, width: widths[index] })),
+      height,
+      LABEL_GAP * hr,
+    );
+    labels.forEach((label, index) => {
+      ctx.fillStyle = label.color;
+      ctx.fillRect(xs[index], label.y - height / 2, widths[index], height);
+      // Le blanc ne porte plus un contraste suffisant sur les teintes claires de la palette
+      // (l'or, ~2) : `labelInk` choisit le blanc ou l'encre sombre selon le contraste WCAG réel.
+      ctx.fillStyle = labelInk(label.color);
+      ctx.fillText(label.text, xs[index] + LABEL_PADDING * hr, label.y);
+    });
   }
 }
 
