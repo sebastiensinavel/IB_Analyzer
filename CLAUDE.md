@@ -39,8 +39,8 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   appeler le proxy Flex. Une synchro relayée par l'agent n'en exige aucune. Aucune route du
   SPA n'est protégée : un serveur injoignable grise la synchro, jamais le reste de
   l'application.
-- **Aucun nom de domaine dans un fichier versionné.** Il vit dans le `.env` du VPS et dans
-  `deploy/traefik/.env`, jamais dans le dépôt. L'agent le reçoit par `ib-tws-agent init
+- **Aucun nom de domaine dans un fichier versionné.** Il vit dans les `.env` du VPS et dans
+  `/srv/infra`, hors du dépôt, jamais dans le dépôt. L'agent le reçoit par `ib-tws-agent init
   --origin`, la page Aide le lit dans `window.location.origin`, jamais dans le code.
 - **Comptes jamais combinés** : chaque vue est scopée `/accounts/:accountId/...`. Les comptes
   vivent en IndexedDB, rien n'est codé en dur.
@@ -432,7 +432,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 |---|---|---|
 | 1 | Socle monorepo, `ledger`, `ib-parsers`, Historique au palier 2 sans serveur | fait (2026-09-03) |
 | 2 | `coverage` porté avec oracle, positions Flex, Positions et Dashboard, table sectorielle | fait (2026-09-04) |
-| 3 | Serveur Django : invitations, 2FA, proxy Flex, déploiement VPS | livré (2026-09-04), sauf la mise en ligne réelle sur le VPS, en attente de l'utilisateur |
+| 3 | Serveur Django : invitations, 2FA, proxy Flex, déploiement VPS | fait (2026-09-04), mis en ligne par le sous-projet 32 |
 | 4 | Agent local, positions intraday, exécutions du jour | fait (2026-09-06) |
 | 5 | Journaux Wheel, LEAPS, Condors | fait (2026-09-07) |
 | 6 | Sauvegarde chiffrée et page Paramètres | fondu dans le 25 |
@@ -461,6 +461,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 29 | Les tableaux de la Wheel et des LEAPS rangés par point de contrôle | fait (2026-09-22) |
 | 30 | Les stratégies actives d'un compte | fait (2026-09-23) |
 | 31 | Habillage « finance-desktop » : tokens, polices, tableaux, graphes, barres de défilement | fait (2026-09-24) |
+| 32 | Publication : une prod et une dev sur le VPS | fait (2026-09-25), mise en ligne en attente de la tâche 5 du plan 32 |
 
 ## Outillage
 
@@ -507,7 +508,11 @@ depuis `apps/web`.
 **`apps/api`** : un unique workspace uv à la racine du dépôt (`pyproject.toml`, `uv.lock`),
 membres `apps/api` et `apps/tws-agent`. `pnpm test:api` (`uv run
 --project apps/api pytest apps/api`) exécute les tests Python de l'API ; il demande un
-PostgreSQL joignable, démarré par `docker compose -f docker-compose.dev.yml up -d db`.
+PostgreSQL joignable, démarré par `docker compose -f docker-compose.dev.yml up -d db` — sauf
+`test_deployment_config.py` et `test_iba_script.py`, qui n'ouvrent aucune base et se lancent
+seuls (`uv run --project apps/api pytest apps/api/tests/<fichier>`). Un `.venv` dont les
+scripts pointent vers un ancien chemin du dépôt (`Failed to spawn: pytest`) se répare par
+`uv sync --all-packages --reinstall`.
 `pnpm test:agent` (`uv run --project apps/tws-agent pytest apps/tws-agent`) exécute ceux de
 l'agent, sur un `FakeIB` : aucun PostgreSQL, aucun TWS requis. `pnpm build:agent` construit
 la roue et écrit `index.json` dans `apps/web/public/agent/`, ce que fait aussi l'image `web`
@@ -525,22 +530,39 @@ Vitest sur les paquets TS purs et `apps/web`, pytest sur `apps/api` et `apps/tws
 pas juste couvrir des lignes. `apps/web` teste sur `fake-indexeddb` avec un ledger semé en
 base, jamais en moquant les hooks. `coverage` : tests écrits à la main.
 
-## VPS (sous-projet 3)
+## VPS (sous-projets 3 et 32)
 
-VPS OVH. Un seul Traefik pour tout le VPS, sur un réseau Docker externe partagé, une pile
-Compose par application, une instance PostgreSQL par application. ufw : `deny incoming`, seuls
-80, 443 et 2002 (SSH) ouverts. Le nom du réseau externe Traefik est à lire sur le VPS au moment
-du déploiement. L'ancienne topologie (TWS tunnelé en SSH vers le VPS, le pont TWS sur l'hôte)
-disparaît : l'agent tourne sur la machine de l'utilisateur, jamais sur le VPS.
+VPS OVH. Un seul Traefik pour tout le VPS, sur le réseau Docker externe partagé `traefik`, une
+pile Compose par application et par instance, une instance PostgreSQL par pile. ufw : `deny
+incoming`, seuls 80, 443 et 2002 (SSH) ouverts. L'agent tourne sur la machine de
+l'utilisateur, jamais sur le VPS.
 
-`deploy/traefik/` installe ce Traefik unique : c'est de l'**infrastructure du VPS, pas de
-l'application**. Il vit dans ce dépôt parce que cette application est la première occupante
-du VPS et que Traefik n'y existait pas encore ; il déménagera dans un dépôt à part dès
-qu'une deuxième application s'y installera. Procédure complète, tracée commande par commande,
-dans `docs/deploiement-vps.md`. Les images Docker (`web`, `api`) se construisent et la pile
-Compose valide, mais **le site n'a jamais répondu en HTTPS** : la mise en ligne réelle
-attend un accès SSH, le nom de domaine, le nom du réseau Traefik et une source de clone
-atteignable depuis le VPS — quatre informations que seul l'utilisateur peut fournir, et
-qu'aucun fichier versionné ne doit porter (le nom de domaine en particulier). L'image `web`
-construit aussi la roue de l'agent et la sert sous `/agent/` : un utilisateur n'a besoin que
-d'`uv` et du site pour installer l'agent, jamais d'un accès direct à ce dépôt.
+**Deux instances d'IB Analyzer**, `iba-prod` et `iba-dev`, clones du dépôt sous `/srv/iba/prod`
+et `/srv/iba/dev`, propriété de l'utilisateur `iba`. Tout ce qui les distingue vient de leur
+`.env`, `COMPOSE_PROJECT_NAME` en tête : noms des routeurs, services et middlewares Traefik,
+volumes, réseau interne, `RESTART_POLICY` (`unless-stopped` en prod, `no` en dev),
+`ADMIN_PORT` (8201, 8211), `ROBOTS_TAG` (vide en prod, `noindex` en dev ; Traefik retire un
+en-tête vide, vérifié en v3.7). **Ne jamais recoder un nom de routeur** dans
+`docker-compose.yml` : deux piles se disputeraient le même. `test_deployment_config.py` le
+vérifie, comme le reste de la pile.
+
+**`/admin` n'est jamais routé depuis internet** — la 2FA d'allauth ne garde pas le formulaire
+de connexion de l'admin Django — : il se joint par tunnel SSH sur `127.0.0.1:<ADMIN_PORT>`.
+Tout port publié par la pile commence par `127.0.0.1:`.
+
+**`deploy/iba <prod|dev> <commande>`** (lié en `/usr/local/bin/iba`) porte l'exploitation et
+ses garde-fous : la prod ne déploie que des tags et se sauvegarde avant toute migration, une
+sauvegarde échouée arrête le déploiement ; `reset` n'existe qu'en dev, après le nom du projet
+retapé ; 14 sauvegardes gardées par instance dans `/srv/iba/backups`. Les migrations ne
+tournent jamais au démarrage d'un conteneur. `deploy/systemd/iba-prod.service` démarre la
+prod au boot ; la dev n'a pas d'unité. `test_iba_script.py` pilote le script sur un faux
+`docker` et un faux `git`.
+
+**Traefik et le site vitrine vivent dans `/srv/infra`**, dépôt git local de l'utilisateur
+`infra`, **hors de ce dépôt** parce qu'ils portent des noms de domaine. Le site vitrine a été le
+deuxième occupant qui a fait déménager `deploy/traefik/`. Caddy, qui servait le site vitrine
+avant, est arrêté et désactivé, pas désinstallé. Le groupe `docker` vaut root : la séparation
+`iba`/`infra` est organisationnelle. Procédure complète dans `docs/deploiement-vps.md`.
+
+L'image `web` construit aussi la roue de l'agent et la sert sous `/agent/` : un utilisateur
+n'a besoin que d'`uv` et du site pour installer l'agent, jamais d'un accès direct à ce dépôt.

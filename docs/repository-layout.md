@@ -23,7 +23,7 @@ the Django app stays thin.
 | `packages/ui` | shadcn components (on base-ui, not Radix), shared by the app. |
 | `tools/dev-env` | Per-checkout port/database allocation and detached dev instances. |
 | `scripts/` | Repository-level checks (`check-api-types.mjs`). |
-| `deploy/traefik` | The VPS's single shared Traefik. Infrastructure, not the application. |
+| `deploy/` | VPS operations: the `iba` script (prod and dev instances) and the prod systemd unit. The shared Traefik lives outside this repository, in `/srv/infra`. |
 | `docs/` | Specs, plans, deployment guide, deferred-debt list. |
 | `private/` | Real IB files used to write parsers. Git-ignored, never committed. |
 

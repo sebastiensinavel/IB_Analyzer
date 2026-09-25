@@ -47,5 +47,5 @@ Les données restent dans IndexedDB du navigateur. Rien ne quitte la machine.
 de donnée de portefeuille), `packages/ledger` (modèle et calculs), `packages/ib-parsers`
 (Flex XML, relevé HTML), `packages/coverage` (moteur de couverture), `packages/ui`
 (composants shadcn),
-`deploy/traefik` (infrastructure partagée du VPS, pas de l'application). Détail dans
-`CLAUDE.md`.
+`deploy/` (script d'exploitation `iba` et unité systemd de la prod ; le Traefik du VPS vit hors
+de ce dépôt, dans `/srv/infra`). Détail dans `CLAUDE.md` et `docs/deploiement-vps.md`.

@@ -1,6 +1,6 @@
 # Sous-projet 32 — Publication : une prod et une dev sur le VPS
 
-Statut : spec validé, à planifier.
+Statut : livré (2026-09-25), mise en ligne à la tâche 5 du plan.
 
 Le sous-projet 3 a livré les images, la pile Compose et un Traefik dans `deploy/traefik/`,
 mais le site n'a jamais répondu en HTTPS. Ce sous-projet le met en ligne, en **deux

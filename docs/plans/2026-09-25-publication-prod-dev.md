@@ -998,13 +998,13 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Modify : `docs/specs/2026-09-03-architecture-design.md` (§12, sous-projet 3)
 - Modify : `docs/specs/2026-09-25-publication-prod-dev-design.md` (statut)
 
-- [ ] **Step 1 : supprimer `deploy/traefik/`**
+- [x] **Step 1 : supprimer `deploy/traefik/`**
 
 `git rm -r deploy/traefik`. Puis `grep -rn "deploy/traefik" --exclude-dir=node_modules
 --exclude-dir=.git .` : les seules occurrences restantes sont dans `docs/specs/` et
 `docs/plans/` datés d'avant (historiques, on n'y touche pas), dans ce plan et dans le spec 32.
 
-- [ ] **Step 2 : réécrire `docs/deploiement-vps.md`**
+- [x] **Step 2 : réécrire `docs/deploiement-vps.md`**
 
 Structure, dans l'ordre d'exécution, chaque commande en bloc de code, `<domaine-prod>`,
 `<domaine-dev>`, `<vps>` comme seuls emplacements :
@@ -1047,7 +1047,7 @@ Structure, dans l'ordre d'exécution, chaque commande en bloc de code, `<domaine
 Garder de l'ancien texte : le paragraphe sur `127.0.0.1` dans `DJANGO_ALLOWED_HOSTS` et
 celui sur `django_cache` après la première migration.
 
-- [ ] **Step 3 : `CLAUDE.md`**
+- [x] **Step 3 : `CLAUDE.md`**
 
 - Règle « Aucun nom de domaine » : remplacer « et dans `deploy/traefik/.env` » par « et dans
   `/srv/infra`, hors du dépôt ».
@@ -1066,7 +1066,7 @@ celui sur `django_cache` après la première migration.
 - Outillage : ajouter que `test_deployment_config.py` et `test_iba_script.py` ne demandent
   pas PostgreSQL.
 
-- [ ] **Step 4 : `docs/points-reportes.md`**
+- [x] **Step 4 : `docs/points-reportes.md`**
 
 Dans « Reporté par les sous-projets 3 et 4 », supprimer les entrées « `deploy/traefik/` vit
 dans ce dépôt » et « `traefik:v3.3` … est provisoire » ; remplacer « Aucune sauvegarde de
@@ -1090,13 +1090,13 @@ PostgreSQL sur le VPS » par la version réduite ci-dessous. Ajouter une section
   rien et peut tromper un lecteur.
 ```
 
-- [ ] **Step 5 : specs**
+- [x] **Step 5 : specs**
 
 `docs/specs/2026-09-03-architecture-design.md` §12, point 3 : ajouter « Mis en ligne au
 sous-projet 32. » ; `docs/specs/2026-09-25-publication-prod-dev-design.md` : `Statut : livré
 (<date>).`
 
-- [ ] **Step 6 : vérification finale**
+- [x] **Step 6 : vérification finale**
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d db   # si la base de dev ne tourne pas
@@ -1109,7 +1109,7 @@ grep -rniF "$(sed -n 's/^VITRINE_HOST=//p' ~/infra-staging/vitrine/.env)" \
 
 Expected : `pnpm test:api` et `pnpm check` verts ; le `grep` affiche `aucun domaine`.
 
-- [ ] **Step 7 : commit**
+- [x] **Step 7 : commit**
 
 ```bash
 git add -A docs CLAUDE.md deploy

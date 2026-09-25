@@ -105,10 +105,6 @@ fixes, et le Cash Report de chaque relevé est recalculé depuis ses transaction
   30 campagnes complètes, mais non fermée. Et même quand elle passe, l'assertion ne prouve
   que le départ de la session côté serveur, pas que l'interface a réagi au clic. Mordra le
   jour où ce test devient instable sous une charge CI plus lourde.
-- **Aucune sauvegarde de PostgreSQL sur le VPS.** Le seul contenu irremplaçable est la table
-  des utilisateurs (comptes, mots de passe hachés, secrets TOTP) ; les données de
-  portefeuille n'y sont pas, par construction (§7.1). À poser au moment de la mise en ligne
-  réelle (tâche 10, parquée).
 - **La marche arrière de `core/migrations/0003_cache_table.py` code en dur
   `DROP TABLE IF EXISTS django_cache`** alors que la marche avant appelle `createcachetable`,
   qui lit `settings.CACHES["default"]["LOCATION"]`. Un déploiement posant
@@ -116,12 +112,6 @@ fixes, et le Cash Report de chaque relevé est recalculé depuis ses transaction
   marche arrière en supprimer une autre — c'est-à-dire aucune. Sans conséquence tant que la
   variable n'est pas posée, et le `IF EXISTS` fait que rien n'échoue bruyamment ; c'est
   précisément ce qui le rend silencieux.
-- **`deploy/traefik/` vit dans ce dépôt** faute d'un deuxième occupant du VPS ; déménagera
-  dans un dépôt à part à l'arrivée d'une deuxième application.
-- **`traefik:v3.3` (`deploy/traefik/docker-compose.yml`) est provisoire, pas un choix.** La
-  ligne 3.7.x existe déjà ; la décision prise au sous-projet 3 était de constater la version
-  courante au moment du déploiement, lequel est parqué. Sans cette ligne, le premier lecteur
-  prendra `v3.3` pour une version retenue délibérément.
 - **`SimpleRateThrottle` garde son état par requête sur une instance partagée.**
   `apps/api/ib/api.py` construit `FLEX_THROTTLE` une seule fois à l'import, et
   `allow_request` écrit `self.key`, `self.history` et `self.now` sur cette instance unique.
@@ -1107,6 +1097,28 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   une fois sur deux, jamais deux fois le même test. La cause est le délai par défaut d'une
   seconde des `findBy...` de Testing Library, qui expire quand la machine est chargée. À
   traiter par un délai explicite sur les assertions concernées, pas en relançant jusqu'au vert.
+
+---
+
+## Reporté par le sous-projet 32 (publication prod et dev)
+
+- **Les sauvegardes PostgreSQL restent sur le VPS.** `iba prod backup` en garde 14 dans
+  `/srv/iba/backups` : une fausse manœuvre se rattrape, la perte du VPS non. Le seul contenu
+  irremplaçable est la table des utilisateurs (comptes, mots de passe hachés, secrets TOTP) et
+  les blobs de sauvegarde chiffrés ; une copie hors du serveur (stockage objet OVH, ou tirée
+  depuis une autre machine) reste à poser.
+- **Une session d'admin sur la dev déconnecte celle de la prod** : les deux tunnels arrivent
+  sur `localhost`, et les cookies ne séparent pas les ports. Rendre `SESSION_COOKIE_NAME`
+  réglable par instance le fermerait.
+- **`seb` est dans le groupe `docker`**, donc root de fait, et contourne la séparation `iba` /
+  `infra`. Le retirer ferait passer toute opération par `sudo -iu`.
+- **`/srv/infra` n'a pas de dépôt distant** : son historique vit sur le VPS seul.
+- **Aucun tableau de trafic** : les journaux d'accès JSON de Traefik permettent GoAccess ou
+  Prometheus, rien n'est posé.
+- **Caddy est arrêté et désactivé, pas désinstallé** : `/etc/caddy/Caddyfile` ne sert plus
+  rien et peut tromper un lecteur.
+- **`deploy/iba` n'est vérifié que par `bash -n` et ses tests** : `shellcheck` n'est pas
+  installé sur le VPS.
 
 ---
 
