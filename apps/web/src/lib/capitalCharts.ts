@@ -234,8 +234,21 @@ export function returnOption(capital: StrategyCapital, series: readonly CapitalS
         smooth: false,
         connectNulls: false,
         ...LINE_SYMBOLS,
-        color: colors.series[0],
+        color: colors.success,
         lineStyle: { width: 2 },
+        areaStyle: {
+          color: {
+            type: "linear",
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: colors.areaTop },
+              { offset: 1, color: `${colors.success}00` },
+            ],
+          },
+        },
         data: linePoints(capital.months.map((m) => m.returnRate)),
         markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { color: colors.track, width: 1, type: "solid" }, data: [{ yAxis: 0 }] },
       },

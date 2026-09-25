@@ -134,6 +134,23 @@ describe("exposureOption", () => {
     expect((returnOption(CAPITAL, SERIES, colors).tooltip as { confine: boolean }).confine).toBe(true);
   });
 
+  it.each(["light", "dark"] as const)("draws the %s return line in teal over the mockup's fading teal area", (theme) => {
+    const c = CHART_COLORS[theme];
+    const [line] = returnOption(CAPITAL, SERIES, c).series as LineSeriesOption[];
+    expect(line.color).toBe(c.success);
+    expect(line.areaStyle?.color).toMatchObject({
+      type: "linear",
+      x: 0,
+      y: 0,
+      x2: 0,
+      y2: 1,
+      colorStops: [
+        { offset: 0, color: `${c.success}${theme === "dark" ? "52" : "33"}` },
+        { offset: 1, color: `${c.success}00` },
+      ],
+    });
+  });
+
   it("leaves no gap in a ring of a single slice", () => {
     const [, pie] = exposureOption(sectorSlices(SEVEN.slice(0, 1), ownSector, "?"), "Autres", colors, "USD").series as PieSeriesOption[];
     expect(pie.padAngle).toBe(0);

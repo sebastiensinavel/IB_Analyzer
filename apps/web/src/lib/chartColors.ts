@@ -26,6 +26,11 @@ export interface ChartColors {
   axisText: string;
   /** Bordure des échelles du graphe de cours : `--border`. */
   axisBorder: string;
+  /**
+   * Haut du dégradé sous une courbe teal, celui de « Valeur totale du patrimoine » dans la
+   * maquette : `success` à 0,2 d'opacité en clair, 0,32 en sombre, qui s'efface jusqu'à 0.
+   */
+  areaTop: string;
 }
 
 export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
@@ -40,6 +45,7 @@ export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
     grid: "#c8d2d9",
     axisText: "#8795a0",
     axisBorder: "#e3e8ec",
+    areaTop: "#0e9f9033",
   },
   dark: {
     success: "#2bc4b4",
@@ -52,6 +58,7 @@ export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
     grid: "#2b3a46",
     axisText: "#63727d",
     axisBorder: "#1c2731",
+    areaTop: "#2bc4b452",
   },
 };
 
