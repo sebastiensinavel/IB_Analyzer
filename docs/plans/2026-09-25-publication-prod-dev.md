@@ -384,7 +384,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   code de sortie 2 sur usage invalide, 1 sur refus ; sauvegardes
   `${IBA_HOME:-/srv/iba}/backups/<projet>-AAAAMMJJ-HHMMSS.sql.gz`, 14 par projet.
 
-- [ ] **Step 1 : écrire les tests qui échouent**
+- [x] **Step 1 : écrire les tests qui échouent**
 
 `apps/api/tests/test_iba_script.py` :
 
@@ -560,12 +560,12 @@ def test_backup_keeps_the_14_newest_of_its_own_project_only(env):
 Note sur la rétention : le nouveau fichier porte la date du jour (2026 ou plus, après janvier),
 il trie donc après tous les `202601…` ; 16 anciens + 1 neuf = 17, les 3 plus anciens partent.
 
-- [ ] **Step 2 : vérifier qu'ils échouent**
+- [x] **Step 2 : vérifier qu'ils échouent**
 
 Run : `uv run --project apps/api pytest apps/api/tests/test_iba_script.py -q`
 Expected : FAIL partout (`deploy/iba` n'existe pas).
 
-- [ ] **Step 3 : écrire `deploy/iba`**
+- [x] **Step 3 : écrire `deploy/iba`**
 
 ```bash
 #!/usr/bin/env bash
@@ -673,13 +673,13 @@ d'une fonction ou du script — elle ne l'est pas ici.
 
 `chmod 755 deploy/iba`.
 
-- [ ] **Step 4 : vérifier que les tests passent**
+- [x] **Step 4 : vérifier que les tests passent**
 
 Run : `uv run --project apps/api pytest apps/api/tests/test_iba_script.py -q`
 Expected : tout PASS. Puis `bash -n deploy/iba` (aucune sortie) ; `shellcheck deploy/iba` si
 l'outil est installé (il ne l'est pas sur le VPS au 2026-09-25 : le noter, ne pas l'installer).
 
-- [ ] **Step 5 : écrire `deploy/systemd/iba-prod.service`**
+- [x] **Step 5 : écrire `deploy/systemd/iba-prod.service`**
 
 ```ini
 # Démarre la prod d'IB Analyzer au boot, même après un `iba prod down` manuel.
@@ -706,7 +706,7 @@ Vérifier : `systemd-analyze verify deploy/systemd/iba-prod.service` (les averti
 `infra-traefik.service` introuvable et l'utilisateur sont attendus hors du VPS configuré ;
 aucune erreur de syntaxe).
 
-- [ ] **Step 6 : commit**
+- [x] **Step 6 : commit**
 
 ```bash
 git add deploy/iba deploy/systemd/iba-prod.service apps/api/tests/test_iba_script.py docs/plans/2026-09-25-publication-prod-dev.md
