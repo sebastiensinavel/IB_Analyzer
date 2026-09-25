@@ -3,6 +3,9 @@ WORKDIR /repo
 RUN corepack enable
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
 COPY packages ./packages
+# vite.config.ts importe tools/dev-env/ports.mjs (ports du serveur de dev) : le build le
+# vérifie au typage, sans quoi l'image ne se construit pas.
+COPY tools/dev-env ./tools/dev-env
 COPY apps/web ./apps/web
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter web build

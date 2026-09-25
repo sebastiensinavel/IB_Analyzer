@@ -217,3 +217,23 @@ def test_compose_refuses_an_env_without_instance(tmp_path):
     result = compose_config(tmp_path, env)
     assert result.returncode != 0
     assert "IBA_INSTANCE" in result.stderr
+
+
+WEB_DIR = REPO_ROOT / "apps" / "web"
+WEB_DOCKERFILE = (WEB_DIR / "Dockerfile").read_text()
+
+
+def test_the_web_image_copies_every_directory_its_build_config_imports():
+    """`pnpm --filter web build` type-checks the Vite config, which imports outside apps/web.
+
+    `tools/dev-env/ports.mjs` became such an import after the image was last built, and the
+    `web` image stopped building without anything noticing until the first real deployment.
+    """
+    copied = set(re.findall(r"^COPY (?!--from)(\S+)", WEB_DOCKERFILE, re.MULTILINE))
+    for config in WEB_DIR.glob("*.config.ts"):
+        for target in re.findall(r"""from ["'](\.\./\.\./[^"']+)["']""", config.read_text()):
+            top = Path(target).relative_to("../..").parts
+            needed = "/".join(top[:2]) if top[0] in ("apps", "packages", "tools") else top[0]
+            assert any(needed == c.rstrip("/") or needed.startswith(c.rstrip("/") + "/") for c in copied), (
+                f"{config.name} imports {target}, but apps/web/Dockerfile never copies {needed}"
+            )
