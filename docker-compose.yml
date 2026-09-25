@@ -1,48 +1,87 @@
+# Une instance par .env : IBA_INSTANCE (prod, dev) nomme la pile iba-<instance>, ses volumes,
+# son réseau interne et ses routeurs Traefik. Jamais COMPOSE_PROJECT_NAME : Compose le remplit
+# du nom du dossier quand il manque, et une pile « prod » vide naîtrait à côté de « iba-prod ».
+# Voir docs/deploiement-vps.md.
+name: iba-${IBA_INSTANCE:?IBA_INSTANCE manquant dans .env (prod ou dev)}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    restart: unless-stopped
+    restart: ${RESTART_POLICY:-unless-stopped}
+    logging: *logging
     networks: [traefik, internal]
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=${TRAEFIK_NETWORK}"
-      - "traefik.http.routers.ibweb.rule=Host(`${PUBLIC_HOST}`)"
-      - "traefik.http.routers.ibweb.entrypoints=websecure"
-      - "traefik.http.routers.ibweb.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.ibweb.priority=1"
-      - "traefik.http.services.ibweb.loadbalancer.server.port=80"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:?TRAEFIK_NETWORK manquant dans .env}"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-web.rule=Host(`${PUBLIC_HOST:?PUBLIC_HOST manquant dans .env}`)"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-web.entrypoints=websecure"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-web.priority=1"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-web.service=iba-${IBA_INSTANCE}-web"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-web.middlewares=iba-${IBA_INSTANCE}-headers"
+      - "traefik.http.services.iba-${IBA_INSTANCE}-web.loadbalancer.server.port=80"
+      # Vide en prod : Traefik retire alors l'en-tête. `noindex` en dev.
+      - "traefik.http.middlewares.iba-${IBA_INSTANCE}-headers.headers.customresponseheaders.X-Robots-Tag=${ROBOTS_TAG:-}"
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    restart: unless-stopped
+    restart: ${RESTART_POLICY:-unless-stopped}
+    logging: *logging
     env_file: .env
-    depends_on: [db]
+    depends_on:
+      db:
+        condition: service_healthy
     networks: [traefik, internal]
+    # L'admin n'est pas routé par Traefik : il se joint par tunnel SSH sur ce port.
+    ports:
+      - "127.0.0.1:${ADMIN_PORT:?ADMIN_PORT manquant dans .env}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
+      # Traefik n'aiguille que les conteneurs `healthy` : sans sonde rapprochée au démarrage,
+      # l'API resterait injoignable 30 s après chaque déploiement.
+      start_period: 60s
+      start_interval: 2s
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=${TRAEFIK_NETWORK}"
-      - "traefik.http.routers.ibapi.rule=Host(`${PUBLIC_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/_allauth`) || PathPrefix(`/static`))"
-      - "traefik.http.routers.ibapi.entrypoints=websecure"
-      - "traefik.http.routers.ibapi.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.ibapi.priority=10"
-      - "traefik.http.services.ibapi.loadbalancer.server.port=8000"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-api.rule=Host(`${PUBLIC_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/_allauth`) || PathPrefix(`/static`))"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-api.entrypoints=websecure"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-api.priority=10"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-api.service=iba-${IBA_INSTANCE}-api"
+      - "traefik.http.routers.iba-${IBA_INSTANCE}-api.middlewares=iba-${IBA_INSTANCE}-headers"
+      - "traefik.http.services.iba-${IBA_INSTANCE}-api.loadbalancer.server.port=8000"
 
   db:
     image: postgres:17-alpine
-    restart: unless-stopped
+    restart: ${RESTART_POLICY:-unless-stopped}
+    logging: *logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    # Un volume neuf passe quelques secondes en initdb, sur un serveur temporaire qui n'écoute
+    # que le socket : la sonde passe par TCP pour n'attendre que le vrai serveur.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+      start_interval: 1s
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks: [internal]

@@ -544,6 +544,7 @@ Chacun a son spec et son plan. Chaque étape livre quelque chose d'utilisable.
    `docs/deploiement-vps.md`, mais le site n'a jamais répondu en HTTPS. La suite demande un
    accès SSH au VPS, le nom de domaine, le nom du réseau Traefik et une source de clone
    atteignable depuis le VPS — quatre informations que seul l'utilisateur peut fournir.
+   Mis en ligne au sous-projet 32, en deux instances (prod et dev).
 4. **Agent local et Aujourd'hui.** Paquet Python, détection, positions intraday.
    **Fait (2026-09-06)**, sans page Aujourd'hui.
 5. **Journaux** Wheel, LEAPS, Condors, avec leurs graphiques. **Fait (2026-09-07)**, avec un

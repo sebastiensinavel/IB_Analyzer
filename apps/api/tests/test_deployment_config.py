@@ -8,7 +8,10 @@ so a permanently `unhealthy` container on a real VPS), and `DJANGO_SECRET_KEY`
 fell back in silence to a value committed in this repository.
 """
 import importlib.util
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -98,3 +101,119 @@ def test_the_image_build_supplies_its_own_key():
     dockerfile = (REPO_ROOT / "apps" / "api" / "Dockerfile").read_text()
     build_step = next(line for line in dockerfile.splitlines() if "collectstatic" in line)
     assert "DJANGO_SECRET_KEY=" in build_step, build_step
+
+
+LABELS = re.findall(r'^\s*-\s*"(traefik\.[^"]+)"', COMPOSE, re.MULTILINE)
+SERVICE_BLOCKS = dict(
+    re.findall(r"^  (\w+):\n((?:    .*\n|\n)+)", COMPOSE.split("\nvolumes:")[0], re.MULTILINE)
+)
+
+
+def traefik_names(kind):
+    """The router, service or middleware names the labels declare."""
+    return {m.group(1) for l in LABELS if (m := re.match(rf"traefik\.http\.{kind}\.([^.]+)\.", l))}
+
+
+@pytest.mark.parametrize("kind", ["routers", "services", "middlewares"])
+def test_every_traefik_name_belongs_to_the_instance(kind):
+    """Two stacks behind one Traefik that both declare `ibweb` fight over one router."""
+    names = traefik_names(kind)
+    assert names, f"no traefik {kind} declared"
+    for name in names:
+        assert name.startswith("iba-${IBA_INSTANCE}-"), f"{kind} {name!r} is not scoped to the instance"
+
+
+def test_the_admin_is_never_routed_from_the_internet():
+    """allauth's 2FA does not guard the Django admin's own login form."""
+    rules = [l for l in LABELS if ".rule=" in l]
+    assert rules
+    for rule in rules:
+        assert "/admin" not in rule, rule
+
+
+def test_every_published_port_is_bound_to_loopback():
+    published = re.findall(r"ports:\n((?:\s+- .*\n)+)", COMPOSE)
+    assert published, "the api must publish its admin port for the SSH tunnel"
+    for block in published:
+        for line in re.findall(r"- \"?([^\"\n]+)", block):
+            assert line.startswith("127.0.0.1:"), f"port {line!r} is reachable from outside the VPS"
+
+
+@pytest.mark.parametrize("service", ["web", "api", "db"])
+def test_each_service_restarts_by_policy_and_rotates_its_logs(service):
+    block = SERVICE_BLOCKS[service]
+    assert "restart: ${RESTART_POLICY:-unless-stopped}" in block
+    assert "logging: *logging" in block
+    assert 'max-size: "10m"' in COMPOSE and 'max-file: "5"' in COMPOSE
+
+
+@pytest.mark.parametrize("name", ["IBA_INSTANCE", "ADMIN_PORT", "PUBLIC_HOST", "TRAEFIK_NETWORK"])
+def test_a_missing_instance_variable_stops_compose(name):
+    """One `:?` anywhere makes `docker compose` refuse the whole file when the variable is unset."""
+    assert "${" + name + ":?" in COMPOSE, f"{name} unset would silently yield an empty value"
+
+
+def test_the_env_template_describes_both_instances_and_the_tunnel():
+    for name in ["IBA_INSTANCE", "RESTART_POLICY", "ADMIN_PORT", "ROBOTS_TAG"]:
+        env_example_value(name)
+    # Compose fills COMPOSE_PROJECT_NAME from the directory name when .env lacks it, and it
+    # would override `name:`; the template must not suggest setting it.
+    assert not re.search(r"^COMPOSE_PROJECT_NAME=", ENV_EXAMPLE, re.MULTILINE)
+    allowed = [h.strip() for h in env_example_value("DJANGO_ALLOWED_HOSTS").split(",")]
+    assert {"127.0.0.1", "localhost"} <= set(allowed)
+    origins = env_example_value("DJANGO_CSRF_TRUSTED_ORIGINS")
+    assert "http://localhost:" in origins
+    assert env_example_value("TRAEFIK_NETWORK") == "traefik"
+
+
+def test_the_project_is_named_by_the_instance_variable_alone():
+    """`name:` from IBA_INSTANCE, never from the directory: `prod` would be a second stack."""
+    assert re.search(r"^name: iba-\$\{IBA_INSTANCE:\?", COMPOSE, re.MULTILINE)
+
+
+def test_migrations_wait_for_a_ready_database():
+    """A fresh volume runs initdb for seconds; `run api migrate` must not start before."""
+    assert "pg_isready" in SERVICE_BLOCKS["db"]
+    assert re.search(r"depends_on:\n\s+db:\n\s+condition: service_healthy", SERVICE_BLOCKS["api"])
+
+
+def test_the_api_is_routed_soon_after_a_deploy():
+    """Traefik routes only healthy containers: without a start interval, /api is down 30 s."""
+    block = SERVICE_BLOCKS["api"]
+    assert "start_period:" in block and "start_interval:" in block
+
+
+DOCKER = shutil.which("docker")
+
+
+def compose_config(tmp_path, env):
+    env_file = tmp_path / "env"
+    env_file.write_text("".join(f"{k}={v}\n" for k, v in env.items()))
+    (tmp_path / ".env").write_text("")
+    return subprocess.run(
+        ["docker", "compose", "-f", str(REPO_ROOT / "docker-compose.yml"),
+         "--project-directory", str(tmp_path), "--env-file", str(env_file), "config"],
+        capture_output=True, text=True, env={"PATH": os.environ["PATH"], "HOME": str(tmp_path)},
+    )
+
+
+INSTANCE_ENV = {
+    "IBA_INSTANCE": "dev", "ADMIN_PORT": "8211", "PUBLIC_HOST": "dev.example.test",
+    "TRAEFIK_NETWORK": "traefik", "POSTGRES_USER": "ib", "POSTGRES_PASSWORD": "x", "POSTGRES_DB": "ib",
+}
+
+
+@pytest.mark.skipif(DOCKER is None, reason="docker absent")
+def test_compose_names_the_stack_from_the_instance(tmp_path):
+    result = compose_config(tmp_path, INSTANCE_ENV)
+    assert result.returncode == 0, result.stderr
+    assert re.search(r"^name: iba-dev$", result.stdout, re.MULTILINE)
+    assert "iba-dev-web.rule" in result.stdout
+
+
+@pytest.mark.skipif(DOCKER is None, reason="docker absent")
+def test_compose_refuses_an_env_without_instance(tmp_path):
+    env = {k: v for k, v in INSTANCE_ENV.items() if k != "IBA_INSTANCE"}
+    result = compose_config(tmp_path, env)
+    assert result.returncode != 0
+    assert "IBA_INSTANCE" in result.stderr

@@ -1,0 +1,7 @@
+#!/bin/sh
+# Installé en /usr/local/bin/iba (sudo install -m 755 deploy/iba-launcher /usr/local/bin/iba).
+# /srv/iba est en 750 : seul l'utilisateur iba peut lire le script du clone de prod, donc ce
+# lanceur lui passe la main. Il ne change jamais : le script, lui, suit les déploiements.
+script=/srv/iba/prod/deploy/iba
+[ "$(id -un)" = iba ] && exec "$script" "$@"
+exec sudo -u iba -- "$script" "$@"

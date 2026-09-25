@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# iba <prod|dev> <commande> — exploitation des instances d'IB Analyzer sur le VPS.
+# Procédure complète : docs/deploiement-vps.md.
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+usage : iba <prod|dev> <commande>
+  up                 construire, démarrer, migrer
+  down               arrêter (les données restent)
+  status             conteneurs et révision déployée
+  logs               journaux en continu
+  migrate            migrations Django
+  createsuperuser    créer un administrateur
+  backup             sauvegarder la base (14 gardées par instance)
+  deploy <ref>       prod : un tag ; dev : une branche ou un tag
+  reset              dev seulement : tout effacer et repartir de zéro
+EOF
+  exit 2
+}
+
+fail() { echo "iba : $*" >&2; exit 1; }
+
+[ $# -ge 2 ] || usage
+instance=$1 command=$2
+shift 2
+case "$instance" in prod|dev) ;; *) usage ;; esac
+case "$command" in up|down|status|logs|migrate|createsuperuser|backup|deploy|reset) ;; *) usage ;; esac
+
+home=${IBA_HOME:-/srv/iba}
+dir=$home/$instance
+
+# Les clones, les .env et les sauvegardes appartiennent à l'utilisateur de l'application, et
+# /srv/iba est en 750 : on lui passe la main avant même de regarder le dossier.
+user=${IBA_USER:-iba}
+if [ "$(id -un)" != "$user" ]; then
+  exec sudo -u "$user" -- env IBA_HOME="$home" "$(readlink -f "$0")" "$instance" "$command" "$@"
+fi
+
+[ -d "$dir" ] || fail "$dir introuvable"
+cd "$dir"
+declared=$(sed -n 's/^IBA_INSTANCE=//p' .env 2>/dev/null || true)
+[ "$declared" = "$instance" ] \
+  || fail "$dir/.env déclare IBA_INSTANCE=« $declared », attendu « $instance »"
+# COMPOSE_PROJECT_NAME écraserait `name: iba-<instance>` de docker-compose.yml.
+! grep -q '^COMPOSE_PROJECT_NAME=' .env || fail "$dir/.env ne doit pas poser COMPOSE_PROJECT_NAME"
+project=iba-$instance
+
+migrate() { docker compose run --rm api python manage.py migrate; }
+
+backup() {
+  local dest=$home/backups file
+  mkdir -p "$dest"
+  file=$dest/$project-$(date +%Y%m%d-%H%M%S).sql.gz
+  # .part d'abord : une sauvegarde interrompue ne doit jamais passer pour une sauvegarde.
+  if ! docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > "$file.part"; then
+    rm -f "$file.part"
+    fail "sauvegarde impossible (la base de $project tourne-t-elle ?)"
+  fi
+  mv "$file.part" "$file"
+  # Les noms portent l'horodatage : l'ordre alphabétique est l'ordre chronologique.
+  find "$dest" -maxdepth 1 -name "$project-*.sql.gz" | sort -r | tail -n +15 | xargs -r rm --
+  echo "$file"
+}
+
+resolve() {
+  local ref=$1
+  if git rev-parse --verify -q "refs/tags/$ref^{commit}"; then return; fi
+  [ "$instance" = prod ] && fail "la prod ne déploie que des tags ; « $ref » n'en est pas un"
+  git rev-parse --verify -q "origin/$ref^{commit}" || fail "« $ref » n'est ni un tag ni une branche de origin"
+}
+
+case "$command" in
+  up)              docker compose up -d --build; migrate ;;
+  down)            docker compose down ;;
+  status)          docker compose ps; git describe --tags --always ;;
+  logs)            docker compose logs -f --tail=200 ;;
+  migrate)         migrate ;;
+  createsuperuser) docker compose run --rm api python manage.py createsuperuser ;;
+  backup)          backup ;;
+  deploy)
+    [ $# -ge 1 ] || usage
+    git fetch --tags origin
+    sha=$(resolve "$1")
+    [ "$instance" = prod ] && backup
+    git checkout --detach "$sha"
+    docker compose up -d --build
+    migrate
+    ;;
+  reset)
+    [ "$instance" = dev ] || fail "reset est réservé à la dev"
+    read -r -p "Tout effacer de $project ? Retapez « $project » : " answer || answer=
+    [ "$answer" = "$project" ] || fail "abandon, rien n'a été effacé"
+    docker compose down -v
+    docker compose up -d --build
+    migrate
+    docker compose run --rm api python manage.py createsuperuser
+    ;;
+esac

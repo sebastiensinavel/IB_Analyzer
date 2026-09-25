@@ -57,7 +57,7 @@ toute tâche.
 
 ## Préalable : le worktree
 
-- [ ] Créer le worktree `.claude/worktrees/publication` sur une branche `publication` depuis
+- [x] Créer le worktree `.claude/worktrees/publication` sur une branche `publication` depuis
   `main` (skill `superpowers:using-git-worktrees`), y copier ce plan s'il n'y est pas.
 
 ---
@@ -74,7 +74,7 @@ toute tâche.
   `ROBOTS_TAG` (lues par la tâche 2 et documentées en tâche 4) ; routeurs
   `<projet>-web`, `<projet>-api`, services homonymes, middleware `<projet>-headers`.
 
-- [ ] **Step 1 : écrire les tests qui échouent**
+- [x] **Step 1 : écrire les tests qui échouent**
 
 Ajouter à la fin de `apps/api/tests/test_deployment_config.py` :
 
@@ -139,13 +139,13 @@ def test_the_env_template_describes_both_instances_and_the_tunnel():
     assert env_example_value("TRAEFIK_NETWORK") == "traefik"
 ```
 
-- [ ] **Step 2 : vérifier qu'ils échouent**
+- [x] **Step 2 : vérifier qu'ils échouent**
 
 Run : `uv run --project apps/api pytest apps/api/tests/test_deployment_config.py -q`
 Expected : les nouveaux tests en FAIL (noms `ibweb`, `/admin` dans la règle, aucun `ports:`,
 pas de `RESTART_POLICY`), les six anciens en PASS.
 
-- [ ] **Step 3 : réécrire `docker-compose.yml`**
+- [x] **Step 3 : réécrire `docker-compose.yml`**
 
 ```yaml
 # Une instance par .env : COMPOSE_PROJECT_NAME (iba-prod, iba-dev) nomme la pile, ses
@@ -230,7 +230,7 @@ networks:
 Le test `test_the_healthcheck_host_is_allowed_by_the_env_template` lit toujours
 `urlopen('http://…` : ne pas toucher au `healthcheck`.
 
-- [ ] **Step 4 : réécrire `.env.example`**
+- [x] **Step 4 : réécrire `.env.example`**
 
 ```dotenv
 # Copié en .env dans /srv/iba/prod et /srv/iba/dev, et rempli là-bas. Jamais committé rempli.
@@ -271,12 +271,12 @@ DATABASE_URL=postgres://ib:<le même mot de passe>@db:5432/ib_analyzer
 `env_example_value("ROBOTS_TAG")` doit trouver la ligne : la regex `^ROBOTS_TAG=(.*)$`
 accepte une valeur vide.
 
-- [ ] **Step 5 : vérifier que les tests passent**
+- [x] **Step 5 : vérifier que les tests passent**
 
 Run : `uv run --project apps/api pytest apps/api/tests/test_deployment_config.py -q`
 Expected : tout PASS.
 
-- [ ] **Step 6 : vérifier l'interpolation réelle par Compose**
+- [x] **Step 6 : vérifier l'interpolation réelle par Compose**
 
 Dans un dossier de travail hors dépôt (`$SCRATCH`, par exemple le scratchpad de la session),
 écrire deux fichiers d'environnement factices, sans vrai domaine :
@@ -327,7 +327,7 @@ docker compose --env-file "$SCRATCH/env.broken" config >/dev/null; echo "exit=$?
 
 Expected : `ADMIN_PORT manquant dans .env` et `exit=1`.
 
-- [ ] **Step 7 : vérifier qu'une valeur vide retire l'en-tête dans un vrai Traefik**
+- [x] **Step 7 : vérifier qu'une valeur vide retire l'en-tête dans un vrai Traefik**
 
 Traefik jetable sur un réseau et un port de test, deux nginx étiquetés, l'un avec
 `X-Robots-Tag=` vide, l'autre avec `noindex` :
@@ -360,7 +360,7 @@ erreur de routeur**, s'arrêter et appliquer le repli du spec §3.1 : retirer le
 qui les ajoute, et documenter `COMPOSE_FILE=docker-compose.yml:docker-compose.dev.override.yml`
 dans `.env.example` pour la dev — puis adapter les tests du Step 1 en conséquence.
 
-- [ ] **Step 8 : commit**
+- [x] **Step 8 : commit**
 
 ```bash
 git add docker-compose.yml .env.example apps/api/tests/test_deployment_config.py docs/plans/2026-09-25-publication-prod-dev.md
@@ -384,7 +384,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   code de sortie 2 sur usage invalide, 1 sur refus ; sauvegardes
   `${IBA_HOME:-/srv/iba}/backups/<projet>-AAAAMMJJ-HHMMSS.sql.gz`, 14 par projet.
 
-- [ ] **Step 1 : écrire les tests qui échouent**
+- [x] **Step 1 : écrire les tests qui échouent**
 
 `apps/api/tests/test_iba_script.py` :
 
@@ -560,12 +560,12 @@ def test_backup_keeps_the_14_newest_of_its_own_project_only(env):
 Note sur la rétention : le nouveau fichier porte la date du jour (2026 ou plus, après janvier),
 il trie donc après tous les `202601…` ; 16 anciens + 1 neuf = 17, les 3 plus anciens partent.
 
-- [ ] **Step 2 : vérifier qu'ils échouent**
+- [x] **Step 2 : vérifier qu'ils échouent**
 
 Run : `uv run --project apps/api pytest apps/api/tests/test_iba_script.py -q`
 Expected : FAIL partout (`deploy/iba` n'existe pas).
 
-- [ ] **Step 3 : écrire `deploy/iba`**
+- [x] **Step 3 : écrire `deploy/iba`**
 
 ```bash
 #!/usr/bin/env bash
@@ -673,13 +673,13 @@ d'une fonction ou du script — elle ne l'est pas ici.
 
 `chmod 755 deploy/iba`.
 
-- [ ] **Step 4 : vérifier que les tests passent**
+- [x] **Step 4 : vérifier que les tests passent**
 
 Run : `uv run --project apps/api pytest apps/api/tests/test_iba_script.py -q`
 Expected : tout PASS. Puis `bash -n deploy/iba` (aucune sortie) ; `shellcheck deploy/iba` si
 l'outil est installé (il ne l'est pas sur le VPS au 2026-09-25 : le noter, ne pas l'installer).
 
-- [ ] **Step 5 : écrire `deploy/systemd/iba-prod.service`**
+- [x] **Step 5 : écrire `deploy/systemd/iba-prod.service`**
 
 ```ini
 # Démarre la prod d'IB Analyzer au boot, même après un `iba prod down` manuel.
@@ -706,7 +706,7 @@ Vérifier : `systemd-analyze verify deploy/systemd/iba-prod.service` (les averti
 `infra-traefik.service` introuvable et l'utilisateur sont attendus hors du VPS configuré ;
 aucune erreur de syntaxe).
 
-- [ ] **Step 6 : commit**
+- [x] **Step 6 : commit**
 
 ```bash
 git add deploy/iba deploy/systemd/iba-prod.service apps/api/tests/test_iba_script.py docs/plans/2026-09-25-publication-prod-dev.md
@@ -732,7 +732,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   `letsencrypt`, que la pile de la tâche 1 référence ; l'unité `infra-traefik.service` que
   `iba-prod.service` attend.
 
-- [ ] **Step 1 : constater la version de Traefik**
+- [x] **Step 1 : constater la version de Traefik**
 
 ```bash
 docker pull traefik:v3 >/dev/null && docker run --rm traefik:v3 version | sed -n 's/^Version: *//p'
@@ -741,7 +741,7 @@ docker pull traefik:v3 >/dev/null && docker run --rm traefik:v3 version | sed -n
 Noter la version exacte (par exemple `3.7.2`) : elle s'écrit en toutes lettres dans l'image
 (`traefik:v3.7.2`), jamais `v3` ni `latest`.
 
-- [ ] **Step 2 : `traefik/`**
+- [x] **Step 2 : `traefik/`**
 
 `~/infra-staging/traefik/docker-compose.yml` (remplacer `<version>` par celle du Step 1) :
 
@@ -799,7 +799,7 @@ networks:
 ACME_EMAIL=<email>
 ```
 
-- [ ] **Step 3 : `vitrine/`**
+- [x] **Step 3 : `vitrine/`**
 
 `~/infra-staging/vitrine/nginx.conf` — reproduit la liste blanche de `/etc/caddy/Caddyfile` :
 
@@ -886,7 +886,7 @@ services:
 networks: !reset {}
 ```
 
-- [ ] **Step 4 : vérifier la vitrine contre sa liste blanche**
+- [x] **Step 4 : vérifier la vitrine contre sa liste blanche**
 
 ```bash
 cd ~/infra-staging/vitrine
@@ -905,7 +905,7 @@ complète : `docker compose config >/dev/null` dans `traefik/` (avec un `.env` c
 `ACME_EMAIL` factice, supprimé ensuite) et dans `vitrine/` — aucune erreur. Le réseau externe
 `traefik` n'existe pas encore : `config` ne le vérifie pas, c'est attendu.
 
-- [ ] **Step 5 : `systemd/`**
+- [x] **Step 5 : `systemd/`**
 
 `~/infra-staging/systemd/infra-traefik.service` :
 
@@ -935,7 +935,7 @@ WantedBy=multi-user.target
 Vérifier : `systemd-analyze verify ~/infra-staging/systemd/*.service` — pas d'erreur de
 syntaxe (les avertissements d'utilisateur ou de dossier absents sont attendus).
 
-- [ ] **Step 6 : `README.md` et `.gitignore`**
+- [x] **Step 6 : `README.md` et `.gitignore`**
 
 `~/infra-staging/.gitignore` :
 
@@ -974,7 +974,7 @@ Les applications vivent chacune sous leur propre utilisateur (`/srv/iba` pour IB
 - Rien n'est publié hors de 80, 443 et `127.0.0.1`.
 ```
 
-- [ ] **Step 7 : commit (le plan seul)**
+- [x] **Step 7 : commit (le plan seul)**
 
 Vérifier d'abord que rien de `~/infra-staging` n'est entré dans le worktree :
 `git status --short` ne montre que le plan.
@@ -998,13 +998,13 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Modify : `docs/specs/2026-09-03-architecture-design.md` (§12, sous-projet 3)
 - Modify : `docs/specs/2026-09-25-publication-prod-dev-design.md` (statut)
 
-- [ ] **Step 1 : supprimer `deploy/traefik/`**
+- [x] **Step 1 : supprimer `deploy/traefik/`**
 
 `git rm -r deploy/traefik`. Puis `grep -rn "deploy/traefik" --exclude-dir=node_modules
 --exclude-dir=.git .` : les seules occurrences restantes sont dans `docs/specs/` et
 `docs/plans/` datés d'avant (historiques, on n'y touche pas), dans ce plan et dans le spec 32.
 
-- [ ] **Step 2 : réécrire `docs/deploiement-vps.md`**
+- [x] **Step 2 : réécrire `docs/deploiement-vps.md`**
 
 Structure, dans l'ordre d'exécution, chaque commande en bloc de code, `<domaine-prod>`,
 `<domaine-dev>`, `<vps>` comme seuls emplacements :
@@ -1047,7 +1047,7 @@ Structure, dans l'ordre d'exécution, chaque commande en bloc de code, `<domaine
 Garder de l'ancien texte : le paragraphe sur `127.0.0.1` dans `DJANGO_ALLOWED_HOSTS` et
 celui sur `django_cache` après la première migration.
 
-- [ ] **Step 3 : `CLAUDE.md`**
+- [x] **Step 3 : `CLAUDE.md`**
 
 - Règle « Aucun nom de domaine » : remplacer « et dans `deploy/traefik/.env` » par « et dans
   `/srv/infra`, hors du dépôt ».
@@ -1066,7 +1066,7 @@ celui sur `django_cache` après la première migration.
 - Outillage : ajouter que `test_deployment_config.py` et `test_iba_script.py` ne demandent
   pas PostgreSQL.
 
-- [ ] **Step 4 : `docs/points-reportes.md`**
+- [x] **Step 4 : `docs/points-reportes.md`**
 
 Dans « Reporté par les sous-projets 3 et 4 », supprimer les entrées « `deploy/traefik/` vit
 dans ce dépôt » et « `traefik:v3.3` … est provisoire » ; remplacer « Aucune sauvegarde de
@@ -1090,13 +1090,13 @@ PostgreSQL sur le VPS » par la version réduite ci-dessous. Ajouter une section
   rien et peut tromper un lecteur.
 ```
 
-- [ ] **Step 5 : specs**
+- [x] **Step 5 : specs**
 
 `docs/specs/2026-09-03-architecture-design.md` §12, point 3 : ajouter « Mis en ligne au
 sous-projet 32. » ; `docs/specs/2026-09-25-publication-prod-dev-design.md` : `Statut : livré
 (<date>).`
 
-- [ ] **Step 6 : vérification finale**
+- [x] **Step 6 : vérification finale**
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d db   # si la base de dev ne tourne pas
@@ -1109,7 +1109,7 @@ grep -rniF "$(sed -n 's/^VITRINE_HOST=//p' ~/infra-staging/vitrine/.env)" \
 
 Expected : `pnpm test:api` et `pnpm check` verts ; le `grep` affiche `aucun domaine`.
 
-- [ ] **Step 7 : commit**
+- [x] **Step 7 : commit**
 
 ```bash
 git add -A docs CLAUDE.md deploy
