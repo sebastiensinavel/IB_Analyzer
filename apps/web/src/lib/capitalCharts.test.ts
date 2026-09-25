@@ -122,6 +122,18 @@ describe("exposureOption", () => {
     expect(pie.padAngle).toBeGreaterThan(0);
   });
 
+  it("keeps its tooltip inside the chart, one fact per line, the sector name escaped", () => {
+    const option = exposureOption(sectorSlices(SEVEN.slice(0, 1), ownSector, "?"), "Autres", colors, "USD");
+    const tooltip = option.tooltip as { confine: boolean; formatter: (params: unknown) => string };
+    expect(tooltip.confine).toBe(true);
+    expect(tooltip.formatter({ name: "R&D <b>", value: 1234.5, percent: 42 })).toBe("<b>R&amp;D &lt;b&gt;</b><br/>1,234.50 USD<br/>42.0%");
+  });
+
+  it("keeps the axis tooltips of the capital and return charts inside the chart", () => {
+    expect((capitalOption(CAPITAL, SERIES, colors).tooltip as { confine: boolean }).confine).toBe(true);
+    expect((returnOption(CAPITAL, SERIES, colors).tooltip as { confine: boolean }).confine).toBe(true);
+  });
+
   it("leaves no gap in a ring of a single slice", () => {
     const [, pie] = exposureOption(sectorSlices(SEVEN.slice(0, 1), ownSector, "?"), "Autres", colors, "USD").series as PieSeriesOption[];
     expect(pie.padAngle).toBe(0);

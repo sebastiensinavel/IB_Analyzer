@@ -19,7 +19,7 @@ export function MonthlyPnlCard({ stats, series, isDark }: MonthlyPnlCardProps) {
   const option = {
     textStyle: { fontFamily: CHART_FONT, color: colors.foreground },
     grid: { ...monthGrid(series), top: 16, bottom: 32 },
-    tooltip: { trigger: "axis", valueFormatter: (value: number) => `${formatAmount(value)} ${stats.currency}` },
+    tooltip: { trigger: "axis", confine: true, valueFormatter: (value: number) => `${formatAmount(value)} ${stats.currency}` },
     xAxis: { type: "category", data: stats.months.map((m) => m.month), axisLine: { lineStyle: { color: colors.track } } },
     yAxis: { type: "value", splitLine: { lineStyle: { color: colors.track } } },
     series: [

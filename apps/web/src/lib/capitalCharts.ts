@@ -1,4 +1,4 @@
-import type { EChartsOption } from "echarts";
+import { format, type EChartsOption } from "echarts";
 import type { CapitalScope, Exposure, StrategyCapital } from "@ib/ledger";
 import { CHART_FONT, type ChartColors } from "@/lib/chartColors";
 import { formatAmount, formatRate } from "@/lib/format";
@@ -125,13 +125,15 @@ export function exposureOption(slices: readonly SectorSlice[], other: string, co
     textStyle: { fontFamily: CHART_FONT, color: colors.foreground },
     tooltip: {
       trigger: "item",
+      confine: true,
       backgroundColor: colors.surface,
       borderColor: colors.axisBorder,
       textStyle: { color: colors.foreground, fontFamily: CHART_FONT, fontSize: 12 },
       extraCssText: "box-shadow:none;border-radius:8px;",
       formatter: (params: unknown) => {
         const { name, value, percent } = params as { name: string; value: number; percent: number };
-        return `${name}: ${formatAmount(value)} ${currency} (${formatRate(percent / 100)})`;
+        // One fact per line, the sector — typed by the user in the sector table — escaped.
+        return `<b>${format.encodeHTML(name)}</b><br/>${formatAmount(value)} ${currency}<br/>${formatRate(percent / 100)}`;
       },
     },
     series: [
@@ -171,6 +173,7 @@ export function capitalOption(capital: StrategyCapital, series: readonly Capital
     legend: { type: "scroll", top: 0, textStyle: { color: colors.foreground } },
     tooltip: {
       trigger: "axis",
+      confine: true,
       valueFormatter: (value: unknown) => `${typeof value === "number" ? formatAmount(value) : "—"} ${capital.currency}`,
     },
     // The cumulative P/L usually ends near 0, and its wrapped end label reaches half its height
@@ -219,6 +222,7 @@ export function returnOption(capital: StrategyCapital, series: readonly CapitalS
     grid: { ...monthGrid(series), top: 16, bottom: 32 },
     tooltip: {
       trigger: "axis",
+      confine: true,
       valueFormatter: (value: unknown) => (typeof value === "number" ? formatRate(value) : "—"),
     },
     xAxis: { type: "category", boundaryGap: true, data: capital.months.map((m) => m.month), axisLine: { lineStyle: { color: colors.track } } },
