@@ -11,18 +11,18 @@ interface ExposureCardProps {
   capital: StrategyCapital;
   /** The Wheel's split of each sector between the shares assigned and the puts' cash. */
   detailed: boolean;
-  /** Said in place of the pie when nothing is open. */
+  /** Said in place of the donut when nothing is open. */
   empty: string;
   sectorOf: (ticker: string) => string | null;
   isDark: boolean;
-  /** The legend table beside the pie; the dashboard shows the pie alone. */
+  /** The legend table beside the donut; the dashboard shows the donut alone. */
   withTable?: boolean;
 }
 
 /**
- * What a scope ties up per sector now: a pie on the left and its legend table on the right,
- * scrolling within the pie's height under a sticky header — the same card fills a statistics page
- * and the dashboard, which shows the pie alone. Only a very narrow card puts the table under the pie.
+ * What a scope ties up per sector now: a donut on the left, 18 rem at most, and its legend table taking the rest on the right,
+ * scrolling within the donut's height under a sticky header — the same card fills a statistics page
+ * and the dashboard, which shows the donut alone. Only a very narrow card puts the table under the donut.
  */
 export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, withTable = true }: ExposureCardProps) {
   const { t } = useTranslation();
@@ -38,13 +38,20 @@ export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, withT
         {slices.length === 0 ? (
           <p className="text-sm text-muted-foreground">{empty}</p>
         ) : (
-          <div className={withTable ? "grid items-center gap-4 @md:grid-cols-2" : undefined}>
-            <div data-testid="exposure-chart" className="w-full">
+          <div className={withTable ? "grid items-center gap-6 @md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]" : undefined}>
+            <div data-testid="exposure-chart" className="relative w-full">
               <ReactECharts
                 option={exposureOption(slices, t("stats.exposure.other"), colors, capital.currency)}
                 opts={{ renderer: "svg" }}
                 style={{ height: 260, width: "100%" }}
               />
+              {/* The largest sector in the hole, as the mockup names its largest class. */}
+              <div data-testid="exposure-center" className="pointer-events-none absolute inset-0 grid place-items-center">
+                <div className="max-w-[120px] text-center">
+                  <b className="block font-mono text-xl font-semibold tracking-tight tabular-nums">{formatRate(slices[0].share)}</b>
+                  <span className="block truncate text-[11px] text-subtle-foreground">{slices[0].sector}</span>
+                </div>
+              </div>
             </div>
             {withTable && (
               <div
@@ -70,7 +77,7 @@ export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, withT
                       <TableRow key={slice.sector}>
                         <TableCell className="font-medium">
                           <span className="inline-flex items-center gap-2">
-                            <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: swatchColor(slice, index, colors) }} />
+                            <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: swatchColor(slice, index, colors) }} />
                             {slice.sector}
                           </span>
                         </TableCell>
@@ -81,7 +88,7 @@ export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, withT
                           </>
                         )}
                         <TableCell className="text-right font-mono tabular-nums">{formatAmount(slice.total)}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">{formatRate(slice.share)}</TableCell>
+                        <TableCell className="text-right font-mono tabular-nums text-subtle-foreground">{formatRate(slice.share)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

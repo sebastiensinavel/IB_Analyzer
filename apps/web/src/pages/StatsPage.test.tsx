@@ -114,6 +114,10 @@ describe("StatsPage", () => {
     const unclassified = within(card).getByRole("row", { name: /Non classé/ });
     expect(within(unclassified).getAllByText("3,400.00")).toHaveLength(2);
     expect(within(unclassified).getByText("23.6%")).toBeInTheDocument();
+    // The donut's hole names the largest sector.
+    const center = within(card).getByTestId("exposure-center");
+    expect(center).toHaveTextContent("76.4%");
+    expect(center).toHaveTextContent("Energy");
     expect(screen.getByText("Capital de la stratégie")).toBeInTheDocument();
     expect(screen.getByTestId("capital-chart")).toBeInTheDocument();
     expect(screen.getByText("Rendement mensuel")).toBeInTheDocument();

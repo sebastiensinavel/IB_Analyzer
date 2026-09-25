@@ -110,6 +110,11 @@ function linePoints(values: readonly (number | null)[]) {
 /** Symbols on, sized per point by `linePoints`, and never sampled away on a long axis. */
 const LINE_SYMBOLS = { showSymbol: true, showAllSymbol: true, symbol: "circle" } as const;
 
+/** The donut's ring, as the mockup draws it: a 16 px stroke on a 138 px circle, some 68 % to 91 % of its radius. */
+export const DONUT_RADIUS = ["66%", "88%"] as const;
+/** Degrees of empty track between two slices: the mockup's 3 px gap. */
+const DONUT_PAD_ANGLE = 2;
+
 export function exposureOption(slices: readonly SectorSlice[], other: string, colors: ChartColors, currency: string): EChartsOption {
   const data = slices
     .filter((slice) => !slice.folded)
@@ -120,17 +125,37 @@ export function exposureOption(slices: readonly SectorSlice[], other: string, co
     textStyle: { fontFamily: CHART_FONT, color: colors.foreground },
     tooltip: {
       trigger: "item",
+      backgroundColor: colors.surface,
+      borderColor: colors.axisBorder,
+      textStyle: { color: colors.foreground, fontFamily: CHART_FONT, fontSize: 12 },
+      extraCssText: "box-shadow:none;border-radius:8px;",
       formatter: (params: unknown) => {
         const { name, value, percent } = params as { name: string; value: number; percent: number };
         return `${name}: ${formatAmount(value)} ${currency} (${formatRate(percent / 100)})`;
       },
     },
     series: [
+      // The track under the ring: the gaps between slices show it, as in the mockup.
       {
+        id: "track",
         type: "pie",
-        radius: "75%",
+        radius: [...DONUT_RADIUS],
+        silent: true,
         label: { show: false },
-        itemStyle: { borderColor: colors.surface, borderWidth: 2 },
+        emphasis: { disabled: true },
+        tooltip: { show: false },
+        itemStyle: { color: colors.track },
+        data: [{ name: "", value: 1 }],
+        animation: false,
+      },
+      {
+        id: "sectors",
+        type: "pie",
+        radius: [...DONUT_RADIUS],
+        padAngle: data.length > 1 ? DONUT_PAD_ANGLE : 0,
+        label: { show: false },
+        itemStyle: { borderRadius: 3 },
+        emphasis: { scale: true, scaleSize: 4 },
         data,
       },
     ],

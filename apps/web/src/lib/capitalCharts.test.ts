@@ -5,6 +5,7 @@ import { CHART_COLORS } from "@/lib/chartColors";
 import {
   type CapitalSeries,
   capitalOption,
+  DONUT_RADIUS,
   exposureOption,
   monthGrid,
   returnOption,
@@ -97,7 +98,7 @@ describe("swatchColor", () => {
 
 describe("exposureOption", () => {
   it("draws five named slices in the series colors and one gray Other slice summing the rest", () => {
-    const [pie] = exposureOption(sectorSlices(SEVEN, ownSector, "?"), "Autres", colors, "USD").series as PieSeriesOption[];
+    const [, pie] = exposureOption(sectorSlices(SEVEN, ownSector, "?"), "Autres", colors, "USD").series as PieSeriesOption[];
     expect(pie.type).toBe("pie");
     expect(pie.data).toEqual([
       { name: "SA", value: 600, itemStyle: { color: colors.series[0] } },
@@ -109,10 +110,21 @@ describe("exposureOption", () => {
     ]);
   });
 
-  it("adds no Other slice when nothing is folded, and parts the slices with the card's own color", () => {
-    const [pie] = exposureOption(sectorSlices(SEVEN.slice(0, 2), ownSector, "?"), "Autres", colors, "USD").series as PieSeriesOption[];
+  it("adds no Other slice when nothing is folded", () => {
+    const [, pie] = exposureOption(sectorSlices(SEVEN.slice(0, 2), ownSector, "?"), "Autres", colors, "USD").series as PieSeriesOption[];
     expect((pie.data as { name: string }[]).map((d) => d.name)).toEqual(["SA", "SB"]);
-    expect(pie.itemStyle).toMatchObject({ borderColor: colors.surface, borderWidth: 2 });
+  });
+
+  it("draws a donut over a silent track ring of the same radius, the slices parted by gaps", () => {
+    const [track, pie] = exposureOption(sectorSlices(SEVEN.slice(0, 2), ownSector, "?"), "Autres", colors, "USD").series as PieSeriesOption[];
+    expect(track).toMatchObject({ id: "track", radius: [...DONUT_RADIUS], silent: true, itemStyle: { color: colors.track } });
+    expect(pie).toMatchObject({ id: "sectors", radius: [...DONUT_RADIUS] });
+    expect(pie.padAngle).toBeGreaterThan(0);
+  });
+
+  it("leaves no gap in a ring of a single slice", () => {
+    const [, pie] = exposureOption(sectorSlices(SEVEN.slice(0, 1), ownSector, "?"), "Autres", colors, "USD").series as PieSeriesOption[];
+    expect(pie.padAngle).toBe(0);
   });
 });
 
