@@ -134,21 +134,77 @@ describe("exposureOption", () => {
     expect((returnOption(CAPITAL, SERIES, colors).tooltip as { confine: boolean }).confine).toBe(true);
   });
 
-  it.each(["light", "dark"] as const)("draws the %s return line in teal over the mockup's fading teal area", (theme) => {
+  /** A month at +37.5 %, one at −12.5 %, one without capital: 0 sits three quarters of the way down. */
+  const SWING: StrategyCapital = {
+    ...CAPITAL,
+    months: [
+      { ...CAPITAL.months[0], month: "2026-07", returnRate: 0.375 },
+      { ...CAPITAL.months[0], month: "2026-08", returnRate: -0.125 },
+      { ...CAPITAL.months[1], month: "2026-09", returnRate: null },
+    ],
+  };
+
+  it.each(["light", "dark"] as const)("draws the %s return line and its points teal above 0 and red below", (theme) => {
     const c = CHART_COLORS[theme];
-    const [line] = returnOption(CAPITAL, SERIES, c).series as LineSeriesOption[];
-    expect(line.color).toBe(c.success);
-    expect(line.areaStyle?.color).toMatchObject({
+    const [line] = returnOption(SWING, SERIES, c).series as LineSeriesOption[];
+    expect(line.lineStyle?.color).toEqual({
       type: "linear",
       x: 0,
       y: 0,
       x2: 0,
       y2: 1,
       colorStops: [
-        { offset: 0, color: `${c.success}${theme === "dark" ? "52" : "33"}` },
-        { offset: 1, color: `${c.success}00` },
+        { offset: 0, color: c.success },
+        { offset: 0.75, color: c.success },
+        { offset: 0.75, color: c.destructive },
+        { offset: 1, color: c.destructive },
       ],
     });
+    expect((line.data as ({ itemStyle: { color: string } } | null)[]).map((point) => point?.itemStyle.color ?? null)).toEqual([c.success, c.destructive, null]);
+  });
+
+  it("draws the return line in one plain hue when every month has the same sign", () => {
+    const line = (rates: number[]) => {
+      const capital = { ...CAPITAL, months: rates.map((returnRate, i) => ({ ...CAPITAL.months[0], month: `2026-0${i + 1}`, returnRate })) };
+      return (returnOption(capital, SERIES, colors).series as LineSeriesOption[])[0];
+    };
+    expect(line([0, 0.2]).lineStyle?.color).toBe(colors.success);
+    expect(line([-0.1, -0.2]).lineStyle?.color).toBe(colors.destructive);
+  });
+
+  it.each(["light", "dark"] as const)("fades the %s area to nothing at 0, the mockup's teal above and red below", (theme) => {
+    const c = CHART_COLORS[theme];
+    const alpha = theme === "dark" ? "52" : "33";
+    const [line] = returnOption(SWING, SERIES, c).series as LineSeriesOption[];
+    expect(line.areaStyle?.color).toEqual({
+      type: "linear",
+      x: 0,
+      y: 0,
+      x2: 0,
+      y2: 1,
+      colorStops: [
+        { offset: 0, color: `${c.success}${alpha}` },
+        { offset: 0.75, color: `${c.success}00` },
+        { offset: 0.75, color: `${c.destructive}00` },
+        { offset: 1, color: `${c.destructive}${alpha}` },
+      ],
+    });
+  });
+
+  it("keeps the area all teal when no month is negative, all red when none is positive", () => {
+    const stops = (rates: number[]) => {
+      const capital = { ...CAPITAL, months: rates.map((returnRate, i) => ({ ...CAPITAL.months[0], month: `2026-0${i + 1}`, returnRate })) };
+      const [line] = returnOption(capital, SERIES, colors).series as LineSeriesOption[];
+      return (line.areaStyle?.color as { colorStops: unknown } | undefined)?.colorStops;
+    };
+    expect(stops([0.1, 0.2])).toEqual([
+      { offset: 0, color: `${colors.success}33` },
+      { offset: 1, color: `${colors.success}00` },
+    ]);
+    expect(stops([-0.1, -0.2])).toEqual([
+      { offset: 0, color: `${colors.destructive}00` },
+      { offset: 1, color: `${colors.destructive}33` },
+    ]);
   });
 
   it("leaves no gap in a ring of a single slice", () => {

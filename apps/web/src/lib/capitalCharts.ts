@@ -216,7 +216,36 @@ export function capitalOption(capital: StrategyCapital, series: readonly Capital
   };
 }
 
+/**
+ * The return line's hues: teal above 0, red below, on the line as on its points. The line's
+ * gradient spans its own box, from the highest month to the lowest, and turns at 0, which sits at
+ * `top / (top − bottom)` of it. The area under it, bounded by the line and the 0 baseline, has
+ * the same box as soon as the months change sign: its mockup gradient, teal above and a red
+ * mirror below, fades to nothing at that same 0.
+ */
+function returnStyles(rates: readonly (number | null)[], colors: ChartColors) {
+  const values = rates.filter((rate): rate is number => rate !== null);
+  const top = Math.max(0, ...values);
+  const bottom = Math.min(0, ...values);
+  const zero = top === bottom ? 1 : top / (top - bottom);
+  const gain = colors.success;
+  const loss = colors.destructive;
+  const vertical = (colorStops: { offset: number; color: string }[]) => ({ type: "linear" as const, x: 0, y: 0, x2: 0, y2: 1, colorStops });
+  const rising = top > 0 || bottom === 0;
+  const falling = bottom < 0;
+  return {
+    line: rising && falling ? vertical([{ offset: 0, color: gain }, { offset: zero, color: gain }, { offset: zero, color: loss }, { offset: 1, color: loss }]) : falling ? loss : gain,
+    area: vertical([
+      ...(rising ? [{ offset: 0, color: `${gain}${colors.areaAlpha}` }, { offset: zero, color: `${gain}00` }] : []),
+      ...(falling ? [{ offset: zero, color: `${loss}00` }, { offset: 1, color: `${loss}${colors.areaAlpha}` }] : []),
+    ]),
+    point: (rate: number) => (rate < 0 ? loss : gain),
+  };
+}
+
 export function returnOption(capital: StrategyCapital, series: readonly CapitalSeries[], colors: ChartColors): EChartsOption {
+  const rates = capital.months.map((m) => m.returnRate);
+  const styles = returnStyles(rates, colors);
   return {
     textStyle: { fontFamily: CHART_FONT, color: colors.foreground },
     grid: { ...monthGrid(series), top: 16, bottom: 32 },
@@ -235,21 +264,9 @@ export function returnOption(capital: StrategyCapital, series: readonly CapitalS
         connectNulls: false,
         ...LINE_SYMBOLS,
         color: colors.success,
-        lineStyle: { width: 2 },
-        areaStyle: {
-          color: {
-            type: "linear",
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              { offset: 0, color: colors.areaTop },
-              { offset: 1, color: `${colors.success}00` },
-            ],
-          },
-        },
-        data: linePoints(capital.months.map((m) => m.returnRate)),
+        lineStyle: { width: 2, color: styles.line },
+        areaStyle: { color: styles.area },
+        data: linePoints(rates).map((point) => point && { ...point, itemStyle: { color: styles.point(point.value) } }),
         markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { color: colors.track, width: 1, type: "solid" }, data: [{ yAxis: 0 }] },
       },
     ],
