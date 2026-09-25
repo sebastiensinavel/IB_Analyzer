@@ -57,7 +57,7 @@ toute tâche.
 
 ## Préalable : le worktree
 
-- [ ] Créer le worktree `.claude/worktrees/publication` sur une branche `publication` depuis
+- [x] Créer le worktree `.claude/worktrees/publication` sur une branche `publication` depuis
   `main` (skill `superpowers:using-git-worktrees`), y copier ce plan s'il n'y est pas.
 
 ---
@@ -74,7 +74,7 @@ toute tâche.
   `ROBOTS_TAG` (lues par la tâche 2 et documentées en tâche 4) ; routeurs
   `<projet>-web`, `<projet>-api`, services homonymes, middleware `<projet>-headers`.
 
-- [ ] **Step 1 : écrire les tests qui échouent**
+- [x] **Step 1 : écrire les tests qui échouent**
 
 Ajouter à la fin de `apps/api/tests/test_deployment_config.py` :
 
@@ -139,13 +139,13 @@ def test_the_env_template_describes_both_instances_and_the_tunnel():
     assert env_example_value("TRAEFIK_NETWORK") == "traefik"
 ```
 
-- [ ] **Step 2 : vérifier qu'ils échouent**
+- [x] **Step 2 : vérifier qu'ils échouent**
 
 Run : `uv run --project apps/api pytest apps/api/tests/test_deployment_config.py -q`
 Expected : les nouveaux tests en FAIL (noms `ibweb`, `/admin` dans la règle, aucun `ports:`,
 pas de `RESTART_POLICY`), les six anciens en PASS.
 
-- [ ] **Step 3 : réécrire `docker-compose.yml`**
+- [x] **Step 3 : réécrire `docker-compose.yml`**
 
 ```yaml
 # Une instance par .env : COMPOSE_PROJECT_NAME (iba-prod, iba-dev) nomme la pile, ses
@@ -230,7 +230,7 @@ networks:
 Le test `test_the_healthcheck_host_is_allowed_by_the_env_template` lit toujours
 `urlopen('http://…` : ne pas toucher au `healthcheck`.
 
-- [ ] **Step 4 : réécrire `.env.example`**
+- [x] **Step 4 : réécrire `.env.example`**
 
 ```dotenv
 # Copié en .env dans /srv/iba/prod et /srv/iba/dev, et rempli là-bas. Jamais committé rempli.
@@ -271,12 +271,12 @@ DATABASE_URL=postgres://ib:<le même mot de passe>@db:5432/ib_analyzer
 `env_example_value("ROBOTS_TAG")` doit trouver la ligne : la regex `^ROBOTS_TAG=(.*)$`
 accepte une valeur vide.
 
-- [ ] **Step 5 : vérifier que les tests passent**
+- [x] **Step 5 : vérifier que les tests passent**
 
 Run : `uv run --project apps/api pytest apps/api/tests/test_deployment_config.py -q`
 Expected : tout PASS.
 
-- [ ] **Step 6 : vérifier l'interpolation réelle par Compose**
+- [x] **Step 6 : vérifier l'interpolation réelle par Compose**
 
 Dans un dossier de travail hors dépôt (`$SCRATCH`, par exemple le scratchpad de la session),
 écrire deux fichiers d'environnement factices, sans vrai domaine :
@@ -327,7 +327,7 @@ docker compose --env-file "$SCRATCH/env.broken" config >/dev/null; echo "exit=$?
 
 Expected : `ADMIN_PORT manquant dans .env` et `exit=1`.
 
-- [ ] **Step 7 : vérifier qu'une valeur vide retire l'en-tête dans un vrai Traefik**
+- [x] **Step 7 : vérifier qu'une valeur vide retire l'en-tête dans un vrai Traefik**
 
 Traefik jetable sur un réseau et un port de test, deux nginx étiquetés, l'un avec
 `X-Robots-Tag=` vide, l'autre avec `noindex` :
@@ -360,7 +360,7 @@ erreur de routeur**, s'arrêter et appliquer le repli du spec §3.1 : retirer le
 qui les ajoute, et documenter `COMPOSE_FILE=docker-compose.yml:docker-compose.dev.override.yml`
 dans `.env.example` pour la dev — puis adapter les tests du Step 1 en conséquence.
 
-- [ ] **Step 8 : commit**
+- [x] **Step 8 : commit**
 
 ```bash
 git add docker-compose.yml .env.example apps/api/tests/test_deployment_config.py docs/plans/2026-09-25-publication-prod-dev.md

@@ -1,27 +1,44 @@
+# Une instance par .env : COMPOSE_PROJECT_NAME (iba-prod, iba-dev) nomme la pile, ses
+# volumes, son réseau interne et ses routeurs Traefik. Voir docs/deploiement-vps.md.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    restart: unless-stopped
+    restart: ${RESTART_POLICY:-unless-stopped}
+    logging: *logging
     networks: [traefik, internal]
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=${TRAEFIK_NETWORK}"
-      - "traefik.http.routers.ibweb.rule=Host(`${PUBLIC_HOST}`)"
-      - "traefik.http.routers.ibweb.entrypoints=websecure"
-      - "traefik.http.routers.ibweb.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.ibweb.priority=1"
-      - "traefik.http.services.ibweb.loadbalancer.server.port=80"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:?TRAEFIK_NETWORK manquant dans .env}"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:?COMPOSE_PROJECT_NAME manquant dans .env}-web.rule=Host(`${PUBLIC_HOST:?PUBLIC_HOST manquant dans .env}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-web.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-web.priority=1"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-web.service=${COMPOSE_PROJECT_NAME}-web"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-web.middlewares=${COMPOSE_PROJECT_NAME}-headers"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-web.loadbalancer.server.port=80"
+      # Vide en prod : Traefik retire alors l'en-tête. `noindex` en dev.
+      - "traefik.http.middlewares.${COMPOSE_PROJECT_NAME}-headers.headers.customresponseheaders.X-Robots-Tag=${ROBOTS_TAG:-}"
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    restart: unless-stopped
+    restart: ${RESTART_POLICY:-unless-stopped}
+    logging: *logging
     env_file: .env
     depends_on: [db]
     networks: [traefik, internal]
+    # L'admin n'est pas routé par Traefik : il se joint par tunnel SSH sur ce port.
+    ports:
+      - "127.0.0.1:${ADMIN_PORT:?ADMIN_PORT manquant dans .env}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
       interval: 30s
@@ -30,15 +47,18 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=${TRAEFIK_NETWORK}"
-      - "traefik.http.routers.ibapi.rule=Host(`${PUBLIC_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/_allauth`) || PathPrefix(`/static`))"
-      - "traefik.http.routers.ibapi.entrypoints=websecure"
-      - "traefik.http.routers.ibapi.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.ibapi.priority=10"
-      - "traefik.http.services.ibapi.loadbalancer.server.port=8000"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.rule=Host(`${PUBLIC_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/_allauth`) || PathPrefix(`/static`))"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.priority=10"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.service=${COMPOSE_PROJECT_NAME}-api"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.middlewares=${COMPOSE_PROJECT_NAME}-headers"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api.loadbalancer.server.port=8000"
 
   db:
     image: postgres:17-alpine
-    restart: unless-stopped
+    restart: ${RESTART_POLICY:-unless-stopped}
+    logging: *logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
