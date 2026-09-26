@@ -57,19 +57,19 @@ describe("HelpPage", () => {
     ]);
   });
 
-  it("keeps the agent's six steps, numbered and in order, inside that one section", async () => {
+  it("keeps the agent's six steps, lettered and in order, inside that one section", async () => {
     mockIndex(new Response("", { status: 404 }));
     const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
     const agentCard = (await screen.findByText("3. L'agent local, facultatif")).closest("[data-slot=card]");
     expect(agentCard).toBeInstanceOf(HTMLElement);
     const steps = [...(agentCard as HTMLElement).querySelectorAll("p.font-heading")].map((el) => el.textContent);
     expect(steps).toEqual([
-      "1. Installer uv",
-      "2. Installer l'agent",
-      "3. Le configurer et le lancer",
-      "4. Régler l'API de TWS",
-      "5. La permission du navigateur",
-      "6. Renseigner le port",
+      "A. Installer uv",
+      "B. Installer l'agent",
+      "C. Le configurer et le lancer",
+      "D. Régler l'API de TWS",
+      "E. La permission du navigateur",
+      "F. Renseigner le port",
     ]);
     // The six are inside the agent card, so they are not cards of their own.
     expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(5);

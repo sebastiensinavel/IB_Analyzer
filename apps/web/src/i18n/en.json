@@ -711,22 +711,22 @@
       "dayValues": "Day chg and Daily P&L come from the local agent: a portfolio rebuilt from a statement or a Flex response leaves them at \"—\", as does a contract bought or sold today."
     },
     "uv": {
-      "title": "1. Install uv",
+      "title": "A. Install uv",
       "text": "uv installs the agent and the Python it needs.",
       "macLinux": "macOS and Linux",
       "windows": "Windows"
     },
     "install": {
-      "title": "2. Install the agent",
+      "title": "B. Install the agent",
       "text": "The command installs the version this site serves. Run it again after the site is updated.",
       "unavailable": "This server does not serve the agent package: in development, run pnpm build:agent."
     },
     "configure": {
-      "title": "3. Configure and start it",
+      "title": "C. Configure and start it",
       "text": "The first command adds this site's address to those the agent answers; for another site, add its address too, then restart the agent. ib-tws-agent origin list shows them, ib-tws-agent origin remove drops one. The second command starts the agent; leave it running while you use the site."
     },
     "tws": {
-      "title": "4. Set up the TWS API",
+      "title": "D. Set up the TWS API",
       "text": "In TWS: Configuration › API › Settings.",
       "items": [
         "Tick \"Enable ActiveX and Socket Clients\".",
@@ -736,11 +736,11 @@
       ]
     },
     "chrome": {
-      "title": "5. The browser's permission",
+      "title": "E. The browser's permission",
       "text": "The first time, Chrome asks whether this site may reach your local network: that is the agent on your machine. Accept."
     },
     "port": {
-      "title": "6. Fill in the port",
+      "title": "F. Fill in the port",
       "text": "In Data sources, Local agent section, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
       "link": "Open Data sources"
     },
