@@ -26,6 +26,8 @@ interface Edge {
 interface Layout {
   width: number;
   height: number;
+  /** Font sizes in the drawing's own units, set so that each lands near 11–12 px on screen. */
+  font: { title: number; sub: number; label: number; frame: number };
   /** The « your computer » frame, and where its name and Internet's are written. */
   frame: Box;
   computerLabel: { x: number; y: number };
@@ -44,6 +46,7 @@ const LAYOUTS: Record<"wide" | "narrow", Layout> = {
   wide: {
     width: 750,
     height: 372,
+    font: { title: 16, sub: 14, label: 14, frame: 13 },
     frame: { x: 10, y: 8, w: 470, h: 356 },
     computerLabel: { x: 24, y: 26 },
     internetLabel: { x: 740, y: 26, anchor: "end" },
@@ -68,6 +71,7 @@ const LAYOUTS: Record<"wide" | "narrow", Layout> = {
   narrow: {
     width: 400,
     height: 430,
+    font: { title: 15, sub: 12, label: 12, frame: 11 },
     frame: { x: 4, y: 124, w: 380, h: 300 },
     computerLabel: { x: 16, y: 414 },
     internetLabel: { x: 16, y: 20, anchor: "start" },
@@ -107,7 +111,7 @@ const FEATURES: { key: string; values: Record<HelpMode, boolean | string> }[] = 
   { key: "serverSees", values: { manual: "nothing", agent: "nothing", server: "transit" } },
 ];
 
-function DiagramNode({ box, id, active, degraded }: { box: Box; id: NodeId; active: boolean; degraded: boolean }) {
+function DiagramNode({ box, font, id, active, degraded }: { box: Box; font: Layout["font"]; id: NodeId; active: boolean; degraded: boolean }) {
   const { t } = useTranslation();
   const { x, y, w, h } = box;
   const tone = !active ? "stroke-line-2" : degraded ? "stroke-warning" : "stroke-primary";
@@ -118,22 +122,22 @@ function DiagramNode({ box, id, active, degraded }: { box: Box; id: NodeId; acti
         y={y}
         width={w}
         height={h}
-        rx={10}
+        rx={8}
         className={cn("fill-card", tone)}
-        strokeWidth={active ? 2 : 1.5}
+        strokeWidth={active ? 1.5 : 1}
         strokeDasharray={active ? undefined : "5 4"}
       />
-      <text x={x + w / 2} y={y + h / 2 - 3} textAnchor="middle" className="fill-foreground text-[15px] font-semibold">
+      <text x={x + w / 2} y={y + h / 2 - 3} textAnchor="middle" fontSize={font.title} className="fill-foreground font-medium">
         {t(`help.modes.nodes.${id}.title`)}
       </text>
-      <text x={x + w / 2} y={y + h / 2 + 15} textAnchor="middle" className="fill-muted-foreground text-[12px]">
+      <text x={x + w / 2} y={y + h / 2 + font.sub + 3} textAnchor="middle" fontSize={font.sub} className="fill-muted-foreground">
         {t(`help.modes.nodes.${id}.sub`)}
       </text>
     </g>
   );
 }
 
-function DiagramEdge({ edge, id, active, degraded, markers }: { edge: Edge; id: EdgeId; active: boolean; degraded: boolean; markers: string }) {
+function DiagramEdge({ edge, fontSize, id, active, degraded, markers }: { edge: Edge; fontSize: number; id: EdgeId; active: boolean; degraded: boolean; markers: string }) {
   const { t } = useTranslation();
   const { d, label } = edge;
   if (!active) return null;
@@ -143,7 +147,7 @@ function DiagramEdge({ edge, id, active, degraded, markers }: { edge: Edge; id: 
       <path
         d={d}
         fill="none"
-        strokeWidth={2.5}
+        strokeWidth={1.75}
         strokeDasharray="7 5"
         markerEnd={`url(#${markers}-${degraded ? "degraded" : "normal"})`}
         className={cn(stroke, "motion-safe:animate-[help-flow_1s_linear_infinite]")}
@@ -153,7 +157,8 @@ function DiagramEdge({ edge, id, active, degraded, markers }: { edge: Edge; id: 
           x={label.x}
           y={label.y}
           textAnchor={label.anchor ?? "middle"}
-          className={cn("text-[12px] font-medium", degraded ? "fill-warning" : "fill-primary")}
+          fontSize={fontSize}
+          className={degraded ? "fill-warning" : "fill-primary"}
         >
           {t(`help.modes.edges.${label.text ?? id}`)}
         </text>
@@ -164,12 +169,12 @@ function DiagramEdge({ edge, id, active, degraded, markers }: { edge: Edge; id: 
 
 function Diagram({ layout, mode, className }: { layout: keyof typeof LAYOUTS; mode: HelpMode; className: string }) {
   const { t } = useTranslation();
-  const { width, height, frame, computerLabel, internetLabel, nodes, edges } = LAYOUTS[layout];
+  const { width, height, font, frame, computerLabel, internetLabel, nodes, edges } = LAYOUTS[layout];
   const active = ACTIVE[mode];
   const degraded = mode === "server";
   // One set of arrowheads per drawing: both are in the page at once, and ids must not repeat.
   const markers = `help-arrow-${layout}`;
-  const frameLabel = "fill-subtle-foreground text-[11px] font-semibold uppercase tracking-wider";
+  const frameLabel = "fill-subtle-foreground font-medium uppercase tracking-wider";
 
   return (
     <svg
@@ -181,25 +186,25 @@ function Diagram({ layout, mode, className }: { layout: keyof typeof LAYOUTS; mo
     >
       <defs>
         {(["normal", "degraded"] as const).map((tone) => (
-          <marker key={tone} id={`${markers}-${tone}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker key={tone} id={`${markers}-${tone}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M0 0 L10 5 L0 10 z" className={tone === "degraded" ? "fill-warning" : "fill-primary"} />
           </marker>
         ))}
       </defs>
 
       <rect x={frame.x} y={frame.y} width={frame.w} height={frame.h} rx={16} className="fill-none stroke-line-2" strokeWidth={1.5} />
-      <text x={computerLabel.x} y={computerLabel.y} className={frameLabel}>
+      <text x={computerLabel.x} y={computerLabel.y} fontSize={font.frame} className={frameLabel}>
         {t("help.modes.frames.computer")}
       </text>
-      <text x={internetLabel.x} y={internetLabel.y} textAnchor={internetLabel.anchor} className={frameLabel}>
+      <text x={internetLabel.x} y={internetLabel.y} textAnchor={internetLabel.anchor} fontSize={font.frame} className={frameLabel}>
         {t("help.modes.frames.internet")}
       </text>
 
       {(Object.keys(edges) as EdgeId[]).map((id) => (
-        <DiagramEdge key={id} id={id} edge={edges[id]} active={active.edges.includes(id)} degraded={degraded} markers={markers} />
+        <DiagramEdge key={id} id={id} edge={edges[id]} fontSize={font.label} active={active.edges.includes(id)} degraded={degraded} markers={markers} />
       ))}
       {(Object.keys(nodes) as NodeId[]).map((id) => (
-        <DiagramNode key={id} id={id} box={nodes[id]} active={active.nodes.includes(id)} degraded={degraded && id === "server"} />
+        <DiagramNode key={id} id={id} box={nodes[id]} font={font} active={active.nodes.includes(id)} degraded={degraded && id === "server"} />
       ))}
     </svg>
   );
@@ -216,7 +221,7 @@ export function ModesDiagram() {
   const [mode, setMode] = useState<HelpMode>("agent");
 
   return (
-    <div data-testid="help-modes" className="flex flex-col gap-4">
+    <div data-testid="help-modes" className="flex flex-col gap-3">
       <div role="group" aria-label={t("help.modes.choose")} className="grid gap-2 sm:grid-cols-3">
         {HELP_MODES.map((m) => (
           <button
@@ -226,42 +231,43 @@ export function ModesDiagram() {
             onClick={() => setMode(m)}
             className={cn(
               buttonVariants({ variant: mode === m ? "default" : "outline" }),
-              "h-auto flex-col items-start gap-0.5 whitespace-normal px-3 py-2 text-left",
+              "h-auto flex-col items-start gap-0 whitespace-normal px-3 py-1.5 text-left text-[13px]",
             )}
           >
             <span className="font-medium">{t(`help.modes.${m}.name`)}</span>
-            <span className={cn("text-xs", mode === m ? "opacity-85" : "text-muted-foreground")}>{t(`help.modes.${m}.tag`)}</span>
+            <span className={cn("text-[11px] font-normal", mode === m ? "opacity-85" : "text-muted-foreground")}>{t(`help.modes.${m}.tag`)}</span>
           </button>
         ))}
       </div>
 
-      <p className="text-muted-foreground sm:min-h-[4.5rem]">{t(`help.modes.${mode}.summary`)}</p>
+      <p className="text-muted-foreground sm:min-h-[3.75rem]">{t(`help.modes.${mode}.summary`)}</p>
 
-      <div className="rounded-lg bg-muted/40 p-2">
-        <Diagram layout="wide" mode={mode} className="hidden sm:block" />
-        <Diagram layout="narrow" mode={mode} className="mx-auto max-w-[420px] sm:hidden" />
+      {/* The drawing at a fixed modest width, what the mode gives beside it on a wide screen. */}
+      <div className="grid items-center gap-4 lg:grid-cols-[minmax(0,600px)_minmax(0,1fr)]">
+        <div className="w-full max-w-[600px] rounded-lg bg-muted/40 p-2">
+          <Diagram layout="wide" mode={mode} className="hidden sm:block" />
+          <Diagram layout="narrow" mode={mode} className="mx-auto max-w-[400px] sm:hidden" />
+        </div>
+
+        <ul data-testid="help-modes-features" className="flex flex-col">
+          {FEATURES.map(({ key, values }) => {
+            const value = values[mode];
+            return (
+              <li key={key} data-feature={key} className="flex items-baseline justify-between gap-3 border-b border-sep py-1.5 last:border-b-0">
+                <span className="text-muted-foreground">{t(`help.modes.features.${key}`)}</span>
+                {typeof value === "boolean" ? (
+                  <span data-value={value} className={cn("inline-flex items-center gap-1 font-medium", value ? "text-success" : "text-destructive")}>
+                    {value ? <Check aria-hidden className="size-4 self-center" /> : <X aria-hidden className="size-4 self-center" />}
+                    {t(value ? "help.modes.values.yes" : "help.modes.values.no")}
+                  </span>
+                ) : (
+                  <span className="text-right font-medium">{t(`help.modes.values.${value}`)}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
-
-      <ul data-testid="help-modes-features" className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
-        {FEATURES.map(({ key, values }) => {
-          const value = values[mode];
-          return (
-            <li key={key} data-feature={key} className="flex items-baseline justify-between gap-3 border-b border-sep py-1">
-              <span className="text-muted-foreground">{t(`help.modes.features.${key}`)}</span>
-              {typeof value === "boolean" ? (
-                <span data-value={value} className={cn("inline-flex items-center gap-1 font-medium", value ? "text-success" : "text-destructive")}>
-                  {value ? <Check aria-hidden className="size-4 self-center" /> : <X aria-hidden className="size-4 self-center" />}
-                  {t(value ? "help.modes.values.yes" : "help.modes.values.no")}
-                </span>
-              ) : (
-                <span className="text-right font-medium">{t(`help.modes.values.${value}`)}</span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-
-      <p className="rounded-md bg-muted px-3 py-2">{t("help.modes.history")}</p>
     </div>
   );
 }

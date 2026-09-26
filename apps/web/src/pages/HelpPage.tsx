@@ -81,8 +81,16 @@ export function HelpPage() {
         <p className="text-muted-foreground">{t("help.app.text")}</p>
         <p className="rounded-md bg-muted px-3 py-2">{t("help.app.privacy")}</p>
         <p className="text-muted-foreground">{t("help.app.sources")}</p>
-        <p className="font-heading font-medium">{t("help.modes.title")}</p>
-        <ModesDiagram />
+        <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+          {(t("help.app.tiers", { returnObjects: true }) as string[]).map((tier) => (
+            <li key={tier}>{tier}</li>
+          ))}
+        </ul>
+        <p className="text-muted-foreground">{t("help.app.history")}</p>
+        <div className="mt-2 flex flex-col gap-3 border-t pt-4">
+          <p className="font-heading font-medium">{t("help.modes.title")}</p>
+          <ModesDiagram />
+        </div>
       </Section>
 
       <Section id="statement" title={t("help.statement.title")}>

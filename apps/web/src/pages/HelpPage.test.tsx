@@ -75,15 +75,26 @@ describe("HelpPage", () => {
     expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(5);
   });
 
-  // Whatever the mode, the history older than a year comes from statements: a newcomer choosing
-  // a mode needs that limit, not just the names.
-  it("says every mode takes its long history from statements, and urges a full history", async () => {
+  // The three sources and what each can and cannot do: a newcomer choosing between them needs
+  // the limits, not just the names.
+  it("names the three data sources with the limit of each, and urges a full history", async () => {
     mockIndex(new Response("", { status: 404 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);
     expect(await screen.findByText(/en filtrant automatiquement les doublons/)).toBeInTheDocument();
-    expect(screen.getByText(/l'historique de plus de 365 jours vient des relevés HTML/)).toBeInTheDocument();
-    expect(screen.getByText(/l'agent ne récupère aucun historique/)).toBeInTheDocument();
-    expect(screen.getByText(/importez l'ensemble de votre historique/)).toBeInTheDocument();
+    expect(screen.getByText(/que vous chargez dans l'application à la main/)).toBeInTheDocument();
+    expect(screen.getByText(/ne peuvent pas importer de données au-delà de 365 jours/)).toBeInTheDocument();
+    expect(screen.getByText(/Il ne permet pas de récupérer un historique/)).toBeInTheDocument();
+    expect(screen.getByText(/fortement recommandé d'importer l'ensemble de l'historique/)).toBeInTheDocument();
+  });
+
+  // The drawing comes on top of that text, in the same card, never in its place.
+  it("draws the three modes inside the application's card, after its text", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    const card = (await screen.findByText("L'application")).closest("[data-slot=card]") as HTMLElement;
+    const history = within(card).getByText(/fortement recommandé d'importer/);
+    const modes = within(card).getByTestId("help-modes");
+    expect(history.compareDocumentPosition(modes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   function features(): Record<string, string> {

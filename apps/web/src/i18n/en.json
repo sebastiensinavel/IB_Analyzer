@@ -591,7 +591,13 @@
       "title": "The application",
       "text": "IB Analyzer analyzes your Interactive Brokers portfolios, stocks and options: coverage of your option sales and required cash, Wheel, LEAPS and Condor journals rebuilt from your history, full history, positions and statistics per strategy. The strategies followed are chosen for each account in Data sources.",
       "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
-      "sources": "The application can draw on several data sources, filtering out duplicates automatically."
+      "sources": "The application can draw on several data sources, filtering out duplicates automatically.",
+      "tiers": [
+        "HTML activity statements: a data export provided by Interactive Brokers that you load into the application by hand. They can bring in recent data as well as data older than a year, and they are the quickest way to get a first look at the application.",
+        "Flex Queries: an export format provided by Interactive Brokers that automates the import. It gives you data as fresh as yesterday's market close. Flex Queries cannot import data older than 365 days.",
+        "The local agent, optional, adds today's positions and fills. It also collects the data the charts need. It cannot fetch any history: it comes on top of the other sources."
+      ],
+      "history": "For the application to work well, importing your whole history is strongly recommended. That is what makes it possible to check that every transaction is there and that together they rebuild the last known values of your portfolio."
     },
     "modes": {
       "title": "Three ways to use it",
@@ -669,8 +675,7 @@
         "signIn": "sign-in required",
         "nothing": "nothing",
         "transit": "the Flex token and response, in transit"
-      },
-      "history": "Whatever the mode, history older than 365 days comes from HTML statements: Flex Queries go no further back, and the agent fetches no history at all. For the application to work well, import your whole history: that is what makes it possible to check that every transaction is there and that together they rebuild the last known values of your portfolio."
+      }
     },
     "statement": {
       "title": "1. Get an activity statement",
