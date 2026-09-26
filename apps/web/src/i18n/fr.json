@@ -478,7 +478,7 @@
   },
   "agent": {
     "title": "Agent local",
-    "hint": "L'agent lit TWS sur cette machine et ne parle qu'à ce site et à Interactive Brokers : il relaie les appels Flex Query sans rien conserver, et positions, cash et exécutions du jour restent chez vous. Renseignez le port de l'API TWS de ce compte pour les données en direct.",
+    "hint": "L'agent lit TWS sur cette machine et ne parle qu'à l'application ouverte dans ce navigateur et à Interactive Brokers, jamais au serveur : il relaie les appels Flex Query sans rien conserver, et positions, cash et exécutions du jour restent chez vous. Renseignez le port de l'API TWS de ce compte pour les données en direct.",
     "port": "Port TWS",
     "savePort": "Enregistrer",
     "portSaved": "Port enregistré.",
@@ -623,12 +623,13 @@
       ],
       "corporateActions": "Corporate Actions est la seule dont l'absence ne déclenche aucun avertissement : sans elle, splits et fusions manquent en silence.",
       "token": "Activez ensuite le Flex Web Service et copiez le jeton ; notez l'identifiant de la requête. Saisissez les deux dans « Sources de données › Flex Query ».",
+      "relay": "Interactive Brokers n'accepte pas d'appel Flex venu directement d'un navigateur : il faut un relais. Deux sont possibles, au choix pour chaque compte dans « Sources de données › Flex Query » : l'agent local (recommandé), qui relaie depuis votre machine sans que le jeton ne passe par le serveur — voir la section 3 ; ou le serveur, si vous avez un compte serveur et êtes connecté, que le jeton et le relevé traversent sans être journalisés ni conservés. Sans agent ni compte serveur, restez sur les relevés HTML.",
       "missing": "Ce que l'application ne trouve pas est listé dans Sources de données à chaque synchronisation."
     },
     "what": {
       "title": "3. L'agent local, facultatif",
-      "tws": "TWS, pour Trader Workstation, est l'application de bureau d'Interactive Brokers, celle où vous passez vos ordres. L'agent local est un petit programme à installer sur votre machine : il lit TWS pour ce site. Les six points ci-dessous s'enchaînent dans l'ordre.",
-      "text": "L'agent lit TWS sur votre machine et ne parle qu'à ce site et à Interactive Brokers. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de ce site vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer.",
+      "tws": "TWS, pour Trader Workstation, est l'application de bureau d'Interactive Brokers, celle où vous passez vos ordres. L'agent local est un petit programme à installer sur votre machine : il lit TWS et transmet ce qu'il lit à l'application qui tourne dans votre navigateur, directement, sur votre machine. Les six points ci-dessous s'enchaînent dans l'ordre.",
+      "text": "L'agent ne parle qu'à l'application ouverte dans votre navigateur et à Interactive Brokers, jamais au serveur. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de l'application vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer.",
       "dayValues": "Var. jour et P&L jour viennent de l'agent local : un portefeuille reconstruit depuis un relevé ou une réponse Flex les laisse à « — », comme un contrat acheté ou vendu le jour même."
     },
     "uv": {

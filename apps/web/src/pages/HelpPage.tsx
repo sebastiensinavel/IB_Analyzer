@@ -111,6 +111,7 @@ export function HelpPage() {
         </div>
         <p className="text-muted-foreground">{t("help.flex.corporateActions")}</p>
         <p className="text-muted-foreground">{t("help.flex.token")}</p>
+        <p>{t("help.flex.relay")}</p>
         <p className="text-muted-foreground">{t("help.flex.missing")}</p>
       </Section>
 

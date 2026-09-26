@@ -192,9 +192,23 @@ describe("HelpPage", () => {
   it("says the agent also relays Flex Query, and that the port is only for live data", async () => {
     mockIndex(new Response("", { status: 404 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);
-    expect(await screen.findByText(/relaie aussi les appels Flex Query de ce site vers Interactive Brokers/)).toBeInTheDocument();
+    expect(await screen.findByText(/relaie aussi les appels Flex Query de l'application vers Interactive Brokers/)).toBeInTheDocument();
     expect(screen.getByText(/le jeton Flex ne passe jamais par le serveur/)).toBeInTheDocument();
     expect(screen.getByText(/pas pour relayer Flex Query/)).toBeInTheDocument();
+  });
+
+  it("says a Flex Query needs a relay, the local agent or the server", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/il faut un relais/)).toBeInTheDocument();
+    expect(screen.getByText(/l'agent local \(recommandé\)/)).toBeInTheDocument();
+  });
+
+  it("says the agent talks to the application in the browser, never to the server", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/transmet ce qu'il lit à l'application qui tourne dans votre navigateur/)).toBeInTheDocument();
+    expect(screen.getByText(/L'agent ne parle qu'à l'application ouverte dans votre navigateur et à Interactive Brokers, jamais au serveur/)).toBeInTheDocument();
   });
 
   it("says the day's move and P&L come from the local agent", async () => {
