@@ -5,6 +5,7 @@ import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { cn } from "@ib/ui/lib/utils";
 import { useAgentIndex } from "@/agent/agentIndex";
+import { ModesDiagram } from "@/components/help/ModesDiagram";
 import { getLastAccountId } from "@/lib/accountStorage";
 
 // Astral's own documented installers. Not our domain: fine in a versioned file.
@@ -80,12 +81,8 @@ export function HelpPage() {
         <p className="text-muted-foreground">{t("help.app.text")}</p>
         <p className="rounded-md bg-muted px-3 py-2">{t("help.app.privacy")}</p>
         <p className="text-muted-foreground">{t("help.app.sources")}</p>
-        <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-          {(t("help.app.tiers", { returnObjects: true }) as string[]).map((tier) => (
-            <li key={tier}>{tier}</li>
-          ))}
-        </ul>
-        <p className="text-muted-foreground">{t("help.app.history")}</p>
+        <p className="font-heading font-medium">{t("help.modes.title")}</p>
+        <ModesDiagram />
       </Section>
 
       <Section id="statement" title={t("help.statement.title")}>
@@ -162,6 +159,26 @@ export function HelpPage() {
               </Link>
             </div>
           )}
+        </Step>
+      </Section>
+
+      {/* Last on purpose: the server is a fallback and an option, never a step on the way in. */}
+      <Section id="server" title={t("help.server.title")}>
+        <p className="text-muted-foreground">{t("help.server.intro")}</p>
+
+        <Step title={t("help.server.relay.title")}>
+          <p className="text-muted-foreground">{t("help.server.relay.text")}</p>
+          <p className="rounded-md bg-warning/10 px-3 py-2">{t("help.server.relay.degraded")}</p>
+        </Step>
+
+        <Step title={t("help.server.backup.title")}>
+          <p className="text-muted-foreground">{t("help.server.backup.text")}</p>
+          <p className="text-muted-foreground">{t("help.server.backup.encrypted")}</p>
+          <div>
+            <Link to="/settings" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+              {t("help.server.backup.link")}
+            </Link>
+          </div>
         </Step>
       </Section>
     </div>

@@ -218,3 +218,10 @@
       }
     }
 }
+
+/* The Help page's diagram: its dashed arrows run the way the data goes. */
+@keyframes help-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}

@@ -591,13 +591,86 @@
       "title": "The application",
       "text": "IB Analyzer analyzes your Interactive Brokers portfolios, stocks and options: coverage of your option sales and required cash, Wheel, LEAPS and Condor journals rebuilt from your history, full history, positions and statistics per strategy. The strategies followed are chosen for each account in Data sources.",
       "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
-      "sources": "The application can draw on several data sources, filtering out duplicates automatically.",
-      "tiers": [
-        "HTML activity statements: a data export provided by Interactive Brokers that you load into the application by hand. They can bring in recent data as well as data older than a year, and they are the quickest way to get a first look at the application.",
-        "Flex Queries: an export format provided by Interactive Brokers that automates the import. It gives you data as fresh as yesterday's market close. Flex Queries cannot import data older than 365 days.",
-        "The local agent, optional, adds today's positions and fills. It also collects the data the charts need. It cannot fetch any history: it comes on top of the other sources."
-      ],
-      "history": "For the application to work well, importing your whole history is strongly recommended. That is what makes it possible to check that every transaction is there and that together they rebuild the last known values of your portfolio."
+      "sources": "The application can draw on several data sources, filtering out duplicates automatically."
+    },
+    "modes": {
+      "title": "Three ways to use it",
+      "choose": "Choose a way of working",
+      "manual": {
+        "name": "1. Manual import",
+        "tag": "Discovery",
+        "summary": "The application runs in your browser. You download an activity statement from the Interactive Brokers website and import it by hand. The data stops at the statement's date, yesterday at best, and there are no price charts."
+      },
+      "agent": {
+        "name": "2. Automatic with the local agent",
+        "tag": "Recommended",
+        "summary": "The application runs in your browser and talks to the local agent, a small program installed on your computer. The agent fetches your Flex Queries from Interactive Brokers and reads TWS on your machine: positions close to real time, today's fills, price charts. Nothing goes through the server."
+      },
+      "server": {
+        "name": "3. Automatic through the server",
+        "tag": "Fallback mode",
+        "summary": "The application runs in your browser. Without the local agent, the IB Analyzer server relays your Flex Queries to Interactive Brokers, which takes a server account and being signed in. The data stops at yesterday's close, and there are no price charts. See section 4."
+      },
+      "frames": {
+        "computer": "Your computer",
+        "internet": "Internet"
+      },
+      "nodes": {
+        "file": {
+          "title": "HTML statement",
+          "sub": "downloaded by hand"
+        },
+        "app": {
+          "title": "IB Analyzer",
+          "sub": "in your browser"
+        },
+        "agent": {
+          "title": "Local agent",
+          "sub": "small program"
+        },
+        "tws": {
+          "title": "TWS",
+          "sub": "Trader Workstation"
+        },
+        "ib": {
+          "title": "Interactive Brokers",
+          "sub": "Client Portal · Flex"
+        },
+        "server": {
+          "title": "IB Analyzer server",
+          "sub": "relay, sign-in required"
+        }
+      },
+      "edges": {
+        "download": "statement downloaded",
+        "import": "imported",
+        "flexAgent": "Flex Query",
+        "live": "live · prices",
+        "viaServer": "Flex response relayed",
+        "flexServer": "Flex Query"
+      },
+      "features": {
+        "freshness": "Data freshness",
+        "update": "Updates",
+        "charts": "Price charts",
+        "dayValues": "Day P&L and change",
+        "serverAccount": "Server account",
+        "serverSees": "What the server sees"
+      },
+      "values": {
+        "yes": "yes",
+        "no": "no",
+        "statement": "statement's date",
+        "live": "near real time",
+        "yesterday": "yesterday's close",
+        "byHand": "by hand",
+        "automatic": "automatic",
+        "notNeeded": "not needed",
+        "signIn": "sign-in required",
+        "nothing": "nothing",
+        "transit": "the Flex token and response, in transit"
+      },
+      "history": "Whatever the mode, history older than 365 days comes from HTML statements: Flex Queries go no further back, and the agent fetches no history at all. For the application to work well, import your whole history: that is what makes it possible to check that every transaction is there and that together they rebuild the last known values of your portfolio."
     },
     "statement": {
       "title": "1. Get an activity statement",
@@ -623,13 +696,13 @@
       ],
       "corporateActions": "Corporate Actions is the only one whose absence triggers no warning: without it, splits and mergers go missing in silence.",
       "token": "Then enable the Flex Web Service and copy the token; note the query's id. Enter both in \"Data sources › Flex Query\".",
-      "relay": "Interactive Brokers does not accept a Flex call made directly from a browser: it needs a relay. Two are available, chosen per account in \"Data sources › Flex Query\": the local agent (recommended), which relays from your machine without the token ever going through the server — see section 3; or the server, if you have a server account and are signed in, which the token and the statement pass through without being logged or kept. With neither agent nor server account, stay with HTML statements.",
+      "relay": "Interactive Brokers does not accept a Flex call made directly from a browser: it needs a relay. The local agent (recommended) does it from your machine, without the token ever going through the server — see section 3. Failing that, the server can relay, as a fallback — see section 4. With neither, stay with HTML statements.",
       "missing": "What the app cannot find is listed in Data sources at every sync."
     },
     "what": {
       "title": "3. The local agent, optional",
       "tws": "TWS, short for Trader Workstation, is the Interactive Brokers desktop application, the one where you place your orders. The local agent is a small program you install on your machine: it reads TWS and hands what it reads to the application running in your browser, directly, on your machine. The six points below follow one another in order.",
-      "text": "The agent talks only to the application open in your browser and to Interactive Brokers, never to the server. It stores nothing: positions, cash and today's fills never leave your computer. It also relays the application's Flex Query calls to Interactive Brokers, keeping nothing: in \"local agent only\" mode, the Flex token never goes through the server. Without it, the app works with statements, and with Flex Query if you let the server relay.",
+      "text": "The agent talks only to the application open in your browser and to Interactive Brokers, never to the server. It stores nothing: positions, cash and today's fills never leave your computer. It also relays the application's Flex Query calls to Interactive Brokers, keeping nothing: in \"local agent only\" mode, the Flex token never goes through the server. Without it, the app works with statements, and with Flex Query if you let the server relay (section 4).",
       "dayValues": "Day chg and Daily P&L come from the local agent: a portfolio rebuilt from a statement or a Flex response leaves them at \"—\", as does a contract bought or sold today."
     },
     "uv": {
@@ -665,6 +738,21 @@
       "title": "6. Fill in the port",
       "text": "In Data sources, Local agent section, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
       "link": "Open Data sources"
+    },
+    "server": {
+      "title": "4. The server, optional",
+      "intro": "The application does not need the server. A server account, by invitation, opens only two things, both optional: the Flex Query relay when the local agent is missing, and an encrypted backup of your data. It never sees your transactions or your positions.",
+      "relay": {
+        "title": "Relaying Flex Query through the server: a fallback mode",
+        "text": "If you cannot install the local agent, the server can relay your Flex Queries to Interactive Brokers. Sign in to your server account, then choose this relay for the account in \"Data sources › Flex Query\". The Flex token and the Interactive Brokers response then pass through the server, without being logged or kept there.",
+        "degraded": "It is a fallback mode: the data stops at yesterday's close, and everything that comes from the agent — today's positions and fills, day P&L and change, price charts — stays missing. As soon as you can, prefer the local agent."
+      },
+      "backup": {
+        "title": "Backing up your data, encrypted",
+        "text": "Entirely optional, the backup lets you find your work again from another machine or another browser: your accounts and their settings, your imported statements, your history, your sector table. On the new browser, sign in, then choose \"Settings › Backup › Restore\".",
+        "encrypted": "Your data is encrypted in your browser before it leaves, with a key protected by a passphrase you choose. The server keeps only an unreadable block and never sees the passphrase or the key: no one, not even us, can recover it, and once forgotten, the backup is lost for good.",
+        "link": "Open Settings"
+      }
     }
   },
   "accountSwitcher": {

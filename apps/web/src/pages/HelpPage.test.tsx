@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
 import { HelpPage } from "@/pages/HelpPage";
@@ -40,18 +40,20 @@ function stubScrollIntoView(): { scrolled: Element[]; restore: () => void } {
 const ORIGIN = window.location.origin; // jsdom: http://localhost:3000
 
 describe("HelpPage", () => {
-  it("opens on what the application is, then the two data sources, then the agent", async () => {
+  it("opens on what the application is, then the two data sources, then the agent, and ends on the server", async () => {
     mockIndex(new Response("", { status: 404 }));
     const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
     await screen.findByText("L'application");
     const titles = [...container.querySelectorAll("[data-slot=card-title]")].map((el) => el.textContent);
-    // Four sections, not nine: everything about the optional agent lives inside the third one,
-    // so a newcomer does not read six installation cards as prerequisites.
+    // Five sections, not eleven: everything about the optional agent lives inside the third one,
+    // so a newcomer does not read six installation cards as prerequisites. The server comes
+    // last: a fallback and an option, never a step on the way in.
     expect(titles).toEqual([
       "L'application",
       "1. Obtenir un relevé d'activité",
       "2. Configurer une Flex Query",
       "3. L'agent local, facultatif",
+      "4. Le serveur, facultatif",
     ]);
   });
 
@@ -70,19 +72,79 @@ describe("HelpPage", () => {
       "6. Renseigner le port",
     ]);
     // The six are inside the agent card, so they are not cards of their own.
-    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(4);
+    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(5);
   });
 
-  // The three sources and what each can and cannot do: a newcomer choosing between them needs
-  // the limits, not just the names.
-  it("names the three data sources with the limit of each, and urges a full history", async () => {
+  // Whatever the mode, the history older than a year comes from statements: a newcomer choosing
+  // a mode needs that limit, not just the names.
+  it("says every mode takes its long history from statements, and urges a full history", async () => {
     mockIndex(new Response("", { status: 404 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);
     expect(await screen.findByText(/en filtrant automatiquement les doublons/)).toBeInTheDocument();
-    expect(screen.getByText(/que vous chargez dans l'application à la main/)).toBeInTheDocument();
-    expect(screen.getByText(/ne peuvent pas importer de données au-delà de 365 jours/)).toBeInTheDocument();
-    expect(screen.getByText(/Il ne permet pas de récupérer un historique/)).toBeInTheDocument();
-    expect(screen.getByText(/fortement recommandé d'importer l'ensemble de l'historique/)).toBeInTheDocument();
+    expect(screen.getByText(/l'historique de plus de 365 jours vient des relevés HTML/)).toBeInTheDocument();
+    expect(screen.getByText(/l'agent ne récupère aucun historique/)).toBeInTheDocument();
+    expect(screen.getByText(/importez l'ensemble de votre historique/)).toBeInTheDocument();
+  });
+
+  function features(): Record<string, string> {
+    const list = screen.getByTestId("help-modes-features");
+    return Object.fromEntries(
+      [...list.querySelectorAll("li")].map((li) => [li.dataset.feature, li.lastElementChild?.textContent ?? ""]),
+    );
+  }
+
+  // Both drawings, wide and narrow, are in the page — CSS shows one — and must light the same boxes.
+  function activeNodes(): string[] {
+    const lit = (layout: string) =>
+      [...screen.getByTestId("help-modes").querySelectorAll(`svg[data-layout=${layout}] [data-node][data-active=true]`)]
+        .map((node) => node.getAttribute("data-node") ?? "")
+        .sort();
+    expect(lit("narrow")).toEqual(lit("wide"));
+    return lit("wide");
+  }
+
+  it("opens the diagram on the recommended mode, the local agent", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    const group = await screen.findByRole("group", { name: "Choisir un mode de fonctionnement" });
+    const buttons = within(group).getAllByRole("button");
+    expect(buttons.map((b) => b.getAttribute("aria-pressed"))).toEqual(["false", "true", "false"]);
+    expect(buttons[1]).toHaveTextContent("Recommandé");
+    expect(activeNodes()).toEqual(["agent", "app", "ib", "tws"]);
+    expect(features()).toEqual({
+      freshness: "presque instantanée",
+      update: "automatique",
+      charts: "oui",
+      dayValues: "oui",
+      serverAccount: "non requis",
+      serverSees: "rien",
+    });
+  });
+
+  // Only the agent's mode draws the price charts: the two others stop at yesterday.
+  it("switches to the manual import: a statement by hand, no charts, no server", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole("button", { name: /1\. Import manuel/ }));
+    expect(screen.getByRole("button", { name: /1\. Import manuel/ })).toHaveAttribute("aria-pressed", "true");
+    expect(activeNodes()).toEqual(["app", "file", "ib"]);
+    expect(features()).toMatchObject({ freshness: "date du relevé", update: "à la main", charts: "non", dayValues: "non", serverSees: "rien" });
+    expect(screen.getAllByRole("img", { name: /vous l'importez à la main/ })).toHaveLength(2);
+  });
+
+  it("switches to the server's relay, called a fallback, and says what the server sees", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    const button = await screen.findByRole("button", { name: /3\. Automatique par le serveur/ });
+    expect(button).toHaveTextContent("Mode dégradé");
+    fireEvent.click(button);
+    expect(activeNodes()).toEqual(["app", "ib", "server"]);
+    expect(features()).toMatchObject({
+      freshness: "clôture de la veille",
+      charts: "non",
+      serverAccount: "connexion requise",
+      serverSees: "le jeton et la réponse Flex, en transit",
+    });
   });
 
   // A newcomer does not know either name; both are spelled out where they first appear.
@@ -197,11 +259,25 @@ describe("HelpPage", () => {
     expect(screen.getByText(/pas pour relayer Flex Query/)).toBeInTheDocument();
   });
 
-  it("says a Flex Query needs a relay, the local agent or the server", async () => {
+  it("says a Flex Query needs a relay, the local agent first, the server as a fallback", async () => {
     mockIndex(new Response("", { status: 404 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);
     expect(await screen.findByText(/il faut un relais/)).toBeInTheDocument();
-    expect(screen.getByText(/l'agent local \(recommandé\)/)).toBeInTheDocument();
+    expect(screen.getByText(/L'agent local \(recommandé\)/)).toBeInTheDocument();
+    expect(screen.getByText(/le serveur peut relayer, en mode dégradé — voir la section 4/)).toBeInTheDocument();
+  });
+
+  it("explains the server last: an optional relay in fallback mode, and an encrypted backup", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    const card = (await screen.findByText("4. Le serveur, facultatif")).closest("[data-slot=card]") as HTMLElement;
+    const steps = [...card.querySelectorAll("p.font-heading")].map((el) => el.textContent);
+    expect(steps).toEqual(["Relayer Flex Query par le serveur : un mode dégradé", "Sauvegarder vos données, chiffrées"]);
+    expect(within(card).getByText(/L'application n'a pas besoin du serveur/)).toBeInTheDocument();
+    expect(within(card).getByText(/sans y être journalisés ni conservés/)).toBeInTheDocument();
+    expect(within(card).getByText(/Tout à fait facultative/)).toBeInTheDocument();
+    expect(within(card).getByText(/chiffrées dans votre navigateur avant de partir/)).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Ouvrir les Paramètres" })).toHaveAttribute("href", "/settings");
   });
 
   it("says the agent talks to the application in the browser, never to the server", async () => {
