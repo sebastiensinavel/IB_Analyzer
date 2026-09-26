@@ -23,7 +23,8 @@ interface ExposureCardProps {
  * What a scope ties up per sector now: its legend table on the right at its own width, scrolling
  * within the donut's height under a sticky header, and the donut on the left in the rest, 13 rem at
  * least. The same card fills a statistics page and the dashboard, whose table keeps the sector and
- * its share alone. Only a very narrow card puts the table under the donut.
+ * its share alone. Only a very narrow card puts the table under the donut. Stretched to a taller
+ * neighbour, as on the dashboard, the card keeps both centred in its height.
  */
 export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, shareOnly = false }: ExposureCardProps) {
   const { t } = useTranslation();
@@ -35,7 +36,7 @@ export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, share
       <CardHeader>
         <CardTitle>{t("stats.exposure.title")}</CardTitle>
       </CardHeader>
-      <CardContent className="@container">
+      <CardContent className="@container flex flex-1 flex-col justify-center">
         {slices.length === 0 ? (
           <p className="text-sm text-muted-foreground">{empty}</p>
         ) : (
