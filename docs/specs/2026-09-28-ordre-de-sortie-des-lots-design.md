@@ -95,9 +95,10 @@ rachetés. Ce qu'elle vend au-delà sort par R3.
 
 Un rachat est un trade `OPT` de right `C`, acheté (`quantity > 0`), avec commission (pas une
 jambe d'expiration ni d'assignation), sur le même ticker et la même devise que la vente. Il ne
-sert qu'une fois : plusieurs ventes dans sa fenêtre se partagent ses contrats, la plus proche
-dans le temps d'abord. Une vente appariée à plusieurs rachats les consomme du plus proche au plus
-lointain, chacun avec son strike.
+sert qu'une fois : plusieurs ventes dans sa fenêtre se partagent ses contrats dans l'ordre
+chronologique, la première rejouée d'abord — la servir par proximité obligerait le replay à lire
+l'avenir. Une vente appariée à plusieurs rachats les consomme du plus proche au plus lointain,
+chacun avec son strike.
 
 ### R3 — Toute autre sortie d'actions longues
 
@@ -193,10 +194,10 @@ positions courtes, options), `move` et `insertAfter` continuent d'utiliser.
 
 `packages/ledger/src/journals/exitOrder.ts`, pur, sans carnet :
 
-- `strikeOrder(lots, strike)` — R1 : les lots dans l'ordre où un call de ce strike les livre ;
+- `strikePlan(lots, strike, contracts, reserved?, maxShares?)` — R1 en quantités, utilisé aussi
+  par R2 ;
 - `coverAttribution(wheelLots, openCalls)` — §2 : actions couvertes par lot ;
-- `salePlan(lots, covered, quantity)` — R3 : libres par Autres, LEAPS, Wheel, puis couvertes ;
-- `strikePlan(lots, strike, quantity)` — R1 en quantités, utilisé aussi par R2.
+- `salePlan(lots, covered, shares)` — R3 : libres par Autres, LEAPS, Wheel, puis couvertes.
 
 Chaque fonction se teste seule sur des lots écrits à la main.
 
