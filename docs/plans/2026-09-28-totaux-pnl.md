@@ -399,7 +399,7 @@ it("splits the market value with the quantity: free and covered parts add up to 
   - `export function headerTotals<Row>(rows: readonly Row[], currencyOf: (r: Row) => string, pick: { daily: (r: Row) => number | null; value: (r: Row) => number | null; pnl: (r: Row) => number | null }): HeaderTotalsValue`
   - `FilteredTableBoxProps.totals?: HeaderTotalsValue`
 
-- [ ] **Step 1: Textes** — `fr.json`, nouvelle section racine :
+- [x] **Step 1: Textes** — `fr.json`, nouvelle section racine :
 
 ```json
 "totals": {
@@ -414,7 +414,7 @@ it("splits the market value with the quantity: free and covered parts add up to 
 
 `en.json` : `"daily": "Day P/L"`, `"value": "Value"`, `"pnl": "P/L"`, `"partial_one": "{{count}} line without a value"`, `"partial_other": "{{count}} lines without a value"`, `"cashExcluded": "Cash left out: a filter is active."`.
 
-- [ ] **Step 2: Test**
+- [x] **Step 2: Test**
 
 ```tsx
 // apps/web/src/components/HeaderTotals.test.tsx
@@ -467,9 +467,9 @@ describe("HeaderTotals", () => {
 });
 ```
 
-- [ ] **Step 3: Voir échouer** — `cd apps/web && npx vitest run HeaderTotals`.
+- [x] **Step 3: Voir échouer** — `cd apps/web && npx vitest run HeaderTotals`.
 
-- [ ] **Step 4: Implémenter**
+- [x] **Step 4: Implémenter**
 
 ```tsx
 // apps/web/src/components/HeaderTotals.tsx
@@ -547,7 +547,7 @@ export function HeaderTotals({ totals }: { totals: HeaderTotalsValue }) {
 
 L'astérisque colle au chiffre : le test attend `10.00*`. Si `toHaveTextContent` voit une espace, retirer celle-ci plutôt que d'assouplir le test.
 
-- [ ] **Step 5: `FilteredTableBox`** — prop `totals?: HeaderTotalsValue` ; dans le `CardHeader` :
+- [x] **Step 5: `FilteredTableBox`** — prop `totals?: HeaderTotalsValue` ; dans le `CardHeader` :
 
 ```tsx
 <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
@@ -558,9 +558,9 @@ L'astérisque colle au chiffre : le test attend `10.00*`. Si `toHaveTextContent`
 
 Vérifier dans `packages/ui/src/card.tsx` que `CardHeader` accepte `className` et ne pose pas une grille qui écraserait `flex` (le `CardHeader` shadcn récent est une `grid` avec `CardAction`) ; s'il y a un `CardAction`, poser `HeaderTotals` dedans plutôt que de forcer `flex`.
 
-- [ ] **Step 6: Tests verts** — `cd apps/web && npx vitest run HeaderTotals FilteredTableBox`.
+- [x] **Step 6: Tests verts** — `cd apps/web && npx vitest run HeaderTotals FilteredTableBox`.
 
-- [ ] **Step 7: Commit** — `git commit -m "Totaux : HeaderTotals, dans l'en-tête des tableaux filtrés"`.
+- [x] **Step 7: Commit** — `git commit -m "Totaux : HeaderTotals, dans l'en-tête des tableaux filtrés"`.
 
 ---
 

@@ -819,5 +819,13 @@
       "textOperator": "No comparison nor range on text",
       "syntax": "Incomplete criterion"
     }
+  },
+  "totals": {
+    "daily": "Day P/L",
+    "value": "Value",
+    "pnl": "P/L",
+    "partial_one": "{{count}} line without a value",
+    "partial_other": "{{count}} lines without a value",
+    "cashExcluded": "Cash left out: a filter is active."
   }
 }

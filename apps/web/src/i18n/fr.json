@@ -819,5 +819,13 @@
       "textOperator": "Pas de comparaison ni de plage sur du texte",
       "syntax": "Critère incomplet"
     }
+  },
+  "totals": {
+    "daily": "P/L du jour",
+    "value": "Valeur",
+    "pnl": "P/L",
+    "partial_one": "{{count}} ligne sans valeur",
+    "partial_other": "{{count}} lignes sans valeur",
+    "cashExcluded": "Hors cash : un filtre est actif."
   }
 }

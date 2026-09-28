@@ -1,9 +1,10 @@
 import { Fragment, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { TableBody, TableCell, TableRow } from "@ib/ui/table";
 import { DataTable, DataTableHeader, type ColumnDef } from "@/components/table/DataTable";
 import { ActiveFilters } from "@/components/table/ActiveFilters";
+import { HeaderTotals, type HeaderTotalsValue } from "@/components/HeaderTotals";
 import type { TableViewState } from "@/hooks/useTableView";
 import { facetValues, type ColumnSpec } from "@/lib/tableView";
 
@@ -25,6 +26,8 @@ export interface FilteredTableBoxProps<Row> {
   emptyKey: string;
   rowKey: (row: Row) => string;
   renderRow: (row: Row) => ReactNode;
+  /** Sums of `rows`, beside the title (spec of sub-project 36, §4). */
+  totals?: HeaderTotalsValue;
 }
 
 /**
@@ -45,6 +48,7 @@ export function FilteredTableBox<Row>({
   emptyKey,
   rowKey,
   renderRow,
+  totals,
 }: FilteredTableBoxProps<Row>) {
   const { t } = useTranslation();
   const facets = useMemo(
@@ -65,6 +69,11 @@ export function FilteredTableBox<Row>({
       {title !== undefined && (
         <CardHeader>
           <CardTitle>{title}</CardTitle>
+          {totals && (
+            <CardAction>
+              <HeaderTotals totals={totals} />
+            </CardAction>
+          )}
         </CardHeader>
       )}
       <CardContent className="flex flex-col gap-3 overflow-x-auto">
