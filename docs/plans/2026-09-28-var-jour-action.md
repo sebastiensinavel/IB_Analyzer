@@ -39,9 +39,9 @@
 
 ### Task 0: Worktree
 
-- [ ] **Step 1:** depuis la racine du dépôt, sur `main` propre : `git worktree add .claude/worktrees/var-jour-action -b var-jour-action`
-- [ ] **Step 2:** `cd .claude/worktrees/var-jour-action && pnpm install --frozen-lockfile && uv sync --all-packages`
-- [ ] **Step 3:** `npx vitest run src/lib/positionColumns` depuis `apps/web` → PASS (base saine).
+- [x] **Step 1:** depuis la racine du dépôt, sur `main` propre : `git worktree add .claude/worktrees/var-jour-action -b var-jour-action`
+- [x] **Step 2:** `cd .claude/worktrees/var-jour-action && pnpm install --frozen-lockfile && uv sync --all-packages`
+- [x] **Step 3:** `npx vitest run src/lib/positionColumns` depuis `apps/web` → PASS (base saine).
 
 ---
 
@@ -52,7 +52,7 @@ TWS ne tourne pas sur la machine de développement : le script est écrit ici et
 **Files:**
 - Create: `private/probe_quotes.py` (dossier ignoré par git : le script lit les positions réelles)
 
-- [ ] **Step 1: Écrire le script**
+- [x] **Step 1: Écrire le script**
 
 ```python
 """Sonde du sous-projet 35 : que rend reqMktData sans abonnement temps réel ?
@@ -115,7 +115,7 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-- [ ] **Step 2:** vérifier qu'il s'importe : `uv run --project apps/tws-agent python -c "import ast,sys; ast.parse(open('private/probe_quotes.py').read())"` → aucune sortie.
+- [x] **Step 2:** vérifier qu'il s'importe : `uv run --project apps/tws-agent python -c "import ast,sys; ast.parse(open('private/probe_quotes.py').read())"` → aucune sortie.
 - [ ] **Step 3:** le contrôleur demande à Seb de lancer, **en séance puis après la clôture ou le week-end** : `! uv run --project apps/tws-agent python private/probe_quotes.py <port TWS>` et recopie la sortie. Rien n'est committé à ce stade (le script est dans `private/`) ; la tâche 9 reporte le verdict dans la spec §9.
 
 ---
