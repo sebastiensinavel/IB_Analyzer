@@ -664,7 +664,7 @@ Sommes par type de ligne :
 | `WheelShareLine` | `dailyPnl` | `marketValue` | `unrealizedPnl` | `currency` |
 | `CondorLine` | `dailyPnl` | `marketValue` | `pnl` | `contract.currency` |
 
-- [ ] **Step 1: Tests** dans `StrategyPositionsPage.test.tsx`, sur la fixture `SNAPSHOT` existante (les montants attendus se calculent sur cette fixture : les écrire en dur dans le test après les avoir dérivés à la main des positions de `SNAPSHOT`, pas en relisant la sortie du code) :
+- [x] **Step 1: Tests** dans `StrategyPositionsPage.test.tsx`, sur la fixture `SNAPSHOT` existante (les montants attendus se calculent sur cette fixture : les écrire en dur dans le test après les avoir dérivés à la main des positions de `SNAPSHOT`, pas en relisant la sortie du code) :
 
 ```tsx
 it("heads the Wheel page with the sums of every box's shown lines", async () => { /* page-totals : value = Σ marketValue des encadrés rendus */ });
@@ -680,9 +680,9 @@ it("marks the day P/L partial when dayShare drops a line", async () => { /* une 
 
 Chaque test écrit ses montants attendus en dur et ses assertions sur `within(screen.getByTestId("page-totals"))` ou sur la carte (`aria-label` = titre de l'encadré).
 
-- [ ] **Step 2: Voir échouer.**
+- [x] **Step 2: Voir échouer.**
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
   - Trois fonctions locales en tête de fichier :
 
 ```ts
@@ -713,9 +713,9 @@ const pageTotals: HeaderTotalsValue = {
     Seuls les encadrés rendus comptent : `lines`, `shares`, `condorBoxes` sont les `Map` que la page construit déjà après `filterBoxes`, et un encadré déclaré mais absent de `defs` n'y est pas.
   - Rendu du titre, identique à la page Positions (`data-testid="page-totals"`).
 
-- [ ] **Step 4: Tests verts** — `cd apps/web && npx vitest run StrategyPositions`.
+- [x] **Step 4: Tests verts** — `cd apps/web && npx vitest run StrategyPositions`.
 
-- [ ] **Step 5: Commit** — `git commit -m "Totaux : en-têtes des pages de stratégie"`.
+- [x] **Step 5: Commit** — `git commit -m "Totaux : en-têtes des pages de stratégie"`.
 
 ---
 
