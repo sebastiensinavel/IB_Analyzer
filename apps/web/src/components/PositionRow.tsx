@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
+import type { BuybackAdvice } from "@ib/coverage";
 import { Badge } from "@ib/ui/badge";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
+import { DecisionBadge } from "@/components/DecisionBadge";
 import { useUnderlyingDayChange } from "@/hooks/useUnderlyingDayChange";
 import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
-import { decisionBadge, type CoverageBadge } from "@/lib/riskReport";
+import { type CoverageBadge } from "@/lib/riskReport";
 import { cn } from "@/lib/utils";
 
 export const NUMERIC = "text-right font-mono tabular-nums";
@@ -58,6 +60,10 @@ export interface PositionRowValues {
   dailyPnl: number | null;
   unrealizedPnl: number | null;
   decision: "buy back" | "keep" | null;
+  /** The advice behind `decision`, for its tooltip. */
+  buyback: BuybackAdvice | null;
+  /** The position's currency, which the tooltip's price is in. */
+  currency: string;
   /** The coverage badges of the line, computed by the page: the whole IB position's, or a strategy's part of it. */
   coverage: readonly CoverageBadge[];
 }
@@ -71,7 +77,6 @@ export interface PositionRowProps {
 }
 
 export function PositionRow({ values, onClick, expanded = false }: PositionRowProps) {
-  const decision = decisionBadge(values.decision);
   return (
     <TableRow
       onClick={onClick}
@@ -89,7 +94,9 @@ export function PositionRow({ values, onClick, expanded = false }: PositionRowPr
       <TableCell className={cn(NUMERIC, toneOf(values.dayChange))}>{formatDayChange(values.dayChange)}</TableCell>
       <TableCell className={cn(NUMERIC, toneOf(values.dailyPnl))}>{formatMoney(values.dailyPnl)}</TableCell>
       <TableCell className={cn(NUMERIC, toneOf(values.unrealizedPnl))}>{formatMoney(values.unrealizedPnl)}</TableCell>
-      <TableCell>{decision && <Badge variant={decision.variant}>{decision.label}</Badge>}</TableCell>
+      <TableCell>
+        <DecisionBadge decision={values.decision} advice={values.buyback} currency={values.currency} />
+      </TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-1">
           {values.coverage.map((badge, index) =>

@@ -400,13 +400,13 @@ function timingOf(contract: ContractKey, contributions: readonly Contribution[],
 - Consumes: `saleInstants`, `BuybackAdvice`, `SaleTiming`, `buildRiskReport(..., sales)`, `PricedSnapshot.asOf`, `StrategyLine.buyback`, `CondorLine.buyback`, `AnalyzedPosition.buyback`.
 - Produces: `useRiskReport(accountId: string, soldAt?: ReadonlyMap<string, string>): RiskReportView` ; `<DecisionBadge decision advice currency />` ; `PositionRowValues` gagne `buyback: BuybackAdvice | null` et `currency: string`.
 
-- [ ] **Step 1: Écrire les tests qui échouent.**
+- [x] **Step 1: Écrire les tests qui échouent.**
   - `DecisionBadge.test.tsx` : rendu avec `decision "keep"`, `advice { decision: "keep", threshold: 0.42, remainingDays: 11.6, totalDays: 30.2 }`, `currency "USD"` ; au survol du badge (reprendre la façon dont un test existant ouvre une infobulle base-ui — `grep -rn "TooltipContent\|hover" apps/web/src --include=*.test.tsx`), le texte « Rachat rentable sous 0.42 USD : 12 j restants sur 30 » paraît (i18n fr, comme les autres tests) ; avec `remainingDays: null`, « Rachat rentable sous 0.75 USD : 50 % de la prime » ; `decision null` ne rend rien ; `advice null` rend le badge sans infobulle.
   - `hooks.test.tsx`, bloc `useRiskReport` : sur la graine existante, avec une table `new Map([[contractId(contractOf(put)), "<une date avant l'asOf>"]])` pour un put vendu du snapshot, `report.positions[i].buyback.remainingDays` n'est pas `null` ; sans table, il l'est et le seuil vaut `avgPrice / 2` (Review Focus 3 : le chargement des journaux).
 
-- [ ] **Step 2:** `cd apps/web && npx vitest run DecisionBadge hooks` → FAIL.
+- [x] **Step 2:** `cd apps/web && npx vitest run DecisionBadge hooks` → FAIL.
 
-- [ ] **Step 3: Implémenter.**
+- [x] **Step 3: Implémenter.**
 
 `hooks.ts` :
 
@@ -482,8 +482,8 @@ i18n, sous `positions` :
 }
 ```
 
-- [ ] **Step 4:** `cd apps/web && npx vitest run DecisionBadge hooks PositionRow PositionGroupCard CondorRows StrategyPositionsPage riskReport && npx tsc --noEmit -p .` → PASS.
-- [ ] **Step 5:** cocher et commit : `Décision de rachat : infobulle du seuil, pages datées par les journaux`.
+- [x] **Step 4:** `cd apps/web && npx vitest run DecisionBadge hooks PositionRow PositionGroupCard CondorRows StrategyPositionsPage riskReport && npx tsc --noEmit -p .` → PASS.
+- [x] **Step 5:** cocher et commit : `Décision de rachat : infobulle du seuil, pages datées par les journaux`.
 
 ---
 

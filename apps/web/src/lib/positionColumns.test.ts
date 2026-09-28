@@ -6,7 +6,7 @@ import { SAMPLE_POSITIONS } from "@/mocks/positions";
 function positionWith(overrides: Partial<AnalyzedPosition>): AnalyzedPosition {
   return {
     description: "TEST", kind: "long_stock", label: "long stock", marketValue: 0, quantity: 1,
-    avgPrice: 1, lastPrice: 1, dailyPnl: null, dayChange: null, unrealizedPnl: 0, action: "to evaluate", decision: null,
+    avgPrice: 1, lastPrice: 1, dailyPnl: null, dayChange: null, unrealizedPnl: 0, action: "to evaluate", decision: null, buyback: null,
     symbol: "TEST", secType: "STK", currency: "USD", right: "", strike: 0, expiry: "", multiplier: 1,
     allocations: [], uncoveredQuantity: 0, usedQuantity: 0, requiredCash: 0, riskNotes: [], ...overrides,
   };

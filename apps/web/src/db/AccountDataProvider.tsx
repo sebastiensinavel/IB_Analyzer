@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { saleInstants } from "@ib/coverage";
 import type { ActivableStrategy } from "@ib/ledger";
 import { useUnderlyingQuotes } from "@/agent/useUnderlyingQuotes";
 import { buildHeldDayChange } from "@/lib/underlyingDayChange";
@@ -25,7 +26,9 @@ const AccountDataContext = createContext<AccountData | null>(null);
 export function AccountDataProvider({ accountId, children }: { accountId: string; children: ReactNode }) {
   const strategies = useActiveStrategies(accountId);
   const journals = useJournals(accountId, strategies);
-  const { snapshot, report, sectorOf } = useRiskReport(accountId);
+  // Built once per journals, so the report is rebuilt only when a sale date can have moved.
+  const soldAt = useMemo(() => (journals.status === "ready" ? saleInstants(journals.report.rows) : undefined), [journals]);
+  const { snapshot, report, sectorOf } = useRiskReport(accountId, soldAt);
   useUnderlyingQuotes(accountId, report ?? null);
   const heldDayChange = useMemo(() => buildHeldDayChange(snapshot?.positions ?? []), [snapshot]);
   const value = useMemo(

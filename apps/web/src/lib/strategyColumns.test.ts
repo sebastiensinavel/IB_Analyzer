@@ -8,7 +8,7 @@ const CONTRACT = { ticker: "XOM", secType: "OPT", right: "P" as const, strike: 1
 function analyzedPosition(overrides: Partial<AnalyzedPosition> = {}): AnalyzedPosition {
   return {
     description: "TEST", kind: "long_put", label: "buy of put", marketValue: 0, quantity: 1,
-    avgPrice: 1, lastPrice: 1, dailyPnl: null, dayChange: null, unrealizedPnl: 0, action: "to evaluate", decision: null,
+    avgPrice: 1, lastPrice: 1, dailyPnl: null, dayChange: null, unrealizedPnl: 0, action: "to evaluate", decision: null, buyback: null,
     symbol: "XOM", secType: "OPT", currency: "USD", right: "P", strike: 100, expiry: "2026-03-20", multiplier: 100,
     allocations: [], uncoveredQuantity: 0, usedQuantity: 0, requiredCash: 0, riskNotes: [], ...overrides,
   };
@@ -17,7 +17,7 @@ function analyzedPosition(overrides: Partial<AnalyzedPosition> = {}): AnalyzedPo
 function line(overrides: Partial<StrategyLine> = {}): StrategyLine {
   return {
     contract: CONTRACT, kind: "short_put", label: "sell of put", quantity: -2, avgPrice: 2, lastPrice: 1.5,
-    marketValue: -300, dailyPnl: null, dayChange: null, unrealizedPnl: 100, decision: "keep", position: null, coverage: [], used: null, ...overrides,
+    marketValue: -300, dailyPnl: null, dayChange: null, unrealizedPnl: 100, decision: "keep", buyback: null, position: null, coverage: [], used: null, ...overrides,
   };
 }
 

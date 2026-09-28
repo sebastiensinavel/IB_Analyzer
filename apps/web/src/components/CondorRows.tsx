@@ -7,9 +7,10 @@ import { Badge } from "@ib/ui/badge";
 import { Button } from "@ib/ui/button";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
+import { DecisionBadge } from "@/components/DecisionBadge";
 import { NUMERIC, toneOf, UnderlyingDayChangeCell } from "@/components/PositionRow";
 import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
-import { decisionBadge, uncoveredBadge } from "@/lib/riskReport";
+import { uncoveredBadge } from "@/lib/riskReport";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,7 +34,6 @@ export function CondorRows({
   charted: boolean;
 }) {
   const { t } = useTranslation();
-  const decision = decisionBadge(line.decision);
   const partial = line.kind === "partial_iron_condor";
   const pnl = formatMoney(line.pnl);
   return (
@@ -93,7 +93,9 @@ export function CondorRows({
             pnl
           )}
         </TableCell>
-        <TableCell>{decision && <Badge variant={decision.variant}>{decision.label}</Badge>}</TableCell>
+        <TableCell>
+          <DecisionBadge decision={line.decision} advice={line.buyback} currency={line.contract.currency} />
+        </TableCell>
         <TableCell>{line.naked > 0 && <NakedBadge quantity={line.naked} />}</TableCell>
       </TableRow>
       {unfolded &&

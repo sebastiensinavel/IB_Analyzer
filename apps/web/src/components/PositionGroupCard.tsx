@@ -79,6 +79,8 @@ export function PositionGroupCard({
                 dailyPnl: position.dailyPnl,
                 unrealizedPnl: position.unrealizedPnl,
                 decision: position.decision,
+                buyback: position.buyback,
+                currency: position.currency,
                 coverage: coverageBadges(position),
               }}
             />
