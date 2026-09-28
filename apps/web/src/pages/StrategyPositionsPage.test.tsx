@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { ACTIVABLE_STRATEGIES, type Position, type Transaction } from "@ib/ledger";
 import i18n from "@/i18n";
+import { mergeQuotes, resetQuotes } from "@/agent/quotes";
 import { db, type SnapshotRecord } from "@/db/schema";
 import { StrategyPositionsPage, type PositionsStrategy } from "@/pages/StrategyPositionsPage";
 import { WithAccountData } from "@/test/WithAccountData";
@@ -80,6 +81,10 @@ beforeEach(async () => {
   await db.accounts.put({ id: "beta", label: "beta", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: [...ACTIVABLE_STRATEGIES] });
 });
 
+afterEach(() => {
+  resetQuotes();
+});
+
 async function seed() {
   await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, XOM_PUT]);
   await db.snapshots.put(SNAPSHOT);
@@ -104,11 +109,11 @@ describe("StrategyPositionsPage — Wheel", () => {
     renderPage("wheel");
     expect(await screen.findByText("Positions Wheel")).toBeInTheDocument();
     const free = await rowIn("Actions assignées sans call", "MQZA");
-    expect(texts(free)).toEqual(["MQZA", "", "100", "17.00", "—", "$1,700.00", "18.00", "—", "—", "$100.00", "unused"]);
+    expect(texts(free)).toEqual(["—", "MQZA", "", "100", "17.00", "—", "$1,700.00", "18.00", "—", "—", "$100.00", "unused"]);
     const covered = await rowIn("Actions assignées, call < assignation", "MQZA");
-    expect(texts(covered)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
-    expect(cells(covered)[4]).toHaveClass("bg-warning/25");
-    expect(cells(covered)[3]).not.toHaveClass("bg-warning/25");
+    expect(texts(covered)).toEqual(["—", "MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
+    expect(cells(covered)[5]).toHaveClass("bg-warning/25");
+    expect(cells(covered)[4]).not.toHaveClass("bg-warning/25");
     expect(screen.queryByLabelText("Actions assignées, call ≥ assignation")).not.toBeInTheDocument();
   });
 
@@ -122,8 +127,8 @@ describe("StrategyPositionsPage — Wheel", () => {
     });
     renderPage("wheel");
     const covered = await rowIn("Actions assignées, call ≥ assignation", "MQZA");
-    expect(texts(covered)).toEqual(["MQZA", "", "100", "17.00", "20.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
-    expect(cells(covered)[4]).not.toHaveClass("bg-warning/25");
+    expect(texts(covered)).toEqual(["—", "MQZA", "", "100", "17.00", "20.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
+    expect(cells(covered)[5]).not.toHaveClass("bg-warning/25");
     expect(screen.queryByLabelText("Actions assignées, call < assignation")).not.toBeInTheDocument();
   });
 
@@ -139,11 +144,19 @@ describe("StrategyPositionsPage — Wheel", () => {
     await seed();
     renderPage("wheel");
     const call = await rowIn("Ventes de calls", "MQZA Oct16'26 15 Call");
-    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.80", "1.00", "—", "—", "-$20.00", "keep", "stock ×1"]);
+    expect(texts(call)).toEqual(["—", "MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.80", "1.00", "—", "—", "-$20.00", "keep", "stock ×1"]);
     const put = await rowIn("Ventes de puts", "XOM Oct16'26 110 Put");
-    expect(texts(put)).toEqual(["XOM Oct16'26 110 Put", "sell of put", "", "—", "-1", "1.20", "—", "—", "—", "—", "", ""]);
+    expect(texts(put)).toEqual(["—", "XOM Oct16'26 110 Put", "sell of put", "", "—", "-1", "1.20", "—", "—", "—", "—", "", ""]);
     // The LEAPS call is not the Wheel's.
     expect(within(screen.getByLabelText("Ventes de calls")).queryByText("ZZZ Sep18'26 20 Call")).not.toBeInTheDocument();
+  });
+
+  it("shows the underlying's day move first, on a put sold on a ticker not held", async () => {
+    mergeQuotes(new Map([["XOM", -0.0312]]));
+    await seed();
+    renderPage("wheel");
+    const put = await rowIn("Ventes de puts", "XOM Oct16'26 110 Put");
+    expect(cells(put)[0]).toHaveTextContent("-3.1%");
   });
 
   it("shows no box at all, and says so once, when the Wheel holds nothing open", async () => {
@@ -169,9 +182,9 @@ describe("StrategyPositionsPage — Wheel", () => {
     });
     renderPage("wheel");
     const call = await rowIn("Ventes de calls", "MQZA Oct16'26 15 Call");
-    // dayChange is POSITION_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
-    expect(cells(call)[7]).toHaveTextContent("+5.0%");
-    expect(cells(call)[8]).toHaveTextContent("-$20.00");
+    // dayChange is POSITION_COLUMNS[8], dailyPnl is [9]: a swap between the two would fail this.
+    expect(cells(call)[8]).toHaveTextContent("+5.0%");
+    expect(cells(call)[9]).toHaveTextContent("-$20.00");
   });
 
   it("prorates the assigned shares' day P&L to the Wheel's share of the position, day change unprorated", async () => {
@@ -186,9 +199,9 @@ describe("StrategyPositionsPage — Wheel", () => {
     });
     renderPage("wheel");
     const row = await rowIn("Actions assignées, call < assignation", "MQZA");
-    // dayChange is WHEEL_SHARE_COLUMNS[7], dailyPnl is [8]: a swap between the two would fail this.
-    expect(cells(row)[7]).toHaveTextContent("+1.0%");
-    expect(cells(row)[8]).toHaveTextContent("$20.00");
+    // dayChange is WHEEL_SHARE_COLUMNS[8], dailyPnl is [9]: a swap between the two would fail this.
+    expect(cells(row)[8]).toHaveTextContent("+1.0%");
+    expect(cells(row)[9]).toHaveTextContent("$20.00");
     expect(screen.queryByLabelText("Actions assignées sans call")).not.toBeInTheDocument();
   });
 });
@@ -199,9 +212,9 @@ describe("StrategyPositionsPage — LEAPS", () => {
     renderPage("leaps");
     expect(await screen.findByText("Positions LEAPS")).toBeInTheDocument();
     const leaps = await rowIn("LEAPS avec call vendu", "ZZZ Jun18'27 15 Call");
-    expect(texts(leaps)).toEqual(["ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "used 1/1"]);
+    expect(texts(leaps)).toEqual(["—", "ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "used 1/1"]);
     const call = await rowIn("Ventes de calls", "ZZZ Sep18'26 20 Call");
-    expect(texts(call)).toEqual(["ZZZ Sep18'26 20 Call", "sell of call", "", "-$25.00", "-1", "0.50", "0.25", "—", "—", "$25.00", "buy back", "leaps ×1"]);
+    expect(texts(call)).toEqual(["—", "ZZZ Sep18'26 20 Call", "sell of call", "", "-$25.00", "-1", "0.50", "0.25", "—", "—", "$25.00", "buy back", "leaps ×1"]);
     expect(screen.queryByLabelText("Actions")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("LEAPS sans call vendu")).not.toBeInTheDocument();
   });
@@ -216,9 +229,9 @@ describe("StrategyPositionsPage — LEAPS", () => {
     });
     const { container } = renderPage("leaps");
     const covered = await rowIn("LEAPS avec call vendu", "ZZZ Jun18'27 15 Call");
-    expect(texts(covered)).toEqual(["ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "used 1/1"]);
+    expect(texts(covered)).toEqual(["—", "ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "used 1/1"]);
     const uncovered = await rowIn("LEAPS sans call vendu", "ZZZ Jun18'27 15 Call");
-    expect(texts(uncovered)).toEqual(["ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "unused"]);
+    expect(texts(uncovered)).toEqual(["—", "ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "unused"]);
     const titles = [...container.querySelectorAll("[data-slot=card]")].map((card) => card.getAttribute("aria-label"));
     expect(titles).toEqual(["LEAPS sans call vendu", "LEAPS avec call vendu", "Ventes de calls"]);
   });
@@ -264,16 +277,16 @@ describe("StrategyPositionsPage — a call that lost its cover", () => {
     await seedNaked();
     renderPage("wheel");
     const call = await rowIn("Ventes de calls", "MQZA Oct16'26 15 Call");
-    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "—", "—", "-$30.00", "keep", "stock ×1"]);
+    expect(texts(call)).toEqual(["—", "MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "—", "—", "-$30.00", "keep", "stock ×1"]);
     const held = await rowIn("Actions assignées, call < assignation", "MQZA");
-    expect(texts(held)).toEqual(["MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
+    expect(texts(held)).toEqual(["—", "MQZA", "", "100", "17.00", "15.00", "$1,700.00", "18.00", "—", "—", "$100.00", "used 100/100"]);
   });
 
   it("shows the naked contract on Others, without naming where it comes from", async () => {
     await seedNaked();
     renderPage("others");
     const call = await rowIn("Ventes d'options", "MQZA Oct16'26 15 Call");
-    expect(texts(call)).toEqual(["MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "—", "—", "-$30.00", "keep", "UNCOVERED ×1"]);
+    expect(texts(call)).toEqual(["—", "MQZA Oct16'26 15 Call", "sell of call", "", "-$100.00", "-1", "0.70", "1.00", "—", "—", "-$30.00", "keep", "UNCOVERED ×1"]);
     expect(within(screen.getByLabelText("Ventes d'options")).queryByText("Wheel")).not.toBeInTheDocument();
   });
 });
@@ -407,8 +420,8 @@ describe("StrategyPositionsPage — Condors", () => {
     await seedCondor();
     renderPage("condors");
     const line = await rowIn("Condors en cours", TITLE);
-    // Position, Type, Sector, Value, Qty, Credit, To close, Day %, Day P&L, P/L, Decision, Coverage.
-    expect(texts(line)).toEqual([TITLE, "iron condor", "", "-$30.00", "-1", "0.75", "0.30", "—", "—", "$45.00", "buy back", ""]);
+    // Underlying %, Position, Type, Sector, Value, Qty, Credit, To close, Day %, Day P&L, P/L, Decision, Coverage.
+    expect(texts(line)).toEqual(["—", TITLE, "iron condor", "", "-$30.00", "-1", "0.75", "0.30", "—", "—", "$45.00", "buy back", ""]);
     expect(screen.queryByLabelText("Achats d'options")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Ventes d'options")).not.toBeInTheDocument();
   });
@@ -417,7 +430,7 @@ describe("StrategyPositionsPage — Condors", () => {
     await seedCondor();
     renderPage("condors");
     const line = await rowIn("Condors en cours", TITLE);
-    const titleCell = cells(line)[0];
+    const titleCell = cells(line)[1];
     // One <wbr/> after each of the title's three slashes, none of them splitting a strike number.
     expect(titleCell.querySelectorAll("wbr")).toHaveLength(3);
     expect(titleCell.textContent).toBe(TITLE);
@@ -431,15 +444,27 @@ describe("StrategyPositionsPage — Condors", () => {
     const user = userEvent.setup();
     await user.click(within(line).getByRole("button", { name: "Voir les jambes" }));
     const legs = screen.getAllByTestId("condor-leg");
-    expect(legs.map((leg) => cells(leg)[0].textContent)).toEqual([
+    expect(legs.map((leg) => cells(leg)[1].textContent)).toEqual([
       "QQQ Oct16'26 480 Put", "QQQ Oct16'26 485 Put", "QQQ Oct16'26 520 Call", "QQQ Oct16'26 525 Call",
     ]);
     // Leg P/L: −15, +45, +30, −15, summing to the condor's $45.00.
-    expect(legs.map((leg) => texts(leg)[9])).toEqual(["-$15.00", "$45.00", "$30.00", "-$15.00"]);
+    expect(legs.map((leg) => texts(leg)[10])).toEqual(["-$15.00", "$45.00", "$30.00", "-$15.00"]);
     // The chevron folds and unfolds; it never opens the price chart (its row has no chart below).
     expect(line).not.toHaveAttribute("data-state", "selected");
     await user.click(within(line).getByRole("button", { name: "Masquer les jambes" }));
     expect(screen.queryAllByTestId("condor-leg")).toHaveLength(0);
+  });
+
+  it("shows the underlying's day move first, on the condor line and its unfolded legs", async () => {
+    mergeQuotes(new Map([["QQQ", 0.015]]));
+    await seedCondor();
+    renderPage("condors");
+    const line = await rowIn("Condors en cours", TITLE);
+    expect(cells(line)[0]).toHaveTextContent("+1.5%");
+    const user = userEvent.setup();
+    await user.click(within(line).getByRole("button", { name: "Voir les jambes" }));
+    const legs = screen.getAllByTestId("condor-leg");
+    expect(legs.map((leg) => cells(leg)[0].textContent)).toEqual(["+1.5%", "+1.5%", "+1.5%", "+1.5%"]);
   });
 
   it("searches by ticker on the condors and keeps the legs with them", async () => {

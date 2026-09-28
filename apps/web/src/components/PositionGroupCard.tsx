@@ -8,7 +8,7 @@ import { FilteredTableBox } from "@/components/table/FilteredTableBox";
 import type { OpenChart } from "@/hooks/useOpenChart";
 import type { TableViewState } from "@/hooks/useTableView";
 import { formatContract } from "@/lib/format";
-import { POSITION_COLUMNS } from "@/lib/positionColumns";
+import { POSITION_COLUMNS, POSITION_TABLE_MIN_WIDTH } from "@/lib/positionColumns";
 import { coverageBadges } from "@/lib/riskReport";
 import type { ColumnSpec } from "@/lib/tableView";
 
@@ -47,7 +47,7 @@ export function PositionGroupCard({
       title={title}
       columns={POSITION_COLUMNS}
       labelKey="positions.columns"
-      minWidth="70rem"
+      minWidth={POSITION_TABLE_MIN_WIDTH}
       specs={specs}
       facetRows={positions}
       rows={rows}
@@ -62,6 +62,7 @@ export function PositionGroupCard({
               onClick={() => chart.toggle(key)}
               expanded={chart.isOpen(key)}
               values={{
+                ticker: position.symbol,
                 contract: formatContract(position),
                 label: position.label,
                 sector: sectorOf(position.symbol),

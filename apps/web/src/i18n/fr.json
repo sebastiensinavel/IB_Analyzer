@@ -113,6 +113,7 @@
       "other": "Autres positions"
     },
     "columns": {
+      "underlyingDayChange": "Var. jour action",
       "position": "Position",
       "type": "Type",
       "sector": "Secteur",
@@ -146,6 +147,7 @@
       "condors": "Condors en cours"
     },
     "columns": {
+      "underlyingDayChange": "Var. jour action",
       "position": "Position",
       "sector": "Secteur",
       "quantity": "Quantité",
@@ -786,6 +788,9 @@
     "noBars": "Interactive Brokers ne rend aucun historique pour {{ticker}}",
     "proxy": "Cours de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}. Les niveaux restent aux prix de {{ticker}}.",
     "loading": "Chargement du graphe…"
+  },
+  "quotes": {
+    "proxy": "Variation de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}."
   },
   "tableFilter": {
     "panel": "Options de la colonne {{column}}",

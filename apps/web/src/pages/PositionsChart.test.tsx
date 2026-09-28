@@ -95,6 +95,6 @@ describe("the chart row of the Positions page", () => {
     await user.click(await rowFor("XOM Mar20'26 100 Put"));
 
     const cell = (await screen.findByTestId("position-chart-row")).querySelector("td");
-    expect(cell).toHaveAttribute("colspan", "12");
+    expect(cell).toHaveAttribute("colspan", "13");
   });
 });

@@ -4,9 +4,11 @@ import { coverageValues } from "@/lib/riskReport";
 import type { ColumnSpec } from "@/lib/tableView";
 
 /**
- * The twelve columns every table of the Positions page shares, in order, the cash table
- * included. Their widths are fixed, as a share of the table, so the tables line up whatever
- * their content. Re-measured for the whole-branch review of sub-project 23: the first pass
+ * The thirteen columns every table of the Positions page shares, in order, the cash table
+ * included. `underlyingDayChange` leads every table (spec of sub-project 35, §5); widths
+ * re-measured by task 6 of its plan. Their widths are fixed, as a share of the table, so the
+ * tables line up whatever their content. Re-measured for the whole-branch review of sub-project
+ * 23: the first pass
  * fitted every numeric column to the demo fixture's own values, sub-pixel from its widest
  * cell — a regression the review caught, not a design choice (`docs/points-reportes.md`). The
  * requirement is now the larger of two things, each measured live rather than assumed: the
@@ -45,26 +47,37 @@ import type { ColumnSpec } from "@/lib/tableView";
  * fixture, not a regression to chase back down by under-sizing a column again.
  */
 export const POSITION_COLUMNS = [
-  { key: "position", width: "12%", numeric: false },
-  { key: "type", width: "5.75%", numeric: false },
-  { key: "sector", width: "7.5%", numeric: false },
-  { key: "marketValue", width: "9.75%", numeric: true },
-  { key: "quantity", width: "6%", numeric: true },
-  { key: "avgPrice", width: "9%", numeric: true },
-  { key: "lastPrice", width: "9%", numeric: true },
-  { key: "dayChange", width: "6.75%", numeric: true },
-  { key: "dailyPnl", width: "9%", numeric: true },
-  { key: "unrealizedPnl", width: "9%", numeric: true },
-  { key: "decision", width: "8%", numeric: false },
-  { key: "coverage", width: "8.25%", numeric: false },
+  { key: "underlyingDayChange", width: "6.75%", numeric: true },
+  { key: "position", width: "10%", numeric: false },
+  { key: "type", width: "5.5%", numeric: false },
+  { key: "sector", width: "7%", numeric: false },
+  { key: "marketValue", width: "9.25%", numeric: true },
+  { key: "quantity", width: "5.75%", numeric: true },
+  { key: "avgPrice", width: "8.5%", numeric: true },
+  { key: "lastPrice", width: "8.5%", numeric: true },
+  { key: "dayChange", width: "6.5%", numeric: true },
+  { key: "dailyPnl", width: "8.5%", numeric: true },
+  { key: "unrealizedPnl", width: "8.5%", numeric: true },
+  { key: "decision", width: "7.5%", numeric: false },
+  { key: "coverage", width: "7.75%", numeric: false },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean }[];
+
+/** The table's provisional minimum width (task 6 of sub-project 35's plan re-measures it). */
+export const POSITION_TABLE_MIN_WIDTH = "75rem";
+
+/** The underlying's day move of a ticker, as the quotes store has it (spec of sub-project 35). */
+export type UnderlyingOf = (ticker: string) => number | null;
+
+/** A fraction on the row, a percentage in a spec: a filter typed "> 5" has to mean +5 %. */
+export const asPercent = (ratio: number | null) => (ratio === null ? null : ratio * 100);
 
 /**
  * What each shared column of the Positions page compares, filters and sorts on. Same keys and order
  * as POSITION_COLUMNS. The coverage is a set of sources, filterable but without a natural order.
  */
-export function positionColumnSpecs(sectorOf: (symbol: string) => string | null): ColumnSpec<AnalyzedPosition>[] {
+export function positionColumnSpecs(sectorOf: (symbol: string) => string | null, underlyingOf: UnderlyingOf): ColumnSpec<AnalyzedPosition>[] {
   return [
+    { key: "underlyingDayChange", type: "number", sortable: true, value: (position) => asPercent(underlyingOf(position.symbol)) },
     { key: "position", type: "text", sortable: true, value: (position) => formatContract(position) },
     {
       key: "type",
@@ -79,7 +92,7 @@ export function positionColumnSpecs(sectorOf: (symbol: string) => string | null)
     { key: "avgPrice", type: "number", sortable: true, value: (position) => position.avgPrice },
     { key: "lastPrice", type: "number", sortable: true, value: (position) => position.lastPrice },
     // A fraction on the row, a percentage here: a filter typed "> 5" has to mean +5 %.
-    { key: "dayChange", type: "number", sortable: true, value: (position) => (position.dayChange === null ? null : position.dayChange * 100) },
+    { key: "dayChange", type: "number", sortable: true, value: (position) => asPercent(position.dayChange) },
     { key: "dailyPnl", type: "number", sortable: true, value: (position) => position.dailyPnl },
     { key: "unrealizedPnl", type: "number", sortable: true, value: (position) => position.unrealizedPnl },
     { key: "decision", type: "enum", sortable: true, value: (position) => position.decision },
@@ -90,8 +103,10 @@ export function positionColumnSpecs(sectorOf: (symbol: string) => string | null)
 export type PositionColumnKey = (typeof POSITION_COLUMNS)[number]["key"];
 
 /**
- * The eleven columns of the Wheel's assigned shares: its own table, so its own floor, measured on
- * its own — eleven columns, not twelve, none of them the variable-length contract label that
+ * The twelve columns of the Wheel's assigned shares: its own table, so its own floor, measured on
+ * its own — twelve columns, not thirteen, `underlyingDayChange` leading it too (spec of
+ * sub-project 35, §5); widths re-measured by task 6 of its plan. None of them is the
+ * variable-length contract label that
  * drives `position`'s margin above POSITION_COLUMNS; here `position` is a bare ticker (`GOOGL`,
  * a realistic five-letter worst case; the header word dominates it anyway). Same method as
  * POSITION_COLUMNS, re-measured for the same whole-branch review: each column's widest
@@ -112,15 +127,19 @@ export type PositionColumnKey = (typeof POSITION_COLUMNS)[number]["key"];
  * a third of `coverage` — off-screen and reached by scrolling), unlike POSITION_COLUMNS' 70rem.
  */
 export const WHEEL_SHARE_COLUMNS = [
-  { key: "position", width: "8.5%", numeric: false },
-  { key: "sector", width: "8.25%", numeric: false },
-  { key: "quantity", width: "8.75%", numeric: true },
-  { key: "averageAssignmentPrice", width: "8.5%", numeric: true },
-  { key: "averageCallStrike", width: "8.5%", numeric: true },
-  { key: "assignedTotal", width: "11%", numeric: true },
-  { key: "lastPrice", width: "10%", numeric: true },
-  { key: "dayChange", width: "7.5%", numeric: true },
-  { key: "dailyPnl", width: "10%", numeric: true },
-  { key: "unrealizedPnl", width: "10%", numeric: true },
-  { key: "coverage", width: "9%", numeric: false },
+  { key: "underlyingDayChange", width: "7%", numeric: true },
+  { key: "position", width: "6.75%", numeric: false },
+  { key: "sector", width: "7.75%", numeric: false },
+  { key: "quantity", width: "8.25%", numeric: true },
+  { key: "averageAssignmentPrice", width: "8%", numeric: true },
+  { key: "averageCallStrike", width: "8%", numeric: true },
+  { key: "assignedTotal", width: "10.25%", numeric: true },
+  { key: "lastPrice", width: "9.5%", numeric: true },
+  { key: "dayChange", width: "7%", numeric: true },
+  { key: "dailyPnl", width: "9.5%", numeric: true },
+  { key: "unrealizedPnl", width: "9.5%", numeric: true },
+  { key: "coverage", width: "8.5%", numeric: false },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean }[];
+
+/** The table's provisional minimum width (task 6 of sub-project 35's plan re-measures it). */
+export const WHEEL_SHARE_TABLE_MIN_WIDTH = "68rem";

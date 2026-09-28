@@ -5,6 +5,7 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import statementHtml from "../../../../packages/ib-parsers/tests/fixtures/activity_statement_sample.htm?raw";
 import i18n from "@/i18n";
+import { mergeQuotes, resetQuotes } from "@/agent/quotes";
 import { db, type AccountRecord } from "@/db/schema";
 import { importFile } from "@/db/importFile";
 import { PositionsPage } from "@/pages/PositionsPage";
@@ -35,6 +36,10 @@ function renderPositions(accountId = "alpha") {
 beforeEach(async () => {
   window.localStorage.clear();
   await Promise.all([db.snapshots.clear(), db.sectors.clear(), db.transactions.clear(), db.cashPoints.clear()]);
+});
+
+afterEach(() => {
+  resetQuotes();
 });
 
 /** SAMPLE_TRANSACTIONS end on USD -18,543.15 raw and EUR 10,000; the end point moves USD to 1,456.85. */
@@ -160,7 +165,7 @@ describe("PositionsPage", () => {
     const user = userEvent.setup();
     await openPanel(user, sells, "P&L latent");
     await user.click(await screen.findByRole("button", { name: "Croissant" }));
-    const order = () => within(sells).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[0].textContent);
+    const order = () => within(sells).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[1].textContent);
     // Sells' P&L: AAPL 155 C -20, MSFT 400 C -10, XYZ 105 C 50, XYZ 95 P 100, AAPL 150 C 120, XOM unknown.
     await waitFor(() =>
       expect(order()).toEqual(["AAPL Feb20'26 155 Call", "MSFT Mar20'26 400 Call", "XYZ Mar20'26 105 Call", "XYZ Mar20'26 95 Put", "AAPL Jan16'26 150 Call", "XOM Mar20'26 100 Put"]),
@@ -195,7 +200,7 @@ describe("PositionsPage", () => {
     await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [{ ...SAMPLE_POSITIONS[0], marketValue: null }] });
     renderPositions();
     const cells = within(await rowFor("AAPL")).getAllByRole("cell");
-    expect(cells[3]).toHaveTextContent("—");
+    expect(cells[4]).toHaveTextContent("—");
   });
 
   it("shows the empty state with a link to the data sources when the account has no snapshot", async () => {
@@ -231,7 +236,7 @@ describe("PositionsPage", () => {
     for (const table of tables) {
       expect(widths(table)).toHaveLength(POSITION_COLUMNS.length);
       expect(widths(table)).toEqual(widths(tables[0]));
-      expect((within(table).getByText("Valeur de marché").closest("th") as HTMLTableCellElement).cellIndex).toBe(3);
+      expect((within(table).getByText("Valeur de marché").closest("th") as HTMLTableCellElement).cellIndex).toBe(4);
     }
   });
 
@@ -276,23 +281,68 @@ describe("PositionsPage", () => {
     expect(within(withMove).getByText("+8.2%")).toBeInTheDocument();
     // formatMoney, like the unrealized P&L column next to it (spec §7): a signed dollar amount.
     expect(within(withMove).getByText("$550.45")).toBeInTheDocument();
-    // Cell index, not just presence in the row: dayChange is POSITION_COLUMNS[7], dailyPnl is
-    // [8], between lastPrice and unrealizedPnl — a swap between the two values (both distinct
+    // Cell index, not just presence in the row: dayChange is POSITION_COLUMNS[8], dailyPnl is
+    // [9], between lastPrice and unrealizedPnl — a swap between the two values (both distinct
     // and non-null here) would fail this, where presence-only assertions would not.
     const moveCells = within(withMove).getAllByRole("cell");
-    expect(moveCells[7]).toHaveTextContent("+8.2%");
-    expect(moveCells[8]).toHaveTextContent("$550.45");
+    expect(moveCells[8]).toHaveTextContent("+8.2%");
+    expect(moveCells[9]).toHaveTextContent("$550.45");
     const withoutMove = await rowFor("ONDS");
     expect(within(withoutMove).getAllByText("—").length).toBeGreaterThanOrEqual(2);
   });
 
   it("leaves the day columns of the cash table empty", async () => {
-    // The cash card lays the twelve shared columns and fills only Position and Market value; the
-    // other ten are `aria-hidden`, so they need `hidden: true` to be counted at all.
+    // The cash card lays the thirteen shared columns and fills only Position and Market value; the
+    // other eleven are `aria-hidden`, so they need `hidden: true` to be counted at all.
     await seedCash();
     renderPositions();
     const cashRow = (await screen.findByText("USD")).closest("tr") as HTMLTableRowElement;
     expect(within(cashRow).getAllByRole("cell", { hidden: true })).toHaveLength(POSITION_COLUMNS.length);
+  });
+
+  it("shows the underlying's day move first, and a dash before any quote", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    const before = within(await rowFor("XOM Mar20'26 100 Put")).getAllByRole("cell");
+    expect(before[0]).toHaveTextContent("—");
+  });
+
+  it("shows the underlying's day move first, once the agent has quoted it", async () => {
+    mergeQuotes(new Map([["XOM", -0.0312]]));
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    const cells = within(await rowFor("XOM Mar20'26 100 Put")).getAllByRole("cell");
+    expect(cells[0]).toHaveTextContent("-3.1%");
+  });
+
+  it("never sorts the underlying's day move by default", async () => {
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
+    expect(within(sells).getByRole("columnheader", { name: /^Var\. jour action/ })).not.toHaveAttribute("aria-sort");
+  });
+
+  it("reads XSP's day move from SPY, with a tooltip naming the substitute", async () => {
+    mergeQuotes(new Map([["SPY", 0.004]]));
+    await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ symbol: "XSP", description: "XSP TEST" })] });
+    renderPositions();
+    const row = await rowFor("XSP");
+    const cells = within(row).getAllByRole("cell");
+    expect(cells[0]).toHaveTextContent("+0.4%");
+    await userEvent.setup().hover(within(cells[0]).getByText("+0.4%"));
+    expect(await screen.findByText("Variation de SPY : Interactive Brokers ne cote pas XSP.", {}, { timeout: 2000 })).toBeInTheDocument();
+  });
+
+  it("sorts a card on the underlying's day move, unknown values last", async () => {
+    mergeQuotes(new Map([["AAPL", 0.02], ["XOM", -0.03]]));
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
+    const user = userEvent.setup();
+    await openPanel(user, sells, "Var. jour action");
+    await user.click(await screen.findByRole("button", { name: "Croissant" }));
+    const order = () => within(sells).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[1].textContent);
+    await waitFor(() => expect(order()[0]).toBe("XOM Mar20'26 100 Put"));
   });
 });
 

@@ -113,6 +113,7 @@
       "other": "Other positions"
     },
     "columns": {
+      "underlyingDayChange": "Stock day chg.",
       "position": "Position",
       "type": "Type",
       "sector": "Sector",
@@ -146,6 +147,7 @@
       "condors": "Open condors"
     },
     "columns": {
+      "underlyingDayChange": "Stock day chg.",
       "position": "Position",
       "sector": "Sector",
       "quantity": "Quantity",
@@ -786,6 +788,9 @@
     "noBars": "Interactive Brokers returns no history for {{ticker}}",
     "proxy": "Showing {{proxy}}: Interactive Brokers does not quote {{ticker}}. The levels stay at {{ticker}} prices.",
     "loading": "Loading the chart…"
+  },
+  "quotes": {
+    "proxy": "{{proxy}} change: Interactive Brokers does not quote {{ticker}}."
   },
   "tableFilter": {
     "panel": "Column {{column}} options",

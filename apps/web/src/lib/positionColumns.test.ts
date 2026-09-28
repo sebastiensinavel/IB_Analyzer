@@ -14,10 +14,10 @@ function positionWith(overrides: Partial<AnalyzedPosition>): AnalyzedPosition {
 
 describe("positionColumnSpecs", () => {
   it("types every shared column, in its order, coverage filterable but not sortable", () => {
-    const specs = positionColumnSpecs(() => null);
+    const specs = positionColumnSpecs(() => null, () => null);
     expect(specs.map((spec) => spec.key)).toEqual(POSITION_COLUMNS.map((column) => column.key));
     expect(specs.map((spec) => spec.type)).toEqual([
-      "text", "enum", "enum", "number", "number", "number", "number", "number", "number", "number", "enum", "enum",
+      "number", "text", "enum", "enum", "number", "number", "number", "number", "number", "number", "number", "enum", "enum",
     ]);
     expect(specs.filter((spec) => !spec.sortable).map((spec) => spec.key)).toEqual(["coverage"]);
   });
@@ -25,7 +25,7 @@ describe("positionColumnSpecs", () => {
   it("compares what the row shows, the sector read through sectorOf", () => {
     const report = buildRiskReport(SAMPLE_POSITIONS, 42000);
     const put = report.positions.find((position) => position.symbol === "XOM")!;
-    const specs = Object.fromEntries(positionColumnSpecs((symbol) => (symbol === "XOM" ? "Energy" : null)).map((spec) => [spec.key, spec]));
+    const specs = Object.fromEntries(positionColumnSpecs((symbol) => (symbol === "XOM" ? "Energy" : null), () => null).map((spec) => [spec.key, spec]));
     expect(specs.position.value(put)).toBe("XOM Mar20'26 100 Put");
     expect(specs.type.value(put)).toBe("short_put");
     expect(specs.type.label?.("short_put")).toBe("sell of put");
@@ -36,7 +36,7 @@ describe("positionColumnSpecs", () => {
   });
 
   it("sorts and filters the day columns as numbers, the move in percent", () => {
-    const specs = positionColumnSpecs(() => null);
+    const specs = positionColumnSpecs(() => null, () => null);
     const byKey = Object.fromEntries(specs.map((s) => [s.key, s]));
 
     expect(byKey.dailyPnl.type).toBe("number");
@@ -45,12 +45,24 @@ describe("positionColumnSpecs", () => {
     expect(byKey.dayChange.value(positionWith({ dayChange: 0.0215 }))).toBeCloseTo(2.15, 12);
     expect(byKey.dayChange.value(positionWith({ dayChange: null }))).toBeNull();
   });
+
+  it("reads the underlying's day move as a percentage, null when unquoted", () => {
+    const report = buildRiskReport(SAMPLE_POSITIONS, 42000);
+    const put = report.positions.find((position) => position.symbol === "XOM")!;
+    const specs = Object.fromEntries(
+      positionColumnSpecs(() => null, (ticker) => (ticker === "XOM" ? 0.0215 : null)).map((spec) => [spec.key, spec]),
+    );
+    expect(specs.underlyingDayChange.value(put)).toBeCloseTo(2.15, 10);
+    expect(specs.underlyingDayChange.sortable).toBe(true);
+    expect(specs.underlyingDayChange.type).toBe("number");
+    expect(specs.underlyingDayChange.value(positionWith({ symbol: "OTHER" }))).toBeNull();
+  });
 });
 
 describe("POSITION_COLUMNS widths", () => {
-  it("declares the twelve shared columns in order, summing to 100", () => {
+  it("declares the thirteen shared columns in order, underlyingDayChange leading, summing to 100", () => {
     expect(POSITION_COLUMNS.map((c) => c.key)).toEqual([
-      "position", "type", "sector", "marketValue", "quantity", "avgPrice",
+      "underlyingDayChange", "position", "type", "sector", "marketValue", "quantity", "avgPrice",
       "lastPrice", "dayChange", "dailyPnl", "unrealizedPnl", "decision", "coverage",
     ]);
     const total = POSITION_COLUMNS.reduce((n, c) => n + Number.parseFloat(c.width), 0);

@@ -30,17 +30,17 @@ function holding(overrides: Partial<WheelShareLine> = {}): WheelShareLine {
 }
 
 describe("strategyColumnSpecs", () => {
-  it("types the shared twelve columns, in their order, coverage filterable but not sortable", () => {
-    const specs = strategyColumnSpecs(() => null, "wheel");
+  it("types the shared thirteen columns, in their order, coverage filterable but not sortable", () => {
+    const specs = strategyColumnSpecs(() => null, "wheel", () => null);
     expect(specs.map((spec) => spec.key)).toEqual(POSITION_COLUMNS.map((column) => column.key));
     expect(specs.map((spec) => spec.type)).toEqual([
-      "text", "enum", "enum", "number", "number", "number", "number", "number", "number", "number", "enum", "enum",
+      "number", "text", "enum", "enum", "number", "number", "number", "number", "number", "number", "number", "enum", "enum",
     ]);
     expect(specs.filter((spec) => !spec.sortable).map((spec) => spec.key)).toEqual(["coverage"]);
   });
 
   it("compares what the row shows, the sector read on the contract's ticker", () => {
-    const specs = Object.fromEntries(strategyColumnSpecs((symbol) => (symbol === "XOM" ? "Energy" : null), "wheel").map((spec) => [spec.key, spec]));
+    const specs = Object.fromEntries(strategyColumnSpecs((symbol) => (symbol === "XOM" ? "Energy" : null), "wheel", () => null).map((spec) => [spec.key, spec]));
     expect(specs.position.value(line())).toBe("XOM Mar20'26 100 Put");
     expect(specs.type.value(line())).toBe("short_put");
     expect(specs.type.label?.("short_put")).toBe("sell of put");
@@ -49,15 +49,25 @@ describe("strategyColumnSpecs", () => {
     expect(specs.decision.value(line())).toBe("keep");
   });
 
+  it("reads the underlying's day move on the contract's ticker, as a percentage, null when unquoted", () => {
+    const specs = Object.fromEntries(
+      strategyColumnSpecs(() => null, "wheel", (ticker) => (ticker === "XOM" ? -0.0312 : null)).map((spec) => [spec.key, spec]),
+    );
+    expect(specs.underlyingDayChange.value(line())).toBeCloseTo(-3.12, 10);
+    expect(specs.underlyingDayChange.sortable).toBe(true);
+    expect(specs.underlyingDayChange.type).toBe("number");
+    expect(specs.underlyingDayChange.value(line({ contract: { ...CONTRACT, ticker: "OTHER" } }))).toBeNull();
+  });
+
   it("filters a sold option of Others on UNCOVERED, whatever the snapshot says", () => {
-    const specs = Object.fromEntries(strategyColumnSpecs(() => null, "others").map((spec) => [spec.key, spec]));
+    const specs = Object.fromEntries(strategyColumnSpecs(() => null, "others", () => null).map((spec) => [spec.key, spec]));
     expect(specs.coverage.value(line())).toEqual(["UNCOVERED"]);
   });
 
   it("filters a condor's sold leg on its spread allocation and its wing on its use", () => {
     const sold = line({ coverage: [{ source: "spread", quantity: 1, detail: "" }] });
     const usedWing = line({ kind: "long_put", quantity: 1, position: analyzedPosition({ usedQuantity: 1 }), used: 1 });
-    const specs = Object.fromEntries(strategyColumnSpecs(() => null, "condors").map((spec) => [spec.key, spec]));
+    const specs = Object.fromEntries(strategyColumnSpecs(() => null, "condors", () => null).map((spec) => [spec.key, spec]));
     expect(specs.coverage.value(sold)).toEqual(["spread"]);
     expect(specs.coverage.value(usedWing)).toEqual(["used"]);
     // No position at all — the journal reads the wing open, the snapshot does not carry it — files
@@ -68,16 +78,16 @@ describe("strategyColumnSpecs", () => {
 });
 
 describe("wheelShareColumnSpecs", () => {
-  it("types the eleven columns of the assigned shares, in their order", () => {
-    const specs = wheelShareColumnSpecs(() => null);
+  it("types the twelve columns of the assigned shares, in their order", () => {
+    const specs = wheelShareColumnSpecs(() => null, () => null);
     expect(specs.map((spec) => spec.key)).toEqual(WHEEL_SHARE_COLUMNS.map((column) => column.key));
     expect(specs.map((spec) => spec.type)).toEqual([
-      "text", "enum", "number", "number", "number", "number", "number", "number", "number", "number", "enum",
+      "number", "text", "enum", "number", "number", "number", "number", "number", "number", "number", "number", "enum",
     ]);
   });
 
   it("reads the ticker as the position and the cover as used or unused", () => {
-    const specs = Object.fromEntries(wheelShareColumnSpecs((symbol) => (symbol === "MQZA" ? "Crypto" : null)).map((spec) => [spec.key, spec]));
+    const specs = Object.fromEntries(wheelShareColumnSpecs((symbol) => (symbol === "MQZA" ? "Crypto" : null), () => null).map((spec) => [spec.key, spec]));
     expect(specs.position.value(holding())).toBe("MQZA");
     expect(specs.sector.value(holding())).toBe("Crypto");
     expect(specs.averageCallStrike.value(holding())).toBe(15);
@@ -86,7 +96,7 @@ describe("wheelShareColumnSpecs", () => {
   });
 
   it("sorts and filters the day columns as numbers, the move in percent", () => {
-    const specs = wheelShareColumnSpecs(() => null);
+    const specs = wheelShareColumnSpecs(() => null, () => null);
     const byKey = Object.fromEntries(specs.map((s) => [s.key, s]));
 
     expect(byKey.dailyPnl.type).toBe("number");
@@ -95,12 +105,21 @@ describe("wheelShareColumnSpecs", () => {
     expect(byKey.dayChange.value(holding({ dayChange: 0.0215 }))).toBeCloseTo(2.15, 12);
     expect(byKey.dayChange.value(holding({ dayChange: null }))).toBeNull();
   });
+
+  it("reads the underlying's day move on the ticker, as a percentage, null when unquoted", () => {
+    const specs = wheelShareColumnSpecs(() => null, (ticker) => (ticker === "MQZA" ? 0.0215 : null));
+    const byKey = Object.fromEntries(specs.map((s) => [s.key, s]));
+    expect(byKey.underlyingDayChange.value(holding())).toBeCloseTo(2.15, 10);
+    expect(byKey.underlyingDayChange.sortable).toBe(true);
+    expect(byKey.underlyingDayChange.type).toBe("number");
+    expect(byKey.underlyingDayChange.value(holding({ ticker: "OTHER" }))).toBeNull();
+  });
 });
 
 describe("WHEEL_SHARE_COLUMNS widths", () => {
-  it("declares the eleven columns of the Wheel's shares, summing to 100", () => {
+  it("declares the twelve columns of the Wheel's shares, underlyingDayChange leading, summing to 100", () => {
     expect(WHEEL_SHARE_COLUMNS.map((c) => c.key)).toEqual([
-      "position", "sector", "quantity", "averageAssignmentPrice", "averageCallStrike",
+      "underlyingDayChange", "position", "sector", "quantity", "averageAssignmentPrice", "averageCallStrike",
       "assignedTotal", "lastPrice", "dayChange", "dailyPnl", "unrealizedPnl", "coverage",
     ]);
     const total = WHEEL_SHARE_COLUMNS.reduce((n, c) => n + Number.parseFloat(c.width), 0);

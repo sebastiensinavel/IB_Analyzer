@@ -5,6 +5,7 @@ import { DETAIL_GROUPS, groupedPositions, type AnalyzedPosition, type DetailGrou
 import { anchoredBalances } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
+import { underlyingDayChangeOf, useUnderlyingQuotesMap } from "@/agent/quotes";
 import { CashBalancesCard } from "@/components/CashBalancesCard";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
 import { PositionGroupCard } from "@/components/PositionGroupCard";
@@ -25,7 +26,9 @@ export function PositionsPage() {
   const { accountId = "" } = useParams<{ accountId: string }>();
   const { t } = useTranslation();
   const { snapshot, report, sectorOf } = useAccountRiskReport();
-  const specs = useMemo(() => positionColumnSpecs(sectorOf), [sectorOf]);
+  const quotes = useUnderlyingQuotesMap();
+  const underlyingOf = useCallback((ticker: string) => underlyingDayChangeOf(quotes, ticker), [quotes]);
+  const specs = useMemo(() => positionColumnSpecs(sectorOf, underlyingOf), [sectorOf, underlyingOf]);
   const search = usePageSearch(pageSearchKey(accountId, "positions"));
   const views = usePositionGroupViews(accountId, specs);
   const setExpiry = useCallback(

@@ -24,10 +24,11 @@ import { Badge } from "@ib/ui/badge";
 import { Card, CardContent } from "@ib/ui/card";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
+import { underlyingDayChangeOf, useUnderlyingQuotesMap } from "@/agent/quotes";
 import { CondorRows } from "@/components/CondorRows";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
 import { PositionChartRow } from "@/components/PositionChartRow";
-import { NUMERIC, PositionRow, toneOf } from "@/components/PositionRow";
+import { NUMERIC, PositionRow, toneOf, UnderlyingDayChangeCell } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
 import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountJournals, useAccountRiskReport, useAccountStrategies } from "@/db/AccountDataProvider";
@@ -38,7 +39,7 @@ import { usePageSearch, type TableViewState } from "@/hooks/useTableView";
 import { condorColumnSpecs } from "@/lib/condorColumns";
 import { expiryChoices, reportToday } from "@/lib/expiryFilter";
 import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
-import { POSITION_COLUMNS, WHEEL_SHARE_COLUMNS } from "@/lib/positionColumns";
+import { POSITION_COLUMNS, POSITION_TABLE_MIN_WIDTH, WHEEL_SHARE_COLUMNS, WHEEL_SHARE_TABLE_MIN_WIDTH } from "@/lib/positionColumns";
 import { strategyCoverageBadges, usedBadge } from "@/lib/riskReport";
 import { STRATEGY_BOXES } from "@/lib/strategyBoxes";
 import { strategyColumnSpecs, wheelShareColumnSpecs } from "@/lib/strategyColumns";
@@ -76,9 +77,11 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   const journals = useAccountJournals();
   const active = useAccountStrategies();
   const { snapshot, report, sectorOf } = useAccountRiskReport();
-  const lineSpecs = useMemo(() => strategyColumnSpecs(sectorOf, strategy), [sectorOf, strategy]);
-  const shareSpecs = useMemo(() => wheelShareColumnSpecs(sectorOf), [sectorOf]);
-  const condorSpecs = useMemo(() => condorColumnSpecs(sectorOf), [sectorOf]);
+  const quotes = useUnderlyingQuotesMap();
+  const underlyingOf = useCallback((ticker: string) => underlyingDayChangeOf(quotes, ticker), [quotes]);
+  const lineSpecs = useMemo(() => strategyColumnSpecs(sectorOf, strategy, underlyingOf), [sectorOf, strategy, underlyingOf]);
+  const shareSpecs = useMemo(() => wheelShareColumnSpecs(sectorOf, underlyingOf), [sectorOf, underlyingOf]);
+  const condorSpecs = useMemo(() => condorColumnSpecs(sectorOf, underlyingOf), [sectorOf, underlyingOf]);
   const search = usePageSearch(pageSearchKey(accountId, `positions:${strategy}`));
   const views = useStrategyBoxViews(accountId, strategy, lineSpecs, shareSpecs, condorSpecs);
   const chart = useOpenChart();
@@ -232,7 +235,7 @@ function LinesBox({
       title={box.title}
       columns={POSITION_COLUMNS}
       labelKey="positions.columns"
-      minWidth="70rem"
+      minWidth={POSITION_TABLE_MIN_WIDTH}
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
@@ -247,6 +250,7 @@ function LinesBox({
               onClick={() => chart.toggle(key)}
               expanded={chart.isOpen(key)}
               values={{
+                ticker: line.contract.ticker,
                 contract: formatContractLabel(line.contract),
                 label: line.label,
                 sector: sectorOf(line.contract.ticker),
@@ -300,7 +304,7 @@ function CondorsBox({
       title={box.title}
       columns={POSITION_COLUMNS}
       labelKey="positions.columns"
-      minWidth="70rem"
+      minWidth={POSITION_TABLE_MIN_WIDTH}
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
@@ -353,7 +357,7 @@ function SharesBox({
       title={box.title}
       columns={WHEEL_SHARE_COLUMNS}
       labelKey="strategyPositions.columns"
-      minWidth="63rem"
+      minWidth={WHEEL_SHARE_TABLE_MIN_WIDTH}
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
@@ -399,6 +403,7 @@ function WheelShareRow({
   const covered = usedBadge(line.coveredShares, line.quantity);
   return (
     <TableRow onClick={onClick} data-state={expanded ? "selected" : undefined} className={cn(onClick && "cursor-pointer")}>
+      <UnderlyingDayChangeCell ticker={line.ticker} />
       <TableCell className="font-medium">{line.ticker}</TableCell>
       <TableCell>{sector && <Badge variant="outline">{sector}</Badge>}</TableCell>
       <TableCell className={NUMERIC}>{line.quantity}</TableCell>

@@ -783,7 +783,7 @@ export function useUnderlyingQuotes(accountId: string, report: RiskReport | null
   - `export type UnderlyingOf = (ticker: string) => number | null;` dans `positionColumns.ts` ; `positionColumnSpecs(sectorOf, underlyingOf)`, `strategyColumnSpecs(sectorOf, strategy, underlyingOf)`, `wheelShareColumnSpecs(sectorOf, underlyingOf)`, `condorColumnSpecs(sectorOf, underlyingOf)`.
   - `export function UnderlyingDayChangeCell({ ticker }: { ticker: string })` dans `PositionRow.tsx`.
 
-- [ ] **Step 1: Largeurs provisoires.** `POSITION_COLUMNS` à 75rem, chaque colonne gardant au moins ses pixels d'avant (ancienne part × 70/75, arrondie au 0,25 % supérieur), la nouvelle colonne en tête :
+- [x] **Step 1: Largeurs provisoires.** `POSITION_COLUMNS` à 75rem, chaque colonne gardant au moins ses pixels d'avant (ancienne part × 70/75, arrondie au 0,25 % supérieur), la nouvelle colonne en tête :
 
 ```ts
 export const POSITION_COLUMNS = [
@@ -824,7 +824,7 @@ export const WHEEL_SHARE_COLUMNS = [
 
 Les deux somment à 100. Les commentaires de tête (« twelve columns », « eleven », « 70rem », « 63rem ») sont réécrits par la tâche 6 avec les mesures ; ici, remplacer seulement les nombres de colonnes (« thirteen », « twelve ») et ajouter une ligne : « `underlyingDayChange` leads every table (spec of sub-project 35, §5); widths re-measured by task 6 of its plan. »
 
-- [ ] **Step 2: Tests des colonnes** (`positionColumns.test.ts`) — adapter « declares the twelve shared columns in order, summing to 100 » en treize colonnes, `underlyingDayChange` en tête ; même test pour `WHEEL_SHARE_COLUMNS` (douze, en tête) s'il existe, l'ajouter sinon. Ajouter :
+- [x] **Step 2: Tests des colonnes** (`positionColumns.test.ts`) — adapter « declares the twelve shared columns in order, summing to 100 » en treize colonnes, `underlyingDayChange` en tête ; même test pour `WHEEL_SHARE_COLUMNS` (douze, en tête) s'il existe, l'ajouter sinon. Ajouter :
 
 ```ts
 it("reads the underlying's day move as a percentage, null when unquoted", () => {
@@ -837,8 +837,8 @@ it("reads the underlying's day move as a percentage, null when unquoted", () => 
 
 (`byKey` / `put` : reprendre les aides déjà présentes dans ce fichier de test ; si elles n'existent pas sous ces noms, utiliser celles qui y sont.) Même vérification pour `strategyColumnSpecs`, `wheelShareColumnSpecs` et `condorColumnSpecs` dans leurs tests respectifs (`grep -rln "strategyColumnSpecs\|condorColumnSpecs" apps/web/src --include=*.test.ts`) : chaque spec a `underlyingDayChange` en tête et lit le ticker de la ligne (`line.contract.ticker`, `line.ticker`).
 
-- [ ] **Step 3:** `npx vitest run src/lib` → FAIL.
-- [ ] **Step 4: Specs.** Dans `positionColumns.ts` :
+- [x] **Step 3:** `npx vitest run src/lib` → FAIL.
+- [x] **Step 4: Specs.** Dans `positionColumns.ts` :
 
 ```ts
 /** The underlying's day move of a ticker, as the quotes store has it (spec of sub-project 35). */
@@ -850,9 +850,9 @@ export const asPercent = (ratio: number | null) => (ratio === null ? null : rati
 
 `positionColumnSpecs(sectorOf, underlyingOf: UnderlyingOf)` commence par `{ key: "underlyingDayChange", type: "number", sortable: true, value: (position) => asPercent(underlyingOf(position.symbol)) }` ; ses `dayChange` passent par `asPercent`. Même première entrée dans `strategyColumnSpecs(sectorOf, strategy, underlyingOf)` (`line.contract.ticker`), `wheelShareColumnSpecs(sectorOf, underlyingOf)` (`line.ticker`), `condorColumnSpecs(sectorOf, underlyingOf)` (`line.contract.ticker`, triable : un condor a un sous-jacent). Mettre à jour les docstrings (« thirteen », « twelve »).
 
-- [ ] **Step 5:** `npx vitest run src/lib` → PASS.
+- [x] **Step 5:** `npx vitest run src/lib` → PASS.
 
-- [ ] **Step 6: La cellule.** Dans `PositionRow.tsx` :
+- [x] **Step 6: La cellule.** Dans `PositionRow.tsx` :
 
 ```tsx
 /**
@@ -881,7 +881,7 @@ export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
 
 `PositionRowValues` gagne `/** The underlying's ticker, which the first column is quoted on. */ ticker: string;` et `PositionRow` rend `<UnderlyingDayChangeCell ticker={values.ticker} />` **avant** la cellule Position.
 
-- [ ] **Step 7: Les appelants.**
+- [x] **Step 7: Les appelants.**
   - `PositionGroupCard` : `ticker: position.symbol` ; `minWidth={POSITION_TABLE_MIN_WIDTH}`.
   - `StrategyPositionsPage` / `LinesBox` : `ticker: line.contract.ticker` ; `minWidth={POSITION_TABLE_MIN_WIDTH}` (deux endroits) et `WHEEL_SHARE_TABLE_MIN_WIDTH` (un endroit).
   - `WheelShareRow` : `<UnderlyingDayChangeCell ticker={line.ticker} />` en première cellule.
@@ -890,9 +890,9 @@ export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
   - Chaque appel de `positionColumnSpecs`, `strategyColumnSpecs`, `wheelShareColumnSpecs`, `condorColumnSpecs` : `const quotes = useUnderlyingQuotesMap();` puis `const underlyingOf = useCallback((ticker: string) => underlyingDayChangeOf(quotes, ticker), [quotes]);` passé en dernier argument, et ajouté aux dépendances du `useMemo` qui construit les specs.
   - `pnpm --filter web exec tsc --noEmit` (ou `npx tsc --noEmit -p .` depuis `apps/web`) → aucune erreur : le typage trouve tout appelant oublié.
 
-- [ ] **Step 8: Textes.** `fr.json` : `positions.columns.underlyingDayChange: "Var. jour action"`, `strategyPositions.columns.underlyingDayChange: "Var. jour action"`, clé de tête `"quotes": { "proxy": "Variation de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}." }`. `en.json` : `"Stock day chg."` aux deux endroits, `"quotes": { "proxy": "{{proxy}} change: Interactive Brokers does not quote {{ticker}}." }`. (Le test de parité des clés fr/en, s'il existe, doit passer.)
+- [x] **Step 8: Textes.** `fr.json` : `positions.columns.underlyingDayChange: "Var. jour action"`, `strategyPositions.columns.underlyingDayChange: "Var. jour action"`, clé de tête `"quotes": { "proxy": "Variation de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}." }`. `en.json` : `"Stock day chg."` aux deux endroits, `"quotes": { "proxy": "{{proxy}} change: Interactive Brokers does not quote {{ticker}}." }`. (Le test de parité des clés fr/en, s'il existe, doit passer.)
 
-- [ ] **Step 9: Tests de rendu.** Dans le test existant de la page Positions de stratégie (ledger semé sur `fake-indexeddb`, jamais de hook moqué), avec `mergeQuotes(new Map([["<ticker d'une vente de put semée>", -0.0312]]))` avant le rendu et `resetQuotes()` en `afterEach` :
+- [x] **Step 9: Tests de rendu.** Dans le test existant de la page Positions de stratégie (ledger semé sur `fake-indexeddb`, jamais de hook moqué), avec `mergeQuotes(new Map([["<ticker d'une vente de put semée>", -0.0312]]))` avant le rendu et `resetQuotes()` en `afterEach` :
 
 ```tsx
 it("shows the underlying's day move first, on a put sold on a ticker not held", async () => {
@@ -915,8 +915,8 @@ Et un test XSP : semer (ou reprendre de la fixture de démo) une position XSP, `
 
 Un test `CondorRows` (ou page Condors) : la ligne du condor et, dépliées, ses jambes montrent la variation du sous-jacent en première cellule.
 
-- [ ] **Step 10:** `npx vitest run src/components src/pages src/lib` depuis `apps/web` → PASS.
-- [ ] **Step 11: Commit** — `git add apps/web docs/plans/2026-09-28-var-jour-action.md && git commit -m "Tableaux de positions : Var. jour action en première colonne, triable, XSP via SPY"`
+- [x] **Step 10:** `npx vitest run src/components src/pages src/lib` depuis `apps/web` → PASS.
+- [x] **Step 11: Commit** — `git add apps/web docs/plans/2026-09-28-var-jour-action.md && git commit -m "Tableaux de positions : Var. jour action en première colonne, triable, XSP via SPY"`
 
 ---
 
