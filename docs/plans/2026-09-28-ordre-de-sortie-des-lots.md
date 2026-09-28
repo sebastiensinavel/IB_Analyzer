@@ -431,7 +431,7 @@ git commit -m "Journaux : le module d'ordre de sortie des lots (R1, attribution,
   - `mergePortions(...lists: ClosedPortion[][]): ClosedPortion[]` — un lot, une portion ;
   - `sharesOf(portions: ClosedPortion[]): number` et `contractsOf(portions: ClosedPortion[]): number`.
 
-- [ ] **Step 1: Write the failing replay tests** — dans `replay.test.ts`, après le
+- [x] **Step 1: Write the failing replay tests** — dans `replay.test.ts`, après le
   `describe` du sous-projet 17 :
 
 ```ts
@@ -502,12 +502,12 @@ describe("buildJournals — the order shares leave in (spec 33)", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `npx vitest run replay -t "spec 33"`
 Expected: FAIL — §4.1 livre le lot à 6 (FIFO), §4.3 livre 5 au call à 7, le dernier vend le lot à 9.
 
-- [ ] **Step 3: Implement `exits.ts`**
+- [x] **Step 3: Implement `exits.ts`**
 
 ```ts
 import { isWheelCoveredCall, isWheelShares, sharesPerContract, type ClosedPortion, type Lot } from "./book.ts";
@@ -555,7 +555,7 @@ export function contractsOf(portions: ClosedPortion[]): number {
 }
 ```
 
-- [ ] **Step 4: Rewire `deliverShares`** (`replay.ts`) — remplacer les lignes
+- [x] **Step 4: Rewire `deliverShares`** (`replay.ts`) — remplacer les lignes
 
 ```ts
   // A Wheel covered call hands over Wheel shares first (spec 17, §4.2): the
@@ -584,7 +584,7 @@ Ajouter `type ClosedPortion` à l'import de `./book.ts` et importer `mergePortio
 `sellAtStrike`, `sellFree`, `sharesOf` depuis `./exits.ts`. `isWheelShares` reste importé tant
 que la boucle des actions l'utilise (tâche 3).
 
-- [ ] **Step 5: Run the new tests, then the whole package**
+- [x] **Step 5: Run the new tests, then the whole package**
 
 Run: `npx vitest run replay -t "spec 33"` — Expected: PASS.
 Run: `npx vitest run` (dans `packages/ledger`). Tout test existant qui change d'attente :
@@ -593,7 +593,7 @@ son strike ; R3 : une livraison hors Wheel prend Autres puis LEAPS puis Wheel), 
 à jour et noter la règle dans le message de commit. Sinon, c'est un bug : le corriger.
 Run: `npx vitest run journals.oracle` dans `packages/ib-parsers` — Expected: PASS sans modification.
 
-- [ ] **Step 6: Commit** (cases cochées dans le même commit)
+- [x] **Step 6: Commit** (cases cochées dans le même commit)
 
 ```bash
 git add packages/ledger/src/journals/exits.ts packages/ledger/src/journals/replay.ts packages/ledger/src/journals/replay.test.ts docs/plans/2026-09-28-ordre-de-sortie-des-lots.md

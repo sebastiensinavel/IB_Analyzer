@@ -624,6 +624,72 @@ describe("buildJournals and corporate actions", () => {
   });
 });
 
+describe("buildJournals — the order shares leave in (spec 33)", () => {
+  const T = "AISP";
+  const put = (strike: number, expiry: string) => ({ ticker: T, right: "P" as const, strike, expiry });
+  const call = (strike: number, expiry: string) => ({ ticker: T, right: "C" as const, strike, expiry });
+  const soldShares = (report: JournalsReport, strategy = "wheel") =>
+    report.rows.filter((r) => r.kind === "shares" && r.strategy === strategy && r.endWhen !== null).map((r) => [r.openPrice, r.closePrice, r.quantity]);
+  const heldShares = (report: JournalsReport, strategy = "wheel") =>
+    report.rows.filter((r) => r.kind === "shares" && r.strategy === strategy && r.endWhen === null).map((r) => [r.openPrice, r.quantity]);
+  const assignedPut = (strike: number, expiry: string, sold: string) => [
+    option({ ...put(strike, expiry), quantity: -1, price: 0.3, when: sold }),
+    ...deliver({ ...put(strike, expiry), quantity: 1 }),
+  ];
+
+  it("§4.1: a call at 5 delivers the lot at 5, not the older lot at 6", () => {
+    const report = buildJournals([
+      ...assignedPut(6, "2026-01-16", "2026-01-05T15:00:00.000Z"),
+      ...assignedPut(5, "2026-02-20", "2026-02-02T15:00:00.000Z"),
+      option({ ...call(5, "2026-03-20"), quantity: -1, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+      ...deliver({ ...call(5, "2026-03-20"), quantity: 1 }),
+    ]);
+    expect(soldShares(report)).toEqual([[5, 5, 100]]);
+    expect(heldShares(report)).toEqual([[6, 100]]);
+  });
+
+  it("§4.2: with no lot at or below the strike, the cheapest leaves", () => {
+    const report = buildJournals([
+      ...assignedPut(7, "2026-01-16", "2026-01-05T15:00:00.000Z"),
+      ...assignedPut(6, "2026-02-20", "2026-02-02T15:00:00.000Z"),
+      option({ ...call(5, "2026-03-20"), quantity: -1, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+      ...deliver({ ...call(5, "2026-03-20"), quantity: 1 }),
+    ]);
+    expect(soldShares(report)).toEqual([[6, 5, 100]]);
+    expect(heldShares(report)).toEqual([[7, 100]]);
+  });
+
+  it("§4.3: two calls, each delivers the lot closest below its strike", () => {
+    const report = buildJournals([
+      ...assignedPut(5, "2026-01-16", "2026-01-05T15:00:00.000Z"),
+      ...assignedPut(6, "2026-02-20", "2026-02-02T15:00:00.000Z"),
+      option({ ...call(5, "2026-04-17"), quantity: -1, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+      option({ ...call(7, "2026-03-20"), quantity: -1, price: 0.1, when: "2026-03-03T15:00:00.000Z" }),
+      ...deliver({ ...call(7, "2026-03-20"), quantity: 1 }),
+      ...deliver({ ...call(5, "2026-04-17"), quantity: 1 }),
+    ]);
+    expect(soldShares(report)).toEqual(expect.arrayContaining([[6, 7, 100], [5, 5, 100]]));
+    expect(soldShares(report)).toHaveLength(2);
+  });
+
+  it("delivers what the Wheel lacks by R3: free shares of Others before the Wheel's own", () => {
+    // Wheel inactive at the call sale: the call goes naked to Others, the assignment is not a Wheel call.
+    const report = buildJournals(
+      [
+        stock({ ticker: T, quantity: 100, price: 9, when: "2026-01-02T15:00:00.000Z" }),
+        stock({ ticker: T, quantity: 100, price: 4, when: "2026-01-03T15:00:00.000Z" }),
+        option({ ...call(5, "2026-03-20"), quantity: -1, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+        ...deliver({ ...call(5, "2026-03-20"), quantity: 1 }),
+      ],
+      undefined,
+      undefined,
+      ["leaps"],
+    );
+    expect(soldShares(report, "others")).toEqual([[4, 5, 100]]);
+    expect(heldShares(report, "others")).toEqual([[9, 100]]);
+  });
+});
+
 describe("buildJournals — statistics", () => {
   it("runs every strategy's months on to the ledger's last transaction, whatever its strategy", () => {
     const report = buildJournals([

@@ -6,6 +6,7 @@ import { contractId, contractOf, formatContractLabel, isPackedOptionSymbol, opti
 import { classifyOpenings, type Opening } from "./classify.ts";
 import { computeCapital } from "./capital.ts";
 import { applyConversion, applyMixedMerger, pairCorporateActions, withoutOldSuffix, type CorporateActionEvent } from "./corporate.ts";
+import { mergePortions, sellAtStrike, sellFree, sharesOf } from "./exits.ts";
 import { mergeFills } from "./fills.ts";
 import { condorRows } from "./condor.ts";
 import { closeLot, idsOf, kindOf, newContext, uniqueId, type ReplayContext } from "./context.ts";
@@ -459,10 +460,17 @@ function closeOptions(tx: Transaction, contract: ContractKey, closed: ClosedPort
 /** Books the shares an assignment or exercise delivers: sells what is held, or opens a delivered lot in the option's own journal. */
 function deliverShares(ctx: ReplayContext, lot: Lot, delivery: Delivery, when: string, row: JournalRow | null): void {
   const contract = sharesContract(lot.contract.ticker, lot.contract.currency);
-  // A Wheel covered call hands over Wheel shares first (spec 17, §4.2): the
-  // Wheel may cover a call with shares ranked behind a lot it never took over.
-  const wheelCall = delivery.sign < 0 && isWheelCoveredCall(lot);
-  const { closed } = ctx.book.closePreferring(contract, delivery.sign * delivery.shares, isWheelShares, wheelCall ? delivery.shares / delivery.ratio : 0);
+  // Shares leaving: a Wheel covered call hands over by R1, what it lacks and
+  // any other delivery by R3 (spec 33 §3). Shares coming in close shorts FIFO.
+  let closed: ClosedPortion[];
+  if (delivery.sign < 0) {
+    const strike = lot.contract.strike;
+    const first = isWheelCoveredCall(lot) && strike !== null ? sellAtStrike(ctx, contract, strike, delivery.shares / delivery.ratio, delivery.shares) : [];
+    const rest = delivery.shares - sharesOf(first);
+    closed = mergePortions(first, rest > 1e-9 ? sellFree(ctx, contract, rest) : []);
+  } else {
+    closed = ctx.book.close(contract, delivery.shares);
+  }
   for (const portion of closed) {
     closeLot(ctx, portion.lot, portion.quantity, {
       when,
