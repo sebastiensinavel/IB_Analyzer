@@ -57,6 +57,15 @@ function Probe() {
   return <p>{`${asOf} / ${journals.report.rows.length} rows / ${naked}`}</p>;
 }
 
+/** The buyback timing of every sold option of the report, once the journals are ready. */
+function TimingProbe() {
+  const journals = useAccountJournals();
+  const { report } = useAccountRiskReport();
+  if (journals.status === "loading" || report === undefined || report === null) return <p>loading</p>;
+  const sold = report.positions.filter((p) => p.decision !== null);
+  return <p>{`timed: ${sold.map((p) => `${p.symbol}=${p.buyback?.remainingDays ?? "none"}`).join(",")}`}</p>;
+}
+
 beforeEach(async () => {
   await Promise.all([db.accounts.clear(), db.transactions.clear(), db.snapshots.clear(), db.contracts.clear()]);
 });
@@ -115,5 +124,22 @@ describe("AccountDataProvider", () => {
     await setActiveStrategies(db, "beta", ["wheel", "leaps", "condors"]);
     // Same component, never remounted: the journals follow the setting.
     expect(await screen.findByText("active: wheel,leaps,condors / rows: condors,leaps,others,wheel")).toBeInTheDocument();
+  });
+
+  it("dates the Positions page's sold options from the journals (buyback timing)", async () => {
+    await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
+    await db.snapshots.put({
+      ...SAMPLE_JOURNAL_SNAPSHOT,
+      positions: SAMPLE_JOURNAL_SNAPSHOT.positions.map((p) =>
+        p.symbol === "ZZZ" && p.quantity < 0 ? { ...p, avgPrice: 0.5, marketPrice: 0.2 } : p,
+      ),
+    });
+    render(
+      <AccountDataProvider accountId="beta">
+        <TimingProbe />
+      </AccountDataProvider>,
+    );
+    // Sold 2026-06-10 16:00-ish, expiring 2026-09-18 16:00, priced at 2026-09-02 16:00: 16 days left.
+    expect(await screen.findByText(/^timed: ZZZ=1[5-6](\.\d+)?$/)).toBeInTheDocument();
   });
 });

@@ -23,8 +23,12 @@ describe("DecisionBadge", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders the badge without a tooltip when there is no advice", () => {
+  it("renders the badge without a tooltip when there is no advice", async () => {
     render(<DecisionBadge decision="keep" advice={null} currency="USD" />);
+    await userEvent.setup().hover(screen.getByText("keep"));
+    await new Promise((resolve) => setTimeout(resolve, 700));
     expect(screen.getByText("keep")).toBeInTheDocument();
+    expect(screen.queryByText(/Rachat rentable/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 });

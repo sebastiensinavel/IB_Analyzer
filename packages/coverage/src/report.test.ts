@@ -190,8 +190,11 @@ describe("buildRiskReport sale timing", () => {
     const dated = buildRiskReport([put], 0, { asOf: "2026-09-28T16:00:00.000Z", soldAt: new Map([[id, "2026-09-01T16:00:00.000Z"]]) });
     expect(dated.positions[0].decision).toBe("keep");
     expect(dated.positions[0].buyback).toMatchObject({ remainingDays: 3, totalDays: 30 });
-    const plain = buildRiskReport([put], 0);
-    expect(plain.positions[0].decision).toBe("buy back");
-    expect(plain.positions[0].buyback).toEqual({ decision: "buy back", threshold: 15, remainingDays: null, totalDays: null });
+    const other = option({ symbol: "QQQ", right: "P", strike: 400, expiry: "2026-10-01", quantity: -1, avgPrice: 20, marketPrice: 8 });
+    const plain = buildRiskReport([put, other], 0);
+    expect(plain.positions.map((p) => p.buyback)).toEqual([
+      { decision: "buy back", threshold: 15, remainingDays: null, totalDays: null },
+      { decision: "buy back", threshold: 10, remainingDays: null, totalDays: null },
+    ]);
   });
 });

@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useRef, type ReactNode } from "react";
 import { saleInstants } from "@ib/coverage";
 import type { ActivableStrategy } from "@ib/ledger";
 import { useUnderlyingQuotes } from "@/agent/useUnderlyingQuotes";
@@ -26,8 +26,16 @@ const AccountDataContext = createContext<AccountData | null>(null);
 export function AccountDataProvider({ accountId, children }: { accountId: string; children: ReactNode }) {
   const strategies = useActiveStrategies(accountId);
   const journals = useJournals(accountId, strategies);
-  // Built once per journals, so the report is rebuilt only when a sale date can have moved.
-  const soldAt = useMemo(() => (journals.status === "ready" ? saleInstants(journals.report.rows) : undefined), [journals]);
+  // The same Map while its content is unchanged, so a ledger write that moves no sale date
+  // does not rebuild the report and everything downstream.
+  const built = useMemo(() => (journals.status === "ready" ? saleInstants(journals.report.rows) : undefined), [journals]);
+  const stable = useRef<{ key: string; map: Map<string, string> } | undefined>(undefined);
+  const soldAt = useMemo(() => {
+    if (built === undefined) return undefined;
+    const key = JSON.stringify([...built].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+    if (stable.current?.key !== key) stable.current = { key, map: built };
+    return stable.current.map;
+  }, [built]);
   const { snapshot, report, sectorOf } = useRiskReport(accountId, soldAt);
   useUnderlyingQuotes(accountId, report ?? null);
   const heldDayChange = useMemo(() => buildHeldDayChange(snapshot?.positions ?? []), [snapshot]);
