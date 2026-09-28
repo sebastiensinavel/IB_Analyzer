@@ -1,9 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { sumByCurrency } from "@ib/coverage";
 import type { CurrencyTotal } from "@ib/ledger";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
-import { formatAmount } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { TotalAmount } from "@/components/stats/TotalAmount";
 
 export interface HeaderTotalsValue {
   daily: CurrencyTotal[];
@@ -26,29 +24,6 @@ export function headerTotals<Row>(
   };
 }
 
-function Figure({ label, total, signed, note }: { label: string; total: CurrencyTotal | undefined; signed: boolean; note?: string }) {
-  const { t } = useTranslation();
-  const value = total?.total ?? null;
-  const partial = total !== undefined && total.missing > 0 && value !== null;
-  const tone = value === null ? "text-muted-foreground" : signed ? (value >= 0 ? "text-success" : "text-destructive") : undefined;
-  const tip = [partial ? t("totals.partial", { count: total.missing }) : null, note ?? null].filter(Boolean).join(" ");
-  const figure = (
-    <span className="whitespace-nowrap">
-      <span className="text-xs text-muted-foreground">{label}</span>{" "}
-      <span className={cn("font-mono tabular-nums", tone)}>{value === null ? "—" : formatAmount(value)}</span>
-      {(partial || note) && <span className="text-muted-foreground">*</span>}
-    </span>
-  );
-  return tip ? (
-    <Tooltip>
-      <TooltipTrigger render={<span />}>{figure}</TooltipTrigger>
-      <TooltipContent>{tip}</TooltipContent>
-    </Tooltip>
-  ) : (
-    figure
-  );
-}
-
 /** One compact line per currency, beside a title; wraps on a narrow screen. */
 export function HeaderTotals({ totals }: { totals: HeaderTotalsValue }) {
   const { t } = useTranslation();
@@ -59,9 +34,9 @@ export function HeaderTotals({ totals }: { totals: HeaderTotalsValue }) {
     <div className="flex flex-col items-end gap-0.5 text-sm">
       {currencies.map((currency) => (
         <div key={currency} data-testid={`header-totals-${currency}`} className="flex flex-wrap items-baseline justify-end gap-x-3 gap-y-0.5">
-          <Figure label={t("totals.daily")} total={of(totals.daily, currency)} signed />
-          <Figure label={t("totals.value")} total={of(totals.value, currency)} signed={false} note={totals.valueNote} />
-          <Figure label={t("totals.pnl")} total={of(totals.pnl, currency)} signed />
+          <TotalAmount label={t("totals.daily")} total={of(totals.daily, currency)} signed />
+          <TotalAmount label={t("totals.value")} total={of(totals.value, currency)} signed={false} note={totals.valueNote} />
+          <TotalAmount label={t("totals.pnl")} total={of(totals.pnl, currency)} signed />
           <span className="text-xs text-muted-foreground">{currency}</span>
         </div>
       ))}
