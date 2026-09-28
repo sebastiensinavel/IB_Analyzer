@@ -35,9 +35,9 @@
 
 ### Task 0: Worktree
 
-- [ ] **Step 1:** depuis la racine, sur `main` propre : `git worktree add .claude/worktrees/decision-rachat -b decision-rachat`
-- [ ] **Step 2:** `cd .claude/worktrees/decision-rachat && pnpm install --frozen-lockfile`
-- [ ] **Step 3:** `cd packages/coverage && npx vitest run` → PASS (base saine).
+- [x] **Step 1:** depuis la racine, sur `main` propre : `git worktree add .claude/worktrees/decision-rachat -b decision-rachat`
+- [x] **Step 2:** `cd .claude/worktrees/decision-rachat && pnpm install --frozen-lockfile`
+- [x] **Step 3:** `cd packages/coverage && npx vitest run` → PASS (base saine).
 
 ---
 
@@ -61,7 +61,7 @@
   // AnalyzedPosition gagne : buyback: BuybackAdvice | null
   ```
 
-- [ ] **Step 1: Écrire les tests qui échouent** — `packages/coverage/src/buyback.test.ts` :
+- [x] **Step 1: Écrire les tests qui échouent** — `packages/coverage/src/buyback.test.ts` :
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -177,9 +177,9 @@ it("dates a short option from the sale table, and keeps the 50% rule without it"
 
 (`contractId`, `contractOf` s'importent de `@ib/ledger`. Utiliser la fabrique de positions déjà présente dans `report.test.ts` ou `analyze.test.ts`.)
 
-- [ ] **Step 2:** `cd packages/coverage && npx vitest run buyback report analyze` → FAIL (`./buyback.ts` introuvable).
+- [x] **Step 2:** `cd packages/coverage && npx vitest run buyback report analyze` → FAIL (`./buyback.ts` introuvable).
 
-- [ ] **Step 3: Implémenter** — `packages/coverage/src/buyback.ts` :
+- [x] **Step 3: Implémenter** — `packages/coverage/src/buyback.ts` :
 
 ```ts
 import { contractId, type JournalRow } from "@ib/ledger";
@@ -312,8 +312,8 @@ export function buildRiskReport(positions: readonly Position[], cashAvailable: n
 
 Dans `index.ts` : `export * from "./buyback.ts";`. Toute autre construction d'`AnalyzedPosition` littérale dans les tests du paquet reçoit `buyback: null` (le typage les signale).
 
-- [ ] **Step 4:** `cd packages/coverage && npx vitest run && npx tsc --noEmit -p .` → PASS (les appelants `strategy.ts`/`condors.ts` passent `null` en troisième argument à ce stade : `evaluateBuyback(avgPrice, lastPrice, null).decision`, remplacés à la tâche 2).
-- [ ] **Step 5:** cocher les cases de la tâche 1 et commit : `Décision de rachat : l'avis tient compte du temps`.
+- [x] **Step 4:** `cd packages/coverage && npx vitest run && npx tsc --noEmit -p .` → PASS (les appelants `strategy.ts`/`condors.ts` passent `null` en troisième argument à ce stade : `evaluateBuyback(avgPrice, lastPrice, null).decision`, remplacés à la tâche 2).
+- [x] **Step 5:** cocher les cases de la tâche 1 et commit : `Décision de rachat : l'avis tient compte du temps`.
 
 ---
 
@@ -327,16 +327,16 @@ Dans `index.ts` : `export * from "./buyback.ts";`. Toute autre construction d'`A
 - Consumes: `evaluateBuyback`, `averageSaleInstant`, `BuybackAdvice`, `BuybackTiming` (tâche 1).
 - Produces: `PricedSnapshot` gagne `asOf?: string` ; `StrategyLine.buyback: BuybackAdvice | null` ; `CondorLine.buyback: BuybackAdvice | null`.
 
-- [ ] **Step 1: Écrire les tests qui échouent.** Dans `strategy.test.ts`, en reprenant les fabriques du fichier (journal + snapshot) :
+- [x] **Step 1: Écrire les tests qui échouent.** Dans `strategy.test.ts`, en reprenant les fabriques du fichier (journal + snapshot) :
   - une Wheel qui a vendu un put SPY d'échéance `E` en deux lignes ouvertes (−1 à `t1`, −3 à `t2`), un snapshot `{ positions, report, asOf }` : la ligne a `buyback.totalDays` égal à `(E 16:00 − moyenne pondérée) / 1 j` et `decision === buyback.decision` ; sans `asOf` dans le `PricedSnapshot`, `buyback.remainingDays` est `null` et le seuil vaut `avgPrice / 2`.
   - une ligne d'Autres faite uniquement de contrats migrés (reprendre le cas de migration existant du fichier, compte réduit au strict nécessaire) : son `buyback.totalDays` se mesure depuis le `startWhen` des lignes de la stratégie d'origine.
   - un call acheté : `buyback` et `decision` `null`.
 
   Dans `condors.test.ts`, sur le condor complet existant du fichier, avec `asOf` dans le snapshot : `buyback.totalDays` se mesure du `startWhen` du composite à l'échéance du condor, `decision === buyback.decision` ; le cas existant « negative closing cost » garde `decision: "buy back"` et a `buyback.threshold === 0` ; un condor partiel a `buyback: null`.
 
-- [ ] **Step 2:** `npx vitest run strategy condors` → FAIL.
+- [x] **Step 2:** `npx vitest run strategy condors` → FAIL.
 
-- [ ] **Step 3: Implémenter.** `strategy.ts` :
+- [x] **Step 3: Implémenter.** `strategy.ts` :
 
 ```ts
 /** The snapshot's positions and the risk report built from them, index for index. */
@@ -384,8 +384,8 @@ function timingOf(contract: ContractKey, contributions: readonly Contribution[],
 
 `CondorLine` gagne `buyback: BuybackAdvice | null`.
 
-- [ ] **Step 4:** `npx vitest run && npx tsc --noEmit -p .` depuis `packages/coverage` → PASS.
-- [ ] **Step 5:** cocher et commit : `Décision de rachat : pages de stratégie et Condors datés`.
+- [x] **Step 4:** `npx vitest run && npx tsc --noEmit -p .` depuis `packages/coverage` → PASS.
+- [x] **Step 5:** cocher et commit : `Décision de rachat : pages de stratégie et Condors datés`.
 
 ---
 
@@ -400,13 +400,13 @@ function timingOf(contract: ContractKey, contributions: readonly Contribution[],
 - Consumes: `saleInstants`, `BuybackAdvice`, `SaleTiming`, `buildRiskReport(..., sales)`, `PricedSnapshot.asOf`, `StrategyLine.buyback`, `CondorLine.buyback`, `AnalyzedPosition.buyback`.
 - Produces: `useRiskReport(accountId: string, soldAt?: ReadonlyMap<string, string>): RiskReportView` ; `<DecisionBadge decision advice currency />` ; `PositionRowValues` gagne `buyback: BuybackAdvice | null` et `currency: string`.
 
-- [ ] **Step 1: Écrire les tests qui échouent.**
+- [x] **Step 1: Écrire les tests qui échouent.**
   - `DecisionBadge.test.tsx` : rendu avec `decision "keep"`, `advice { decision: "keep", threshold: 0.42, remainingDays: 11.6, totalDays: 30.2 }`, `currency "USD"` ; au survol du badge (reprendre la façon dont un test existant ouvre une infobulle base-ui — `grep -rn "TooltipContent\|hover" apps/web/src --include=*.test.tsx`), le texte « Rachat rentable sous 0.42 USD : 12 j restants sur 30 » paraît (i18n fr, comme les autres tests) ; avec `remainingDays: null`, « Rachat rentable sous 0.75 USD : 50 % de la prime » ; `decision null` ne rend rien ; `advice null` rend le badge sans infobulle.
   - `hooks.test.tsx`, bloc `useRiskReport` : sur la graine existante, avec une table `new Map([[contractId(contractOf(put)), "<une date avant l'asOf>"]])` pour un put vendu du snapshot, `report.positions[i].buyback.remainingDays` n'est pas `null` ; sans table, il l'est et le seuil vaut `avgPrice / 2` (Review Focus 3 : le chargement des journaux).
 
-- [ ] **Step 2:** `cd apps/web && npx vitest run DecisionBadge hooks` → FAIL.
+- [x] **Step 2:** `cd apps/web && npx vitest run DecisionBadge hooks` → FAIL.
 
-- [ ] **Step 3: Implémenter.**
+- [x] **Step 3: Implémenter.**
 
 `hooks.ts` :
 
@@ -482,8 +482,8 @@ i18n, sous `positions` :
 }
 ```
 
-- [ ] **Step 4:** `cd apps/web && npx vitest run DecisionBadge hooks PositionRow PositionGroupCard CondorRows StrategyPositionsPage riskReport && npx tsc --noEmit -p .` → PASS.
-- [ ] **Step 5:** cocher et commit : `Décision de rachat : infobulle du seuil, pages datées par les journaux`.
+- [x] **Step 4:** `cd apps/web && npx vitest run DecisionBadge hooks PositionRow PositionGroupCard CondorRows StrategyPositionsPage riskReport && npx tsc --noEmit -p .` → PASS.
+- [x] **Step 5:** cocher et commit : `Décision de rachat : infobulle du seuil, pages datées par les journaux`.
 
 ---
 
@@ -492,9 +492,9 @@ i18n, sous `positions` :
 **Files:**
 - Modify: `CLAUDE.md` (registre + une règle), `docs/specs/2026-09-28-decision-rachat-design.md` (statut)
 
-- [ ] **Step 1:** `CLAUDE.md` : ligne `| 38 | La décision de rachat tient compte du temps | fait (<date>) |` au registre ; dans « Constantes métier » ou juste après, une puce :
+- [x] **Step 1:** `CLAUDE.md` : ligne `| 38 | La décision de rachat tient compte du temps | fait (<date>) |` au registre ; dans « Constantes métier » ou juste après, une puce :
   « **La décision de rachat se mesure au temps, jamais au seul prix** (sous-projet 38) : `evaluateBuyback` (`packages/coverage/src/buyback.ts`) rachète si C ≤ S × min(½, r/T), T depuis la date moyenne de vente pondérée par la quantité, r depuis l'`asOf` du snapshot — jamais l'horloge —, échéance à 16:00 New York ; échue à l'`asOf`, garder. La page Positions date ses positions par `saleInstants` des journaux, passé par `AccountDataProvider` à `useRiskReport` ; sans journaux, la seule règle des 50 %. Ni plancher de fin de vie ni commission. L'infobulle du badge (`DecisionBadge`) dit le seuil. »
   Spec : `Statut : implémenté (<date>).`
-- [ ] **Step 2:** `pnpm check` depuis la racine du worktree → tout vert. Corriger ce qui ne l'est pas.
-- [ ] **Step 3:** cocher et commit : `Décision de rachat : documentation`.
-- [ ] **Step 4:** `pnpm dev:start` dans le worktree ; donner les deux URL à Seb (`pnpm dev:status`).
+- [x] **Step 2:** `pnpm check` depuis la racine du worktree → tout vert. Corriger ce qui ne l'est pas.
+- [x] **Step 3:** cocher et commit : `Décision de rachat : documentation`.
+- [x] **Step 4:** `pnpm dev:start` dans le worktree ; donner les deux URL à Seb (`pnpm dev:status`).

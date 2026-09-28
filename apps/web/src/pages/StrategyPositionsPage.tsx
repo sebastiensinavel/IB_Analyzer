@@ -64,7 +64,7 @@ const condorTotals = (rows: readonly CondorLine[]) =>
   headerTotals(rows, (l) => l.contract.currency, { daily: (l) => l.dailyPnl, value: (l) => l.marketValue, pnl: (l) => l.pnl });
 
 function pricedSnapshot(snapshot: SnapshotRecord | null | undefined, report: RiskReport | null | undefined): PricedSnapshot | null {
-  return snapshot && report ? { positions: snapshot.positions, report } : null;
+  return snapshot && report ? { positions: snapshot.positions, report, asOf: snapshot.asOf } : null;
 }
 
 function emptyBoxContents(): StrategyBoxContents {
@@ -291,6 +291,8 @@ function LinesBox({
                 dailyPnl: line.dailyPnl,
                 unrealizedPnl: line.unrealizedPnl,
                 decision: line.decision,
+                buyback: line.buyback,
+                currency: line.contract.currency,
                 coverage: strategyCoverageBadges(line, strategy),
               }}
             />

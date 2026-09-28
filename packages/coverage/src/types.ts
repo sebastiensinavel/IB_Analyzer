@@ -1,3 +1,4 @@
+import type { BuybackAdvice } from "./buyback.ts";
 import type { CoverSource, PositionKind, StructureKind } from "./constants.ts";
 
 /** One slice of coverage attributed to a short option leg. */
@@ -26,6 +27,8 @@ export interface AnalyzedPosition {
   dayChange: number | null;
   action: "to evaluate" | "ignore";
   decision: "buy back" | "keep" | null;
+  /** Why the decision: its threshold and the days it was measured on (spec of sub-project 38). */
+  buyback: BuybackAdvice | null;
   symbol: string;
   secType: string;
   currency: string;

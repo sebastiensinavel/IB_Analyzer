@@ -1,6 +1,6 @@
 # Sous-projet 38 — La décision de rachat tient compte du temps
 
-Statut : conçu (2026-09-28).
+Statut : implémenté (2026-09-28).
 
 La colonne « Décision » des tableaux de positions propose « buy back » ou « keep » pour une
 option vendue. La règle actuelle, `evaluateBuyback` (`packages/coverage/src/classify.ts`), ne

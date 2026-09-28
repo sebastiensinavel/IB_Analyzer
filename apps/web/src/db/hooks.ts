@@ -119,13 +119,20 @@ export interface RiskReportView {
   sectorOf: (symbol: string) => string | null;
 }
 
-/** The risk report of one account, recomputed when its snapshot changes. */
-export function useRiskReport(accountId: string): RiskReportView {
+/**
+ * The risk report of one account, recomputed when its snapshot changes. `soldAt` (contractId →
+ * average sale instant, spec of sub-project 38 §4) times the sold options; without it — journals
+ * still loading — the 50% rule alone.
+ */
+export function useRiskReport(accountId: string, soldAt?: ReadonlyMap<string, string>): RiskReportView {
   const snapshot = useSnapshot(accountId);
   const sectors = useSectors();
   const report = useMemo(
-    () => (snapshot ? buildRiskReport(snapshot.positions, snapshot.cashAvailable) : snapshot),
-    [snapshot],
+    () =>
+      snapshot
+        ? buildRiskReport(snapshot.positions, snapshot.cashAvailable, soldAt ? { asOf: snapshot.asOf, soldAt } : null)
+        : snapshot,
+    [snapshot, soldAt],
   );
   const sectorOf = useCallback((symbol: string) => sectors?.get(symbol)?.category || null, [sectors]);
   return { snapshot, report, sectorOf };

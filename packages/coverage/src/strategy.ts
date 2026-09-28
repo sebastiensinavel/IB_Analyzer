@@ -12,7 +12,8 @@ import {
   type Strategy,
   type WheelHolding,
 } from "@ib/ledger";
-import { contractMultiplier, evaluateBuyback } from "./classify.ts";
+import { averageSaleInstant, evaluateBuyback, type BuybackAdvice, type BuybackTiming } from "./buyback.ts";
+import { contractMultiplier } from "./classify.ts";
 import { DEFAULT_MULTIPLIER, DETAIL_GROUPS, KIND_LABELS, type CoverSource, type DetailGroupId, type PositionKind } from "./constants.ts";
 import type { AnalyzedPosition, CoverageAllocation, RiskReport } from "./types.ts";
 
@@ -37,8 +38,10 @@ export interface StrategyLine {
   dailyPnl: number | null;
   /** The IB position's move of the day, unprorated: it does not depend on the quantity. */
   dayChange: number | null;
-  /** Short options only: evaluateBuyback(avgPrice, lastPrice); `null` otherwise or without both prices. */
+  /** Short options only: the buyback advice's decision; `null` otherwise or without both prices. */
   decision: "buy back" | "keep" | null;
+  /** The advice behind `decision`; `null` exactly when it is. */
+  buyback: BuybackAdvice | null;
   /** The whole IB position; `null` when the snapshot does not hold the contract. */
   position: AnalyzedPosition | null;
   /**
@@ -68,6 +71,8 @@ export interface WheelShareLine extends WheelHolding {
 export interface PricedSnapshot {
   positions: readonly Position[];
   report: RiskReport;
+  /** The snapshot's asOf: the instant its prices were read, which a buyback decision is timed on. */
+  asOf?: string;
 }
 
 /** Every strategy has a positions page; each shows the boxes its lines fill (spec of sub-project 21, §4). */
@@ -171,6 +176,8 @@ export function pricedByContract(snapshot: PricedSnapshot | null): Map<string, P
 interface Contribution {
   quantity: number;
   openPrice: number | null;
+  /** The instant it was opened; for contracts taken over by Others, their strategy's average. */
+  when: string | null;
 }
 
 interface LineInput {
@@ -181,7 +188,7 @@ interface LineInput {
   migrated: number;
 }
 
-const toContribution = (row: JournalRow): Contribution => ({ quantity: row.quantity as number, openPrice: row.openPrice });
+const toContribution = (row: JournalRow): Contribution => ({ quantity: row.quantity as number, openPrice: row.openPrice, when: row.startWhen });
 
 /** Σ openPrice × |quantity| ÷ Σ |quantity|; `null` when a contribution has no price or nothing weighs. */
 function weightedPrice(contributions: readonly Contribution[]): number | null {
@@ -222,7 +229,18 @@ export function dayShare(position: Position | null, quantity: number): { dailyPn
   return { dailyPnl: (position.dailyPnl * quantity) / position.quantity, dayChange: position.dayChange };
 }
 
-function line({ contract, kind, contributions, migrated }: LineInput, priced: Priced | null, sources: readonly CoverSource[]): StrategyLine {
+function timingOf(contract: ContractKey, contributions: readonly Contribution[], asOf: string | undefined): BuybackTiming | null {
+  if (!asOf || !contract.expiry || contributions.some((c) => c.when === null)) return null;
+  const soldAt = averageSaleInstant(contributions.map((c) => ({ when: c.when as string, quantity: c.quantity })));
+  return soldAt ? { soldAt, expiry: contract.expiry, asOf } : null;
+}
+
+function line(
+  { contract, kind, contributions, migrated }: LineInput,
+  priced: Priced | null,
+  sources: readonly CoverSource[],
+  asOf: string | undefined,
+): StrategyLine {
   // A sale's quantity is negative, so what migrates brings it back towards zero.
   const quantity = contributions.reduce((n, c) => n + c.quantity, 0) + migrated;
   const avgPrice = weightedPrice(contributions);
@@ -232,6 +250,7 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
   const bought = kind === "long_call" || kind === "long_put";
   const marketValue = lastPrice === null ? null : lastPrice * quantity * multiplier;
   const day = dayShare(priced?.position ?? null, quantity);
+  const buyback = sold && lastPrice !== null && avgPrice !== null ? evaluateBuyback(avgPrice, lastPrice, timingOf(contract, contributions, asOf)) : null;
   return {
     contract,
     kind,
@@ -245,7 +264,8 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
     unrealizedPnl: marketValue === null || avgPrice === null ? null : marketValue - avgPrice * quantity * multiplier,
     dailyPnl: day.dailyPnl,
     dayChange: day.dayChange,
-    decision: sold && lastPrice !== null && avgPrice !== null ? evaluateBuyback(avgPrice, lastPrice) : null,
+    decision: buyback?.decision ?? null,
+    buyback,
     position: priced?.analyzed ?? null,
     coverage: sold && priced ? cappedCoverage(priced, sources, quantity) : [],
     used: bought && priced ? Math.min(Math.abs(quantity), priced.analyzed.usedQuantity) : null,
@@ -344,7 +364,12 @@ function contributionsTakenIn(
   for (const strategy of COVERED_STRATEGIES) {
     const count = migrated.get(strategy) ?? 0;
     if (count <= 0) continue;
-    contributions.push({ quantity: -count, openPrice: weightedPrice((byStrategy.get(strategy) ?? []).map(toContribution)) });
+    const own = (byStrategy.get(strategy) ?? []).map(toContribution);
+    contributions.push({
+      quantity: -count,
+      openPrice: weightedPrice(own),
+      when: averageSaleInstant(own.flatMap((c) => (c.when === null ? [] : [{ when: c.when, quantity: c.quantity }]))),
+    });
   }
   return contributions;
 }
@@ -366,6 +391,7 @@ function linesByGroup(
   priced: Map<string, Priced>,
   taken: Map<string, Map<PositionsStrategy, number>>,
   active: readonly ActivableStrategy[],
+  asOf: string | undefined,
 ): Record<DetailGroupId, StrategyLine[]> {
   const lines: StrategyLine[] = [];
   for (const [id, byStrategy] of open) {
@@ -390,6 +416,7 @@ function linesByGroup(
         },
         priced.get(id) ?? null,
         strategyCoverSources(strategy, active),
+        asOf,
       ),
     );
   }
@@ -421,7 +448,7 @@ export function strategyPositions(
   const priced = pricedByContract(snapshot);
   const open = openRowsByContract(rows);
   const taken = migratedByContract(open, priced, active);
-  const groups = linesByGroup(open, strategy, priced, taken, active);
+  const groups = linesByGroup(open, strategy, priced, taken, active, snapshot?.asOf);
   if (strategy !== "wheel") return { shares: [], groups };
   const covered = coveredCallsByTicker(groups.optionSells);
   const shares = wheelHoldings(rows).map((holding): WheelShareLine => {

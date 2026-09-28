@@ -228,7 +228,9 @@ describe("StrategyPositionsPage — LEAPS", () => {
     const leaps = await rowIn("LEAPS avec call vendu", "ZZZ Jun18'27 15 Call");
     expect(texts(leaps)).toEqual(["—", "ZZZ Jun18'27 15 Call", "buy of call", "", "$400.00", "1", "3.00", "4.00", "—", "—", "$100.00", "", "used 1/1"]);
     const call = await rowIn("Ventes de calls", "ZZZ Sep18'26 20 Call");
-    expect(texts(call)).toEqual(["—", "ZZZ Sep18'26 20 Call", "sell of call", "", "-$25.00", "-1", "0.50", "0.25", "—", "—", "$25.00", "buy back", "leaps ×1"]);
+    expect(texts(call)).toEqual(["—", "ZZZ Sep18'26 20 Call", "sell of call", "", "-$25.00", "-1", "0.50", "0.25", "—", "—", "$25.00", "keep", "leaps ×1"]);
+    // Sold 06-10 for 0.50, 16 of its 100 days left on 09-02: it pays back under 0.50 × 0.16 = 0.08, not 0.25
+    // (the 50% rule alone would say "buy back", spec of sub-project 38).
     expect(screen.queryByLabelText("Actions")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("LEAPS sans call vendu")).not.toBeInTheDocument();
   });

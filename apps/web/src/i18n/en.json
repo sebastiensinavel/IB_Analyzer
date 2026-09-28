@@ -99,6 +99,10 @@
     }
   },
   "positions": {
+    "buyback": {
+      "timed": "Buy back pays below {{price}}: {{remaining}} d left of {{total}}",
+      "half": "Buy back pays below {{price}}: 50% of the premium"
+    },
     "asOf": "Data as of {{date}}",
     "empty": "No positions yet — import an HTML statement or a Flex query response with Open Positions.",
     "emptyLink": "Go to data sources",

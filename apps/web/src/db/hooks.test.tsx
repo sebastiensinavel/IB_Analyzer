@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { ACTIVABLE_STRATEGIES, type JournalsReport, type Transaction } from "@ib/ledger";
+import { ACTIVABLE_STRATEGIES, contractId, contractOf, type JournalsReport, type Transaction } from "@ib/ledger";
 import { db, type AccountRecord } from "@/db/schema";
 import { useAccount, useImports, useJournals, useLedger, useNeverFed, useRiskReport, useSectors, useSnapshot, useStatements } from "@/db/hooks";
 import { SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
@@ -146,6 +146,25 @@ describe("useRiskReport", () => {
     expect(result.current.report?.structures.map((s) => s.kind)).toEqual(["iron condor"]);
     await waitFor(() => expect(result.current.sectorOf("AAPL")).toBe("Tech"));
     expect(result.current.sectorOf("XYZ")).toBeNull();
+  });
+
+  it("times a sold option on the sale table, and falls back to the 50% rule without it", async () => {
+    const snapshot = { ...SAMPLE_SNAPSHOT, asOf: "2026-01-02" };
+    await db.snapshots.put(snapshot);
+    const put = snapshot.positions.find((p) => p.symbol === "XOM")!;
+    const soldAt = new Map([[contractId(contractOf(put)), "2025-12-01T15:00:00.000Z"]]);
+    const find = (report: NonNullable<ReturnType<typeof useRiskReport>["report"]>) =>
+      report.positions.find((p) => p.symbol === "XOM" && p.right === "P")!;
+
+    const timed = renderHook(() => useRiskReport("alpha", soldAt));
+    await waitFor(() => expect(timed.result.current.report).toBeTruthy());
+    expect(find(timed.result.current.report!).buyback?.remainingDays).not.toBeNull();
+
+    const bare = renderHook(() => useRiskReport("alpha"));
+    await waitFor(() => expect(bare.result.current.report).toBeTruthy());
+    const advice = find(bare.result.current.report!).buyback;
+    expect(advice?.remainingDays).toBeNull();
+    expect(advice?.threshold).toBe(put.avgPrice! / 2);
   });
 });
 

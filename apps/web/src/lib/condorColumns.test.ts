@@ -6,7 +6,7 @@ import { POSITION_COLUMNS } from "@/lib/positionColumns";
 const LINE = {
   id: "ic#1", title: "SPY Aug29'26 IC 620/625/660/665", kind: "partial_iron_condor", label: "partial iron condor",
   contract: { ticker: "SPY", secType: "OPT", right: "", strike: null, expiry: "2026-08-29", currency: "USD" },
-  quantity: -1, credit: 0.5, closingCost: 0.2, marketValue: -15, dailyPnl: 4, pnl: 39, realizedPnl: -21, decision: null, naked: 1, legs: [],
+  quantity: -1, credit: 0.5, closingCost: 0.2, marketValue: -15, dailyPnl: 4, pnl: 39, realizedPnl: -21, decision: null, buyback: null, naked: 1, legs: [],
 } as CondorLine;
 
 describe("condorColumnSpecs", () => {

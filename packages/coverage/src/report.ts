@@ -1,4 +1,5 @@
 import type { Position } from "@ib/ledger";
+import type { SaleTiming } from "./buyback.ts";
 import { analyze } from "./classify.ts";
 import { DETAIL_GROUPS, MAX_STRUCTURE_LOSS, STRUCT_IRON_CONDOR, type DetailGroupId } from "./constants.ts";
 import { computeCoverage } from "./coverage.ts";
@@ -6,8 +7,9 @@ import { fmtMoney, fmtNum } from "./format.ts";
 import type { AnalyzedPosition, RiskReport, Structure } from "./types.ts";
 
 /** Run the coverage engine and wrap the result. The Python properties are the pure functions below. */
-export function buildRiskReport(positions: readonly Position[], cashAvailable: number | null): RiskReport {
-  const analyzed = positions.map(analyze);
+export function buildRiskReport(positions: readonly Position[], cashAvailable: number | null, sales: SaleTiming | null = null): RiskReport {
+  // Never `positions.map(analyze)`: map would hand the index to `sales`.
+  const analyzed = positions.map((position) => analyze(position, sales));
   const structures = computeCoverage(analyzed);
   return { cashAvailable, positions: analyzed, structures };
 }

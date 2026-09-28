@@ -99,6 +99,10 @@
     }
   },
   "positions": {
+    "buyback": {
+      "timed": "Rachat rentable sous {{price}} : {{remaining}} j restants sur {{total}}",
+      "half": "Rachat rentable sous {{price}} : 50 % de la prime"
+    },
     "asOf": "Données du {{date}}",
     "empty": "Aucune position — importez un relevé HTML ou une réponse de Flex Query avec Open Positions.",
     "emptyLink": "Aller aux sources de données",

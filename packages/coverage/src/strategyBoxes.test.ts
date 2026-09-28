@@ -17,7 +17,7 @@ const opt = (right: "C" | "P", strike: number, expiry: string): ContractKey => (
 function strategyLine(kind: PositionKind, overrides: Partial<StrategyLine> = {}): StrategyLine {
   return {
     contract: opt(kind === "short_put" ? "P" : "C", 15, "2027-06-18"), kind, label: KIND_LABELS[kind], quantity: 2, avgPrice: 3,
-    lastPrice: 4, marketValue: 800, unrealizedPnl: 200, dailyPnl: 20, dayChange: 0.05, decision: null, position: null,
+    lastPrice: 4, marketValue: 800, unrealizedPnl: 200, dailyPnl: 20, dayChange: 0.05, decision: null, buyback: null, position: null,
     coverage: [], used: 1, ...overrides,
   };
 }
