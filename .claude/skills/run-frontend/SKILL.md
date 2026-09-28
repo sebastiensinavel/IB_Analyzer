@@ -84,7 +84,7 @@ node .claude/skills/run-frontend/driver.mjs \
 | `--ib-account=<id>` | Après `--seed` ou `--empty`, remplace l'identifiant IB du compte de la première route, pour importer un vrai fichier |
 | `--import=<fichier>` | Importe un Flex XML ou un relevé HTML sur Sources de données avant la capture ; se répète, dans l'ordre donné |
 | `--sectors=<fichier>` | Importe un CSV sectoriel sur la page Secteur et Score avant la capture |
-| `--agent` | Intercepte l'agent local (`127.0.0.1:8100`) avec `src/mocks/agent-snapshot.json` et pose un port TWS sur le compte de la première route : les pages passent « en direct » sans TWS ni agent |
+| `--agent` | Intercepte l'agent local (`127.0.0.1:8100`) avec `src/mocks/agent-snapshot.json` et pose un port TWS sur le compte de la première route : les pages passent « en direct » sans TWS ni agent. Sert aussi `/quotes` (`src/mocks/agent-quotes.json`) |
 | `--wait=<ms>` | Attend ce délai avant chaque capture, quelle que soit la page. Sans lui, une page qui porte un graphique ECharts (`[_echarts_instance_]`) attend 1 200 ms, le temps de son animation d'entrée (une seconde environ) : capturé plus tôt, un graphique montre ses courbes à mi-course. Une page sans graphique est capturée aussitôt |
 
 ## Positions et Dashboard

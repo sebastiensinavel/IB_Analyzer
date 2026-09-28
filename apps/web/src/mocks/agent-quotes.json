@@ -1,0 +1,7 @@
+{
+  "fetchedAt": "2026-09-28T14:00:00.000Z",
+  "quotes": [
+    { "symbol": "AAPL", "last": 152.8, "close": 151.2 },
+    { "symbol": "SPY", "last": null, "close": 512.4 }
+  ]
+}

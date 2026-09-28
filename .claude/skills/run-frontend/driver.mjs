@@ -17,7 +17,8 @@
 //   --ib-account=<id> after --seed or --empty, set the IB account id of the first route's account (to import a real file)
 //   --import=<file>   upload a Flex XML or statement HTML on the Sources page of the first route's account; repeatable, in order
 //   --sectors=<file>  upload a sector CSV on the Sector and Score page of the first route's account
-//   --agent           stub the local agent (127.0.0.1:8100) with src/mocks/agent-snapshot.json and set a TWS port on the first route's account
+//   --agent           stub the local agent (127.0.0.1:8100) with src/mocks/agent-snapshot.json (and
+//                     src/mocks/agent-quotes.json for /quotes) and set a TWS port on the first route's account
 //   --wait=<ms>       pause this long before each shot, whatever the page holds. Without it, a page
 //                     holding an ECharts chart ([_echarts_instance_]) gets 1200 ms, so the shot shows
 //                     the chart after its entry animation (about 1 s), never halfway; any other page
@@ -29,6 +30,7 @@
 import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import agentQuotes from "../../../apps/web/src/mocks/agent-quotes.json" with { type: "json" };
 import agentSnapshot from "../../../apps/web/src/mocks/agent-snapshot.json" with { type: "json" };
 import { AGENT_PORT, describePorts, devPorts } from "../../../tools/dev-env/ports.mjs";
 
@@ -150,11 +152,12 @@ try {
       // fulfilled cross-origin response still goes through the browser's CORS check.
       await page.route(`http://127.0.0.1:${AGENT_PORT}/**`, (route) => {
         const path = new URL(route.request().url()).pathname;
+        const body = path === "/health" ? { version: "0.1.0" } : path === "/quotes" ? agentQuotes : agentSnapshot;
         return route.fulfill({
           status: 200,
           contentType: "application/json",
           headers: { "Access-Control-Allow-Origin": "*" },
-          body: JSON.stringify(path === "/health" ? { version: "0.1.0" } : agentSnapshot),
+          body: JSON.stringify(body),
         });
       });
       await page.goto(BASE, { waitUntil: "domcontentloaded" });

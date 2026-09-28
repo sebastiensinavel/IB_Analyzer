@@ -976,11 +976,11 @@ it("shows the underlying's day move first, and keeps the rank order", async () =
 - Create: `apps/web/src/mocks/agent-quotes.json`
 - Modify: `.claude/skills/run-frontend/driver.mjs` (route de l'agent), `.claude/skills/run-frontend/SKILL.md` (une ligne)
 
-- [ ] **Step 1:** `agent-quotes.json` : `{ "fetchedAt": "2026-09-28T14:00:00.000Z", "quotes": [ … ] }`, une entrée par sous-jacent de `apps/web/src/mocks/agent-snapshot.json` plus `SPY`, `last`/`close` inventés (mélange de hausses et de baisses, un `last: null` pour montrer « — »). Aucun montant réel.
-- [ ] **Step 2:** dans la route `http://127.0.0.1:${AGENT_PORT}/**` du driver, servir `agentQuotes` quand `path === "/quotes"`, `{version}` pour `/health`, le snapshot sinon.
-- [ ] **Step 3:** `SKILL.md` : « `--agent` sert aussi `/quotes` (`src/mocks/agent-quotes.json`) ».
-- [ ] **Step 4:** capture de la page Wheel avec `--seed --agent` : la première colonne est remplie. Vérifier la capture.
-- [ ] **Step 5: Commit** — `git add .claude/skills/run-frontend apps/web/src/mocks/agent-quotes.json docs/plans/2026-09-28-var-jour-action.md && git commit -m "run-frontend : l'agent simulé sert /quotes"`
+- [x] **Step 1:** `agent-quotes.json` : `{ "fetchedAt": "2026-09-28T14:00:00.000Z", "quotes": [ … ] }`, une entrée par sous-jacent de `apps/web/src/mocks/agent-snapshot.json` plus `SPY`, `last`/`close` inventés (mélange de hausses et de baisses, un `last: null` pour montrer « — »). Aucun montant réel.
+- [x] **Step 2:** dans la route `http://127.0.0.1:${AGENT_PORT}/**` du driver, servir `agentQuotes` quand `path === "/quotes"`, `{version}` pour `/health`, le snapshot sinon.
+- [x] **Step 3:** `SKILL.md` : « `--agent` sert aussi `/quotes` (`src/mocks/agent-quotes.json`) ».
+- [x] **Step 4:** capture de la page Wheel avec `--seed --agent` : la première colonne est remplie. Vérifier la capture.
+- [x] **Step 5: Commit** — `git add .claude/skills/run-frontend apps/web/src/mocks/agent-quotes.json docs/plans/2026-09-28-var-jour-action.md && git commit -m "run-frontend : l'agent simulé sert /quotes"`
 
 ---
 
