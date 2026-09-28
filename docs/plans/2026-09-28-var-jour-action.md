@@ -394,7 +394,7 @@ git commit -m "Agent : /quotes, dernier prix et clôture des sous-jacents, donn�
 **Interfaces:**
 - Produces: `export function parseAgentQuotes(payload: unknown): Map<string, number | null>` — ticker en majuscules → `(last − close) / close`, `null` si `last`/`close` manque ou si `close` vaut 0 ; lève `NormalizationError` sur un payload mal formé. Exporté par `@ib/ib-parsers` (déjà `export * from "./agent.ts"`).
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 ```ts
 describe("parseAgentQuotes", () => {
@@ -435,8 +435,8 @@ describe("parseAgentQuotes", () => {
 
 (importer `parseAgentQuotes` à côté de `parseAgentSnapshot` ; `NormalizationError` est déjà importé par ce fichier de test ou s'importe de `./common.ts` — vérifier l'import existant.)
 
-- [ ] **Step 2:** `npx vitest run src/agent.test.ts` depuis `packages/ib-parsers` → FAIL (`parseAgentQuotes` n'existe pas).
-- [ ] **Step 3: Implémenter**
+- [x] **Step 2:** `npx vitest run src/agent.test.ts` depuis `packages/ib-parsers` → FAIL (`parseAgentQuotes` n'existe pas).
+- [x] **Step 3: Implémenter**
 
 ```ts
 /**
@@ -459,8 +459,8 @@ export function parseAgentQuotes(payload: unknown): Map<string, number | null> {
 }
 ```
 
-- [ ] **Step 4:** `npx vitest run src/agent.test.ts` → PASS.
-- [ ] **Step 5: Commit** — `git add packages/ib-parsers docs/plans/2026-09-28-var-jour-action.md && git commit -m "Parseur : parseAgentQuotes, la variation du jour des sous-jacents"`
+- [x] **Step 4:** `npx vitest run src/agent.test.ts` → PASS.
+- [x] **Step 5: Commit** — `git add packages/ib-parsers docs/plans/2026-09-28-var-jour-action.md && git commit -m "Parseur : parseAgentQuotes, la variation du jour des sous-jacents"`
 
 ---
 
