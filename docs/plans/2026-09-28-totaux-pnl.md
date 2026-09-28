@@ -232,7 +232,7 @@ git commit -m "Totaux : le réalisé du jour et le cash courant, calculés dans 
   - `export function addTotals(...lists: readonly (readonly CurrencyTotal[])[]): CurrencyTotal[]` — additionne par devise `total` (`null + x = x`, `null + null = null`), `missing` et `count`.
   - `WheelShareLine.marketValue: number | null`
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 ```ts
 // packages/coverage/src/totals.test.ts
@@ -296,9 +296,9 @@ describe("liquidationValue", () => {
 
 (Adapter les champs de `position()` au type réel `Position` de `packages/ledger/src/types.ts:66-100` si un nom diffère.)
 
-- [ ] **Step 2: Voir échouer** — `cd packages/coverage && npx vitest run totals`.
+- [x] **Step 2: Voir échouer** — `cd packages/coverage && npx vitest run totals`.
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 ```ts
 // packages/coverage/src/totals.ts
@@ -348,7 +348,7 @@ export function liquidationValue(positions: readonly Position[], cash: Readonly<
 
 Ajouter `export * from "./totals.ts";` dans `packages/coverage/src/index.ts`.
 
-- [ ] **Step 4: `WheelShareLine.marketValue`** — test dans `strategy.test.ts`, à côté des tests existants des `shares` de `strategyPositions` (reprendre leur fixture) :
+- [x] **Step 4: `WheelShareLine.marketValue`** — test dans `strategy.test.ts`, à côté des tests existants des `shares` de `strategyPositions` (reprendre leur fixture) :
 
 ```ts
 it("prices the Wheel's shares at lastPrice × quantity, null without a price", () => {
@@ -379,9 +379,9 @@ it("splits the market value with the quantity: free and covered parts add up to 
 });
 ```
 
-- [ ] **Step 5: Tests verts** — `cd packages/coverage && npx vitest run` puis `npx tsc --noEmit -p .` (le nouveau champ obligatoire peut casser une fixture de test d'`apps/web` : `cd apps/web && npx tsc --noEmit -p .` et compléter les fixtures).
+- [x] **Step 5: Tests verts** — `cd packages/coverage && npx vitest run` puis `npx tsc --noEmit -p .` (le nouveau champ obligatoire peut casser une fixture de test d'`apps/web` : `cd apps/web && npx tsc --noEmit -p .` et compléter les fixtures).
 
-- [ ] **Step 6: Commit** — `git commit -m "Totaux : sommes par devise, valeur de liquidation, valeur de marché des actions Wheel"`.
+- [x] **Step 6: Commit** — `git commit -m "Totaux : sommes par devise, valeur de liquidation, valeur de marché des actions Wheel"`.
 
 ---
 

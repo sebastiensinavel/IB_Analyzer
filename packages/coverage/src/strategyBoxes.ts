@@ -43,6 +43,7 @@ export function splitWheelShares(line: WheelShareLine): SplitLine<WheelShareLine
       ...line,
       quantity,
       assignedTotal: scale(line.assignedTotal, ratio),
+      marketValue: scale(line.marketValue, ratio),
       unrealizedPnl: scale(line.unrealizedPnl, ratio),
       dailyPnl: scale(line.dailyPnl, ratio),
     };

@@ -52,6 +52,8 @@ export interface StrategyLine {
 
 export interface WheelShareLine extends WheelHolding {
   lastPrice: number | null;
+  /** lastPrice × quantity: what the table's header sums, no column of its own. */
+  marketValue: number | null;
   /** (lastPrice − averageAssignmentPrice) × quantity */
   unrealizedPnl: number | null;
   /** The strategy's prorated share of the IB position's day P&L; `null` with its dayChange. */
@@ -435,6 +437,7 @@ export function strategyPositions(
       averageCallStrike,
       coveredShares: Math.min(holding.quantity, calls.contracts * DEFAULT_MULTIPLIER),
       lastPrice,
+      marketValue: lastPrice === null ? null : lastPrice * holding.quantity,
       unrealizedPnl: lastPrice === null || averageAssignmentPrice === null ? null : (lastPrice - averageAssignmentPrice) * holding.quantity,
       ...day,
       callStrikeBelowAssignment: averageCallStrike !== null && averageAssignmentPrice !== null && averageCallStrike < averageAssignmentPrice,

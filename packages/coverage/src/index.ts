@@ -8,3 +8,4 @@ export * from "./strategy.ts";
 export * from "./strategyBoxes.ts";
 export * from "./condors.ts";
 export * from "./suggestions.ts";
+export * from "./totals.ts";
