@@ -150,9 +150,12 @@ def test_a_nasdaq_and_a_nyse_symbol_are_each_subscribed_on_their_own_primary_exc
     by_symbol = {c.symbol: c for c in ib.mkt_subscribed}
     assert by_symbol["AAPL"].exchange == "NASDAQ"
     assert by_symbol["IBM"].exchange == "NYSE"
-    assert by_symbol["AAPL"].conId != 0
-    assert by_symbol["IBM"].conId != 0
-    assert by_symbol["AAPL"].conId != by_symbol["IBM"].conId
+    # Each subscribed contract carries exactly the conId its own symbol got at qualification -
+    # not merely a non-zero, distinct one, which a mixed-up pairing would also produce.
+    (qualified,) = ib.qualify_calls
+    qualified_con_id = {c.symbol: c.conId for c in qualified}
+    assert by_symbol["AAPL"].conId == qualified_con_id["AAPL"] != 0
+    assert by_symbol["IBM"].conId == qualified_con_id["IBM"] != 0
 
 
 def test_a_failing_qualification_returns_all_null_with_a_200_and_disconnects(make_client):
@@ -168,3 +171,14 @@ def test_only_subscribed_contracts_are_cancelled(make_client):
     ib = FakeIB(quotes={"AAPL": FakeTicker(last=1.0, close=1.0)})
     get(make_client(ib), "symbols=AAPL,ZZZZ")
     assert [c.symbol for c in ib.mkt_cancelled] == ["AAPL"]
+
+
+def test_a_qualification_that_never_resolves_times_out_all_null(make_client):
+    # QUOTES_TIMEOUT_S is 0.05 (the `fast` fixture); a qualification that hangs past it must be
+    # cut off by asyncio.wait_for, not left to hang the whole request.
+    ib = FakeIB(quotes={"AAPL": FakeTicker(last=1.0, close=1.0)}, qualify_delay=1.0)
+    response = get(make_client(ib), "symbols=AAPL")
+    assert response.status_code == 200
+    assert response.json()["quotes"] == [{"symbol": "AAPL", "last": None, "close": None}]
+    assert ib.mkt_subscribed == []
+    assert ib.disconnected

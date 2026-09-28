@@ -1176,6 +1176,9 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **La fixture `agent-quotes.json` ne cote que AAPL et SPY** : SPY n'est jamais demandé par
   `--seed --agent`, MSFT (candidat de la Suggestion) n'y est pas.
 - **`/quotes` répète l'échafaudage connexion/503/déconnexion de `/bars` et `/snapshot`.**
+- **La qualification est tout ou rien** : `qualifyContractsAsync` ne remplit les contrats qu'une
+  fois toutes les réponses reçues, donc un seul symbole lent jusqu'au délai rend toute la passe
+  `null` ; acceptable au vu des 1,5–2,2 s mesurées.
 
 ---
 

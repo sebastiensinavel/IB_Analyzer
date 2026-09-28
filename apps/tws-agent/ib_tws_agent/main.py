@@ -295,7 +295,7 @@ async def collect_quotes(ib: IB, symbols: list[str]) -> dict[str, Any]:
         remaining = max(0.0, deadline - monotonic())
         await asyncio.wait_for(ib.qualifyContractsAsync(*contracts.values()), timeout=remaining)
     except Exception:  # noqa: BLE001 - whatever ib_async/asyncio raises, the answer is still due
-        logger.warning("qualification unavailable; /quotes answers without it", exc_info=True)
+        logger.warning("market data type or qualification unavailable; /quotes answers without it", exc_info=True)
     try:
         for symbol, contract in contracts.items():
             if not contract.conId:

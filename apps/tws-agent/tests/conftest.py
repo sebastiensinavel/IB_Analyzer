@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from math import nan
@@ -120,6 +121,7 @@ class FakeIB:
         qualifiable: set[str] | None = None,
         primary_exchanges: dict[str, str] | None = None,
         qualify_error: Exception | None = None,
+        qualify_delay: float | None = None,
     ):
         self._managed_accounts = managed_accounts if managed_accounts is not None else ["U1234567"]
         self._portfolio = portfolio if portfolio is not None else []
@@ -141,6 +143,9 @@ class FakeIB:
         self._qualifiable = qualifiable if qualifiable is not None else set()
         self._primary_exchanges = primary_exchanges if primary_exchanges is not None else {}
         self._qualify_error = qualify_error
+        # A qualification that never resolves - a real TWS gone silent - within the caller's
+        # own timeout, to exercise the asyncio.wait_for cutoff in collect_quotes.
+        self._qualify_delay = qualify_delay
         # (contract, kwargs) of every reqHistoricalDataAsync call, in order.
         self.historical_requests: list[tuple] = []
         self.pnl_subscribed: list[tuple[str, str, int]] = []
@@ -202,6 +207,8 @@ class FakeIB:
         `conId 0` and gets `None` in its slot. Qualifiable: a symbol in `quotes` - TWS knows
         it well enough to have a price for it - or explicitly listed in `qualifiable`."""
         self.qualify_calls.append(contracts)
+        if self._qualify_delay is not None:
+            await asyncio.sleep(self._qualify_delay)
         if self._qualify_error is not None:
             raise self._qualify_error
         result: list[Any] = []
