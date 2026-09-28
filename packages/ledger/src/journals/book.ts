@@ -1,4 +1,5 @@
 import { contractId, type ContractKey } from "./contract.ts";
+import type { PlanItem } from "./exitOrder.ts";
 import type { CloseEvent, RowKind, RowNote, Strategy } from "./types.ts";
 import { DEFAULT_MULTIPLIER } from "../constants.ts";
 
@@ -158,6 +159,20 @@ export class LotBook {
       closed.push({ lot, quantity: take });
     }
     return closed;
+  }
+
+  /**
+   * Closes exactly what `plan` says, in its order, without moving any lot: the
+   * list stays in rank order for the corporate actions (spec 33 §5.1). The
+   * plan's quantities are unsigned and each is at most what its lot holds.
+   */
+  closeOrdered(plan: readonly PlanItem[]): ClosedPortion[] {
+    return plan.map(({ lot, quantity }) => {
+      if (quantity > Math.abs(lot.remaining) + 1e-9) throw new Error(`closeOrdered: ${quantity} exceeds lot ${lot.id}`);
+      const take = Math.min(quantity, Math.abs(lot.remaining));
+      lot.remaining -= Math.sign(lot.remaining) * take;
+      return { lot, quantity: take };
+    });
   }
 
   /**

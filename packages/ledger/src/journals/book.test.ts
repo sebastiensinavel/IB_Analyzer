@@ -245,3 +245,27 @@ describe("LotBook.closePreferring", () => {
     ]);
   });
 });
+
+describe("LotBook.closeOrdered", () => {
+  it("closes the planned quantities in the planned order, whatever the book order", () => {
+    const book = new LotBook();
+    const a = lot("a", -2);
+    const b = lot("b", -3);
+    book.open(a);
+    book.open(b);
+    expect(book.closeOrdered([{ lot: b, quantity: 2 }, { lot: a, quantity: 1 }])).toEqual([
+      { lot: b, quantity: 2 },
+      { lot: a, quantity: 1 },
+    ]);
+    expect(a.remaining).toBe(-1);
+    expect(b.remaining).toBe(-1);
+    expect(book.openLots(PUT)).toEqual([a, b]);
+  });
+
+  it("refuses to close more than a lot holds", () => {
+    const book = new LotBook();
+    const a = lot("a", -1);
+    book.open(a);
+    expect(() => book.closeOrdered([{ lot: a, quantity: 2 }])).toThrow();
+  });
+});

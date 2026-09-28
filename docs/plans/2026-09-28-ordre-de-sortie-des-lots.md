@@ -80,7 +80,7 @@ opérations sur titres. `journals/exits.ts` relie ces plans au contexte du repla
   Les `lots` passés sont des lots d'actions **longues** ouverts (`remaining > 0`) d'un seul
   contrat, dans l'ordre du carnet.
 
-- [ ] **Step 1: Write the failing tests** — `exitOrder.test.ts`
+- [x] **Step 1: Write the failing tests** — `exitOrder.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -223,12 +223,12 @@ describe("salePlan (R3)", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `npx vitest run exitOrder` (depuis `packages/ledger`)
 Expected: FAIL — `Failed to resolve import "./exitOrder.ts"`.
 
-- [ ] **Step 3: Implement `exitOrder.ts`**
+- [x] **Step 3: Implement `exitOrder.ts`**
 
 ```ts
 import { sharesPerContract, type Lot } from "./book.ts";
@@ -348,12 +348,12 @@ export function salePlan(lots: readonly Lot[], covered: Coverage, shares: number
 }
 ```
 
-- [ ] **Step 4: Run to verify they pass**
+- [x] **Step 4: Run to verify they pass**
 
 Run: `npx vitest run exitOrder`
 Expected: PASS.
 
-- [ ] **Step 5: Test and implement `LotBook.closeOrdered`** — dans `book.test.ts`, nouveau
+- [x] **Step 5: Test and implement `LotBook.closeOrdered`** — dans `book.test.ts`, nouveau
   `describe("LotBook.closeOrdered")` :
 
 ```ts
@@ -403,7 +403,7 @@ Implémentation, dans `LotBook` juste après `close` (importer `PlanItem` en typ
 
 Run: `npx vitest run book exitOrder` — Expected: PASS.
 
-- [ ] **Step 6: Commit** (cocher les cases de la tâche 1 dans ce plan, même commit)
+- [x] **Step 6: Commit** (cocher les cases de la tâche 1 dans ce plan, même commit)
 
 ```bash
 git add packages/ledger/src/journals/exitOrder.ts packages/ledger/src/journals/exitOrder.test.ts packages/ledger/src/journals/book.ts packages/ledger/src/journals/book.test.ts docs/plans/2026-09-28-ordre-de-sortie-des-lots.md
