@@ -1,12 +1,13 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
-import { DETAIL_GROUPS, groupedPositions, type AnalyzedPosition, type DetailGroupId } from "@ib/coverage";
-import { anchoredBalances } from "@ib/ledger";
+import { DETAIL_GROUPS, groupedPositions, liquidationValue, type AnalyzedPosition, type DetailGroupId } from "@ib/coverage";
+import { anchoredBalances, currentCashBalances, type Position } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
 import { CashBalancesCard } from "@/components/CashBalancesCard";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
+import { headerTotals, HeaderTotals, type HeaderTotalsValue } from "@/components/HeaderTotals";
 import { PositionGroupCard } from "@/components/PositionGroupCard";
 import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountRiskReport } from "@/db/AccountDataProvider";
@@ -20,7 +21,41 @@ import { expiryChoices, reportToday } from "@/lib/expiryFilter";
 import { positionColumnSpecs } from "@/lib/positionColumns";
 import { groupTitleKey } from "@/lib/riskReport";
 import { activeExpiry, filterBoxes, searchBoxes } from "@/lib/tableBoxes";
+import { activeCriteria } from "@/lib/tableView";
 import { pageSearchKey } from "@/lib/tableViewStorage";
+
+const POSITION_TOTALS_PICK = {
+  daily: (p: AnalyzedPosition) => p.dailyPnl,
+  value: (p: AnalyzedPosition) => p.marketValue,
+  pnl: (p: AnalyzedPosition) => p.unrealizedPnl,
+};
+
+/**
+ * `AnalyzedPosition` is not structurally a `Position` (no `marketPrice`, no `conid`, and `right`
+ * is a plain `string` there): `liquidationValue` only reads `currency` and `marketValue`, but its
+ * signature still asks for the full shape, so the rest is padded rather than changing a committed
+ * API.
+ */
+function asPosition(p: AnalyzedPosition): Position {
+  return {
+    symbol: p.symbol,
+    secType: p.secType,
+    right: "",
+    strike: p.strike,
+    expiry: p.expiry,
+    multiplier: p.multiplier,
+    quantity: p.quantity,
+    avgPrice: p.avgPrice,
+    marketPrice: p.lastPrice,
+    marketValue: p.marketValue,
+    unrealizedPnl: p.unrealizedPnl,
+    dailyPnl: p.dailyPnl,
+    dayChange: p.dayChange,
+    currency: p.currency,
+    conid: "",
+    description: p.description,
+  };
+}
 
 export function PositionsPage() {
   const { accountId = "" } = useParams<{ accountId: string }>();
@@ -82,9 +117,24 @@ export function PositionsPage() {
   const expiry = activeExpiry(choices, ids, viewOf);
   const boxes = filterBoxes(searched, specs, viewOf, expiry !== null);
 
+  // Page header: the sum of what the boxes actually show (spec §5), cash included only when no
+  // search or column filter narrows the page — a filter takes the cash out and says so.
+  const shown = boxes.flatMap((box) => box.rows);
+  const filtered = search.applied.trim() !== "" || ids.some((id) => activeCriteria(specs, viewOf[id]).length > 0);
+  const cash = anchored ? currentCashBalances(anchored.rows, anchored.checks) : {};
+  const pageTotals: HeaderTotalsValue = {
+    ...headerTotals(shown, (p) => p.currency, POSITION_TOTALS_PICK),
+    ...(filtered ? { valueNote: t("totals.cashExcluded") } : { value: liquidationValue(shown.map(asPosition), cash) }),
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
-      <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.positions")}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.positions")}</h1>
+        <div data-testid="page-totals">
+          <HeaderTotals totals={pageTotals} />
+        </div>
+      </div>
 
       <PageSearchInput search={search} />
 
@@ -109,6 +159,7 @@ export function PositionsPage() {
           sectorOf={sectorOf}
           chart={chart}
           boxId={box.id}
+          totals={headerTotals(box.rows, (p) => p.currency, POSITION_TOTALS_PICK)}
         />
       ))}
 

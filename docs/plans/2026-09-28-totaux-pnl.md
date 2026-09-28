@@ -574,7 +574,7 @@ Vérifier dans `packages/ui/src/card.tsx` que `CardHeader` accepte `className` e
 - Consumes: `headerTotals`, `HeaderTotals`, `HeaderTotalsValue` (tâche 3), `liquidationValue` (tâche 2), `currentCashBalances` (tâche 1), `activeCriteria` (`lib/tableView.ts`).
 - Produces: `PositionGroupCardProps.totals?: HeaderTotalsValue`.
 
-- [ ] **Step 1: Tests** dans `PositionsPage.test.tsx`, avec sa fixture existante (snapshot semé + ledger + cash points). Ajouter :
+- [x] **Step 1: Tests** dans `PositionsPage.test.tsx`, avec sa fixture existante (snapshot semé + ledger + cash points). Ajouter :
 
 ```tsx
 it("heads the page with the day P/L, the liquidation value cash included, and the P/L", async () => {
@@ -613,9 +613,9 @@ it("shows — for the day P/L from a Flex snapshot, never 0.00", async () => {
 
 Adapter la façon de trouver la carte et le champ de recherche à ce que les tests existants du fichier utilisent déjà (`getByRole` / `aria-label`), sans changer les assertions de montant.
 
-- [ ] **Step 2: Voir échouer.**
+- [x] **Step 2: Voir échouer.**
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
   - `PositionGroupCard` : prop `totals?: HeaderTotalsValue`, passée à `FilteredTableBox`.
   - `PositionsPage` : pour chaque `box`, `const totals = headerTotals(box.rows, (p) => p.currency, { daily: (p) => p.dailyPnl, value: (p) => p.marketValue, pnl: (p) => p.unrealizedPnl })` → `totals={…}`.
   - En-tête de page :
@@ -641,9 +641,9 @@ const pageTotals: HeaderTotalsValue = {
 
   - La branche « aucun snapshot » (`report === null || snapshot === null`) ne reçoit pas d'en-tête.
 
-- [ ] **Step 4: Tests verts** — `cd apps/web && npx vitest run PositionsPage`.
+- [x] **Step 4: Tests verts** — `cd apps/web && npx vitest run PositionsPage`.
 
-- [ ] **Step 5: Commit** — `git commit -m "Totaux : en-têtes de la page Positions"`.
+- [x] **Step 5: Commit** — `git commit -m "Totaux : en-têtes de la page Positions"`.
 
 ---
 
