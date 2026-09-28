@@ -197,6 +197,10 @@
     }
   },
   "stats": {
+    "totalValue": "Total value",
+    "unrealized": "Unrealized P/L",
+    "realizedToday": "Realized today",
+    "dailyUnrealized": "Unrealized P/L today",
     "title": { "wheel": "Wheel statistics", "leaps": "LEAPS statistics", "condors": "Condor statistics" },
     "total": "Total profit/loss",
     "monthly": "Monthly profits/losses",

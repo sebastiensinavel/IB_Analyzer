@@ -197,6 +197,10 @@
     }
   },
   "stats": {
+    "totalValue": "Valeur totale",
+    "unrealized": "P/L non réalisé",
+    "realizedToday": "Réalisé du jour",
+    "dailyUnrealized": "P/L non réalisé du jour",
     "title": { "wheel": "Statistiques Wheel", "leaps": "Statistiques LEAPS", "condors": "Statistiques Condors" },
     "total": "Profit/Perte total",
     "monthly": "Profits/pertes mensuels",

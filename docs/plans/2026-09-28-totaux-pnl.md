@@ -733,9 +733,9 @@ const pageTotals: HeaderTotalsValue = {
   - `UnrealizedPnlCard({ unrealized, realizedToday }: { unrealized: CurrencyTotal | null; realizedToday: CurrencyTotal | null })`
   - `DailyPnlCard({ daily }: { daily: CurrencyTotal | null })`
 
-- [ ] **Step 1: Textes** — `fr.json` sous `stats` : `"totalValue": "Valeur totale"`, `"unrealized": "P/L non réalisé"`, `"realizedToday": "Réalisé du jour"`, `"dailyUnrealized": "P/L non réalisé du jour"`. `en.json` : `"Total value"`, `"Unrealized P/L"`, `"Realized today"`, `"Unrealized P/L today"`.
+- [x] **Step 1: Textes** — `fr.json` sous `stats` : `"totalValue": "Valeur totale"`, `"unrealized": "P/L non réalisé"`, `"realizedToday": "Réalisé du jour"`, `"dailyUnrealized": "P/L non réalisé du jour"`. `en.json` : `"Total value"`, `"Unrealized P/L"`, `"Realized today"`, `"Unrealized P/L today"`.
 
-- [ ] **Step 2: Tests** dans `DashboardPage.test.tsx`, sur la fixture existante, en semant un snapshot `agent` (`asOf` `2026-09-25T15:00:00.000Z`), deux positions USD (marketValue 1000/-200, unrealizedPnl 50/20, dailyPnl 10/-4), un cash point USD `end` à 5000, et une transaction qui ferme une ligne ce jour-là (rachat d'un put vendu plus tôt, P/L de journal connu) :
+- [x] **Step 2: Tests** dans `DashboardPage.test.tsx`, sur la fixture existante, en semant un snapshot `agent` (`asOf` `2026-09-25T15:00:00.000Z`), deux positions USD (marketValue 1000/-200, unrealizedPnl 50/20, dailyPnl 10/-4), un cash point USD `end` à 5000, et une transaction qui ferme une ligne ce jour-là (rachat d'un put vendu plus tôt, P/L de journal connu) :
 
 ```tsx
 it("adds the account's total value to the total P/L card", async () => {
@@ -764,9 +764,9 @@ it("shows — for the day's figures without an agent snapshot", async () => {
 
 Les cartes portent `aria-label={titre}` sur leur `Card` pour être trouvées par `role="region"` ; ajouter l'`aria-label` à `PnlTotalCard` et `ExposureCard` si absent (vérifier que cela ne casse pas un test existant). Adapter `renderPage` / la manière de semer à ce que le fichier fait déjà.
 
-- [ ] **Step 3: Voir échouer.**
+- [x] **Step 3: Voir échouer.**
 
-- [ ] **Step 4: Implémenter**
+- [x] **Step 4: Implémenter**
   - Grand chiffre : extraire de `PnlTotal` une `SignedAmount({ value, currency, size })` si utile, sinon reprendre ses classes (`font-mono text-2xl font-semibold tabular-nums`, `text-success`/`text-destructive`, « — » en `text-muted-foreground`).
   - `PnlTotalCard` : sous `<PnlTotal/>`, si `value !== undefined`, une ligne `text-sm` : `t("stats.totalValue")` puis la valeur mono neutre (« — » si `null` ou `total === null`, `*` + infobulle `totals.partial` si `missing > 0`).
   - `UnrealizedPnlCard` : titre `stats.unrealized`, grand chiffre signé, puis ligne `text-sm` `stats.realizedToday` + montant signé.
@@ -791,9 +791,9 @@ const realizedToday = agentDay ? pick(realizedOnDay(view.report.rows, agentDay))
 
     Un jour d'agent sans fermeture vaut 0, pas « — » : l'agent a vu la journée. Poser les hooks (`useMemo`) avant le premier `return` de la page. Grille : colonne gauche `PnlTotalCard value` → `UnrealizedPnlCard` → `CashCoverageCard` ; colonne droite `DailyPnlCard` → `ExposureCard` (la colonne droite devient un `flex flex-col gap-4`).
 
-- [ ] **Step 5: Tests verts** — `cd apps/web && npx vitest run DashboardPage Stats PnlTotal`.
+- [x] **Step 5: Tests verts** — `cd apps/web && npx vitest run DashboardPage Stats PnlTotal`.
 
-- [ ] **Step 6: Commit** — `git commit -m "Totaux : valeur totale, P/L non réalisé et P/L du jour au tableau de bord"`.
+- [x] **Step 6: Commit** — `git commit -m "Totaux : valeur totale, P/L non réalisé et P/L du jour au tableau de bord"`.
 
 ---
 
