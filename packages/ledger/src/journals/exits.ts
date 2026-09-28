@@ -3,6 +3,7 @@ import type { Transaction } from "../types.ts";
 import { contractOf, type ContractKey } from "./contract.ts";
 import type { ReplayContext } from "./context.ts";
 import { coverAttribution, salePlan, strikePlan, type OpenCall } from "./exitOrder.ts";
+import { EXIT_EPSILON } from "./types.ts";
 
 /** Long share lots still open on `shares`, in book order. */
 export function longLots(ctx: ReplayContext, shares: ContractKey): Lot[] {
@@ -43,14 +44,31 @@ export function contractsOf(portions: ClosedPortion[]): number {
   return portions.reduce((n, p) => n + p.quantity / sharesPerContract(p.lot), 0);
 }
 
+/**
+ * The Wheel covered contracts a buyback not yet replayed will close: its FIFO
+ * close walked ahead of time, as `LotBook.close` will walk it. An older lot
+ * of the same contract — a naked call of Others — is closed first and gives
+ * R2 nothing.
+ */
+function wheelContractsClosedBy(ctx: ReplayContext, buyback: Transaction): number {
+  const quantity = buyback.quantity ?? 0;
+  let left = Math.abs(quantity);
+  let wheel = 0;
+  for (const lot of ctx.book.openLots(contractOf(buyback))) {
+    if (left <= EXIT_EPSILON) break;
+    if (Math.sign(lot.remaining) === Math.sign(quantity)) continue;
+    const take = Math.min(Math.abs(lot.remaining), left);
+    left -= take;
+    if (isWheelCoveredCall(lot)) wheel += take;
+  }
+  return wheel;
+}
+
 /** Contracts a buyback may still hand to R2: set at its first use (spec 33 §5.3). */
 function budgetOf(ctx: ReplayContext, buyback: Transaction): number {
   const known = ctx.buybackBudget.get(buyback);
   if (known !== undefined) return known;
-  const replayed = ctx.buybackClosed.get(buyback);
-  const option = contractOf(buyback);
-  const open = ctx.book.openLots(option).filter(isWheelCoveredCall).reduce((n, lot) => n + Math.abs(lot.remaining), 0);
-  const budget = replayed ?? Math.min(buyback.quantity ?? 0, open);
+  const budget = ctx.buybackClosed.get(buyback) ?? wheelContractsClosedBy(ctx, buyback);
   ctx.buybackBudget.set(buyback, budget);
   return budget;
 }
@@ -60,14 +78,14 @@ export function sellShares(ctx: ReplayContext, sale: Transaction, shares: Contra
   let left = quantity;
   const parts: ClosedPortion[][] = [];
   for (const buyback of ctx.buybacks.get(sale) ?? []) {
-    if (left <= 1e-9) break;
+    if (left <= EXIT_EPSILON) break;
     const budget = budgetOf(ctx, buyback);
-    if (budget <= 1e-9 || buyback.strike === null) continue;
+    if (budget <= EXIT_EPSILON || buyback.strike === null) continue;
     const part = sellAtStrike(ctx, shares, buyback.strike, budget, left);
     ctx.buybackBudget.set(buyback, budget - contractsOf(part));
     left -= sharesOf(part);
     parts.push(part);
   }
-  if (left > 1e-9) parts.push(sellFree(ctx, shares, left));
+  if (left > EXIT_EPSILON) parts.push(sellFree(ctx, shares, left));
   return mergePortions(...parts);
 }

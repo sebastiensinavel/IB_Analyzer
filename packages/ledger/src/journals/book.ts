@@ -1,6 +1,6 @@
 import { contractId, type ContractKey } from "./contract.ts";
 import type { PlanItem } from "./exitOrder.ts";
-import type { CloseEvent, RowKind, RowNote, Strategy } from "./types.ts";
+import { EXIT_EPSILON, type CloseEvent, type RowKind, type RowNote, type Strategy } from "./types.ts";
 import { DEFAULT_MULTIPLIER } from "../constants.ts";
 
 /** One exit of a lot, already pro rata for the portion it closes. */
@@ -22,7 +22,9 @@ export interface LegExit {
 
 /**
  * One opening transaction, or one part of it when a call sale is split
- * between strategies. Closed FIFO; a partial close leaves the remainder here.
+ * between strategies. Options and short shares close FIFO, long shares in the
+ * order `exitOrder.ts` chooses (spec 33); a partial close leaves the remainder
+ * here.
  */
 export interface Lot {
   id: string;
@@ -160,12 +162,15 @@ export class LotBook {
   /**
    * Closes exactly what `plan` says, in its order, without moving any lot: the
    * list stays in rank order for the corporate actions (spec 33 §5.1). The
-   * plan's quantities are unsigned and each is at most what its lot holds.
+   * plan's quantities are unsigned and each is at most what its lot holds. A
+   * lot left with no more than `EXIT_EPSILON` closes in full: its free and
+   * covered parts, added back, can miss its size by an ulp.
    */
   closeOrdered(plan: readonly PlanItem[]): ClosedPortion[] {
     return plan.map(({ lot, quantity }) => {
-      if (quantity > Math.abs(lot.remaining) + 1e-9) throw new Error(`closeOrdered: ${quantity} exceeds lot ${lot.id}`);
-      const take = Math.min(quantity, Math.abs(lot.remaining));
+      const held = Math.abs(lot.remaining);
+      if (quantity > held + EXIT_EPSILON) throw new Error(`closeOrdered: ${quantity} exceeds lot ${lot.id}`);
+      const take = held - quantity <= EXIT_EPSILON ? held : quantity;
       lot.remaining -= Math.sign(lot.remaining) * take;
       return { lot, quantity: take };
     });

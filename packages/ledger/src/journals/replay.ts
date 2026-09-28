@@ -15,7 +15,7 @@ import { NO_IDENTITIES, type ContractIdentities } from "./identities.ts";
 import { reconcile } from "./reconcile.ts";
 import { buildRow, net, share } from "./rows.ts";
 import { computeStats } from "./stats.ts";
-import { ACTIVABLE_STRATEGIES, scopeStrategies, type ActivableStrategy, type CapitalScope, type CloseEvent, type JournalRow, type JournalSnapshot, type JournalsReport, type Reconciliation } from "./types.ts";
+import { ACTIVABLE_STRATEGIES, EXIT_EPSILON, scopeStrategies, type ActivableStrategy, type CapitalScope, type CloseEvent, type JournalRow, type JournalSnapshot, type JournalsReport, type Reconciliation } from "./types.ts";
 
 function isReplayable(tx: Transaction): boolean {
   if (tx.kind !== "trade") return false;
@@ -411,7 +411,7 @@ function replayGroup(group: Transaction[], ctx: ReplayContext): void {
       });
     }
     const rest = left - Math.sign(left) * closed.reduce((n, c) => n + c.quantity, 0);
-    if (rest === 0) continue;
+    if (Math.abs(rest) <= EXIT_EPSILON) continue;
     ctx.book.open(
       newLot({
         id: uniqueId(ctx, tx.externalId),
@@ -459,9 +459,9 @@ function deliverShares(ctx: ReplayContext, lot: Lot, delivery: Delivery, when: s
   let closed: ClosedPortion[];
   if (delivery.sign < 0) {
     const strike = lot.contract.strike;
-    const first = isWheelCoveredCall(lot) && strike !== null ? sellAtStrike(ctx, contract, strike, delivery.shares / delivery.ratio, delivery.shares) : [];
+    const first = isWheelCoveredCall(lot) && strike !== null ? sellAtStrike(ctx, contract, strike, Number.POSITIVE_INFINITY, delivery.shares) : [];
     const rest = delivery.shares - sharesOf(first);
-    closed = mergePortions(first, rest > 1e-9 ? sellFree(ctx, contract, rest) : []);
+    closed = mergePortions(first, rest > EXIT_EPSILON ? sellFree(ctx, contract, rest) : []);
   } else {
     closed = ctx.book.close(contract, delivery.shares);
   }
@@ -476,7 +476,7 @@ function deliverShares(ctx: ReplayContext, lot: Lot, delivery: Delivery, when: s
     });
   }
   const rest = delivery.shares - closed.reduce((n, c) => n + c.quantity, 0);
-  if (rest === 0) return;
+  if (Math.abs(rest) <= EXIT_EPSILON) return;
   const inherited = delivery.sign > 0 && !lot.parent && !lot.orphan;
   const sharesLot = newLot({
     id: uniqueId(ctx, delivery.ids[0] ?? lot.id),

@@ -689,6 +689,25 @@ describe("buildJournals — the order shares leave in (spec 33)", () => {
     expect(heldShares(report, "others")).toEqual([[9, 100]]);
   });
 
+  it("an adjusted call hands over all its shares by R1, never by the Wheel's contract count", () => {
+    // One contract delivering 150 shares: R1 at 5 takes the lot at 5, then 50
+    // of the lot at 6. Counting the delivery in contracts of 100 would have
+    // sent those 50 through R3, to Others' free lot at 8.
+    const adjusted = call(5, "2026-03-20");
+    const when = "2026-03-20T20:00:00.000Z";
+    const report = buildJournals([
+      ...assignedPut(6, "2026-01-16", "2026-01-05T15:00:00.000Z"),
+      ...assignedPut(5, "2026-02-20", "2026-02-02T15:00:00.000Z"),
+      stock({ ticker: T, quantity: 100, price: 8, when: "2026-02-25T15:00:00.000Z" }),
+      option({ ...adjusted, quantity: -1, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+      expire({ ...adjusted, quantity: 1, when }),
+      stock({ ticker: T, quantity: -150, price: 5, when, commission: 0 }),
+    ]);
+    expect(soldShares(report)).toEqual(expect.arrayContaining([[5, 5, 100], [6, 5, 50]]));
+    expect(soldShares(report)).toHaveLength(2);
+    expect(heldShares(report, "others")).toEqual([[8, 100]]);
+  });
+
   const wheelAt5And6 = () => [
     ...assignedPut(6, "2026-01-16", "2026-01-05T15:00:00.000Z"),
     ...assignedPut(5, "2026-02-20", "2026-02-02T15:00:00.000Z"),
@@ -721,14 +740,73 @@ describe("buildJournals — the order shares leave in (spec 33)", () => {
   });
 
   it("two sales in one buyback's window: the first takes it, the second is ordinary", () => {
+    // Others' free lot at 8 is what R3 sells first; had the second sale reused
+    // the buyback's contract, R1 at 5 would have sold the Wheel's lot at 6.
     const report = buildJournals([
       ...wheelAt5And6(),
+      stock({ ticker: T, quantity: 100, price: 8, when: "2026-02-25T15:00:00.000Z" }),
       sale("2026-03-10T15:00:00.000Z"),
       buyback("2026-03-10T15:00:10.000Z"),
       sale("2026-03-10T15:00:20.000Z"),
     ]);
-    expect(soldShares(report)).toEqual(expect.arrayContaining([[5, 5.5, 100], [6, 5.5, 100]]));
+    expect(soldShares(report)).toEqual([[5, 5.5, 100]]);
+    expect(soldShares(report, "others")).toEqual([[8, 5.5, 100]]);
+    expect(heldShares(report)).toEqual([[6, 100]]);
+  });
+
+  it("a buyback that closes an older naked call of Others gives R2 nothing, before or after the sale", () => {
+    // The call sold first, with no share held, is naked in Others; the second,
+    // same contract, is covered by the Wheel. The buyback closes the oldest
+    // lot of the contract, Others' naked one: the Wheel's call stays open, and
+    // the sale beside it is ordinary (R3) — the free Wheel lot at 6 leaves,
+    // the lot at 5 stays under the call. The sale before the buyback must not
+    // guess otherwise.
+    const txs = [
+      option({ ...call(5, "2026-04-17"), quantity: -1, price: 0.3, when: "2026-01-02T15:00:00.000Z" }),
+      ...wheelAt5And6(),
+    ];
+    const before = buildJournals([...txs, sale("2026-03-10T15:00:00.000Z"), buyback("2026-03-10T15:00:30.000Z")]);
+    const after = buildJournals([...txs, buyback("2026-03-10T15:00:00.000Z"), sale("2026-03-10T15:00:30.000Z")]);
+    expect(after.rows.filter((r) => r.kind === "short_call" && r.endWhen === null).map((r) => r.strategy)).toEqual(["wheel"]);
+    expect(soldShares(after)).toEqual([[6, 5.5, 100]]);
+    expect(soldShares(before)).toEqual([[6, 5.5, 100]]);
+  });
+
+  it("a sale larger than its buyback: R2 up to the contracts bought back, R3 for the rest", () => {
+    // R1 at 6 takes the lot at 6; the other 100 go by R3, Others first. Plain
+    // R3 would have kept the lot at 6; R2 past its one contract would have
+    // kept Others' lot.
+    const call6 = call(6, "2026-04-17");
+    const report = buildJournals([
+      ...assignedPut(5, "2026-01-16", "2026-01-05T15:00:00.000Z"),
+      ...assignedPut(6, "2026-02-20", "2026-02-02T15:00:00.000Z"),
+      stock({ ticker: T, quantity: 100, price: 8, when: "2026-02-25T15:00:00.000Z" }),
+      option({ ...call6, quantity: -1, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+      option({ ...call6, quantity: 1, price: 0.05, when: "2026-03-10T15:00:00.000Z" }),
+      sale("2026-03-10T15:00:10.000Z", -200),
+    ]);
+    expect(soldShares(report)).toEqual([[6, 5.5, 100]]);
+    expect(soldShares(report, "others")).toEqual([[8, 5.5, 100]]);
+    expect(heldShares(report)).toEqual([[5, 100]]);
+  });
+
+  it("one sale beside two buybacks at different strikes: each call's strike picks its lot", () => {
+    const report = buildJournals([
+      ...assignedPut(5, "2026-01-16", "2026-01-05T15:00:00.000Z"),
+      ...assignedPut(6, "2026-02-20", "2026-02-02T15:00:00.000Z"),
+      ...assignedPut(7, "2026-02-27", "2026-02-09T15:00:00.000Z"),
+      stock({ ticker: T, quantity: 100, price: 8, when: "2026-03-02T14:00:00.000Z" }),
+      option({ ...call(5, "2026-04-17"), quantity: -1, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+      option({ ...call(7, "2026-04-17"), quantity: -1, price: 0.1, when: "2026-03-02T15:01:00.000Z" }),
+      option({ ...call(5, "2026-04-17"), quantity: 1, price: 0.05, when: "2026-03-10T15:00:00.000Z" }),
+      option({ ...call(7, "2026-04-17"), quantity: 1, price: 0.05, when: "2026-03-10T15:00:05.000Z" }),
+      sale("2026-03-10T15:00:20.000Z", -200),
+    ]);
+    // R3 would have sold Others' lot at 8, then the Wheel's free lot at 6.
+    expect(soldShares(report)).toEqual(expect.arrayContaining([[5, 5.5, 100], [7, 5.5, 100]]));
     expect(soldShares(report)).toHaveLength(2);
+    expect(heldShares(report)).toEqual([[6, 100]]);
+    expect(heldShares(report, "others")).toEqual([[8, 100]]);
   });
 
   it("§4.6: a market sale takes Others' shares before the Wheel's taken-over ones", () => {
@@ -783,6 +861,36 @@ describe("buildJournals — the order shares leave in (spec 33)", () => {
     const both = buildJournals([...txs, sale("2026-03-10T15:00:00.000Z", -200)]);
     expect(soldShares(both)).toEqual(expect.arrayContaining([[4, 5.5, 100], [5, 5.5, 100]]));
     expect(both.rows.find((r) => r.kind === "short_call")).toMatchObject({ strategy: "wheel", endWhen: null });
+  });
+
+  it("leaves no floating-point residue when a lot of an adjusted delivery leaves in full", () => {
+    // 30 contracts delivered 1000 shares: 33.33… shares a contract, which no
+    // binary number holds. Its free part and its covered part, added back,
+    // miss 1000 by an ulp: neither a phantom lot of a few 1e-13 nor a phantom
+    // short may stay open.
+    const adjusted = { ticker: T, right: "P" as const, strike: 1, expiry: "2026-01-16" };
+    const delivered = "2026-01-16T20:00:00.000Z";
+    const lot = [
+      option({ ...adjusted, quantity: -30, price: 0.1, when: "2026-01-05T15:00:00.000Z" }),
+      expire({ ...adjusted, quantity: 30, when: delivered }),
+      stock({ ticker: T, quantity: 1000, price: 1, when: delivered, commission: 0 }),
+    ];
+    const plain = buildJournals([
+      ...lot,
+      option({ ...call(2, "2026-04-17"), quantity: -1, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+      stock({ ticker: T, quantity: -1000, price: 1.5, when: "2026-03-10T15:00:00.000Z" }),
+    ]);
+    const paired = buildJournals([
+      ...lot,
+      stock({ ticker: T, quantity: 33.3333, price: 0.9, when: "2026-02-01T15:00:00.000Z" }),
+      option({ ...call(2, "2026-04-17"), quantity: -5, price: 0.2, when: "2026-03-02T15:00:00.000Z" }),
+      option({ ...call(2, "2026-04-17"), quantity: 5, price: 0.1, when: "2026-03-10T14:59:50.000Z" }),
+      stock({ ticker: T, quantity: -1033.3333, price: 1.5, when: "2026-03-10T15:00:00.000Z" }),
+    ]);
+    for (const report of [plain, paired]) {
+      expect(report.rows.filter((r) => r.kind === "short_shares")).toEqual([]);
+      expect(report.rows.filter((r) => r.kind === "shares" && r.endWhen === null)).toEqual([]);
+    }
   });
 
   it("a sale larger than every long lot still opens a short for the rest", () => {

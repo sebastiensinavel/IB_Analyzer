@@ -1,5 +1,5 @@
 import { sharesPerContract, type Lot } from "./book.ts";
-import type { Strategy } from "./types.ts";
+import { EXIT_EPSILON as EPSILON, type Strategy } from "./types.ts";
 
 /** One step of an exit plan: close `quantity` shares (unsigned) of `lot`. */
 export interface PlanItem {
@@ -19,9 +19,6 @@ export interface OpenCall {
 
 /** R3: free shares leave Others first, then LEAPS, then the Wheel (spec 33 §3). */
 export const SALE_STRATEGY_ORDER: readonly Strategy[] = ["others", "leaps", "wheel"];
-
-/** Below this a residue of shares or contracts is floating-point noise, not a position. */
-const EPSILON = 1e-9;
 
 const priceOf = (lot: Lot): number => lot.openPrice ?? Number.POSITIVE_INFINITY;
 

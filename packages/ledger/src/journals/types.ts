@@ -71,6 +71,13 @@ export const FILL_MERGE_WINDOW_MS = 2000;
 export const WHEEL_BUYBACK_WINDOW_MS = 60_000;
 
 /**
+ * Below this a residue of shares or contracts left by an exit is
+ * floating-point noise, not a position: a delivery of 1000 shares for 30
+ * contracts cuts lots in parts no binary number holds (spec 33).
+ */
+export const EXIT_EPSILON = 1e-9;
+
+/**
  * One line of a journal: one lot and one exit event (spec §3.6). Money fields
  * are in `currency`, signed as the broker signs them (a premium received is
  * positive), and `null` when the source did not give them: unknown is never 0.
