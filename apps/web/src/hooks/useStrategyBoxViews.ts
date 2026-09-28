@@ -6,7 +6,7 @@ import { tableViewKey } from "@/lib/tableViewStorage";
 
 /**
  * The stored views of a strategy's positions page, held by the page rather than by each box: the
- * expiry buttons write the same criterion in all of them at once. Eleven `useTableView` in a fixed
+ * expiry buttons write the same criterion in all of them at once. Twelve `useTableView` in a fixed
  * order, one per StrategyBoxId, whatever the strategy shows — a hook count never varies between
  * renders, and a view a page does not display costs one read of localStorage.
  */
@@ -15,6 +15,7 @@ export function useStrategyBoxViews(
   strategy: PositionsStrategy,
   lineColumns: readonly ColumnMeta[],
   shareColumns: readonly ColumnMeta[],
+  condorColumns: readonly ColumnMeta[],
 ): Record<StrategyBoxId, TableViewState> {
   const prefix = `positions:${strategy}`;
   const long = useTableView(tableViewKey(accountId, `${prefix}:long`), lineColumns);
@@ -28,6 +29,7 @@ export function useStrategyBoxViews(
   const sharesUncovered = useTableView(tableViewKey(accountId, `${prefix}:sharesUncovered`), shareColumns);
   const sharesCallAbove = useTableView(tableViewKey(accountId, `${prefix}:sharesCallAbove`), shareColumns);
   const sharesCallBelow = useTableView(tableViewKey(accountId, `${prefix}:sharesCallBelow`), shareColumns);
+  const condors = useTableView(tableViewKey(accountId, `${prefix}:condors`), condorColumns);
   // Typed by StrategyBoxId: a box added to STRATEGY_BOXES without a hook here fails to compile.
   return {
     long,
@@ -41,5 +43,6 @@ export function useStrategyBoxViews(
     sharesUncovered,
     sharesCallAbove,
     sharesCallBelow,
+    condors,
   };
 }

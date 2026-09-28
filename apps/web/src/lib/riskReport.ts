@@ -60,6 +60,11 @@ export function usedBadge(used: number, total: number): CoverageBadge {
   return used > 0 ? { variant: "success", label: `used ${used}/${total}`, tooltip: null } : { variant: "outline", label: "unused", tooltip: null };
 }
 
+/** A condor leg left naked by its closed wing, or the condor that holds it (spec of sub-project 34, §5). */
+export function uncoveredBadge(quantity: number): CoverageBadge {
+  return { variant: COVERAGE_SOURCE_VARIANT[COVER_NONE], label: `${COVER_NONE} ×${quantity}`, tooltip: null };
+}
+
 /** One badge per allocation, then the uncovered remainder; "used x/y" or "unused" for a long cover; nothing without a position. */
 export function coverageBadges(position: AnalyzedPosition | null): CoverageBadge[] {
   if (position === null) return [];

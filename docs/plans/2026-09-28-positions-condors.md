@@ -498,7 +498,7 @@ export function uncoveredBadge(quantity: number): CoverageBadge; // { variant: "
 useStrategyBoxViews(accountId, strategy, lineColumns, shareColumns, condorColumns): Record<StrategyBoxId, TableViewState>
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 (a) `apps/web/src/lib/condorColumns.test.ts` :
 
@@ -594,12 +594,12 @@ pour le rôle réel du champ et la façon dont la recherche s'applique (touche E
 directe), et adapter **seulement le moyen d'y saisir**, pas les attentes. `P&L jour` vaut « — » :
 les positions de démonstration n'ont pas de `dailyPnl`.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd apps/web && npx vitest run condorColumns StrategyPositionsPage`
 Expected: FAIL — module `@/lib/condorColumns` introuvable, et l'encadré « Condors en cours » absent.
 
-- [ ] **Step 3: The box id and the page's box declaration**
+- [x] **Step 3: The box id and the page's box declaration**
 
 `packages/coverage/src/strategyBoxes.ts`, après `LineBoxId` :
 
@@ -626,7 +626,7 @@ i18n — `fr.json`, sous `strategyPositions.groups` : `"condors": "Condors en co
 `strategyPositions` : `"closedLeg": "fermée"`, `"realizedPart": "dont réalisé {{amount}}"`.
 `en.json` : `"condors": "Open condors"`, `"closedLeg": "closed"`, `"realizedPart": "of which realized {{amount}}"`.
 
-- [ ] **Step 4: `condorColumns.ts` and `uncoveredBadge`**
+- [x] **Step 4: `condorColumns.ts` and `uncoveredBadge`**
 
 ```ts
 import { CONDOR_KIND_LABELS, COVER_NONE, type CondorKind, type CondorLine } from "@ib/coverage";
@@ -666,7 +666,7 @@ export function uncoveredBadge(quantity: number): CoverageBadge {
 }
 ```
 
-- [ ] **Step 5: The twelfth view**
+- [x] **Step 5: The twelfth view**
 
 `useStrategyBoxViews` prend un cinquième paramètre `condorColumns: readonly ColumnMeta[]` et
 ajoute, après `sharesCallBelow` :
@@ -677,7 +677,7 @@ ajoute, après `sharesCallBelow` :
 
 puis `condors` dans l'objet rendu. Mettre à jour le commentaire (« Twelve `useTableView` »).
 
-- [ ] **Step 6: `CondorRows.tsx`**
+- [x] **Step 6: `CondorRows.tsx`**
 
 ```tsx
 import { Fragment } from "react";
@@ -791,7 +791,7 @@ function LegRow({ leg, sector }: { leg: CondorLegLine; sector: string | null }) 
 Vérifier que `formatDayChange(null)` rend « — » (sinon écrire `"—"`), et que `Button` accepte
 `size="icon-xs"` (c'est ce qu'utilise `JournalPage`).
 
-- [ ] **Step 7: Wire the page**
+- [x] **Step 7: Wire the page**
 
 Dans `StrategyPositionsPage.tsx` :
 
@@ -915,13 +915,13 @@ function CondorsBox({
 9. Le doc-commentaire de `StrategyPositionsPage` mentionne la page Condors : « the Condors show
    one line per open condor of their journal, legs unfolded under it (sub-project 34) ».
 
-- [ ] **Step 8: Run the tests to verify they pass**
+- [x] **Step 8: Run the tests to verify they pass**
 
 Run: `cd apps/web && npx vitest run condorColumns StrategyPositionsPage useStrategyBoxViews strategyBoxes`
 Expected: PASS. Puis `npx tsc -p . --noEmit` depuis `apps/web` (typage de `StrategyBoxId`
 élargi : tout `Record<StrategyBoxId, …>` doit maintenant avoir `condors`).
 
-- [ ] **Step 9: Commit** (cocher les cases de la tâche 2, même commit)
+- [x] **Step 9: Commit** (cocher les cases de la tâche 2, même commit)
 
 ```bash
 git add apps/web/src packages/coverage/src docs/plans/2026-09-28-positions-condors.md

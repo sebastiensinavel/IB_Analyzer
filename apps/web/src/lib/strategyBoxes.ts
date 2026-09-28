@@ -12,8 +12,8 @@ export interface StrategyBoxDef {
  * and the LEAPS pages sort their lines by checkpoint (spec of sub-project 29). The Wheel opens on its
  * put sales, then the forgotten shares, then the calls struck below the assignment price before
  * those at or above it — the most critical first —, then the call sales; the LEAPS open on the
- * forgotten LEAPS, then the covered ones, then the sales. Condors and Others keep the Positions
- * groups (sub-project 21). A declared box with no line never renders.
+ * forgotten LEAPS, then the covered ones, then the sales. The Condors show one box of condors,
+ * their legs underneath (sub-project 34); Others keeps the Positions groups (sub-project 21). A declared box with no line never renders.
  */
 export const STRATEGY_BOXES: Record<PositionsStrategy, readonly StrategyBoxDef[]> = {
   wheel: [
@@ -30,10 +30,7 @@ export const STRATEGY_BOXES: Record<PositionsStrategy, readonly StrategyBoxDef[]
     { id: "long", titleKey: "strategyPositions.groups.shares" },
     { id: "other", titleKey: "positions.groups.other" },
   ],
-  condors: [
-    { id: "optionBuys", titleKey: "positions.groups.optionBuys" },
-    { id: "optionSells", titleKey: "positions.groups.optionSells" },
-  ],
+  condors: [{ id: "condors", titleKey: "strategyPositions.groups.condors" }],
   others: [
     { id: "long", titleKey: "positions.groups.long" },
     { id: "optionBuys", titleKey: "positions.groups.optionBuys" },
