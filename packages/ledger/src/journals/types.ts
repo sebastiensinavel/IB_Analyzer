@@ -64,6 +64,13 @@ export const LEAPS_MIN_MONTHS = 3;
 export const FILL_MERGE_WINDOW_MS = 2000;
 
 /**
+ * A share sale this close to the buyback of a Wheel covered call, before or
+ * after, is that call's exit done by hand: it sells Wheel shares by R1 at the
+ * call's strike (spec 33 §3, R2).
+ */
+export const WHEEL_BUYBACK_WINDOW_MS = 60_000;
+
+/**
  * One line of a journal: one lot and one exit event (spec §3.6). Money fields
  * are in `currency`, signed as the broker signs them (a premium received is
  * positive), and `null` when the source did not give them: unknown is never 0.

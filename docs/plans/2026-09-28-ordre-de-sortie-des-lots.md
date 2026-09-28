@@ -625,7 +625,7 @@ git commit -m "Journaux : une assignation livre ses actions par R1, le reste par
     `ReplayContext.buybackClosed: Map<Transaction, number>` (contrats Wheel couverts fermés par
     un rachat au moment de son rejeu).
 
-- [ ] **Step 1: Failing tests for `pairBuybacks`** — `buybacks.test.ts`
+- [x] **Step 1: Failing tests for `pairBuybacks`** — `buybacks.test.ts`
 
 ```ts
 import { beforeEach, describe, expect, it } from "vitest";
@@ -671,7 +671,7 @@ describe("pairBuybacks", () => {
 
 Run: `npx vitest run buybacks` — Expected: FAIL (module absent).
 
-- [ ] **Step 2: Implement `buybacks.ts` and the constant**
+- [x] **Step 2: Implement `buybacks.ts` and the constant**
 
 Dans `types.ts`, juste après `FILL_MERGE_WINDOW_MS` :
 
@@ -723,7 +723,7 @@ export function pairBuybacks(sorted: readonly Transaction[]): Map<Transaction, T
 
 Run: `npx vitest run buybacks` — Expected: PASS.
 
-- [ ] **Step 3: Context fields** — dans `ReplayContext` (`context.ts`) :
+- [x] **Step 3: Context fields** — dans `ReplayContext` (`context.ts`) :
 
 ```ts
   /** Per share sale, the call buybacks within the R2 window, nearest first (spec 33 §3). */
@@ -738,7 +738,7 @@ et dans `newContext` : `buybacks: new Map(), buybackBudget: new Map(), buybackCl
 Dans `buildJournals`, juste après `const ctx = newContext(ids, active);` :
 `ctx.buybacks = pairBuybacks(sorted);`.
 
-- [ ] **Step 4: Failing replay tests** — dans le `describe` « spec 33 » de la tâche 2 :
+- [x] **Step 4: Failing replay tests** — dans le `describe` « spec 33 » de la tâche 2 :
 
 ```ts
   const wheelAt5And6 = () => [
@@ -861,7 +861,7 @@ Dans `buildJournals`, juste après `const ctx = newContext(ids, active);` :
 Run: `npx vitest run replay -t "spec 33"` — Expected: FAIL sur §4.4 (fenêtre), §4.6, §4.7,
 §4.8, §4.9 et « Wheel inactive » (FIFO).
 
-- [ ] **Step 5: Rewire the share loop of `replayGroup`**
+- [x] **Step 5: Rewire the share loop of `replayGroup`**
 
 Dans la boucle des options, remplacer le bloc qui remplit `wheelBuybacks` par :
 
@@ -929,7 +929,7 @@ sert plus). Mettre à jour les commentaires de `insertAfter` et du champ `rankWh
 le rang sert aux opérations sur titres ; l'ordre de sortie, lui, se choisit par
 `exitOrder.ts` (spec 33).
 
-- [ ] **Step 6: Run everything in the package, then the oracle**
+- [x] **Step 6: Run everything in the package, then the oracle**
 
 Run: `npx vitest run` (dans `packages/ledger`) — tout test existant qui change d'attente est
 justifié par R2 ou R3 dans le message de commit, sinon corrigé comme un bug. Les deux
@@ -937,7 +937,7 @@ chronologies du sous-projet 17 (« 500 in the Wheel, 5 in Others » et « nothin
 in Others ») doivent passer **sans modification** : elles comptent des quantités.
 Run: `npx vitest run journals` dans `packages/ib-parsers` — Expected: PASS sans modification.
 
-- [ ] **Step 7: Commit** (cases cochées dans le même commit)
+- [x] **Step 7: Commit** (cases cochées dans le même commit)
 
 ```bash
 git add packages/ledger/src/journals docs/plans/2026-09-28-ordre-de-sortie-des-lots.md

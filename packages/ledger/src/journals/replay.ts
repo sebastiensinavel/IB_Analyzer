@@ -1,12 +1,13 @@
 import { dayOf } from "../filter.ts";
 import { sortTransactions } from "../order.ts";
 import type { Transaction } from "../types.ts";
-import { isWheelCoveredCall, isWheelShares, newLot, type ClosedPortion, type Exit, type Lot, type LotBook, type OpenPosition } from "./book.ts";
+import { isWheelCoveredCall, newLot, type ClosedPortion, type Exit, type Lot, type LotBook, type OpenPosition } from "./book.ts";
 import { contractId, contractOf, formatContractLabel, isPackedOptionSymbol, optionTerms, packedOptionSymbol, sharesContract, tickerOf, type ContractKey } from "./contract.ts";
 import { classifyOpenings, type Opening } from "./classify.ts";
 import { computeCapital } from "./capital.ts";
 import { applyConversion, applyMixedMerger, pairCorporateActions, withoutOldSuffix, type CorporateActionEvent } from "./corporate.ts";
-import { mergePortions, sellAtStrike, sellFree, sharesOf } from "./exits.ts";
+import { mergePortions, sellAtStrike, sellFree, sellShares, sharesOf } from "./exits.ts";
+import { pairBuybacks } from "./buybacks.ts";
 import { mergeFills } from "./fills.ts";
 import { condorRows } from "./condor.ts";
 import { closeLot, idsOf, kindOf, newContext, uniqueId, type ReplayContext } from "./context.ts";
@@ -145,6 +146,7 @@ export function buildJournals(
   const events = paired.map((event) => resolveLegs(event, identities));
   const { transactions: sorted, ids } = mergeFills(named.filter(isReplayable));
   const ctx = newContext(ids, active);
+  ctx.buybacks = pairBuybacks(sorted);
   for (const tx of sorted) {
     if (tx.quantity !== null) continue;
     const key = `${contractId(contractOf(tx))}@${dayOf(tx.when)}`;
@@ -376,21 +378,15 @@ function replayGroup(group: Transaction[], ctx: ReplayContext): void {
   const { pools, byTx } = resolveDeliveries(options, stocks, ctx.book);
   const openings: Opening[] = [];
 
-  // Contracts of Wheel covered calls bought back at this instant, per share
-  // contract: a sale of those shares at the same instant sells Wheel shares
-  // first, up to that many contracts (spec 17, §4.1).
-  const wheelBuybacks = new Map<string, number>();
   for (const tx of options) {
     const contract = contractOf(tx);
     const quantity = tx.quantity ?? 0;
     const closed = ctx.book.close(contract, quantity);
     const closedQty = closed.reduce((n, c) => n + c.quantity, 0);
     if (closedQty > 0) closeOptions(tx, contract, closed, closedQty, byTx.get(tx) ?? null, ctx);
-    if (!isSettlementShape(tx)) {
-      const id = contractId(sharesContract(contract.ticker, contract.currency));
-      for (const { lot, quantity: contracts } of closed) {
-        if (isWheelCoveredCall(lot)) wheelBuybacks.set(id, (wheelBuybacks.get(id) ?? 0) + contracts);
-      }
+    if (!isSettlementShape(tx) && quantity > 0) {
+      const wheel = closed.filter(({ lot }) => isWheelCoveredCall(lot)).reduce((n, c) => n + c.quantity, 0);
+      ctx.buybackClosed.set(tx, wheel);
     }
     const rest = quantity - Math.sign(quantity) * closedQty;
     if (rest !== 0) openings.push({ tx, quantity: rest, orphan: closedQty === 0 && isSettlementShape(tx) });
@@ -403,9 +399,7 @@ function replayGroup(group: Transaction[], ctx: ReplayContext): void {
     const whole = Math.abs(quantity);
     const left = quantity - Math.sign(quantity) * consumedShares(tx, pools);
     if (left === 0) continue;
-    const budget = left < 0 ? (wheelBuybacks.get(contractId(contract)) ?? 0) : 0;
-    const { closed, preferredContracts } = ctx.book.closePreferring(contract, left, isWheelShares, budget);
-    if (preferredContracts > 0) wheelBuybacks.set(contractId(contract), budget - preferredContracts);
+    const closed = left < 0 ? sellShares(ctx, tx, contract, -left) : ctx.book.close(contract, left);
     for (const portion of closed) {
       closeLot(ctx, portion.lot, portion.quantity, {
         when: tx.when,

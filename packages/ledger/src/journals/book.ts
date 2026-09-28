@@ -35,6 +35,8 @@ export interface Lot {
    * for the two lots a Wheel takeover cuts out of a lot, the rank of that lot —
    * the taken part opens the day of the call, and ranking it there would send
    * it behind its own remainder at the next corporate action (spec 17, §5).
+   * The rank serves the corporate actions only: which shares a sale or a
+   * delivery takes is chosen by `exitOrder.ts` (spec 33).
    */
   rankWhen: string;
   openPrice: number | null;
@@ -107,18 +109,12 @@ export interface OpenPosition {
   quantity: number;
 }
 
-/** What `LotBook.closePreferring` closed, and how many contracts its first pass used. */
-export interface PreferredClose {
-  closed: ClosedPortion[];
-  preferredContracts: number;
-}
-
-/** Long shares held by the Wheel: what a Wheel covered call makes leave first (spec 17, §4). */
+/** Long shares held by the Wheel: what a Wheel covered call delivers by R1 (spec 33 §3). */
 export function isWheelShares(lot: Lot): boolean {
   return lot.strategy === "wheel" && lot.kind === "shares";
 }
 
-/** A short call of the Wheel covered by shares: the call whose buyback or assignment makes Wheel shares leave first (spec 17, §4). */
+/** A short call of the Wheel covered by shares: the call whose assignment, or buyback beside a sale, sells Wheel shares by R1 (spec 33 §3). */
 export function isWheelCoveredCall(lot: Lot): boolean {
   return lot.kind === "short_call" && lot.strategy === "wheel" && lot.cover === "shares";
 }
@@ -176,36 +172,6 @@ export class LotBook {
   }
 
   /**
-   * Like `close`, but first serves, in book order, the lots `preferred` accepts,
-   * up to `contracts` contracts of them — each lot counted with
-   * `sharesPerContract` —, then closes what is left FIFO. A lot reached by both
-   * passes comes back as one portion, so it makes one row. `preferredContracts`
-   * is what the first pass used, for a caller whose limit spans several closes.
-   */
-  closePreferring(contract: ContractKey, quantity: number, preferred: (lot: Lot) => boolean, contracts: number): PreferredClose {
-    const portions = new Map<Lot, number>();
-    let left = Math.abs(quantity);
-    let budget = contracts;
-    for (const lot of this.openLots(contract)) {
-      if (left === 0 || budget <= 0) break;
-      if (Math.sign(lot.remaining) === Math.sign(quantity) || !preferred(lot)) continue;
-      const per = sharesPerContract(lot);
-      const take = Math.min(Math.abs(lot.remaining), left, budget * per);
-      if (take <= 0) continue;
-      lot.remaining -= Math.sign(lot.remaining) * take;
-      left -= take;
-      budget -= take / per;
-      portions.set(lot, take);
-    }
-    const rest = left === 0 ? [] : this.close(contract, Math.sign(quantity) * left);
-    for (const portion of rest) portions.set(portion.lot, (portions.get(portion.lot) ?? 0) + portion.quantity);
-    return {
-      closed: [...portions].map(([lot, closed]) => ({ lot, quantity: closed })),
-      preferredContracts: contracts - budget,
-    };
-  }
-
-  /**
    * Slots a lot among the destination's open lots by `rankWhen` instead of
    * appending it. Insertion order is FIFO order everywhere else in the engine
    * because lots arrive in time order; a conversion breaks that, since the
@@ -229,12 +195,11 @@ export class LotBook {
   }
 
   /**
-   * Puts `lots` immediately after `lot` in its contract's list. That list *is*
-   * FIFO order — `close` walks it from the front — so a lot cut out of another
-   * must take that other's rank rather than the end of the queue: the shares a
-   * covered call took over have to be reached before the untouched remainder
-   * they were cut from, or an assignment would deliver the wrong ones and the
-   * Wheel cycle would never close.
+   * Puts `lots` immediately after `lot` in its contract's list, so a lot cut
+   * out of another keeps that other's rank rather than the end of the queue.
+   * The list order is the rank the corporate actions replay on; share sales
+   * and deliveries no longer walk it, their order is chosen by `exitOrder.ts`
+   * (spec 33).
    *
    * Unlike `insertByRank`, which sorts on `rankWhen`, this one places by
    * rank: the lots it inserts carry the instant of the takeover, which is

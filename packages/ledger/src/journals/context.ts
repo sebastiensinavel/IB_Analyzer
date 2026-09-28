@@ -18,10 +18,28 @@ export interface ReplayContext {
   ids: Map<string, number>;
   /** The strategies an opening may be offered to (spec of sub-project 30, §3). */
   active: ReadonlySet<ActivableStrategy>;
+  /** Per share sale, the call buybacks within the R2 window, nearest first (spec 33 §3). */
+  buybacks: Map<Transaction, Transaction[]>;
+  /** Per buyback, the Wheel covered contracts its sales may still sell by R2. */
+  buybackBudget: Map<Transaction, number>;
+  /** Per buyback already replayed, the Wheel covered contracts it closed. */
+  buybackClosed: Map<Transaction, number>;
 }
 
 export function newContext(fills: Map<Transaction, string[]> = new Map(), active: readonly ActivableStrategy[] = ACTIVABLE_STRATEGIES): ReplayContext {
-  return { book: new LotBook(), rows: [], composites: [], delivered: new Map(), settlements: new Map(), fills, ids: new Map(), active: new Set(active) };
+  return {
+    book: new LotBook(),
+    rows: [],
+    composites: [],
+    delivered: new Map(),
+    settlements: new Map(),
+    fills,
+    ids: new Map(),
+    active: new Set(active),
+    buybacks: new Map(),
+    buybackBudget: new Map(),
+    buybackClosed: new Map(),
+  };
 }
 
 /** Every id behind a transaction: the slices it folds, or its own. */
