@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { ActivableStrategy } from "@ib/ledger";
+import { useUnderlyingQuotes } from "@/agent/useUnderlyingQuotes";
 import { useActiveStrategies, useJournals, useRiskReport, type JournalsView, type RiskReportView } from "./hooks";
 
 interface AccountData {
@@ -13,12 +14,14 @@ const AccountDataContext = createContext<AccountData | null>(null);
 /**
  * The journals and the risk report of the account on screen, computed once for the whole shell
  * (spec of sub-project 11, §4): the title bar's verdicts and every page read them here, so a
- * change of the ledger replays it once, whatever the page.
+ * change of the ledger replays it once, whatever the page — and quotes the account's
+ * underlyings for the Var. jour action column (spec of sub-project 35).
  */
 export function AccountDataProvider({ accountId, children }: { accountId: string; children: ReactNode }) {
   const strategies = useActiveStrategies(accountId);
   const journals = useJournals(accountId, strategies);
   const { snapshot, report, sectorOf } = useRiskReport(accountId);
+  useUnderlyingQuotes(accountId, report ?? null);
   const value = useMemo(
     () => ({ journals, risk: { snapshot, report, sectorOf }, strategies }),
     [journals, snapshot, report, sectorOf, strategies],

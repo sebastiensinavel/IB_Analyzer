@@ -480,7 +480,7 @@ export function parseAgentQuotes(payload: unknown): Map<string, number | null> {
   - `quotes.ts` : `export type QuoteMap = ReadonlyMap<string, number | null>;` `export function quotedTicker(ticker: string): string;` `export function underlyingDayChangeOf(quotes: QuoteMap, ticker: string): number | null;` `export function useUnderlyingQuotesMap(): QuoteMap;` `export function mergeQuotes(entries: ReadonlyMap<string, number | null>): void;` `export function resetQuotes(): void;` `export async function refreshQuotes(port: number, tickers: readonly string[]): Promise<void>;`
   - `useUnderlyingQuotes.ts` : `export function quoteTickers(report: RiskReport | null, sectors: readonly SectorRecord[]): string[];` `export function useUnderlyingQuotes(accountId: string, report: RiskReport | null): void;`
 
-- [ ] **Step 1: Tests du client** (dans `client.test.ts`, à côté des tests existants, même style de `vi.spyOn(globalThis, "fetch")`) :
+- [x] **Step 1: Tests du client** (dans `client.test.ts`, à côté des tests existants, même style de `vi.spyOn(globalThis, "fetch")`) :
 
 ```ts
 describe("exclusiveTws", () => {
@@ -524,8 +524,8 @@ describe("fetchQuotes", () => {
 });
 ```
 
-- [ ] **Step 2:** `npx vitest run src/agent/client` depuis `apps/web` → FAIL.
-- [ ] **Step 3: Implémenter dans `client.ts`**
+- [x] **Step 2:** `npx vitest run src/agent/client` depuis `apps/web` → FAIL.
+- [x] **Step 3: Implémenter dans `client.ts`**
 
 ```ts
 /** Same ceiling as the agent's QUOTES_MAX_SYMBOLS (apps/tws-agent), one per language. */
@@ -549,9 +549,9 @@ export function fetchQuotes(port: number, symbols: readonly string[]): Promise<A
 
 Factoriser le corps de `fetchSnapshot` en `async function getAgentJson(path: string): Promise<AgentFetchResult>` (le `fetch` avec `AGENT_FETCH_TIMEOUT_MS`, 503 → `tws-unreachable`, non-ok → `agent-error`, JSON invalide → `agent-error`) ; `fetchSnapshot(port)` devient `exclusiveTws(() => getAgentJson(\`/snapshot?port=${port}\`))`. Envelopper le corps actuel de `fetchBars` dans `exclusiveTws(async () => { … })` sans en changer la logique. Les tests existants de `fetchSnapshot`/`fetchBars` doivent passer tels quels.
 
-- [ ] **Step 4:** `npx vitest run src/agent` → PASS (tests du client et de `useAgentSync`/`sync` existants inclus).
+- [x] **Step 4:** `npx vitest run src/agent` → PASS (tests du client et de `useAgentSync`/`sync` existants inclus).
 
-- [ ] **Step 5: Tests du magasin** (`quotes.test.ts`) :
+- [x] **Step 5: Tests du magasin** (`quotes.test.ts`) :
 
 ```ts
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -611,7 +611,7 @@ describe("quotes", () => {
 
 (`getQuotesSnapshot` est exporté par `quotes.ts` pour `useSyncExternalStore` et pour ce test ; l'importer statiquement en tête plutôt que par `await import`.)
 
-- [ ] **Step 6: Implémenter `quotes.ts`**
+- [x] **Step 6: Implémenter `quotes.ts`**
 
 ```ts
 import { useSyncExternalStore } from "react";
@@ -683,9 +683,9 @@ export async function refreshQuotes(port: number, tickers: readonly string[]): P
 
 (Vérifier que `NormalizationError` est exporté par `@ib/ib-parsers` : `grep -n NormalizationError packages/ib-parsers/src/index.ts packages/ib-parsers/src/common.ts` ; sinon l'importer d'où `agent.ts` l'importe.)
 
-- [ ] **Step 7:** `npx vitest run src/agent/quotes` → PASS.
+- [x] **Step 7:** `npx vitest run src/agent/quotes` → PASS.
 
-- [ ] **Step 8: Tests du déclenchement** (`useUnderlyingQuotes.test.tsx`), sur `fake-indexeddb` comme `useAgentSync.test.tsx` (en reprendre `ACCOUNT`, le nettoyage de la base et `resetAgentState`) :
+- [x] **Step 8: Tests du déclenchement** (`useUnderlyingQuotes.test.tsx`), sur `fake-indexeddb` comme `useAgentSync.test.tsx` (en reprendre `ACCOUNT`, le nettoyage de la base et `resetAgentState`) :
 
 ```tsx
 // quoteTickers, pure:
@@ -716,7 +716,7 @@ it("does not call /quotes for an account without a TWS port", async () => { /* A
 
 Écrire ces trois tests en entier sur ce patron ; `afterEach` : `resetQuotes()`, `resetAgentState()`, `vi.restoreAllMocks()`.
 
-- [ ] **Step 9: Implémenter `useUnderlyingQuotes.ts`**
+- [x] **Step 9: Implémenter `useUnderlyingQuotes.ts`**
 
 ```ts
 import { useEffect, useMemo } from "react";
@@ -760,9 +760,9 @@ export function useUnderlyingQuotes(accountId: string, report: RiskReport | null
 
 (Vérifier le type d'entrée de `positionSuggestions` : il prend `readonly SectorEntry[]` ; `SectorRecord` le satisfait déjà puisque `PositionSuggestionsCard` lui passe `[...sectors.values()]`. Si `eslint` signale `syncedAt` comme dépendance inutile, garder la dépendance et ajouter un commentaire d'une ligne : « a pass that moved `lastAgentSyncAt` re-quotes, on purpose ».)
 
-- [ ] **Step 10: Monter le hook** dans `AccountDataProvider` : `const { snapshot, report, sectorOf } = useRiskReport(accountId);` puis `useUnderlyingQuotes(accountId, report);` juste en dessous. Compléter la docstring : « and quotes the account's underlyings for the Var. jour action column (spec of sub-project 35). »
-- [ ] **Step 11:** `npx vitest run src/agent src/db` → PASS.
-- [ ] **Step 12: Commit** — `git add apps/web/src/agent apps/web/src/db/AccountDataProvider.tsx docs/plans/2026-09-28-var-jour-action.md && git commit -m "Web : cotations des sous-jacents en mémoire, une connexion TWS à la fois"`
+- [x] **Step 10: Monter le hook** dans `AccountDataProvider` : `const { snapshot, report, sectorOf } = useRiskReport(accountId);` puis `useUnderlyingQuotes(accountId, report);` juste en dessous. Compléter la docstring : « and quotes the account's underlyings for the Var. jour action column (spec of sub-project 35). »
+- [x] **Step 11:** `npx vitest run src/agent src/db` → PASS.
+- [x] **Step 12: Commit** — `git add apps/web/src/agent apps/web/src/db/AccountDataProvider.tsx docs/plans/2026-09-28-var-jour-action.md && git commit -m "Web : cotations des sous-jacents en mémoire, une connexion TWS à la fois"`
 
 ---
 

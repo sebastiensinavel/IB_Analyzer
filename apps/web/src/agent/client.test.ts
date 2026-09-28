@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AGENT_FETCH_TIMEOUT_MS, AGENT_PROBE_TIMEOUT_MS, AGENT_URL, fetchSnapshot, probeAgent } from "./client";
+import { AGENT_FETCH_TIMEOUT_MS, AGENT_PROBE_TIMEOUT_MS, AGENT_URL, exclusiveTws, fetchQuotes, fetchSnapshot, probeAgent } from "./client";
 
 function mockFetch(handler: (url: string, init?: RequestInit) => Response | Promise<Response>) {
   return vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
@@ -64,5 +64,45 @@ describe("fetchSnapshot", () => {
     expect(await fetchSnapshot(7502)).toEqual({ ok: false, code: "agent-error" });
     mockFetch(() => new Response("not json", { status: 200 }));
     expect(await fetchSnapshot(7502)).toEqual({ ok: false, code: "agent-error" });
+  });
+});
+
+describe("exclusiveTws", () => {
+  it("never lets two agent calls that open a TWS connection overlap", async () => {
+    const order: string[] = [];
+    let release!: () => void;
+    const first = exclusiveTws(async () => {
+      order.push("first:start");
+      await new Promise<void>((resolve) => (release = resolve));
+      order.push("first:end");
+    });
+    const second = exclusiveTws(async () => {
+      order.push("second:start");
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(order).toEqual(["first:start"]);
+    release();
+    await Promise.all([first, second]);
+    expect(order).toEqual(["first:start", "first:end", "second:start"]);
+  });
+
+  it("runs the next call after one that failed", async () => {
+    await expect(exclusiveTws(async () => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
+    await expect(exclusiveTws(async () => 42)).resolves.toBe(42);
+  });
+});
+
+describe("fetchQuotes", () => {
+  it("asks /quotes for the symbols, comma-separated and encoded", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ fetchedAt: "x", quotes: [] })));
+    const result = await fetchQuotes(7496, ["AAPL", "BRK B"]);
+    expect(String(spy.mock.calls[0][0])).toBe("http://127.0.0.1:8100/quotes?port=7496&symbols=AAPL%2CBRK%20B");
+    expect(result).toEqual({ ok: true, payload: { fetchedAt: "x", quotes: [] } });
+  });
+
+  it("maps a 503 to tws-unreachable", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 503 }));
+    expect(await fetchQuotes(7496, ["AAPL"])).toEqual({ ok: false, code: "tws-unreachable" });
   });
 });
