@@ -91,17 +91,40 @@ describe("strategyLevels", () => {
     expect(find(strategyLevels(rows, "BTDR", ALL), "shortPut")).toEqual([]);
   });
 
-  it("rend les actions assignées au prix moyen d'assignation", () => {
+  it("rend un niveau d'actions par prix d'entrée, jamais leur moyenne", () => {
     const rows = [
       row({ kind: "shares", strategy: "wheel", quantity: 400, openPrice: 17.5, assigned: true }),
       row({ id: "s2", kind: "shares", strategy: "wheel", quantity: 300, openPrice: 14, assigned: true }),
     ];
 
-    const shares = find(strategyLevels(rows, "BTDR", ALL), "shares");
+    expect(find(strategyLevels(rows, "BTDR", ALL), "shares")).toEqual([
+      { kind: "shares", price: 14, quantity: 300 },
+      { kind: "shares", price: 17.5, quantity: 400 },
+    ]);
+  });
 
-    expect(shares).toHaveLength(1);
-    expect(shares[0]).toMatchObject({ quantity: 700 });
-    expect((shares[0] as { price: number }).price).toBeCloseTo(16, 10);
+  it("fond les lots d'actions au même prix d'entrée", () => {
+    const rows = [
+      row({ id: "s1", kind: "shares", strategy: "wheel", quantity: 100, openPrice: 5, assigned: true }),
+      row({ id: "s2", kind: "shares", strategy: "wheel", quantity: 100, openPrice: 6, assigned: true }),
+      row({ id: "s3", kind: "shares", strategy: "wheel", quantity: 200, openPrice: 5 }),
+    ];
+
+    expect(find(strategyLevels(rows, "BTDR", ALL), "shares")).toEqual([
+      { kind: "shares", price: 5, quantity: 300 },
+      { kind: "shares", price: 6, quantity: 100 },
+    ]);
+  });
+
+  it("ne dessine ni un lot clos ni un lot sans prix, sans effacer les autres", () => {
+    const rows = [
+      row({ id: "s1", kind: "shares", strategy: "wheel", quantity: 100, openPrice: 5, endWhen: "2026-06-01T14:30:00.000Z" }),
+      row({ id: "s2", kind: "shares", strategy: "wheel", quantity: 100, openPrice: null }),
+      row({ id: "s3", kind: "shares", strategy: "wheel", quantity: 100, openPrice: 6 }),
+      row({ id: "s4", kind: "shares", strategy: "leaps", quantity: 100, openPrice: 7 }),
+    ];
+
+    expect(find(strategyLevels(rows, "BTDR", ALL), "shares")).toEqual([{ kind: "shares", price: 6, quantity: 100 }]);
   });
 
   it("ne retient que les lignes du ticker demandé et des stratégies demandées", () => {

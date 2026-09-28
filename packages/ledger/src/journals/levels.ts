@@ -5,7 +5,6 @@
  * Une ligne est ouverte selon `endWhen === null`, jamais selon `ongoing` : un put assigné reste
  * `ongoing` tant que ses actions ne sont pas vendues alors qu'il n'est plus une vente en cours.
  */
-import { wheelHoldings } from "./holdings.ts";
 import type { JournalRow, Strategy } from "./types.ts";
 
 export type ChartLevelKind = "shares" | "shortPut" | "shortCall" | "leapsBuy" | "condor";
@@ -13,7 +12,11 @@ export type ChartLevelKind = "shares" | "shortPut" | "shortCall" | "leapsBuy" | 
 /** Extrait la date au format YYYY-MM-DD d'un timestamp ISO. */
 const dayOf = (when: string) => when.slice(0, 10);
 
-/** Les actions Wheel détenues, à leur prix moyen d'assignation. */
+/**
+ * Les actions Wheel détenues à un même prix d'entrée - le strike du put qui les a livrées ou du
+ * call qui les a reprises. Un niveau par prix, jamais la moyenne : le graphe montre les lots
+ * d'assignation, que les tableaux (`wheelHoldings`) résument au prix moyen.
+ */
 export interface SharesLevel {
   kind: "shares";
   price: number;
@@ -51,6 +54,23 @@ export interface CondorLevel {
 }
 
 export type ChartLevel = SharesLevel | OptionLevel | LeapsBuyLevel | CondorLevel;
+
+/**
+ * Les lots d'actions Wheel ouverts, fondus par devise et prix d'entrée, prix croissants. Un lot
+ * sans prix n'est pas dessiné, sans effacer les autres.
+ */
+function sharesLevels(rows: readonly JournalRow[]): SharesLevel[] {
+  const byPrice = new Map<string, SharesLevel>();
+  for (const row of rows) {
+    if (row.strategy !== "wheel" || row.kind !== "shares") continue;
+    if (row.quantity === null || row.openPrice === null) continue;
+    const key = `${row.currency}|${row.openPrice}`;
+    const level = byPrice.get(key) ?? { kind: "shares" as const, price: row.openPrice, quantity: 0 };
+    level.quantity += row.quantity;
+    byPrice.set(key, level);
+  }
+  return [...byPrice.values()].filter((level) => level.quantity > 0).sort((a, b) => a.price - b.price);
+}
 
 /** Une vente d'options par strike : deux échéances au même strike ne font qu'une ligne. */
 function optionLevels(rows: readonly JournalRow[], kind: "short_put" | "short_call"): OptionLevel[] {
@@ -119,14 +139,7 @@ export function strategyLevels(
   );
   const levels: ChartLevel[] = [];
 
-  if (strategies.includes("wheel")) {
-    // wheelHoldings lit lui-même les lignes Wheel ouvertes : on lui passe le ledger entier.
-    for (const holding of wheelHoldings(rows)) {
-      if (holding.ticker !== ticker || holding.quantity === 0 || holding.averageAssignmentPrice === null) continue;
-      levels.push({ kind: "shares", price: holding.averageAssignmentPrice, quantity: holding.quantity });
-    }
-  }
-
+  if (strategies.includes("wheel")) levels.push(...sharesLevels(scoped));
   levels.push(...optionLevels(scoped, "short_put"));
   levels.push(...optionLevels(scoped, "short_call"));
   levels.push(...leapsBuyLevels(scoped));
