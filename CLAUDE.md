@@ -258,13 +258,22 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   stratégie d'origine au strike (événement `integrated`, `journals/takeover.ts`) et rouvert dans
   la wheel au même strike, la part reprise gardant le rang du lot dans le carnet. Reprendre au
   coût réel ferait entrer la plus-value d'avant-wheel dans la stratégie ; laisser la part
-  reprise en fin de file ferait livrer les mauvaises actions à l'assignation. La
+  reprise en fin de file la ferait passer derrière son reste à la prochaine opération sur titres. La
   classification se fait une fois, à la vente : un call vendu à nu ne se reclasse jamais.
-  **Un call Wheel fait sortir d'abord des actions Wheel** (`LotBook.closePreferring`) : à son
-  assignation, et quand une vente d'actions tombe au même instant que son rachat, dans la limite
-  des contrats rachetés. Toute autre vente reste FIFO. Le rang d'un lot est `rankWhen`, que les
-  deux morceaux d'une coupe héritent : une opération sur titres trie sur lui, jamais sur
-  `openWhen`.
+  **Les actions longues sortent au prix, jamais au seul FIFO** (sous-projet 33,
+  `journals/exitOrder.ts`) : un call couvert de la Wheel assigné livre le lot Wheel le plus
+  cher dont le prix ne dépasse pas son strike, sinon le plus bas (R1), et ce que la Wheel n'a
+  pas sort par R3 ; une vente à `WHEEL_BUYBACK_WINDOW_MS` (60 s) ou moins du rachat d'un tel
+  call, avant ou après, sort des actions Wheel par R1 au strike du call racheté, dans la limite
+  des contrats couverts Wheel que ce rachat ferme — servis aux ventes dans l'ordre
+  chronologique, une vente n'en reprenant jamais un déjà servi — (R2), le reste par R3 ;
+  toute autre sortie prend d'abord les
+  actions libres — qu'aucun call Wheel ouvert ne couvre selon `coverAttribution`, recalculée à
+  chaque sortie et jamais stockée —, Autres puis LEAPS puis Wheel, le prix le plus faible
+  d'abord, les actions couvertes en dernier recours (R3). À prix égal, l'ordre du carnet ; le
+  rachat d'actions vendues à découvert reste FIFO. `LotBook.closeOrdered` exécute un plan sans
+  réordonner le carnet : le rang d'un lot est `rankWhen`, que les deux morceaux d'une coupe
+  héritent, et une opération sur titres trie sur lui, jamais sur `openWhen`.
 - **`JournalRow.note` porte un code, jamais une phrase** : `packages/ledger` n'écrit aucun
   texte visible, `apps/web/src/i18n/{fr,en}.json` porte la partie fixe et le libellé de
   contrat s'y interpole.
@@ -361,7 +370,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   rangent leurs lignes par point de contrôle** : `strategyBoxContents`
   (`packages/coverage/src/strategyBoxes.ts`) coupe les actions Wheel d'un ticker en part libre
   et part couverte — la couverte au-dessus ou en dessous selon le prix moyen des calls contre
-  le prix moyen d'assignation du ticker, jamais celui des lots FIFO, une comparaison impossible
+  le prix moyen d'assignation du ticker, jamais celui des lots restants, une comparaison impossible
   en dessous — et un LEAPS en part libre et part utilisée (`used`, plafonnée par la ligne). Les
   graphes ne changent pas d'un encadré à l'autre.
 - **La suggestion de position mesure en valeur de risque, jamais en capital** :
@@ -462,6 +471,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 30 | Les stratégies actives d'un compte | fait (2026-09-23) |
 | 31 | Habillage « finance-desktop » : tokens, polices, tableaux, graphes, barres de défilement | fait (2026-09-24) |
 | 32 | Publication : une prod et une dev sur le VPS | fait (2026-09-25), mise en ligne en attente de la tâche 5 du plan 32 |
+| 33 | L'ordre de sortie des lots d'actions | fait (2026-09-28) |
 
 ## Outillage
 

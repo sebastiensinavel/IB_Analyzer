@@ -80,7 +80,7 @@ opérations sur titres. `journals/exits.ts` relie ces plans au contexte du repla
   Les `lots` passés sont des lots d'actions **longues** ouverts (`remaining > 0`) d'un seul
   contrat, dans l'ordre du carnet.
 
-- [ ] **Step 1: Write the failing tests** — `exitOrder.test.ts`
+- [x] **Step 1: Write the failing tests** — `exitOrder.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -223,12 +223,12 @@ describe("salePlan (R3)", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `npx vitest run exitOrder` (depuis `packages/ledger`)
 Expected: FAIL — `Failed to resolve import "./exitOrder.ts"`.
 
-- [ ] **Step 3: Implement `exitOrder.ts`**
+- [x] **Step 3: Implement `exitOrder.ts`**
 
 ```ts
 import { sharesPerContract, type Lot } from "./book.ts";
@@ -348,12 +348,12 @@ export function salePlan(lots: readonly Lot[], covered: Coverage, shares: number
 }
 ```
 
-- [ ] **Step 4: Run to verify they pass**
+- [x] **Step 4: Run to verify they pass**
 
 Run: `npx vitest run exitOrder`
 Expected: PASS.
 
-- [ ] **Step 5: Test and implement `LotBook.closeOrdered`** — dans `book.test.ts`, nouveau
+- [x] **Step 5: Test and implement `LotBook.closeOrdered`** — dans `book.test.ts`, nouveau
   `describe("LotBook.closeOrdered")` :
 
 ```ts
@@ -403,7 +403,7 @@ Implémentation, dans `LotBook` juste après `close` (importer `PlanItem` en typ
 
 Run: `npx vitest run book exitOrder` — Expected: PASS.
 
-- [ ] **Step 6: Commit** (cocher les cases de la tâche 1 dans ce plan, même commit)
+- [x] **Step 6: Commit** (cocher les cases de la tâche 1 dans ce plan, même commit)
 
 ```bash
 git add packages/ledger/src/journals/exitOrder.ts packages/ledger/src/journals/exitOrder.test.ts packages/ledger/src/journals/book.ts packages/ledger/src/journals/book.test.ts docs/plans/2026-09-28-ordre-de-sortie-des-lots.md
@@ -431,7 +431,7 @@ git commit -m "Journaux : le module d'ordre de sortie des lots (R1, attribution,
   - `mergePortions(...lists: ClosedPortion[][]): ClosedPortion[]` — un lot, une portion ;
   - `sharesOf(portions: ClosedPortion[]): number` et `contractsOf(portions: ClosedPortion[]): number`.
 
-- [ ] **Step 1: Write the failing replay tests** — dans `replay.test.ts`, après le
+- [x] **Step 1: Write the failing replay tests** — dans `replay.test.ts`, après le
   `describe` du sous-projet 17 :
 
 ```ts
@@ -502,12 +502,12 @@ describe("buildJournals — the order shares leave in (spec 33)", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `npx vitest run replay -t "spec 33"`
 Expected: FAIL — §4.1 livre le lot à 6 (FIFO), §4.3 livre 5 au call à 7, le dernier vend le lot à 9.
 
-- [ ] **Step 3: Implement `exits.ts`**
+- [x] **Step 3: Implement `exits.ts`**
 
 ```ts
 import { isWheelCoveredCall, isWheelShares, sharesPerContract, type ClosedPortion, type Lot } from "./book.ts";
@@ -555,7 +555,7 @@ export function contractsOf(portions: ClosedPortion[]): number {
 }
 ```
 
-- [ ] **Step 4: Rewire `deliverShares`** (`replay.ts`) — remplacer les lignes
+- [x] **Step 4: Rewire `deliverShares`** (`replay.ts`) — remplacer les lignes
 
 ```ts
   // A Wheel covered call hands over Wheel shares first (spec 17, §4.2): the
@@ -584,7 +584,7 @@ Ajouter `type ClosedPortion` à l'import de `./book.ts` et importer `mergePortio
 `sellAtStrike`, `sellFree`, `sharesOf` depuis `./exits.ts`. `isWheelShares` reste importé tant
 que la boucle des actions l'utilise (tâche 3).
 
-- [ ] **Step 5: Run the new tests, then the whole package**
+- [x] **Step 5: Run the new tests, then the whole package**
 
 Run: `npx vitest run replay -t "spec 33"` — Expected: PASS.
 Run: `npx vitest run` (dans `packages/ledger`). Tout test existant qui change d'attente :
@@ -593,7 +593,7 @@ son strike ; R3 : une livraison hors Wheel prend Autres puis LEAPS puis Wheel), 
 à jour et noter la règle dans le message de commit. Sinon, c'est un bug : le corriger.
 Run: `npx vitest run journals.oracle` dans `packages/ib-parsers` — Expected: PASS sans modification.
 
-- [ ] **Step 6: Commit** (cases cochées dans le même commit)
+- [x] **Step 6: Commit** (cases cochées dans le même commit)
 
 ```bash
 git add packages/ledger/src/journals/exits.ts packages/ledger/src/journals/replay.ts packages/ledger/src/journals/replay.test.ts docs/plans/2026-09-28-ordre-de-sortie-des-lots.md
@@ -625,7 +625,7 @@ git commit -m "Journaux : une assignation livre ses actions par R1, le reste par
     `ReplayContext.buybackClosed: Map<Transaction, number>` (contrats Wheel couverts fermés par
     un rachat au moment de son rejeu).
 
-- [ ] **Step 1: Failing tests for `pairBuybacks`** — `buybacks.test.ts`
+- [x] **Step 1: Failing tests for `pairBuybacks`** — `buybacks.test.ts`
 
 ```ts
 import { beforeEach, describe, expect, it } from "vitest";
@@ -671,7 +671,7 @@ describe("pairBuybacks", () => {
 
 Run: `npx vitest run buybacks` — Expected: FAIL (module absent).
 
-- [ ] **Step 2: Implement `buybacks.ts` and the constant**
+- [x] **Step 2: Implement `buybacks.ts` and the constant**
 
 Dans `types.ts`, juste après `FILL_MERGE_WINDOW_MS` :
 
@@ -723,7 +723,7 @@ export function pairBuybacks(sorted: readonly Transaction[]): Map<Transaction, T
 
 Run: `npx vitest run buybacks` — Expected: PASS.
 
-- [ ] **Step 3: Context fields** — dans `ReplayContext` (`context.ts`) :
+- [x] **Step 3: Context fields** — dans `ReplayContext` (`context.ts`) :
 
 ```ts
   /** Per share sale, the call buybacks within the R2 window, nearest first (spec 33 §3). */
@@ -738,7 +738,7 @@ et dans `newContext` : `buybacks: new Map(), buybackBudget: new Map(), buybackCl
 Dans `buildJournals`, juste après `const ctx = newContext(ids, active);` :
 `ctx.buybacks = pairBuybacks(sorted);`.
 
-- [ ] **Step 4: Failing replay tests** — dans le `describe` « spec 33 » de la tâche 2 :
+- [x] **Step 4: Failing replay tests** — dans le `describe` « spec 33 » de la tâche 2 :
 
 ```ts
   const wheelAt5And6 = () => [
@@ -861,7 +861,7 @@ Dans `buildJournals`, juste après `const ctx = newContext(ids, active);` :
 Run: `npx vitest run replay -t "spec 33"` — Expected: FAIL sur §4.4 (fenêtre), §4.6, §4.7,
 §4.8, §4.9 et « Wheel inactive » (FIFO).
 
-- [ ] **Step 5: Rewire the share loop of `replayGroup`**
+- [x] **Step 5: Rewire the share loop of `replayGroup`**
 
 Dans la boucle des options, remplacer le bloc qui remplit `wheelBuybacks` par :
 
@@ -929,7 +929,7 @@ sert plus). Mettre à jour les commentaires de `insertAfter` et du champ `rankWh
 le rang sert aux opérations sur titres ; l'ordre de sortie, lui, se choisit par
 `exitOrder.ts` (spec 33).
 
-- [ ] **Step 6: Run everything in the package, then the oracle**
+- [x] **Step 6: Run everything in the package, then the oracle**
 
 Run: `npx vitest run` (dans `packages/ledger`) — tout test existant qui change d'attente est
 justifié par R2 ou R3 dans le message de commit, sinon corrigé comme un bug. Les deux
@@ -937,7 +937,7 @@ chronologies du sous-projet 17 (« 500 in the Wheel, 5 in Others » et « nothin
 in Others ») doivent passer **sans modification** : elles comptent des quantités.
 Run: `npx vitest run journals` dans `packages/ib-parsers` — Expected: PASS sans modification.
 
-- [ ] **Step 7: Commit** (cases cochées dans le même commit)
+- [x] **Step 7: Commit** (cases cochées dans le même commit)
 
 ```bash
 git add packages/ledger/src/journals docs/plans/2026-09-28-ordre-de-sortie-des-lots.md
@@ -952,7 +952,7 @@ git commit -m "Journaux : une vente jointe au rachat d'un call Wheel sort par R2
 - Modify: `CLAUDE.md`
 - Modify: `docs/specs/2026-09-28-ordre-de-sortie-des-lots-design.md` (statut)
 
-- [ ] **Step 1: CLAUDE.md** — dans la règle « Un call vendu sur des actions détenues… » :
+- [x] **Step 1: CLAUDE.md** — dans la règle « Un call vendu sur des actions détenues… » :
   - remplacer « laisser la part reprise en fin de file ferait livrer les mauvaises actions à
     l'assignation » par « laisser la part reprise en fin de file la ferait passer derrière son
     reste à la prochaine opération sur titres » ;
@@ -972,17 +972,17 @@ git commit -m "Journaux : une vente jointe au rachat d'un call Wheel sort par R2
     héritent, et une opération sur titres trie sur lui, jamais sur `openWhen`. »
   - ajouter au registre la ligne `| 33 | L'ordre de sortie des lots d'actions | fait (<date du merge>) |`.
 
-- [ ] **Step 2: Statut de la spec** — `Statut : implémenté (<date>).`
+- [x] **Step 2: Statut de la spec** — `Statut : implémenté (<date>).`
 
-- [ ] **Step 3: Données réelles, si `private/` existe dans le checkout principal**
+- [x] **Step 3: Données réelles, si `private/` existe dans le checkout principal**
 
 Run (depuis `packages/ib-parsers`) : `npx vitest run private` puis, depuis `apps/web`,
 `npx vitest run alpha.private` — les tests sautent d'eux-mêmes sans les fichiers. Expected :
 PASS, reconstitution inchangée. Un échec est un bug du moteur, jamais une attente à ajuster.
 
-- [ ] **Step 4: `pnpm check`** depuis la racine du worktree, une seule fois. Expected : vert.
+- [x] **Step 4: `pnpm check`** depuis la racine du worktree, une seule fois. Expected : vert.
 
-- [ ] **Step 5: Commit** (cases cochées dans le même commit)
+- [x] **Step 5: Commit** (cases cochées dans le même commit)
 
 ```bash
 git add CLAUDE.md docs/specs/2026-09-28-ordre-de-sortie-des-lots-design.md docs/plans/2026-09-28-ordre-de-sortie-des-lots.md

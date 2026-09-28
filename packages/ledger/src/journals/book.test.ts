@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sharesContract, type ContractKey } from "./contract.ts";
-import { isWheelShares, LotBook, newLot, type Lot } from "./book.ts";
+import { LotBook, newLot, type Lot } from "./book.ts";
 
 const PUT: ContractKey = { ticker: "MQZA", secType: "OPT", right: "P", strike: 17, expiry: "2026-10-02", currency: "USD" };
 
@@ -199,49 +199,26 @@ describe("LotBook.insertAfter", () => {
   });
 });
 
-describe("LotBook.closePreferring", () => {
-  const SHARES = sharesContract("MQZA", "USD");
-
-  function shareLot(id: string, quantity: number, strategy: "wheel" | "others") {
-    return newLot({
-      id, contract: SHARES, strategy, kind: "shares", openWhen: "2024-01-02T14:30:00.000Z",
-      openPrice: 10, openAmount: -10 * quantity, openCommission: -1, quantity, openIds: [id],
-    });
-  }
-
-  it("serves the preferred lots first, within the contracts given, then FIFO", () => {
+describe("LotBook.closeOrdered", () => {
+  it("closes the planned quantities in the planned order, whatever the book order", () => {
     const book = new LotBook();
-    const others = shareLot("others", 300, "others");
-    const wheel = shareLot("wheel", 600, "wheel");
-    book.open(others);
-    book.open(wheel);
-    const { closed, preferredContracts } = book.closePreferring(SHARES, -800, isWheelShares, 6);
-    expect(closed).toEqual([
-      { lot: wheel, quantity: 600 },
-      { lot: others, quantity: 200 },
+    const a = lot("a", -2);
+    const b = lot("b", -3);
+    book.open(a);
+    book.open(b);
+    expect(book.closeOrdered([{ lot: b, quantity: 2 }, { lot: a, quantity: 1 }])).toEqual([
+      { lot: b, quantity: 2 },
+      { lot: a, quantity: 1 },
     ]);
-    expect(preferredContracts).toBe(6);
+    expect(a.remaining).toBe(-1);
+    expect(b.remaining).toBe(-1);
+    expect(book.openLots(PUT)).toEqual([a, b]);
   });
 
-  it("folds a lot reached by both passes into one portion", () => {
+  it("refuses to close more than a lot holds", () => {
     const book = new LotBook();
-    const wheel = shareLot("wheel", 300, "wheel");
-    book.open(wheel);
-    const { closed, preferredContracts } = book.closePreferring(SHARES, -250, isWheelShares, 1);
-    expect(closed).toEqual([{ lot: wheel, quantity: 250 }]);
-    expect(preferredContracts).toBe(1);
-    expect(wheel.remaining).toBe(50);
-  });
-
-  it("closes like close when no contract is given", () => {
-    const book = new LotBook();
-    const others = shareLot("others", 5, "others");
-    const wheel = shareLot("wheel", 600, "wheel");
-    book.open(others);
-    book.open(wheel);
-    expect(book.closePreferring(SHARES, -600, isWheelShares, 0).closed).toEqual([
-      { lot: others, quantity: 5 },
-      { lot: wheel, quantity: 595 },
-    ]);
+    const a = lot("a", -1);
+    book.open(a);
+    expect(() => book.closeOrdered([{ lot: a, quantity: 2 }])).toThrow();
   });
 });
