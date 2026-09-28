@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
-import { liquidationValue, sumByCurrency } from "@ib/coverage";
-import { anchoredBalances, currentCashBalances, marketDayOf, realizedOnDay, type CurrencyTotal, type StrategyStats } from "@ib/ledger";
+import { liquidationValue } from "@ib/coverage";
+import { marketDayOf, realizedOnDay, sumByCurrency, type CurrencyTotal, type StrategyStats } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
 import { CashCoverageCard } from "@/components/CashCoverageCard";
@@ -17,10 +17,10 @@ import { PnlTotalCard } from "@/components/stats/PnlTotalCard";
 import { ReturnCard } from "@/components/stats/ReturnCard";
 import { UnrealizedPnlCard } from "@/components/stats/UnrealizedPnlCard";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
-import { useCashPoints, useLedger, useNeverFed } from "@/db/hooks";
+import { useNeverFed } from "@/db/hooks";
 import { useCapitalSeries } from "@/hooks/useCapitalSeries";
+import { useCurrentCash } from "@/hooks/useCurrentCash";
 import { useTheme } from "@/hooks/useTheme";
-import { BALANCE_CURRENCIES } from "@/lib/currencies";
 import { cn } from "@/lib/utils";
 
 export function DashboardPage() {
@@ -32,14 +32,8 @@ export function DashboardPage() {
   const series = useCapitalSeries("portfolio");
   const [chosen, setChosen] = useState<string | null>(null);
   const neverFed = useNeverFed(accountId);
-  const ledger = useLedger(accountId);
-  const points = useCashPoints(accountId);
   // The cash now, as the Positions page's Cash card shows it: the anchored running balance.
-  const cash = useMemo(() => {
-    if (!ledger || !points) return {};
-    const anchored = anchoredBalances(ledger, BALANCE_CURRENCIES, points);
-    return currentCashBalances(anchored.rows, anchored.checks);
-  }, [ledger, points]);
+  const current = useCurrentCash(accountId);
 
   if (report === undefined || view.status === "loading") {
     return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
@@ -57,7 +51,7 @@ export function DashboardPage() {
   const pick = (list: CurrencyTotal[]) => list.find((entry) => entry.currency === currency) ?? null;
   const positions = snapshot?.positions ?? [];
   const agentDay = snapshot?.source === "agent" ? marketDayOf(snapshot.asOf) : null;
-  const value = snapshot ? pick(liquidationValue(positions, cash)) : null;
+  const value = snapshot ? pick(liquidationValue(positions, current?.cash)) : null;
   const unrealized = snapshot ? pick(sumByCurrency(positions, (p) => p.currency, (p) => p.unrealizedPnl)) : null;
   const daily = agentDay ? pick(sumByCurrency(positions, (p) => p.currency, (p) => p.dailyPnl)) : null;
   const realizedToday = agentDay ? (pick(realizedOnDay(view.report.rows, agentDay)) ?? { currency, total: 0, missing: 0, count: 0 }) : null;

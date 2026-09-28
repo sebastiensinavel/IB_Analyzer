@@ -2,7 +2,6 @@ import { Fragment, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import {
-  addTotals,
   condorPositions,
   isCondorBoxId,
   isShareBoxId,
@@ -20,7 +19,7 @@ import {
   type StrategyLine,
   type WheelShareLine,
 } from "@ib/coverage";
-import { contractId, formatContractLabel, type JournalRow } from "@ib/ledger";
+import { addTotals, contractId, formatContractLabel, type JournalRow } from "@ib/ledger";
 import { Badge } from "@ib/ui/badge";
 import { Card, CardContent } from "@ib/ui/card";
 import { TableCell, TableRow } from "@ib/ui/table";

@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { sumByCurrency } from "@ib/coverage";
-import type { CurrencyTotal } from "@ib/ledger";
+import { sumByCurrency, type CurrencyTotal } from "@ib/ledger";
 import { TotalAmount } from "@/components/stats/TotalAmount";
 
 export interface HeaderTotalsValue {

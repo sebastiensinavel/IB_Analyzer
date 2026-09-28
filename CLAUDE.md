@@ -203,17 +203,24 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   stratégie proratise `dailyPnl` et reprend `dayChange` tel quel, et abandonne les deux dès que
   `dayChange` de la position est `null` (`dayShare`, `packages/coverage/src/strategy.ts`).
   L'étape PnL de l'agent (`collect_pnl`, `PNL_TIMEOUT_S`) ne fait jamais échouer `/snapshot`.
-- **Les totaux sont des sommes calculées, jamais stockées** (sous-projet 36) : `sumByCurrency`,
-  `addTotals` et `liquidationValue` (`packages/coverage/src/totals.ts`), `realizedOnDay`
-  (`packages/ledger/src/journals/realized.ts`), `currentCashBalances` (`packages/ledger/src/cash.ts`).
+- **Les totaux sont des sommes calculées, jamais stockées** (sous-projet 36) : `sumByCurrency` et
+  `addTotals` (`packages/ledger/src/totals.ts`, à côté de `CurrencyTotal`), `realizedOnDay`
+  (`packages/ledger/src/journals/realized.ts`, un filtre puis `sumByCurrency`), `currentCashBalances`
+  (`packages/ledger/src/cash.ts`), `liquidationValue` (`packages/coverage/src/totals.ts`) ; le cash
+  courant d'une page passe par `useCurrentCash` (`apps/web/src/hooks/useCurrentCash.ts`), seul, qui
+  rend `undefined` tant que le ledger ou les points de cash chargent — `liquidationValue` compte alors
+  le cash de chaque devise détenue dans `missing`, jamais pour rien.
   Par devise, jamais convertis ; une valeur absente compte dans `missing`, jamais pour 0, et le
   total n'est `null` que si aucune ligne n'en a. Un en-tête somme **les lignes affichées**, filtres
-  compris ; celui de la page Positions ne compte le cash que sans filtre. « Le jour » est
+  compris ; celui de la page Positions ne compte le cash que sans filtre, et le cash d'une devise
+  seulement si une ligne affichée est dans cette devise ou si ce cash est connu et non nul : un compte
+  en USD seul n'a pas de ligne EUR. « Le jour » est
   `marketDayOf` d'un snapshot `agent` : sans lui, P/L du jour et réalisé du jour valent « — ». Le
   réalisé du jour compte toute fermeture — une ouverture ne réalise rien — et un condor le jour de
-  sa dernière jambe. **Un seul composant affiche un total : `TotalAmount`**
-  (`apps/web/src/components/stats/TotalAmount.tsx`), repris par `HeaderTotals` et par les cartes du
-  tableau de bord.
+  sa dernière jambe. **Les totaux du sous-projet 36 — en-têtes des pages et des tableaux, cartes du
+  tableau de bord — s'affichent par `TotalAmount` seul** (`apps/web/src/components/stats/TotalAmount.tsx`),
+  repris par `HeaderTotals` et par ces cartes ; les montants plus anciens (P/L total d'une
+  stratégie, carte Cash de Positions) gardent leur propre rendu.
 - **La variation du jour du sous-jacent vient de `/quotes`, jamais stockée** (sous-projet 35) :
   l'agent rend `last` et `close` bruts (`reqMktData`, `MARKET_DATA_TYPE` différé : pas
   d'abonnement temps réel), `parseAgentQuotes` en déduit `(last − close) / close`. C'est une autre

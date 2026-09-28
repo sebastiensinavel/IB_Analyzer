@@ -447,6 +447,24 @@ describe("PositionsPage", () => {
     expect(usd).toHaveTextContent("*");
   });
 
+  it("draws no line for a currency the page neither holds nor has cash in", async () => {
+    await db.snapshots.put(totalsSnapshot(10, -4));
+    await db.transactions.bulkAdd(SAMPLE_TRANSACTIONS.filter((tx) => tx.currency === "USD"));
+    await db.cashPoints.put({ accountId: "alpha", currency: "USD", kind: "end", asOf: "2026-12-31", amount: 1456.85, source: "flex", importedAt: "" });
+    renderPositions();
+    const header = await screen.findByTestId("page-totals");
+    await waitFor(() => expect(within(header).getByTestId("header-totals-USD")).toHaveTextContent("2,256.85")); // 1000 − 200 + 1456.85
+    expect(within(header).queryByTestId("header-totals-EUR")).not.toBeInTheDocument();
+  });
+
+  it("keeps the line of a currency the account holds cash in, positions or not", async () => {
+    await db.snapshots.put(totalsSnapshot(10, -4));
+    await seedCash();
+    renderPositions();
+    const header = await screen.findByTestId("page-totals");
+    await waitFor(() => expect(within(header).getByTestId("header-totals-EUR")).toHaveTextContent("10,000.00"));
+  });
+
   it("shows — for the day P/L from a Flex snapshot, never 0.00", async () => {
     await db.snapshots.put(totalsSnapshot(null, null));
     renderPositions();
