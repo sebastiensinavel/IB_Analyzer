@@ -191,9 +191,9 @@ describe("DashboardPage", () => {
     ]);
     renderDashboard();
     expect(await suggestionRows()).toEqual([
-      ["1", "KO", "Staples", "6", "0.0%", "0.0%"],
-      ["2", "CVX", "Energy", "7", "32.7%", "0.0%"],
-      ["3", "NVDA", "Tech", "8", "50.2%", "0.0%"],
+      ["—", "1", "KO", "Staples", "6", "0.0%", "0.0%"],
+      ["—", "2", "CVX", "Energy", "7", "32.7%", "0.0%"],
+      ["—", "3", "NVDA", "Tech", "8", "50.2%", "0.0%"],
     ]);
   });
 
@@ -201,8 +201,8 @@ describe("DashboardPage", () => {
     await db.sectors.bulkPut([sector("KO", "Staples", 6), sector("CVX", "Energy", 7)]);
     renderDashboard();
     expect(await suggestionRows()).toEqual([
-      ["1", "CVX", "Energy", "7", "0.0%", "0.0%"],
-      ["2", "KO", "Staples", "6", "0.0%", "0.0%"],
+      ["—", "1", "CVX", "Energy", "7", "0.0%", "0.0%"],
+      ["—", "2", "KO", "Staples", "6", "0.0%", "0.0%"],
     ]);
   });
 

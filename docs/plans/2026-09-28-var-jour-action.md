@@ -947,7 +947,7 @@ Règle du dépôt : un réglage visuel se mesure, il ne s'itère pas sur des cap
 **Interfaces:**
 - Consumes: `UnderlyingDayChangeCell` (tâche 5), `mergeQuotes`/`resetQuotes` (tâche 4).
 
-- [ ] **Step 1: Test** (dans le fichier existant, même préparation que ses tests actuels, `resetQuotes()` en `afterEach`) :
+- [x] **Step 1: Test** (dans le fichier existant, même préparation que ses tests actuels, `resetQuotes()` en `afterEach`) :
 
 ```tsx
 it("shows the underlying's day move first, and keeps the rank order", async () => {
@@ -963,10 +963,10 @@ it("shows the underlying's day move first, and keeps the rank order", async () =
 
 (Adapter le format exact de `formatDayChange` — lire `DAY_CHANGE_FORMATTER` dans `lib/format.ts`.)
 
-- [ ] **Step 2:** `npx vitest run src/components/PositionSuggestionsCard` → FAIL.
-- [ ] **Step 3: Implémenter.** `COLUMNS` gagne `{ key: "underlyingDayChange", numeric: true }` **en tête** ; la ligne rend `<UnderlyingDayChangeCell ticker={suggestion.ticker} />` en première cellule. L'ordre des lignes (`suggestions.map`) ne change pas, aucun tri n'est ajouté. `fr.json` `dashboard.suggestions.columns.underlyingDayChange: "Var. jour action"`, `en.json` `"Stock day chg."`.
-- [ ] **Step 4:** `npx vitest run src/components/PositionSuggestionsCard` → PASS.
-- [ ] **Step 5: Commit** — `git add apps/web docs/plans/2026-09-28-var-jour-action.md && git commit -m "Suggestion de position : Var. jour action en première colonne"`
+- [x] **Step 2:** `npx vitest run src/components/PositionSuggestionsCard` → FAIL.
+- [x] **Step 3: Implémenter.** `COLUMNS` gagne `{ key: "underlyingDayChange", numeric: true }` **en tête** ; la ligne rend `<UnderlyingDayChangeCell ticker={suggestion.ticker} />` en première cellule. L'ordre des lignes (`suggestions.map`) ne change pas, aucun tri n'est ajouté. `fr.json` `dashboard.suggestions.columns.underlyingDayChange: "Var. jour action"`, `en.json` `"Stock day chg."`.
+- [x] **Step 4:** `npx vitest run src/components/PositionSuggestionsCard` → PASS.
+- [x] **Step 5: Commit** — `git add apps/web docs/plans/2026-09-28-var-jour-action.md && git commit -m "Suggestion de position : Var. jour action en première colonne"`
 
 ---
 

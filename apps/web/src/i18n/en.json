@@ -88,6 +88,7 @@
       "empty": "No suggestion: no row of the sector table meets the criteria.",
       "emptyLink": "Go to Sectors & scores",
       "columns": {
+        "underlyingDayChange": "Stock day chg.",
         "rank": "#",
         "ticker": "Ticker",
         "sector": "Sector",
