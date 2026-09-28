@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AGENT_FETCH_TIMEOUT_MS, AGENT_PROBE_TIMEOUT_MS, AGENT_URL, exclusiveTws, fetchQuotes, fetchSnapshot, probeAgent } from "./client";
+import {
+  AGENT_FETCH_TIMEOUT_MS,
+  AGENT_PROBE_TIMEOUT_MS,
+  AGENT_URL,
+  exclusiveTws,
+  fetchBars,
+  fetchQuotes,
+  fetchSnapshot,
+  probeAgent,
+} from "./client";
 
 function mockFetch(handler: (url: string, init?: RequestInit) => Response | Promise<Response>) {
   return vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
@@ -90,6 +99,49 @@ describe("exclusiveTws", () => {
   it("runs the next call after one that failed", async () => {
     await expect(exclusiveTws(async () => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
     await expect(exclusiveTws(async () => 42)).resolves.toBe(42);
+  });
+});
+
+describe("fetchSnapshot, fetchQuotes and fetchBars share the exclusiveTws queue", () => {
+  it("never lets a second TWS call start while an earlier one is still in flight", async () => {
+    const order: string[] = [];
+    const releases: Partial<Record<"snapshot" | "quotes" | "bars", () => void>> = {};
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      const kind = url.includes("/snapshot") ? "snapshot" : url.includes("/quotes") ? "quotes" : "bars";
+      order.push(`${kind}:start`);
+      await new Promise<void>((resolve) => (releases[kind] = resolve));
+      order.push(`${kind}:end`);
+      const body =
+        kind === "bars" ? { symbol: "AAPL", fetchedAt: "x", bars: [] } : kind === "quotes" ? { fetchedAt: "x", quotes: [] } : {};
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
+
+    const snapshot = fetchSnapshot(7502);
+    const quotes = fetchQuotes(7502, ["AAPL"]);
+    const bars = fetchBars(7502, "AAPL");
+
+    // Only the first call has actually reached `fetch`; the other two are queued.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(order).toEqual(["snapshot:start"]);
+
+    releases.snapshot?.();
+    await snapshot;
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(order).toEqual(["snapshot:start", "snapshot:end", "quotes:start"]);
+
+    releases.quotes?.();
+    await quotes;
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(order).toEqual(["snapshot:start", "snapshot:end", "quotes:start", "quotes:end", "bars:start"]);
+
+    releases.bars?.();
+    await bars;
+    expect(order).toEqual(["snapshot:start", "snapshot:end", "quotes:start", "quotes:end", "bars:start", "bars:end"]);
   });
 });
 

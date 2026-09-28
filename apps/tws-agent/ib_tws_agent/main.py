@@ -67,7 +67,8 @@ BARS_WHAT_TO_SHOW = "TRADES"
 # under IB's ~100 simultaneous market data lines; and the market data type asked of TWS — 4,
 # delayed frozen: the user has no real-time subscription, and frozen keeps the last session's
 # values once the market is closed. TWS serves real time instead whenever it is subscribed.
-# Fixed by the sub-project 35 probe (spec §9).
+# MARKET_DATA_TYPE and QUOTES_TIMEOUT_S are provisional until the sub-project 35 probe (spec §9)
+# actually runs.
 QUOTES_TIMEOUT_S = 5
 QUOTES_POLL_S = 0.05
 QUOTES_MAX_SYMBOLS = 90

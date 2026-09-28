@@ -6,10 +6,23 @@ import type { SectorRecord } from "@/db/schema";
 import { quotedTicker, refreshQuotes } from "./quotes";
 import { useAgentPresence } from "./useAgentSync";
 
-/** The underlyings of the account's positions and of its suggestions, as the agent is asked for them. */
+/** Only these hold a USD underlying TWS can quote with `Stock(sym,'SMART','USD')`. */
+const QUOTABLE_SEC_TYPES = new Set(["STK", "OPT", "FOP"]);
+
+/**
+ * The underlyings of the account's positions and of its suggestions, as the agent is asked for
+ * them: a position counts only for `STK`/`OPT`/`FOP` in USD, and never a `.OLD` ticker (same
+ * exclusion as `db/sectors.ts`), so a forex pair, a non-USD stock or a dead alias never stalls a
+ * `/quotes` pass or gets quoted as a same-named US security; suggestion tickers are unfiltered.
+ */
 export function quoteTickers(report: RiskReport | null, sectors: readonly SectorRecord[]): string[] {
   const tickers = new Set<string>();
-  for (const position of report?.positions ?? []) tickers.add(quotedTicker(tickerOf(position.symbol)));
+  for (const position of report?.positions ?? []) {
+    if (!QUOTABLE_SEC_TYPES.has(position.secType) || position.currency !== "USD") continue;
+    const ticker = tickerOf(position.symbol);
+    if (ticker.endsWith(".OLD")) continue;
+    tickers.add(quotedTicker(ticker));
+  }
   for (const suggestion of positionSuggestions(sectors, report)) tickers.add(quotedTicker(suggestion.ticker));
   return [...tickers].sort();
 }

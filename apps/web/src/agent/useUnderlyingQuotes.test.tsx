@@ -17,22 +17,42 @@ const ACCOUNT: AccountRecord = {
   twsPort: 7502,
 };
 
-const REPORT = { positions: [{ symbol: "AAPL" }] } as unknown as RiskReport;
+const REPORT = { positions: [{ symbol: "AAPL", secType: "STK", currency: "USD" }] } as unknown as RiskReport;
 
 /** A full SectorRecord, default values everywhere but the fields the test cares about. */
 function sectorRow(fields: Partial<SectorRecord> = {}): SectorRecord {
   return { ticker: "", name: "", category: "", score: null, status: "", updatedAt: "2026-01-01T00:00:00.000Z", ...fields };
 }
 
+/** A full-enough position: STK, USD, the fields quoteTickers reads plus the ones the type demands. */
+function position(fields: Partial<{ symbol: string; secType: string; currency: string }>): RiskReport["positions"][number] {
+  return { symbol: "AAPL", secType: "STK", currency: "USD", ...fields } as unknown as RiskReport["positions"][number];
+}
+
 describe("quoteTickers", () => {
   it("asks for every underlying of the report and every suggestion, XSP as SPY, once each", () => {
-    const report = { positions: [{ symbol: "AAPL" }, { symbol: "AAPL" }, { symbol: "XSP" }] } as unknown as RiskReport;
+    const report = {
+      positions: [position({ symbol: "AAPL" }), position({ symbol: "AAPL" }), position({ symbol: "XSP" })],
+    } as unknown as RiskReport;
     const sectors = [sectorRow({ ticker: "MSFT", category: "Tech", score: 8, status: "on" })];
     expect(quoteTickers(report, sectors)).toEqual(["AAPL", "MSFT", "SPY"]);
   });
 
   it("asks for nothing without a report nor a scored sector table", () => {
     expect(quoteTickers(null, [])).toEqual([]);
+  });
+
+  it("leaves out a forex position, a non-USD stock and a .OLD ticker, and keeps a USD stock and a USD option's underlying", () => {
+    const report = {
+      positions: [
+        position({ symbol: "EUR.USD", secType: "CASH", currency: "USD" }),
+        position({ symbol: "VOD", secType: "STK", currency: "GBP" }),
+        position({ symbol: "ZXAL.OLD", secType: "STK", currency: "USD" }),
+        position({ symbol: "AAPL", secType: "STK", currency: "USD" }),
+        position({ symbol: "MSFT", secType: "OPT", currency: "USD" }),
+      ],
+    } as unknown as RiskReport;
+    expect(quoteTickers(report, [])).toEqual(["AAPL", "MSFT"]);
   });
 });
 
