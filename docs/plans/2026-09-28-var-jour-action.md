@@ -131,7 +131,7 @@ asyncio.run(main())
 - Produces: `GET /quotes?port=<int>&symbols=<A,B,…>` → 200 `{"fetchedAt": str, "quotes": [{"symbol": str, "last": float|null, "close": float|null}]}` (un élément par symbole demandé, dédoublonné, majuscules, dans l'ordre de la requête) ; 422 `{"code": "bad-symbols"}` ; 503 `{"code": "tws-unreachable", "detail": …}`.
 - Constantes : `QUOTES_TIMEOUT_S = 5`, `QUOTES_POLL_S = 0.05`, `QUOTES_MAX_SYMBOLS = 90`, `MARKET_DATA_TYPE = 4` (défaut ; la tâche 9 le fixe d'après la sonde).
 
-- [ ] **Step 1: Étendre `FakeIB`** dans `conftest.py` :
+- [x] **Step 1: Étendre `FakeIB`** dans `conftest.py` :
 
 ```python
 @dataclass
@@ -171,7 +171,7 @@ Méthodes :
         self.mkt_cancelled.append(contract)
 ```
 
-- [ ] **Step 2: Écrire les tests** `apps/tws-agent/tests/test_quotes.py` :
+- [x] **Step 2: Écrire les tests** `apps/tws-agent/tests/test_quotes.py` :
 
 ```python
 """`/quotes`: last and close of each underlying, straight out of reqMktData."""
@@ -282,9 +282,9 @@ def test_the_query_is_read_only_client_zero(make_client):
 
 Note : `symbols=` vide peut être refusé par la validation de FastAPI (`min_length=1`) en 422 sans `code` ; le test paramétré ne vérifie que le statut.
 
-- [ ] **Step 3:** `uv run --project apps/tws-agent pytest apps/tws-agent/tests/test_quotes.py -q` → FAIL (404 sur `/quotes`, `market_data_types` absent).
+- [x] **Step 3:** `uv run --project apps/tws-agent pytest apps/tws-agent/tests/test_quotes.py -q` → FAIL (404 sur `/quotes`, `market_data_types` absent).
 
-- [ ] **Step 4: Implémenter** dans `main.py`. Constantes, après `BARS_WHAT_TO_SHOW` :
+- [x] **Step 4: Implémenter** dans `main.py`. Constantes, après `BARS_WHAT_TO_SHOW` :
 
 ```python
 # /quotes: how long it waits, in all, for every symbol's last and close; the ceiling of one call,
@@ -375,8 +375,8 @@ Route, dans `create_app`, après `/bars` :
 
 Docstring du module : ajouter une phrase après celle du `pnl` — « `/quotes` is the same story: `last` and `close` pass through as the ib_async `Ticker` names them, and the browser derives the underlying's day move. »
 
-- [ ] **Step 5:** `uv run --project apps/tws-agent pytest apps/tws-agent -q` → PASS (toute la suite de l'agent).
-- [ ] **Step 6: Commit**
+- [x] **Step 5:** `uv run --project apps/tws-agent pytest apps/tws-agent -q` → PASS (toute la suite de l'agent).
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/tws-agent docs/plans/2026-09-28-var-jour-action.md

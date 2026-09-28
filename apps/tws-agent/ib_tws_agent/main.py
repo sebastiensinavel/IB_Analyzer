@@ -7,7 +7,8 @@ Every JSON field carries the name of the ib_async attribute it comes from, uncon
 The one exception is `cashAvailable` (see `extract_usd_cash`). The per-position `pnl` is the
 same story: `dailyPnL` and `value` pass through as `PnLSingle` names them, and the browser
 derives the day's percentage move from them (§4 of the design doc); the agent computes
-nothing.
+nothing. `/quotes` is the same story: `last` and `close` pass through as the ib_async `Ticker`
+names them, and the browser derives the underlying's day move.
 
 It also relays the two Flex Web Service calls, bytes untouched.
 """
@@ -62,6 +63,16 @@ CASH_TAGS = ("TotalCashBalance", "CashBalance", "AvailableFunds")
 BARS_DURATION = "2 Y"
 BARS_SIZE = "1 day"
 BARS_WHAT_TO_SHOW = "TRADES"
+# /quotes: how long it waits, in all, for every symbol's last and close; the ceiling of one call,
+# under IB's ~100 simultaneous market data lines; and the market data type asked of TWS — 4,
+# delayed frozen: the user has no real-time subscription, and frozen keeps the last session's
+# values once the market is closed. TWS serves real time instead whenever it is subscribed.
+# Fixed by the sub-project 35 probe (spec §9).
+QUOTES_TIMEOUT_S = 5
+QUOTES_POLL_S = 0.05
+QUOTES_MAX_SYMBOLS = 90
+QUOTES_SYMBOL_MAX_LENGTH = 24
+MARKET_DATA_TYPE = 4
 
 
 class ReadOnlyIB(IB):
@@ -251,6 +262,38 @@ async def collect_pnl(ib: IB, items: Iterable[Any]) -> dict[int, Any]:
     return entries
 
 
+def clean_quote(value: float | None) -> float | None:
+    """A price IB does not have is `None`: nan, DBL_MAX, and the -1 or 0 TWS sends for "no price"."""
+    if value is None or isnan(value) or abs(value) >= UNSET_THRESHOLD or value <= 0:
+        return None
+    return value
+
+
+async def collect_quotes(ib: IB, symbols: list[str]) -> dict[str, Any]:
+    """Subscribe to each symbol, wait for its last and close, cancel, and hand the tickers back.
+
+    Never raises, like collect_pnl: a symbol TWS stays silent about (unknown, no data) is simply
+    absent from the result, and the answer still goes out.
+    """
+    tickers: dict[str, Any] = {}
+    try:
+        ib.reqMarketDataType(MARKET_DATA_TYPE)
+        for symbol in symbols:
+            tickers[symbol] = ib.reqMktData(Stock(symbol, "SMART", "USD"), "", False, False)
+        deadline = monotonic() + QUOTES_TIMEOUT_S
+        while monotonic() < deadline and any(
+            clean_quote(t.last) is None or clean_quote(t.close) is None for t in tickers.values()
+        ):
+            await asyncio.sleep(QUOTES_POLL_S)
+    except Exception:  # noqa: BLE001 - whatever ib_async raises, the answer is still due
+        logger.warning("quotes unavailable; /quotes answers without them", exc_info=True)
+    finally:
+        for ticker in tickers.values():
+            with suppress(Exception):
+                ib.cancelMktData(ticker.contract)
+    return tickers
+
+
 def create_app(config: Config) -> FastAPI:
     app = FastAPI(title="ib-tws-agent", docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(OriginMiddleware, origins=config.origins)
@@ -327,6 +370,41 @@ def create_app(config: Config) -> FastAPI:
             # An empty list is TWS's answer for an unknown symbol, a missing market data
             # subscription or a pacing violation alike: the browser shows "no data", never an error.
             return {"symbol": symbol.upper(), "fetchedAt": utc_now_iso(), "bars": [serialize_bar(bar) for bar in rows]}
+        finally:
+            ib.disconnect()
+
+    @app.get("/quotes")
+    async def quotes(
+        port: Annotated[int, Query(ge=1, le=65535)],
+        symbols: Annotated[str, Query(min_length=1, max_length=4096)],
+        ib_factory: Callable[[], IB] = Depends(get_ib_factory),
+    ):
+        """Last and close of each underlying, raw: the browser derives the day's move."""
+        wanted = list(dict.fromkeys(s.strip().upper() for s in symbols.split(",") if s.strip()))
+        if not wanted or len(wanted) > QUOTES_MAX_SYMBOLS or any(len(s) > QUOTES_SYMBOL_MAX_LENGTH for s in wanted):
+            return JSONResponse(status_code=422, content={"code": "bad-symbols"})
+        ib = ib_factory()
+        try:
+            await ib.connectAsync(IB_HOST, port, clientId=CLIENT_ID, timeout=CONNECT_TIMEOUT_S, readonly=True)
+        except Exception as exc:  # noqa: BLE001 - whatever ib_async raises, the answer is the same
+            ib.disconnect()
+            return JSONResponse(
+                status_code=503,
+                content={"code": "tws-unreachable", "detail": f"{type(exc).__name__}: {exc}"},
+            )
+        try:
+            tickers = await collect_quotes(ib, wanted)
+            return {
+                "fetchedAt": utc_now_iso(),
+                "quotes": [
+                    {
+                        "symbol": symbol,
+                        "last": clean_quote(getattr(tickers.get(symbol), "last", None)),
+                        "close": clean_quote(getattr(tickers.get(symbol), "close", None)),
+                    }
+                    for symbol in wanted
+                ],
+            }
         finally:
             ib.disconnect()
 

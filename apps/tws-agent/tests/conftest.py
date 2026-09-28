@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from math import nan
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -90,6 +91,15 @@ class FakeFill:
     commissionReport: FakeCommissionReport = field(default_factory=FakeCommissionReport)
 
 
+@dataclass
+class FakeTicker:
+    """ib_async's Ticker: nan until TWS fills it in. Only the fields /quotes reads."""
+
+    contract: Any = None
+    last: float = nan
+    close: float = nan
+
+
 class FakeIB:
     def __init__(
         self,
@@ -104,6 +114,8 @@ class FakeIB:
         pnl_error: Exception | None = None,
         bars=None,
         bars_error: Exception | None = None,
+        quotes=None,
+        quotes_error: Exception | None = None,
     ):
         self._managed_accounts = managed_accounts if managed_accounts is not None else ["U1234567"]
         self._portfolio = portfolio if portfolio is not None else []
@@ -117,6 +129,8 @@ class FakeIB:
         self._pnl_error = pnl_error
         self._bars = bars if bars is not None else []
         self._bars_error = bars_error
+        self._quotes = quotes if quotes is not None else {}
+        self._quotes_error = quotes_error
         # (contract, kwargs) of every reqHistoricalDataAsync call, in order.
         self.historical_requests: list[tuple] = []
         self.pnl_subscribed: list[tuple[str, str, int]] = []
@@ -124,6 +138,9 @@ class FakeIB:
         self.connected_to: tuple | None = None
         self.readonly: bool | None = None
         self.disconnected = False
+        self.market_data_types: list[int] = []
+        self.mkt_subscribed: list[Any] = []
+        self.mkt_cancelled: list[Any] = []
 
     async def connectAsync(self, host, port, clientId=0, timeout=4, readonly=False):
         self.connected_to = (host, port, clientId, timeout)
@@ -162,6 +179,20 @@ class FakeIB:
 
     def cancelPnLSingle(self, account, modelCode, conId):
         self.pnl_cancelled.append((account, modelCode, conId))
+
+    def reqMarketDataType(self, marketDataType):
+        self.market_data_types.append(marketDataType)
+
+    def reqMktData(self, contract, genericTickList="", snapshot=False, regulatorySnapshot=False, mktDataOptions=None):
+        if self._quotes_error is not None:
+            raise self._quotes_error
+        self.mkt_subscribed.append(contract)
+        ticker = self._quotes.get(contract.symbol, FakeTicker())
+        ticker.contract = contract
+        return ticker
+
+    def cancelMktData(self, contract):
+        self.mkt_cancelled.append(contract)
 
 
 @pytest.fixture
