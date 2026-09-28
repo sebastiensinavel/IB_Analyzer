@@ -1156,6 +1156,27 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Reporté par le sous-projet 35 (Var. jour action)
+
+- **La sonde sur un vrai TWS reste à faire** : type de données de marché (3 ou 4) et délai
+  d'attente provisoires.
+- **Le comportement en pré-ouverture** (le `last` différé d'avant 9:30) n'est pas vérifié.
+- **Un chargement ou un changement de compte fait une passe `/quotes` de trop** : le rapport
+  en cours de chargement vaut `null`, puis la liste de tickers change.
+- **`void refreshQuotes(...)` laisserait une erreur autre que `NormalizationError` en rejet
+  non géré.**
+- **Aucun test ne couvre le passage absent → présent de l'agent ni un changement de la liste
+  des tickers.**
+- **Le test de tri de Positions sur Var. jour action ne vérifie que la première ligne**, pas
+  l'ordre complet ni les `null` en dernier.
+- **Plusieurs colonnes sont à 0 px de marge au plancher mesuré** : toute retouche
+  typographique demande de remesurer.
+- **La fixture `agent-quotes.json` ne cote que AAPL et SPY** : SPY n'est jamais demandé par
+  `--seed --agent`, MSFT (candidat de la Suggestion) n'y est pas.
+- **`/quotes` répète l'échafaudage connexion/503/déconnexion de `/bars` et `/snapshot`.**
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un

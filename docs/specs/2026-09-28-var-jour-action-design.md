@@ -1,6 +1,6 @@
 # Sous-projet 35 — Var. jour action : la variation du jour du sous-jacent
 
-Statut : spec approuvée (2026-09-28).
+Statut : implémenté (2026-09-28), sonde en attente.
 
 La colonne « Var. jour » des tableaux de positions donne la variation du jour **du contrat
 détenu** : pour une action, celle de l'action ; pour une option, celle de l'option. Elle vient
@@ -184,6 +184,9 @@ Contre le vrai TWS de l'utilisateur, sans abonnement temps réel, avant tout cod
    `CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S` sous `AGENT_FETCH_TIMEOUT_MS` (15 s).
 
 Le résultat s'écrit dans la spec ; un écart à 1 ou 2 revient à l'utilisateur avant la suite.
+
+Résultat : en attente — `MARKET_DATA_TYPE = 4` et `QUOTES_TIMEOUT_S = 5` sont provisoires
+jusqu'à la sonde (`private/probe_quotes.py`, hors dépôt), qui conditionne le merge.
 
 ## 10. Décisions arbitrées (2026-09-28)
 

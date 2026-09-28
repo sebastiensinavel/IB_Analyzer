@@ -154,13 +154,13 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   (`CashBalancesCard`) montre le dernier point de ce même solde par devise, avec ou sans
   snapshot : « — » seulement quand ni transaction ni Cash Report n'existe.
 - **Les tableaux de la page Positions partagent leurs colonnes** : `POSITION_COLUMNS`
-  (`apps/web/src/lib/positionColumns.ts`) fixe l'ordre et la largeur des douze colonnes, et
+  (`apps/web/src/lib/positionColumns.ts`) fixe l'ordre et la largeur des treize colonnes, et
   `PositionTable` les pose en disposition fixe sur chaque tableau, celui du cash compris, qui
   laisse vides les colonnes autres que Position et Valeur de marché. Une colonne s'ajoute là,
   jamais dans un seul tableau : les colonnes ne seraient plus alignées. Les pages de stratégie
   reprennent `POSITION_COLUMNS` pour leurs tableaux d'options et d'actions LEAPS ; seules les
-  trois tables d'actions assignées de la Wheel ont leurs onze colonnes propres, `WHEEL_SHARE_COLUMNS`
-  (même fichier), délibérément : elles ne s'alignent pas sur les douze colonnes partagées.
+  trois tables d'actions assignées de la Wheel ont leurs douze colonnes propres, `WHEEL_SHARE_COLUMNS`
+  (même fichier), délibérément : elles ne s'alignent pas sur les treize colonnes partagées.
 - **L'Historique ne pagine pas** : un seul tableau virtualisé (`components/history/HistoryTable.tsx`)
   défile dans sa carte, en-tête figé, bordé d'une barre temporelle (`TimelineScrubber`). Ses lignes
   ont une hauteur constante, `HISTORY_ROW_HEIGHT` (`lib/historyColumns.ts`), et aucune cellule ne
@@ -203,6 +203,17 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   stratégie proratise `dailyPnl` et reprend `dayChange` tel quel, et abandonne les deux dès que
   `dayChange` de la position est `null` (`dayShare`, `packages/coverage/src/strategy.ts`).
   L'étape PnL de l'agent (`collect_pnl`, `PNL_TIMEOUT_S`) ne fait jamais échouer `/snapshot`.
+- **La variation du jour du sous-jacent vient de `/quotes`, jamais stockée** (sous-projet 35) :
+  l'agent rend `last` et `close` bruts (`reqMktData`, `MARKET_DATA_TYPE` différé : pas
+  d'abonnement temps réel), `parseAgentQuotes` en déduit `(last − close) / close`. C'est une autre
+  notion que `dayChange` : le dernier échange d'une action est son prix, celui d'une option non.
+  Le magasin (`apps/web/src/agent/quotes.ts`) vit en mémoire, commun aux comptes, vidé au
+  rechargement ; `useUnderlyingQuotes`, monté par `AccountDataProvider`, le rafraîchit à chaque
+  passe de l'agent. « Var. jour action » est **la première colonne** de `POSITION_COLUMNS`, de
+  `WHEEL_SHARE_COLUMNS` et de la Suggestion de position, triable, jamais triée par défaut ; XSP
+  se cote par SPY (`chartProxyOf`). **Une connexion TWS à la fois** : `fetchSnapshot`,
+  `fetchBars` et `fetchQuotes` passent par `exclusiveTws` (`agent/client.ts`), parce que TWS
+  refuse deux connexions `clientId 0` simultanées.
 - **Les couleurs vivent dans les tokens de `apps/web/src/index.css`**, reprises des maquettes
   `docs/style/{dark,white}-finance-desktop.html` (sous-projet 31) : `primary` et `success` sont tous deux teal, si bien
   qu'aucune étiquette ne s'appuie sur leur différence (`journalTone.ts` prend les teintes des
@@ -484,6 +495,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 32 | Publication : une prod et une dev sur le VPS | fait (2026-09-25), mise en ligne en attente de la tâche 5 du plan 32 |
 | 33 | L'ordre de sortie des lots d'actions | fait (2026-09-28) |
 | 34 | La page Positions Condors, un condor par ligne | fait (2026-09-28) |
+| 35 | Var. jour action : la variation du jour du sous-jacent | fait (2026-09-28), sonde en attente |
 
 ## Outillage
 
@@ -518,7 +530,7 @@ démonstration est `--seed`. Il accepte aussi `--import=` (répétable, dans l'o
 `--sectors=` et `--ib-account=` pour importer des fichiers réels ou une table sectorielle
 avant la capture, et `--empty`, qui crée les deux comptes sans aucune donnée pour simuler la
 première visite. Il accepte aussi `--agent`, qui intercepte l'agent local
-(`127.0.0.1:8100`) avec une fixture au lieu d'un vrai TWS. Une page
+(`127.0.0.1:8100`) avec une fixture au lieu d'un vrai TWS, `/quotes` compris. Une page
 qui porte un graphique ECharts attend d'elle-même 1 200 ms avant sa capture, la fin de
 l'animation d'entrée ; `--wait=<ms>` impose un autre délai, sur toute page.
 L'anonymiseur Flex (`packages/ib-parsers/scripts/anonymize-flex.mjs`) accepte `--full`, qui lève

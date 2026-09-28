@@ -992,7 +992,7 @@ it("shows the underlying's day move first, and keeps the rank order", async () =
 - Modify: `CLAUDE.md` (règle, registre), `docs/points-reportes.md`
 
 - [ ] **Step 1: Sonde.** Avec la sortie que Seb a recopiée (tâche 1) : fixer `MARKET_DATA_TYPE` (3 ou 4 : celui qui remplit `last` et `close` en séance **et** hors séance) et `QUOTES_TIMEOUT_S` (le « last » de la sonde arrondi au-dessus, `CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S` ≤ 10 s pour rester sous `AGENT_FETCH_TIMEOUT_MS`). Écrire le résultat dans la spec §9, en agrégats seulement. Si aucun type ne remplit `close` hors séance, ou si la variation hors séance est nulle ou décalée d'un jour : **s'arrêter et demander à Seb**.
-- [ ] **Step 2: CLAUDE.md.** Ajouter, après la règle « Les valeurs du jour viennent de l'agent seul », une règle :
+- [x] **Step 2: CLAUDE.md.** Ajouter, après la règle « Les valeurs du jour viennent de l'agent seul », une règle :
 
 > - **La variation du jour du sous-jacent vient de `/quotes`, jamais stockée** (sous-projet 35) :
 >   l'agent rend `last` et `close` bruts (`reqMktData`, `MARKET_DATA_TYPE` différé : pas
@@ -1007,7 +1007,7 @@ it("shows the underlying's day move first, and keeps the rank order", async () =
 >   refuse deux connexions `clientId 0` simultanées.
 
 Mettre à jour la règle « Les tableaux de la page Positions partagent leurs colonnes » : « treize colonnes », « douze colonnes » pour `WHEEL_SHARE_COLUMNS`. Mettre à jour la ligne de `run-frontend` (`--agent` sert aussi `/quotes`). Registre : `| 35 | Var. jour action : la variation du jour du sous-jacent | fait (<date>) |`.
-- [ ] **Step 3: points-reportes.md.** Section « Reporté par le sous-projet 35 » : ce que la revue aura jugé non bloquant ; au minimum, si la sonde l'a montré, le comportement en pré-ouverture (le `last` différé d'avant 9:30).
-- [ ] **Step 4:** `pnpm check` à la racine du worktree → vert. `pnpm test:agent` → vert.
-- [ ] **Step 5: Commit** — `git commit -am "Sous-projet 35 : sonde, CLAUDE.md, registre et statut de la spec"`
+- [x] **Step 3: points-reportes.md.** Section « Reporté par le sous-projet 35 » : ce que la revue aura jugé non bloquant ; au minimum, si la sonde l'a montré, le comportement en pré-ouverture (le `last` différé d'avant 9:30).
+- [x] **Step 4:** `pnpm check` à la racine du worktree → vert. `pnpm test:agent` → vert.
+- [x] **Step 5: Commit** — `git commit -am "Sous-projet 35 : sonde, CLAUDE.md, registre et statut de la spec"`
 - [ ] **Step 6:** `pnpm dev:start` dans le worktree ; donner à Seb les deux URL, et lui rappeler `ib-tws-agent origin add http://127.0.0.1:<port Vite du worktree>` puis relancer l'agent pour voir la colonne avec son vrai TWS.
