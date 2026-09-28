@@ -65,10 +65,12 @@ export function realizedOnDay(rows: readonly JournalRow[], day: string): Currenc
 
 Somme par devise des `pnl` des lignes de journal, **toutes stratégies, Autres compris**, dont
 `endWhen !== null` et `marketDayOf(endWhen) === day`. Une ligne à `pnl` `null` compte dans
-`missing`. Chaque dollar une fois seulement : si les jambes d'un condor sont elles-mêmes des
-lignes du journal, le composite (`kind === "condor"`) est écarté — l'implémentation le vérifie
-dans `journals/condor.ts` et un test le fige. `CurrencyTotal` vit dans `ledger`, dont `coverage`
-dépend : une seule définition.
+`missing`. Un condor n'a qu'une ligne de journal, son composite (`kind === "condor"`) : ses
+jambes n'en ont aucune (`journals/rows.ts`, un lot qui a un parent ne rend pas de ligne). Il
+compte donc une fois, le jour où sa dernière jambe se ferme, pour tout son `pnl` ; une jambe
+fermée seule avant n'entre dans aucun réalisé du jour — limite acceptée, notée dans
+`docs/points-reportes.md`. `CurrencyTotal` vit dans `ledger`, dont `coverage` dépend : une seule
+définition.
 
 ### 2.3 Le jour
 
@@ -84,8 +86,9 @@ export function liquidationValue(positions: readonly Position[],
 ```
 
 Par devise : somme des `marketValue` du snapshot plus le dernier solde calé de la devise — celui
-qu'affiche `CashBalancesCard`, lu sur `anchoredBalances` (même lecture, factorisée si elle ne
-l'est pas). Sans snapshot, « — ».
+qu'affiche `CashBalancesCard`, lu par une fonction factorisée `currentCashBalances(rows, checks)`
+(`packages/ledger/src/cash.ts`) que la carte reprend : dernière ligne du ledger, sinon l'*Ending
+Cash* seul, sinon `null`. Un cash `null` compte dans `missing`. Sans snapshot, « — ».
 
 ### 2.5 `WheelShareLine.marketValue`
 
@@ -171,7 +174,8 @@ Vitest, écrits pour échouer si le comportement change.
 
 - `sumByCurrency` : tout `null`, `null` partiel (`missing`), plusieurs devises triées.
 - `realizedOnDay` : un rachat du jour compté ; un put vendu du jour exclu ; une assignation d'un
-  samedi 01:02 rattachée au vendredi ; un condor compté une seule fois ; Autres compris.
+  samedi 01:02 rattachée au vendredi ; un condor compté le jour de sa dernière jambe ; une ligne
+  à `pnl` `null` comptée dans `missing` ; Autres compris.
 - `liquidationValue` : positions plus cash ; option vendue négative ; devise sans cash.
 - `WheelShareLine.marketValue` : `lastPrice × quantity`, `null` sans prix.
 - `apps/web` sur `fake-indexeddb`, ledger semé : le tableau de bord montre les trois nouveaux
