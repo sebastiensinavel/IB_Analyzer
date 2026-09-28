@@ -33,7 +33,7 @@ export function CondorRows({
 }) {
   const { t } = useTranslation();
   const decision = decisionBadge(line.decision);
-  const partial = line.realizedPnl !== null && line.realizedPnl !== 0;
+  const partial = line.kind === "partial_iron_condor";
   const pnl = formatMoney(line.pnl);
   return (
     <Fragment>
@@ -55,8 +55,22 @@ export function CondorRows({
             {/* A bare text node is an anonymous flex item whose default min-width: auto refuses to
                 shrink below its full content width, so it overflows the fixed-width column instead
                 of wrapping (a long condor title, unlike a two-line option label, overran the 12%
-                position column into the Type column). min-w-0 lets it shrink and wrap normally. */}
-            <span className="min-w-0 break-words">{line.title}</span>
+                position column into the Type column). min-w-0 lets it shrink; break-normal keeps
+                a strike like "480/485" from splitting mid-number, and a <wbr /> after each "/"
+                offers the browser a break point there instead, so "0/525" never lands alone on a
+                line (spec of sub-project 34, review finding). */}
+            <span className="min-w-0 break-normal">
+              {line.title.split("/").map((part, index, parts) => (
+                <Fragment key={index}>
+                  {part}
+                  {index < parts.length - 1 && (
+                    <Fragment>
+                      /<wbr />
+                    </Fragment>
+                  )}
+                </Fragment>
+              ))}
+            </span>
           </span>
         </TableCell>
         <TableCell className="text-muted-foreground">{line.label}</TableCell>

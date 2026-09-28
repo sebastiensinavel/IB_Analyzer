@@ -104,6 +104,25 @@ describe("condorPositions", () => {
     expect(lines.map((l) => l.id)).toEqual(["ic#1"]);
   });
 
+  it("gives the still-open composite its own quantity and leg sizes, not the closed composite's", () => {
+    // A ×2 condor partly bought back down to ×1: the journal keeps the closed ×2 composite
+    // (its own legs at ±2) and opens a fresh ×1 composite (its own legs at ±1).
+    const scaleLegs = (base: JournalRow, factor: number): JournalRow => ({
+      ...base,
+      legs: base.legs!.map((leg) => ({ ...leg, quantity: (leg.quantity as number) * factor })),
+    });
+    const open = { ...scaleLegs(condor("ic#1", "2026-08-03T14:30:00.000Z"), 1), quantity: -1 };
+    const closed = {
+      ...scaleLegs(condor("ic#2", "2026-08-01T14:30:00.000Z"), 2),
+      quantity: -2,
+      endWhen: "2026-08-20T14:30:00.000Z",
+    };
+    const [line] = condorPositions([open, closed], null);
+    expect(line.id).toBe("ic#1");
+    expect(line.quantity).toBe(-1);
+    expect(line.legs.map((l) => Math.abs(l.quantity))).toEqual([1, 1, 1, 1]);
+  });
+
   it("leaves every priced figure null when an open leg has no price, never 0", () => {
     const snapshot = priced([leg("P", 620, 1, 0.05), leg("P", 625, -1, 0.15), leg("C", 660, -1, 0.1), leg("C", 665, 1, null)]);
     const [line] = condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z")], snapshot);

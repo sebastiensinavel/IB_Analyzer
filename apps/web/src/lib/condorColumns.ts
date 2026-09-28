@@ -17,7 +17,7 @@ export function condorColumnSpecs(sectorOf: SectorOf): ColumnSpec<CondorLine>[] 
     { key: "quantity", type: "number", sortable: true, value: (line) => line.quantity },
     { key: "avgPrice", type: "number", sortable: true, value: (line) => line.credit },
     { key: "lastPrice", type: "number", sortable: true, value: (line) => line.closingCost },
-    { key: "dayChange", type: "number", sortable: true, value: () => null },
+    { key: "dayChange", type: "number", sortable: false, value: () => null },
     { key: "dailyPnl", type: "number", sortable: true, value: (line) => line.dailyPnl },
     { key: "unrealizedPnl", type: "number", sortable: true, value: (line) => line.pnl },
     { key: "decision", type: "enum", sortable: true, value: (line) => line.decision },

@@ -413,6 +413,16 @@ describe("StrategyPositionsPage — Condors", () => {
     expect(screen.queryByLabelText("Ventes d'options")).not.toBeInTheDocument();
   });
 
+  it("only offers a line break at a space or after a slash, never inside a strike", async () => {
+    await seedCondor();
+    renderPage("condors");
+    const line = await rowIn("Condors en cours", TITLE);
+    const titleCell = cells(line)[0];
+    // One <wbr/> after each of the title's three slashes, none of them splitting a strike number.
+    expect(titleCell.querySelectorAll("wbr")).toHaveLength(3);
+    expect(titleCell.textContent).toBe(TITLE);
+  });
+
   it("unfolds the four legs under their condor on the chevron, without opening the chart", async () => {
     await seedCondor();
     renderPage("condors");

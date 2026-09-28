@@ -5,6 +5,8 @@ import {
   condorPositions,
   isCondorBoxId,
   isShareBoxId,
+  LINE_BOX_IDS,
+  SHARE_BOX_IDS,
   strategyBoxContents,
   strategyPositions,
   type CondorLine,
@@ -13,6 +15,7 @@ import {
   type PricedSnapshot,
   type RiskReport,
   type ShareBoxId,
+  type StrategyBoxContents,
   type StrategyLine,
   type WheelShareLine,
 } from "@ib/coverage";
@@ -53,6 +56,13 @@ function pricedSnapshot(snapshot: SnapshotRecord | null | undefined, report: Ris
   return snapshot && report ? { positions: snapshot.positions, report } : null;
 }
 
+function emptyBoxContents(): StrategyBoxContents {
+  return {
+    shares: Object.fromEntries(SHARE_BOX_IDS.map((id) => [id, [] as WheelShareLine[]])) as Record<ShareBoxId, WheelShareLine[]>,
+    lines: Object.fromEntries(LINE_BOX_IDS.map((id) => [id, [] as StrategyLine[]])) as Record<LineBoxId, StrategyLine[]>,
+  };
+}
+
 /**
  * A strategy's open positions (spec of sub-project 16, §5.2, extended by sub-project 21): its
  * journal's open lines priced from the snapshot, computed from what the shell already holds, never
@@ -78,10 +88,15 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   const defs = STRATEGY_BOXES[strategy];
   const ready = journals.status === "ready" && snapshot !== undefined && report !== undefined && active !== undefined;
   const rows = journals.status === "ready" ? journals.report.rows : NO_ROWS;
+  // Condors show one line per condor (condorPositions below), never StrategyLines: skip
+  // strategyPositions/strategyBoxContents there and keep an empty StrategyBoxContents, `boxes`
+  // itself staying the readiness signal (spec of sub-project 34, §2).
   const boxes = useMemo(
     () =>
       ready && active !== undefined
-        ? strategyBoxContents(strategyPositions(rows, strategy, pricedSnapshot(snapshot, report), active), strategy)
+        ? strategy === "condors"
+          ? emptyBoxContents()
+          : strategyBoxContents(strategyPositions(rows, strategy, pricedSnapshot(snapshot, report), active), strategy)
         : null,
     [ready, rows, strategy, snapshot, report, active],
   );

@@ -167,7 +167,14 @@ export function condorPositions(
       dailyPnl: sum(open.map((leg) => leg.dailyPnl)),
       pnl: latent === null || realizedPnl === null ? null : latent + realizedPnl,
       realizedPnl,
-      decision: !partial && row.openPrice !== null && closingCost !== null ? evaluateBuyback(row.openPrice, closingCost) : null,
+      // closingCost <= 0 means IB would pay to close: evaluateBuyback takes Math.abs of both
+      // prices, so a credit to close could otherwise read as "keep" against a small sale price.
+      decision:
+        !partial && row.openPrice !== null && closingCost !== null
+          ? closingCost <= 0
+            ? "buy back"
+            : evaluateBuyback(row.openPrice, closingCost)
+          : null,
       naked: 0,
       legs,
     };
