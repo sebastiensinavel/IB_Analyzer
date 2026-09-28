@@ -47,6 +47,26 @@ describe("transactionStrategies", () => {
     for (const id of ["leg1", "leg2", "leg3", "leg4"]) expect(map.get(id)).toEqual(["condors"]);
   });
 
+  it("gives a wing bought back while the condor stays open Condors", () => {
+    const WING = "2026-08-10T15:00:00.000Z";
+    const map = transactionStrategies(
+      buildJournals([
+        ...ironCondor(),
+        option({ ...SPY, id: "bb3", right: "C", strike: 660, quantity: 1, price: 1.5, when: WING }),
+        option({ ...SPY, id: "bb4", right: "C", strike: 665, quantity: -1, price: 0.9, when: WING }),
+      ]).rows,
+    );
+    expect(map.get("bb3")).toEqual(["condors"]);
+    expect(map.get("bb4")).toEqual(["condors"]);
+  });
+
+  it("gives a long call three months or more from expiry LEAPS", () => {
+    const map = transactionStrategies(
+      buildJournals([option({ ticker: "AAPL", id: "leaps", right: "C", strike: 200, expiry: "2027-06-17", quantity: 1, price: 30, when: BUY })]).rows,
+    );
+    expect(map.get("leaps")).toEqual(["leaps"]);
+  });
+
   it("never names an inactive strategy: without Condors the legs are Others", () => {
     const map = transactionStrategies(buildJournals(ironCondor(), undefined, undefined, ["wheel"]).rows);
     for (const id of ["leg1", "leg2", "leg3", "leg4"]) expect(map.get(id)).toEqual(["others"]);

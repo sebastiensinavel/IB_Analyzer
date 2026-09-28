@@ -173,7 +173,9 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
 - **La stratégie d'une ligne de l'Historique est calculée, jamais stockée** (sous-projet 37) :
   `transactionStrategies` (`packages/ledger/src/journals/transactionStrategies.ts`) lit les
   `openIds`/`closeIds` des lignes de journal — jamais les `closeIds` d'une clôture `integrated`,
-  qui sont ceux du call couvert — et la page Historique la dérive de `useAccountJournals`. Le badge
+  qui sont ceux du call couvert —, ceux des jambes d'un condor compris (une aile fermée tôt porte
+  Condors), et la page Historique la dérive de `useAccountJournals`. Les jambes d'une conversion
+  (split, changement de CUSIP) affichent « — ». Le badge
   porte le nom seul, jamais une quantité : des tranches fondues puis réparties ne disent pas
   laquelle est allée où. Teintes dans `STRATEGY_BADGE` (`lib/strategyBadges.ts`) ; la colonne se
   filtre sur ses valeurs et ne se trie pas, comme la Couverture.

@@ -8,7 +8,9 @@ describe("STRATEGY_BADGE", () => {
     expect(STRATEGY_BADGE.wheel.variant).toBe("success");
     expect(STRATEGY_BADGE.condors.variant).toBe("warning");
     expect(STRATEGY_BADGE.others.variant).toBe("outline");
-    expect(STRATEGY_BADGE.leaps.className).toContain("#7b5ce5");
-    expect(STRATEGY_BADGE.leaps.className).toContain("#a28bf5");
+    // The violet comes from the chart-4 token, never a hex recoded here.
+    expect(STRATEGY_BADGE.leaps.className).toContain("text-chart-4");
+    expect(STRATEGY_BADGE.leaps.className).toContain("bg-chart-4/10");
+    expect(STRATEGY_BADGE.leaps.className).not.toMatch(/#[0-9a-f]{3,6}/i);
   });
 });
