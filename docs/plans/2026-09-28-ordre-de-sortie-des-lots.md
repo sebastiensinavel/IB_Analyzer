@@ -952,7 +952,7 @@ git commit -m "Journaux : une vente jointe au rachat d'un call Wheel sort par R2
 - Modify: `CLAUDE.md`
 - Modify: `docs/specs/2026-09-28-ordre-de-sortie-des-lots-design.md` (statut)
 
-- [ ] **Step 1: CLAUDE.md** — dans la règle « Un call vendu sur des actions détenues… » :
+- [x] **Step 1: CLAUDE.md** — dans la règle « Un call vendu sur des actions détenues… » :
   - remplacer « laisser la part reprise en fin de file ferait livrer les mauvaises actions à
     l'assignation » par « laisser la part reprise en fin de file la ferait passer derrière son
     reste à la prochaine opération sur titres » ;
@@ -972,17 +972,17 @@ git commit -m "Journaux : une vente jointe au rachat d'un call Wheel sort par R2
     héritent, et une opération sur titres trie sur lui, jamais sur `openWhen`. »
   - ajouter au registre la ligne `| 33 | L'ordre de sortie des lots d'actions | fait (<date du merge>) |`.
 
-- [ ] **Step 2: Statut de la spec** — `Statut : implémenté (<date>).`
+- [x] **Step 2: Statut de la spec** — `Statut : implémenté (<date>).`
 
-- [ ] **Step 3: Données réelles, si `private/` existe dans le checkout principal**
+- [x] **Step 3: Données réelles, si `private/` existe dans le checkout principal**
 
 Run (depuis `packages/ib-parsers`) : `npx vitest run private` puis, depuis `apps/web`,
 `npx vitest run alpha.private` — les tests sautent d'eux-mêmes sans les fichiers. Expected :
 PASS, reconstitution inchangée. Un échec est un bug du moteur, jamais une attente à ajuster.
 
-- [ ] **Step 4: `pnpm check`** depuis la racine du worktree, une seule fois. Expected : vert.
+- [x] **Step 4: `pnpm check`** depuis la racine du worktree, une seule fois. Expected : vert.
 
-- [ ] **Step 5: Commit** (cases cochées dans le même commit)
+- [x] **Step 5: Commit** (cases cochées dans le même commit)
 
 ```bash
 git add CLAUDE.md docs/specs/2026-09-28-ordre-de-sortie-des-lots-design.md docs/plans/2026-09-28-ordre-de-sortie-des-lots.md

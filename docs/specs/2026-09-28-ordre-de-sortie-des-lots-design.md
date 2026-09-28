@@ -1,6 +1,6 @@
 # Sous-projet 33 — L'ordre de sortie des lots d'actions
 
-Statut : conçu (2026-09-28).
+Statut : implémenté (2026-09-28).
 
 Aujourd'hui, quand des actions sortent du carnet, le moteur de journaux prend les lots dans
 l'ordre du carnet, FIFO, avec une seule préférence : un call couvert de la Wheel fait sortir
