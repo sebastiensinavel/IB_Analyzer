@@ -171,3 +171,26 @@ describe("condorPositions", () => {
     expect(lines.map((l) => [l.id, l.naked])).toEqual([["ic#1", 0], ["ic#2", 1]]);
   });
 });
+
+describe("condorPositions — the buyback advice is timed", () => {
+  const withAsOf = (snapshot: PricedSnapshot): PricedSnapshot => ({ ...snapshot, asOf: "2026-08-10T16:00:00.000Z" });
+
+  it("measures a condor's life from its composite's opening to its expiry", () => {
+    const [line] = condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z")], withAsOf(CHEAP()));
+    const total = (Date.parse("2026-08-29T16:00:00.000Z") - Date.parse("2026-08-03T14:30:00.000Z")) / 86_400_000;
+    expect(line.buyback?.totalDays).toBeCloseTo(total, 6);
+    expect(line.buyback?.remainingDays).toBeCloseTo(19, 6);
+    expect(line.decision).toBe(line.buyback?.decision);
+  });
+
+  it("keeps buy back with a zero threshold for a negative closing cost", () => {
+    const [line] = condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z")], withAsOf(NEGATIVE_CLOSE()));
+    expect(line.decision).toBe("buy back");
+    expect(line.buyback).toMatchObject({ decision: "buy back", threshold: 0 });
+  });
+
+  it("gives a partial condor no advice", () => {
+    const [line] = condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z", { 665: CLOSED_665 })], withAsOf(CHEAP()));
+    expect(line.buyback).toBeNull();
+  });
+});

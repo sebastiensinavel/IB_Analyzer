@@ -327,16 +327,16 @@ Dans `index.ts` : `export * from "./buyback.ts";`. Toute autre construction d'`A
 - Consumes: `evaluateBuyback`, `averageSaleInstant`, `BuybackAdvice`, `BuybackTiming` (tâche 1).
 - Produces: `PricedSnapshot` gagne `asOf?: string` ; `StrategyLine.buyback: BuybackAdvice | null` ; `CondorLine.buyback: BuybackAdvice | null`.
 
-- [ ] **Step 1: Écrire les tests qui échouent.** Dans `strategy.test.ts`, en reprenant les fabriques du fichier (journal + snapshot) :
+- [x] **Step 1: Écrire les tests qui échouent.** Dans `strategy.test.ts`, en reprenant les fabriques du fichier (journal + snapshot) :
   - une Wheel qui a vendu un put SPY d'échéance `E` en deux lignes ouvertes (−1 à `t1`, −3 à `t2`), un snapshot `{ positions, report, asOf }` : la ligne a `buyback.totalDays` égal à `(E 16:00 − moyenne pondérée) / 1 j` et `decision === buyback.decision` ; sans `asOf` dans le `PricedSnapshot`, `buyback.remainingDays` est `null` et le seuil vaut `avgPrice / 2`.
   - une ligne d'Autres faite uniquement de contrats migrés (reprendre le cas de migration existant du fichier, compte réduit au strict nécessaire) : son `buyback.totalDays` se mesure depuis le `startWhen` des lignes de la stratégie d'origine.
   - un call acheté : `buyback` et `decision` `null`.
 
   Dans `condors.test.ts`, sur le condor complet existant du fichier, avec `asOf` dans le snapshot : `buyback.totalDays` se mesure du `startWhen` du composite à l'échéance du condor, `decision === buyback.decision` ; le cas existant « negative closing cost » garde `decision: "buy back"` et a `buyback.threshold === 0` ; un condor partiel a `buyback: null`.
 
-- [ ] **Step 2:** `npx vitest run strategy condors` → FAIL.
+- [x] **Step 2:** `npx vitest run strategy condors` → FAIL.
 
-- [ ] **Step 3: Implémenter.** `strategy.ts` :
+- [x] **Step 3: Implémenter.** `strategy.ts` :
 
 ```ts
 /** The snapshot's positions and the risk report built from them, index for index. */
@@ -384,8 +384,8 @@ function timingOf(contract: ContractKey, contributions: readonly Contribution[],
 
 `CondorLine` gagne `buyback: BuybackAdvice | null`.
 
-- [ ] **Step 4:** `npx vitest run && npx tsc --noEmit -p .` depuis `packages/coverage` → PASS.
-- [ ] **Step 5:** cocher et commit : `Décision de rachat : pages de stratégie et Condors datés`.
+- [x] **Step 4:** `npx vitest run && npx tsc --noEmit -p .` depuis `packages/coverage` → PASS.
+- [x] **Step 5:** cocher et commit : `Décision de rachat : pages de stratégie et Condors datés`.
 
 ---
 

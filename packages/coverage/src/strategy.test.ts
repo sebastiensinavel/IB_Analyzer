@@ -691,3 +691,46 @@ describe("strategyPositions — the naked part leaves the strategy", () => {
     expect(strategyPositions(rows, "leaps", snapshot).groups.optionBuys[0].quantity).toBe(1);
   });
 });
+
+describe("strategyPositions — the buyback advice is timed", () => {
+  const DAY = 86_400_000;
+  const AS_OF = "2026-09-20T16:00:00.000Z";
+
+  it("dates a line on the average sale instant of its rows, weighted by quantity", () => {
+    const t1 = "2026-09-01T14:00:00.000Z";
+    const t2 = "2026-09-11T14:00:00.000Z";
+    const rows = [
+      row({ id: "p#1", contract: XOM_PUT, quantity: -1, openPrice: 2, startWhen: t1 }),
+      row({ id: "p#2", contract: XOM_PUT, quantity: -3, openPrice: 2, startWhen: t2 }),
+    ];
+    const positions = [option({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-10-16", quantity: -4, marketPrice: 0.5, marketValue: -200 })];
+    const average = (Date.parse(t1) + 3 * Date.parse(t2)) / 4;
+    const total = (Date.parse("2026-10-16T16:00:00.000Z") - average) / DAY;
+    const [line] = strategyPositions(rows, "wheel", { ...priced(positions), asOf: AS_OF }).groups.optionSells;
+    expect(line.buyback?.totalDays).toBeCloseTo(total, 6);
+    expect(line.buyback?.remainingDays).toBeCloseTo((Date.parse("2026-10-16T16:00:00.000Z") - Date.parse(AS_OF)) / DAY, 6);
+    expect(line.decision).toBe(line.buyback?.decision);
+  });
+
+  it("falls back on the 50% rule without the snapshot's instant", () => {
+    const rows = [row({ contract: XOM_PUT, quantity: -1, openPrice: 2 })];
+    const positions = [option({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-10-16", quantity: -1, marketPrice: 0.5, marketValue: -50 })];
+    const [line] = strategyPositions(rows, "wheel", priced(positions)).groups.optionSells;
+    expect(line.buyback).toMatchObject({ remainingDays: null, totalDays: null, threshold: 1, decision: "buy back" });
+  });
+
+  it("dates a line made only of contracts taken over by Others from their strategy's rows", () => {
+    const { rows, snapshot } = nakedCallLedger();
+    const [line] = strategyPositions(rows, "others", { ...snapshot, asOf: "2026-09-01T16:00:00.000Z" }).groups.optionSells;
+    const total = (Date.parse("2026-10-16T16:00:00.000Z") - Date.parse("2026-08-03T14:30:00.000Z")) / DAY;
+    expect(line.buyback?.totalDays).toBeCloseTo(total, 6);
+  });
+
+  it("gives a bought call no advice", () => {
+    const rows = [row({ contract: opt("AAPL", "C", 100, "2027-01-15"), strategy: "leaps", kind: "long_call", quantity: 1, openPrice: 5 })];
+    const positions = [option({ symbol: "AAPL", right: "C", strike: 100, expiry: "2027-01-15", quantity: 1, marketPrice: 6, marketValue: 600 })];
+    const [line] = strategyPositions(rows, "leaps", { ...priced(positions), asOf: AS_OF }).groups.optionBuys;
+    expect(line.buyback).toBeNull();
+    expect(line.decision).toBeNull();
+  });
+});

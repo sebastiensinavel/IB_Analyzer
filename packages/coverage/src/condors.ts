@@ -1,5 +1,5 @@
 import { ACTIVABLE_STRATEGIES, contractId, type ActivableStrategy, type ContractKey, type JournalRow } from "@ib/ledger";
-import { evaluateBuyback } from "./buyback.ts";
+import { evaluateBuyback, type BuybackAdvice } from "./buyback.ts";
 import { contractMultiplier } from "./classify.ts";
 import { DEFAULT_MULTIPLIER, KIND_LABELS, type PositionKind } from "./constants.ts";
 import { condorsNakedByContract, dayShare, pricedByContract, type Priced, type PricedSnapshot } from "./strategy.ts";
@@ -44,6 +44,8 @@ export interface CondorLine {
   pnl: number | null; // réalisé + latent
   realizedPnl: number | null; // Σ pnl des jambes fermées ; 0 pour un condor complet
   decision: "buy back" | "keep" | null;
+  /** The advice behind `decision`; `null` exactly when it is. */
+  buyback: BuybackAdvice | null;
   naked: number; // Σ naked des jambes
   legs: CondorLegLine[];
 }
@@ -155,6 +157,11 @@ export function condorPositions(
     const closingCost = sum(open.map((leg) => (leg.lastPrice === null ? null : -Math.sign(leg.quantity) * leg.lastPrice)));
     const realizedPnl = sum(legs.filter((leg) => leg.closed).map((leg) => leg.pnl));
     const latent = sum(open.map((leg) => leg.pnl));
+    const timing = snapshot?.asOf && row.contract.expiry ? { soldAt: row.startWhen, expiry: row.contract.expiry, asOf: snapshot.asOf } : null;
+    const advice = !partial && row.openPrice !== null && closingCost !== null ? evaluateBuyback(row.openPrice, closingCost, timing) : null;
+    // closingCost <= 0 means IB would pay to close: always a buyback, whatever the rule says of
+    // |closingCost| against a small credit.
+    const buyback = advice && closingCost !== null && closingCost <= 0 ? { ...advice, decision: "buy back" as const, threshold: 0 } : advice;
     return {
       id: row.id,
       contract: row.contract,
@@ -168,14 +175,8 @@ export function condorPositions(
       dailyPnl: sum(open.map((leg) => leg.dailyPnl)),
       pnl: latent === null || realizedPnl === null ? null : latent + realizedPnl,
       realizedPnl,
-      // closingCost <= 0 means IB would pay to close: evaluateBuyback takes Math.abs of both
-      // prices, so a credit to close could otherwise read as "keep" against a small sale price.
-      decision:
-        !partial && row.openPrice !== null && closingCost !== null
-          ? closingCost <= 0
-            ? "buy back"
-            : evaluateBuyback(row.openPrice, closingCost, null).decision
-          : null,
+      decision: buyback?.decision ?? null,
+      buyback,
       naked: 0,
       legs,
     };
