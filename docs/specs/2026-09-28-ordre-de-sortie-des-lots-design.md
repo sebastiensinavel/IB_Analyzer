@@ -203,15 +203,21 @@ Chaque fonction se teste seule sur des lots écrits à la main.
 
 ### 5.3 Le replay
 
-- `deliverShares` (`replay.ts`) : un call couvert de la Wheel passe par `strikePlan`, puis
-  `salePlan` pour ce qui manque ; toute autre livraison d'actions longues par `salePlan`.
+- `deliverShares` (`replay.ts`) : un call couvert de la Wheel passe par `strikePlan`, limité par
+  les seules actions livrées — une option ajustée livre tout par R1 —, puis `salePlan` pour ce
+  qui manque ; toute autre livraison d'actions longues par `salePlan`.
+- Un reste d'au plus `EXIT_EPSILON` (`journals/types.ts`) d'actions ou de contrats est du bruit
+  flottant : `closeOrdered` solde un lot qu'il laisserait sous ce seuil, et ni la boucle des
+  ventes ni `deliverShares` n'ouvrent de lot pour un tel reste.
 - La boucle des actions de `replayGroup` : une vente passe d'abord par ses rachats appariés
   (R2), puis par `salePlan`. `wheelBuybacks`, limité au même instant, disparaît.
 - Un pré-passage, après `mergeFills`, apparie chaque vente d'actions longues avec commission aux
   rachats de calls de la fenêtre (§3, R2). Le budget d'un rachat, en contrats, s'établit à sa
   première consommation :
-  - rachat pas encore rejoué (vente avant) : le minimum de sa quantité et des contrats couverts
-    Wheel encore ouverts sur ce contrat ;
+  - rachat pas encore rejoué (vente avant) : les contrats que sa clôture FIFO prendra à des lots
+    couverts Wheel — la clôture parcourue d'avance dans l'ordre du carnet, comme
+    `LotBook.close` la fera ; un call nu d'Autres plus ancien sur le même contrat passe d'abord
+    et ne donne rien à R2 ;
   - rachat déjà rejoué (vente après) : les contrats couverts Wheel qu'il a fermés, notés dans le
     contexte au moment de son rejeu.
 

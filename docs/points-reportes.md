@@ -750,31 +750,44 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ## Reporté par le sous-projet 17 (la Wheel ne prend que ce qu'il faut)
 
-- **« Même instant » est strict.** Un rachat de call Wheel et une vente d'actions passés en
+- ~~**« Même instant » est strict.** Un rachat de call Wheel et une vente d'actions passés en
   deux ordres séparés d'une seconde ne sont pas liés : la vente reste dans l'ordre du carnet.
-  Aucun cas réel observé, alpha les passe à la même seconde.
-- **Une vente d'actions Wheel sans rachat de call** reste dans l'ordre du carnet et peut
+  Aucun cas réel observé, alpha les passe à la même seconde.~~ — **fermé par le sous-projet 33**
+  (2026-09-28) : une vente est jointe aux rachats de calls de son sous-jacent à
+  `WHEEL_BUYBACK_WINDOW_MS` (60 s) ou moins, avant ou après (`journals/buybacks.ts`, R2).
+- ~~**Une vente d'actions Wheel sans rachat de call** reste dans l'ordre du carnet et peut
   vendre un reliquat Autres plus ancien. Voulu : rien ne dit que la vente appartient à la
-  Wheel.
-- **Une livraison ne choisit toujours pas nominativement les lots Wheel qui couvrent le
+  Wheel.~~ — **fermé par le sous-projet 33** (2026-09-28) : une vente ordinaire sort par R3, les
+  actions libres d'Autres d'abord, puis LEAPS, puis Wheel, le prix le plus faible d'abord ; le
+  reliquat Autres part donc avant les actions Wheel, quel que soit son âge.
+- ~~**Une livraison ne choisit toujours pas nominativement les lots Wheel qui couvrent le
   call** : entre deux lots Wheel repris à des strikes différents, l'ordre du carnet décide. Le
-  P/L reste dans la Wheel, seule sa répartition entre lignes peut s'intervertir.
-- **`LotBook.closePreferring` peut laisser un reste de limite infinitésimal** quand un lot
+  P/L reste dans la Wheel, seule sa répartition entre lignes peut s'intervertir.~~ — **fermé par
+  le sous-projet 33** (2026-09-28) : l'assignation livre par R1, le lot Wheel le plus cher dont
+  le prix ne dépasse pas le strike, sinon le moins cher (`strikePlan`).
+- ~~**`LotBook.closePreferring` peut laisser un reste de limite infinitésimal** quand un lot
   porte un ratio autre que 100 (lot converti, 53,333… actions par contrat) :
   `budget -= take / per` peut laisser ~1e-15 contrat, et le lot Wheel suivant se voit
   retirer ~1e-13 action — une ligne quasi nulle et un `remaining` à 599,9999999999. Avec le
   multiplicateur par défaut, la division tombe juste ; aucun cas réel observé. Un seuil
-  (`if (budget < 1e-9) budget = 0`) le fermerait.
-- **Deux comportements du §4.1 n'ont pas de test dédié** : la limite partagée par deux ventes
+  (`if (budget < 1e-9) budget = 0`) le fermerait.~~ — **fermé par le sous-projet 33**
+  (2026-09-28) : `closePreferring` n'existe plus ; `exitOrder.ts` coupe sous `EXIT_EPSILON`,
+  `closeOrdered` solde un lot qu'il laisserait sous ce seuil, et le replay n'ouvre aucun lot
+  pour un reste de cette taille (test « leaves no floating-point residue… »).
+- ~~**Deux comportements du §4.1 n'ont pas de test dédié** : la limite partagée par deux ventes
   du même instant (supprimer la réécriture de `wheelBuybacks` dans `replayGroup` ne casse
   aucun test), et une clôture à prix 0 d'un call Wheel (expiration, assignation) qui ne
-  compte pas comme un rachat (supprimer la garde `!isSettlementShape(tx)` non plus).
+  compte pas comme un rachat (supprimer la garde `!isSettlementShape(tx)` non plus).~~ —
+  **fermé par le sous-projet 33** (2026-09-28) : `wheelBuybacks` a disparu. Le budget d'un rachat
+  partagé par deux ventes est tenu par « two sales in one buyback's window » (retirer sa
+  décrémentation dans `sellShares` le casse), et une jambe de règlement n'est jamais appariée
+  (`buybacks.test.ts`).
 - **La chronologie ZXAF rejouée (`replay.test.ts`, « chronology of spec 17 §2.2 ») ne
   discrimine que le §3** : retirer seul le §4 ou seul le §5 la laisse passer, parce que les
   ventes du 2026-05-06 accompagnent des rachats et que les lots Wheel sont déjà en tête après
   la conversion. Le §5 garde son test dédié (« keeps the Wheel part of a cut ahead of its
   remainder through a conversion »), le §4 les siens dans `takeover.test.ts`.
-- **Des actions Wheel vendues pendant qu'un call couvert est ouvert laissent ce call adossé à
+- ~~**Des actions Wheel vendues pendant qu'un call couvert est ouvert laissent ce call adossé à
   des actions hors Wheel**, et rien ne répare l'écart. Une vente ordinaire, sans rachat au même
   instant, reste FIFO et peut vendre le lot Wheel le plus ancien ; la part libre de la Wheel est
   ensuite bornée à zéro (`takeOverShares`), si bien qu'un call suivant ne reprend que ses propres
@@ -783,13 +796,19 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   ligne, voire la mauvaise stratégie, son total restant conservé. Antérieur au sous-projet 17
   (même résultat sur la base) ; c'était le « mode dur » du saut positionnel du sous-projet 8.
   Épingler chaque call aux actions qui l'adossent fermerait ce point, la livraison non
-  nominative et le suivant d'un coup.
-- **La limite de livraison d'un call Wheel passe par deux ratios** : `deliverShares` donne
+  nominative et le suivant d'un coup.~~ — **fermé pour l'essentiel par le sous-projet 33**
+  (2026-09-28) : une vente ordinaire sort par R3, les actions couvertes en dernier recours, et
+  l'assignation livre par R1 selon `coverAttribution`, recalculée à chaque sortie. Reste le cas
+  d'une vente plus grosse que toutes les actions libres : elle entame alors les couvertes, et
+  le call reste adossé à moins d'actions Wheel qu'il n'en livrera — voulu, la vente le dit.
+- ~~**La limite de livraison d'un call Wheel passe par deux ratios** : `deliverShares` donne
   `delivery.shares / delivery.ratio` contrats, que `closePreferring` reconvertit en actions avec
   le `sharesPerContract` de chaque lot Wheel. Pour une option ajustée (150 actions par contrat)
   livrant des lots Wheel à 100, la priorité ne couvre que 100 actions par contrat, le reste part
   FIFO. Conforme au §4 du spec (« converti par lot ») ; aucun cas réel observé. Une limite en
-  actions serait exacte.
+  actions serait exacte.~~ — **fermé par le sous-projet 33** (2026-09-28) : `deliverShares` passe
+  à R1 un budget de contrats illimité et le plafonne aux seules actions livrées (test « an
+  adjusted call hands over all its shares by R1… »).
 
 ---
 
@@ -1119,6 +1138,21 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
   rien et peut tromper un lecteur.
 - **`deploy/iba` n'est vérifié que par `bash -n` et ses tests** : `shellcheck` n'est pas
   installé sur le VPS.
+
+---
+
+## Reporté par le sous-projet 33 (l'ordre de sortie des lots d'actions)
+
+- **Le rang à travers une conversion n'est plus tenu qu'au niveau du carnet.** Les ventes et
+  les livraisons ne parcourent plus l'ordre du carnet : les tests de replay qui montraient le
+  lot converti vendu à son rang (« puts a converted lot back in FIFO order… ») passent
+  désormais quel que soit ce rang, et `insertByRank` n'est plus fixé que par `book.test.ts`.
+  Le rang ne départage plus que deux lots au même prix ; un test de replay où deux lots
+  convertis au même prix sortent dans l'ordre de leur rang le fixerait.
+- **Une vente d'actions sans commission (`null` ou 0) n'obtient jamais R2** : `pairBuybacks` ne
+  joint que les ventes qui paient une commission, pour ne pas confondre une vente avec une jambe
+  de livraison. Un compte IBKR Lite, sans commission sur les actions américaines, verrait donc
+  toutes ses ventes jointes à un rachat sortir par R3. Aucun tel compte à ce jour.
 
 ---
 
