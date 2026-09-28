@@ -37,8 +37,9 @@ colonne « Var. jour », inchangés ; le tri de la Suggestion de position.
 
 - Connexion comme `/snapshot` et `/bars` (`clientId 0`, `readonly=True`, `CONNECT_TIMEOUT_S`) ;
   TWS injoignable rend le 503 `tws-unreachable` habituel.
-- `ib.reqMarketDataType(3)` avant toute demande : IB sert le temps réel quand il est souscrit,
-  le différé de 15 minutes sinon. Le compte de l'utilisateur n'a **pas** d'abonnement temps réel
+- `ib.reqMarketDataType(MARKET_DATA_TYPE)` avant toute demande — 3 (différé) ou 4 (différé figé à
+  la clôture), choisi par la sonde (§9) : IB sert le temps réel quand il est souscrit, le différé
+  de 15 minutes sinon. Le compte de l'utilisateur n'a **pas** d'abonnement temps réel
   et s'en satisfait : le différé est le cas nominal, pas un repli.
 - Pour chaque symbole, `reqMktData(Stock(symbole, 'SMART', 'USD'), '', False, False)` en flux ;
   attente jusqu'à ce que chaque ticker ait `last` et `close`, ou jusqu'à `QUOTES_TIMEOUT_S`
@@ -71,16 +72,26 @@ le prix : la cotation est légitime. CLAUDE.md le dira en ces termes.
 
 **Magasin** : `apps/web/src/agent/quotes.ts`, un état au niveau du module — une `Map` ticker →
 variation, commune à tous les comptes et à toute la page —, lu par `useSyncExternalStore`
-(`useUnderlyingDayChange()` rend une fonction `(ticker) => number | null`), sur le modèle de
+(`useUnderlyingQuotesMap()` rend la table, `underlyingDayChangeOf(table, ticker)` la valeur d'un
+ticker), sur le modèle de
 `presence` dans `useAgentSync.ts`. Rien en IndexedDB, rien en `localStorage` : un rechargement de
 la page le vide, et la colonne montre « — » jusqu'à la première passe.
 
-**Déclenchement** : `useUnderlyingQuotes(accountId)`, monté par `AccountDataProvider`, se relance
+**Déclenchement** : `useUnderlyingQuotes(accountId, report)`, monté par `AccountDataProvider`, se relance
 chaque fois que `lastAgentSyncAt` du compte change — `syncAgent` ne l'avance qu'après une passe
 réussie (`agent/sync.ts`) —, donc au
 rythme de `AGENT_POLL_MS` (5 minutes, onglet visible), au bouton Actualiser et au changement de
-compte, sans que `syncAgent` ni `useAgentPolling` changent. Une passe de cotations en vol n'en
-lance pas une seconde.
+compte, sans que `syncAgent` ni `useAgentPolling` changent. Il se relance aussi quand l'agent
+devient présent et quand la liste des tickers change (nouvelle position, table sectorielle
+modifiée).
+
+**Une connexion TWS à la fois** : l'agent se connecte à chaque requête avec `clientId 0`, et TWS
+refuse une seconde connexion sur le même `clientId` tant que la première vit. Une passe de
+cotations lancée pendant une passe de snapshot échouerait donc — le même risque existe déjà entre
+`/snapshot` et `/bars`. `apps/web/src/agent/client.ts` fait donc passer `fetchSnapshot`,
+`fetchBars` et `fetchQuotes` par une même file (`exclusiveTws`) : elles se succèdent, jamais en
+même temps ; le délai de chaque appel ne court qu'à partir de son tour. `/health` et le relais
+Flex n'ouvrent aucune connexion TWS et restent hors de la file.
 
 **Tickers demandés** : l'union, dédoublonnée,
 - des sous-jacents des positions du rapport de risque (`tickerOf(position.symbol)`), et
@@ -140,7 +151,7 @@ filtrable, et ne pèse pas dans le score. Même cellule qu'au §5.
 ## 7. Textes
 
 `fr.json` et `en.json` : l'en-tête `underlyingDayChange` dans les colonnes de positions, de la
-Wheel et de la Suggestion — « Var. jour action », « Underlying day chg. » — et une clé neuve
+Wheel et de la Suggestion — « Var. jour action », « Stock day chg. » — et une clé neuve
 pour l'infobulle du substitut, `quotes.proxy` : « Variation de {{proxy}} : Interactive Brokers ne
 cote pas {{ticker}}. » / « {{proxy}} change: Interactive Brokers does not quote {{ticker}}. ».
 `charts.proxy` ne convient pas : il parle des niveaux du graphe.
@@ -148,7 +159,7 @@ cote pas {{ticker}}. » / « {{proxy}} change: Interactive Brokers does not quot
 ## 8. Tests
 
 - **Agent** (`apps/tws-agent/tests/test_quotes.py`, `FakeIB`) : ticker complet, partiel, muet ;
-  délai atteint ; `reqMarketDataType(3)` appelé ; annulation de tous les abonnements même en cas
+  délai atteint ; `reqMarketDataType(MARKET_DATA_TYPE)` appelé ; annulation de tous les abonnements même en cas
   d'exception ; 422 au-delà de `QUOTES_MAX_SYMBOLS` ; 503 sans TWS ; `nan`/`DBL_MAX`/`-1` en `null`.
 - **Parseur** : variation calculée, `null` pour chaque terme manquant et pour `close` nul, payload
   mal formé.
@@ -157,7 +168,7 @@ cote pas {{ticker}}. » / « {{proxy}} change: Interactive Brokers does not quot
   « — » sans agent et avant la première passe ; XSP lit la valeur de SPY ; le tri de la colonne
   est signé, `null` en dernier ; aucun tri par défaut ; une nouvelle passe (`lastAgentSyncAt`
   changé) relance les cotations ; un échec de `/quotes` garde les valeurs précédentes ;
-  découpage en lots au-delà de 90 tickers.
+  découpage en lots au-delà de 90 tickers ; deux appels à l'agent ne se chevauchent jamais.
 - **Colonnes** : les largeurs de `POSITION_COLUMNS` et `WHEEL_SHARE_COLUMNS` somment à 100 %.
 - Le driver `run-frontend --agent` sert une fixture `/quotes` à côté de celle de `/snapshot`.
 
@@ -165,7 +176,7 @@ cote pas {{ticker}}. » / « {{proxy}} change: Interactive Brokers does not quot
 
 Contre le vrai TWS de l'utilisateur, sans abonnement temps réel, avant tout code définitif :
 
-1. Que `reqMarketDataType(3)` remplit bien `last` et `close` des tickers ib_async (les ticks
+1. Lequel de `reqMarketDataType(3)` et `reqMarketDataType(4)` remplit `last` et `close` des tickers ib_async (les ticks
    différés 68 et 75) pour ses sous-jacents et pour SPY.
 2. Ce que vaut `close` en séance, après la clôture et le week-end : la colonne doit montrer la
    variation du dernier jour de séance, jamais un écart nul ou d'un jour décalé.
