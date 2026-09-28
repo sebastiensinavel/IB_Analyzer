@@ -65,7 +65,7 @@
   - `export function realizedOnDay(rows: readonly JournalRow[], day: string): CurrencyTotal[]`
   - `export function currentCashBalances(rows: readonly LedgerRow[], checks: readonly CashCheck[]): Record<string, number | null>`
 
-- [ ] **Step 1: Test `realizedOnDay`**
+- [x] **Step 1: Test `realizedOnDay`**
 
 ```ts
 // packages/ledger/src/journals/realized.test.ts
@@ -127,9 +127,9 @@ describe("realizedOnDay", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer, voir échouer** — `cd packages/ledger && npx vitest run realized` → FAIL (module absent).
+- [x] **Step 2: Lancer, voir échouer** — `cd packages/ledger && npx vitest run realized` → FAIL (module absent).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 ```ts
 // packages/ledger/src/journals/realized.ts
@@ -167,7 +167,7 @@ export function realizedOnDay(rows: readonly JournalRow[], day: string): Currenc
 
 Ajouter `export * from "./realized.ts";` dans `packages/ledger/src/journals/index.ts`.
 
-- [ ] **Step 4: Test `currentCashBalances`** — reprend la règle de `CashBalancesCard.tsx:53-55` (« dernière ligne, sinon l'Ending Cash seul, sinon `null` »).
+- [x] **Step 4: Test `currentCashBalances`** — reprend la règle de `CashBalancesCard.tsx:53-55` (« dernière ligne, sinon l'Ending Cash seul, sinon `null` »).
 
 ```ts
 // packages/ledger/src/cash.current.test.ts
@@ -190,7 +190,7 @@ describe("currentCashBalances", () => {
 
 (Si `LedgerRow.balances` porte un autre nom, suivre le type réel de `cash.ts` et ajuster le cast.)
 
-- [ ] **Step 5: Voir échouer**, puis implémenter dans `packages/ledger/src/cash.ts` :
+- [x] **Step 5: Voir échouer**, puis implémenter dans `packages/ledger/src/cash.ts` :
 
 ```ts
 /**
@@ -204,11 +204,11 @@ export function currentCashBalances(rows: readonly LedgerRow[], checks: readonly
 }
 ```
 
-- [ ] **Step 6: `CashBalancesCard` lit `currentCashBalances`** — dans `apps/web/src/components/CashBalancesCard.tsx`, remplacer le calcul local de `amount` par `const current = currentCashBalances(rows, checks);` hors de la boucle et `const amount = current[currency];` dedans (import depuis `@ib/ledger`). Comportement inchangé : `cd apps/web && npx vitest run CashBalances Positions` doit rester vert.
+- [x] **Step 6: `CashBalancesCard` lit `currentCashBalances`** — dans `apps/web/src/components/CashBalancesCard.tsx`, remplacer le calcul local de `amount` par `const current = currentCashBalances(rows, checks);` hors de la boucle et `const amount = current[currency];` dedans (import depuis `@ib/ledger`). Comportement inchangé : `cd apps/web && npx vitest run CashBalances Positions` doit rester vert.
 
-- [ ] **Step 7: Tests verts** — `cd packages/ledger && npx vitest run realized cash`.
+- [x] **Step 7: Tests verts** — `cd packages/ledger && npx vitest run realized cash`.
 
-- [ ] **Step 8: Commit** (cases cochées dans ce plan)
+- [x] **Step 8: Commit** (cases cochées dans ce plan)
 
 ```bash
 git add packages/ledger apps/web/src/components/CashBalancesCard.tsx docs/plans/2026-09-28-totaux-pnl.md

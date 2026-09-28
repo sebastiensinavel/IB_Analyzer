@@ -148,3 +148,13 @@ export function isCashCheckOk(check: CashCheck): boolean | null {
   if (check.start === null) return null;
   return Math.abs(check.start.gap) <= CASH_CHECK_TOLERANCE;
 }
+
+/**
+ * The cash of each currency now, as the Positions page's Cash card shows it: the last anchored
+ * balance, or — on an empty ledger — the Ending Cash alone when a Cash Report anchors the
+ * currency, and nothing known otherwise.
+ */
+export function currentCashBalances(rows: readonly LedgerRow[], checks: readonly CashCheck[]): Record<string, number | null> {
+  const last = rows.at(-1);
+  return Object.fromEntries(checks.map(({ currency, offset, end }) => [currency, last ? (last.balances[currency] ?? null) : end ? offset : null]));
+}

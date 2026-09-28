@@ -1,6 +1,6 @@
 import { Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { CashCheck, LedgerRow } from "@ib/ledger";
+import { currentCashBalances, type CashCheck, type LedgerRow } from "@ib/ledger";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
@@ -23,7 +23,7 @@ interface CashBalancesCardProps {
  */
 export function CashBalancesCard({ rows, checks }: CashBalancesCardProps) {
   const { t } = useTranslation();
-  const last = rows.at(-1);
+  const current = currentCashBalances(rows, checks);
   return (
     <Card aria-label={t("positions.cash.title")}>
       <CardHeader>
@@ -48,10 +48,8 @@ export function CashBalancesCard({ rows, checks }: CashBalancesCardProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {checks.map(({ currency, offset, end }) => {
-              // An empty ledger has no row: its balance is the offset alone, which is the Ending
-              // Cash when a Cash Report anchors the currency, and nothing known otherwise.
-              const amount = last ? last.balances[currency] : end ? offset : null;
+            {checks.map(({ currency, end }) => {
+              const amount = current[currency];
               return (
                 <TableRow key={currency}>
                   {POSITION_COLUMNS.map(({ key }) =>
