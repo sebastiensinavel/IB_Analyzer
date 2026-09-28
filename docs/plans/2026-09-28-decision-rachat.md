@@ -492,9 +492,9 @@ i18n, sous `positions` :
 **Files:**
 - Modify: `CLAUDE.md` (registre + une règle), `docs/specs/2026-09-28-decision-rachat-design.md` (statut)
 
-- [ ] **Step 1:** `CLAUDE.md` : ligne `| 38 | La décision de rachat tient compte du temps | fait (<date>) |` au registre ; dans « Constantes métier » ou juste après, une puce :
+- [x] **Step 1:** `CLAUDE.md` : ligne `| 38 | La décision de rachat tient compte du temps | fait (<date>) |` au registre ; dans « Constantes métier » ou juste après, une puce :
   « **La décision de rachat se mesure au temps, jamais au seul prix** (sous-projet 38) : `evaluateBuyback` (`packages/coverage/src/buyback.ts`) rachète si C ≤ S × min(½, r/T), T depuis la date moyenne de vente pondérée par la quantité, r depuis l'`asOf` du snapshot — jamais l'horloge —, échéance à 16:00 New York ; échue à l'`asOf`, garder. La page Positions date ses positions par `saleInstants` des journaux, passé par `AccountDataProvider` à `useRiskReport` ; sans journaux, la seule règle des 50 %. Ni plancher de fin de vie ni commission. L'infobulle du badge (`DecisionBadge`) dit le seuil. »
   Spec : `Statut : implémenté (<date>).`
-- [ ] **Step 2:** `pnpm check` depuis la racine du worktree → tout vert. Corriger ce qui ne l'est pas.
-- [ ] **Step 3:** cocher et commit : `Décision de rachat : documentation`.
+- [x] **Step 2:** `pnpm check` depuis la racine du worktree → tout vert. Corriger ce qui ne l'est pas.
+- [x] **Step 3:** cocher et commit : `Décision de rachat : documentation`.
 - [ ] **Step 4:** `pnpm dev:start` dans le worktree ; donner les deux URL à Seb (`pnpm dev:status`).
