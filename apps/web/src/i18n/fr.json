@@ -142,7 +142,8 @@
       "putSells": "Ventes de puts",
       "leapsUncovered": "LEAPS sans call vendu",
       "leapsCovered": "LEAPS avec call vendu",
-      "shares": "Actions"
+      "shares": "Actions",
+      "condors": "Condors en cours"
     },
     "columns": {
       "position": "Position",
@@ -157,7 +158,9 @@
       "unrealizedPnl": "P&L latent",
       "coverage": "Couverture"
     },
-    "callBelowAssignment": "Strike moyen des calls sous le prix d'assignation"
+    "callBelowAssignment": "Strike moyen des calls sous le prix d'assignation",
+    "closedLeg": "fermée",
+    "realizedPart": "dont réalisé {{amount}}"
   },
   "journal": {
     "empty": "Aucune position pour cette stratégie.",

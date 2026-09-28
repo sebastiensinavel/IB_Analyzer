@@ -113,7 +113,7 @@ export function dayShare(position: Position | null, quantity: number): { dailyPn
 export function condorsNakedByContract(rows: readonly JournalRow[], snapshot: PricedSnapshot | null, active: readonly ActivableStrategy[]): Map<string, number>;
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Créer `packages/coverage/src/condors.test.ts` :
 
@@ -260,12 +260,12 @@ describe("condorPositions", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd packages/coverage && npx vitest run condors`
 Expected: FAIL — `Cannot find module './condors.ts'` (ou équivalent).
 
-- [ ] **Step 3: Export the helpers from `strategy.ts`**
+- [x] **Step 3: Export the helpers from `strategy.ts`**
 
 Dans `packages/coverage/src/strategy.ts` :
 - `interface Priced` → `export interface Priced` ;
@@ -293,7 +293,7 @@ export function condorsNakedByContract(
 }
 ```
 
-- [ ] **Step 4: Write `condors.ts`**
+- [x] **Step 4: Write `condors.ts`**
 
 ```ts
 import { ACTIVABLE_STRATEGIES, contractId, type ActivableStrategy, type ContractKey, type JournalRow } from "@ib/ledger";
@@ -445,7 +445,7 @@ export function condorPositions(
 
 Ajouter `export * from "./condors.ts";` à `packages/coverage/src/index.ts`, après `./strategyBoxes.ts`.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd packages/coverage && npx vitest run condors strategy`
 Expected: PASS, `strategy.test.ts` inchangé et vert.
@@ -455,7 +455,7 @@ Si « gives the naked part to the condor whose wing is closed » échoue parce q
 (`packages/coverage/src/coverage.ts`) et ajuster **le snapshot du test** (jamais le code) pour
 qu'IB voie exactement un 660 nu ; noter la raison dans le commit.
 
-- [ ] **Step 6: Commit** (cocher les cases de la tâche 1 dans ce plan, même commit)
+- [x] **Step 6: Commit** (cocher les cases de la tâche 1 dans ce plan, même commit)
 
 ```bash
 git add packages/coverage/src docs/plans/2026-09-28-positions-condors.md
@@ -498,7 +498,7 @@ export function uncoveredBadge(quantity: number): CoverageBadge; // { variant: "
 useStrategyBoxViews(accountId, strategy, lineColumns, shareColumns, condorColumns): Record<StrategyBoxId, TableViewState>
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 (a) `apps/web/src/lib/condorColumns.test.ts` :
 
@@ -594,12 +594,12 @@ pour le rôle réel du champ et la façon dont la recherche s'applique (touche E
 directe), et adapter **seulement le moyen d'y saisir**, pas les attentes. `P&L jour` vaut « — » :
 les positions de démonstration n'ont pas de `dailyPnl`.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd apps/web && npx vitest run condorColumns StrategyPositionsPage`
 Expected: FAIL — module `@/lib/condorColumns` introuvable, et l'encadré « Condors en cours » absent.
 
-- [ ] **Step 3: The box id and the page's box declaration**
+- [x] **Step 3: The box id and the page's box declaration**
 
 `packages/coverage/src/strategyBoxes.ts`, après `LineBoxId` :
 
@@ -626,7 +626,7 @@ i18n — `fr.json`, sous `strategyPositions.groups` : `"condors": "Condors en co
 `strategyPositions` : `"closedLeg": "fermée"`, `"realizedPart": "dont réalisé {{amount}}"`.
 `en.json` : `"condors": "Open condors"`, `"closedLeg": "closed"`, `"realizedPart": "of which realized {{amount}}"`.
 
-- [ ] **Step 4: `condorColumns.ts` and `uncoveredBadge`**
+- [x] **Step 4: `condorColumns.ts` and `uncoveredBadge`**
 
 ```ts
 import { CONDOR_KIND_LABELS, COVER_NONE, type CondorKind, type CondorLine } from "@ib/coverage";
@@ -666,7 +666,7 @@ export function uncoveredBadge(quantity: number): CoverageBadge {
 }
 ```
 
-- [ ] **Step 5: The twelfth view**
+- [x] **Step 5: The twelfth view**
 
 `useStrategyBoxViews` prend un cinquième paramètre `condorColumns: readonly ColumnMeta[]` et
 ajoute, après `sharesCallBelow` :
@@ -677,7 +677,7 @@ ajoute, après `sharesCallBelow` :
 
 puis `condors` dans l'objet rendu. Mettre à jour le commentaire (« Twelve `useTableView` »).
 
-- [ ] **Step 6: `CondorRows.tsx`**
+- [x] **Step 6: `CondorRows.tsx`**
 
 ```tsx
 import { Fragment } from "react";
@@ -791,7 +791,7 @@ function LegRow({ leg, sector }: { leg: CondorLegLine; sector: string | null }) 
 Vérifier que `formatDayChange(null)` rend « — » (sinon écrire `"—"`), et que `Button` accepte
 `size="icon-xs"` (c'est ce qu'utilise `JournalPage`).
 
-- [ ] **Step 7: Wire the page**
+- [x] **Step 7: Wire the page**
 
 Dans `StrategyPositionsPage.tsx` :
 
@@ -915,13 +915,13 @@ function CondorsBox({
 9. Le doc-commentaire de `StrategyPositionsPage` mentionne la page Condors : « the Condors show
    one line per open condor of their journal, legs unfolded under it (sub-project 34) ».
 
-- [ ] **Step 8: Run the tests to verify they pass**
+- [x] **Step 8: Run the tests to verify they pass**
 
 Run: `cd apps/web && npx vitest run condorColumns StrategyPositionsPage useStrategyBoxViews strategyBoxes`
 Expected: PASS. Puis `npx tsc -p . --noEmit` depuis `apps/web` (typage de `StrategyBoxId`
 élargi : tout `Record<StrategyBoxId, …>` doit maintenant avoir `condors`).
 
-- [ ] **Step 9: Commit** (cocher les cases de la tâche 2, même commit)
+- [x] **Step 9: Commit** (cocher les cases de la tâche 2, même commit)
 
 ```bash
 git add apps/web/src packages/coverage/src docs/plans/2026-09-28-positions-condors.md
@@ -937,7 +937,7 @@ git commit -m "Positions Condors : un condor par ligne, jambes dépliables, P/L 
 - Modify: `docs/specs/2026-09-28-positions-condors-design.md` (statut)
 - Modify: `docs/points-reportes.md` (section du sous-projet 34, si la revue en laisse)
 
-- [ ] **Step 1: CLAUDE.md**
+- [x] **Step 1: CLAUDE.md**
 
 Dans la règle « **Les positions d'une stratégie sont une vue calculée** », après la phrase qui se
 termine par « …servies par un seul composant : ses encadrés sont déclarés dans `STRATEGY_BOXES` … et un encadré
@@ -958,25 +958,42 @@ strike, donc rien ne le valorise — »
 Dans le registre des sous-projets, ajouter la ligne :
 `| 34 | La page Positions Condors, un condor par ligne | fait (2026-09-28) |`
 
-- [ ] **Step 2: Spec**
+- [x] **Step 2: Spec**
 
 Statut : `Statut : livré (2026-09-28).`
 
-- [ ] **Step 3: `pnpm check`**
+- [x] **Step 3: `pnpm check`**
 
 Run: `pnpm check` (racine du worktree), **une seule fois**.
 Expected: lint, typage, build et tous les tests verts. Corriger ce qui casse (un test d'une autre
 page qui listait les encadrés Condors, `router.test.tsx`, `AppLayout.test.tsx`…) en expliquant
 dans le commit pourquoi l'attente change.
 
-- [ ] **Step 4: Vérification réelle**
+Vert du premier coup, sans rien à corriger côté tests.
+
+- [x] **Step 4: Vérification réelle**
 
 Depuis la racine du dépôt principal, `run-frontend` avec `--seed` et `--agent`, capture de
 `/accounts/<compte démo>/positions/condors` avant et après un clic sur le chevron du condor QQQ.
 Vérifier : une ligne « QQQ Oct16'26 IC 480/485/520/525 », quatre jambes dépliées, colonnes
 alignées sur celles des autres pages.
 
-- [ ] **Step 5: Commit** (cocher les cases de la tâche 3, même commit)
+Capture faite depuis la racine du worktree (le driver n'a pas d'action de clic générique ; un
+petit script réutilisant son approche — mêmes port/seed/stub d'agent — a cliqué le chevron). La
+première capture a montré un vrai bug : le libellé du condor et le badge « iron condor » de la
+colonne Type se chevauchaient, le texte débordant de la colonne Position. Cause : le titre est
+enveloppé dans un `<span className="flex items-center gap-1">` avec le bouton chevron — un nœud
+de texte nu y devient un item flex dont le `min-width: auto` par défaut l'empêche de rétrécir en
+dessous de sa largeur intrinsèque, donc il déborde la colonne à largeur fixe au lieu de s'y
+envelopper (`PositionRow`, sans ce wrapper flex, n'a jamais ce problème). Corrigé dans
+`apps/web/src/components/CondorRows.tsx` en enveloppant le titre dans son propre
+`<span className="min-w-0 break-words">` et en ajoutant `shrink-0` au bouton. Après correction,
+la ligne s'enveloppe proprement sur quatre lignes dans sa propre colonne (le titre d'un condor,
+plus long que le libellé d'une option à deux mots, dépasse le budget de deux lignes pensé pour un
+contrat simple), sans chevauchement ; les quatre jambes du dépliement s'alignent sur les mêmes
+colonnes que les autres pages de stratégie.
+
+- [x] **Step 5: Commit** (cocher les cases de la tâche 3, même commit)
 
 ```bash
 git add CLAUDE.md docs

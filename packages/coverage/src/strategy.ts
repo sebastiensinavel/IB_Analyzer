@@ -136,7 +136,7 @@ export function migratedContracts(
   return taken;
 }
 
-interface Priced {
+export interface Priced {
   position: Position;
   analyzed: AnalyzedPosition;
 }
@@ -155,7 +155,7 @@ const LINE_KIND: Partial<Record<RowKind, PositionKind>> = {
  * `positions.map(analyze)` and the coverage engine never reorders that array, so the report's
  * position at `i` is the snapshot's position at `i` (a test in strategy.test.ts holds it).
  */
-function pricedByContract(snapshot: PricedSnapshot | null): Map<string, Priced> {
+export function pricedByContract(snapshot: PricedSnapshot | null): Map<string, Priced> {
   const byId = new Map<string, Priced>();
   if (!snapshot) return byId;
   snapshot.positions.forEach((position, i) => {
@@ -213,7 +213,7 @@ function cappedCoverage(priced: Priced, sources: readonly CoverSource[], quantit
  * day P&L then starts from the execution price, and what entered this morning does not carry the
  * same day's P&L per unit as what was held yesterday, so no share of it can be cut (spec §6).
  */
-function dayShare(position: Position | null, quantity: number): { dailyPnl: number | null; dayChange: number | null } {
+export function dayShare(position: Position | null, quantity: number): { dailyPnl: number | null; dayChange: number | null } {
   if (!position || position.dayChange === null || position.dailyPnl === null || position.quantity === 0) {
     return { dailyPnl: null, dayChange: null };
   }
@@ -306,6 +306,24 @@ function migratedByContract(open: OpenRows, priced: Map<string, Priced>, active:
     if (migrated.size > 0) taken.set(id, migrated);
   }
   return taken;
+}
+
+/**
+ * The Condors' naked part on each contract: what `migratedContracts` takes from them for the page
+ * Autres. The Condors page keeps those legs in their condor and badges them with this very number,
+ * so the two pages never disagree (spec of sub-project 34, §5).
+ */
+export function condorsNakedByContract(
+  rows: readonly JournalRow[],
+  snapshot: PricedSnapshot | null,
+  active: readonly ActivableStrategy[],
+): Map<string, number> {
+  const naked = new Map<string, number>();
+  for (const [id, taken] of migratedByContract(openRowsByContract(rows), pricedByContract(snapshot), active)) {
+    const count = taken.get("condors") ?? 0;
+    if (count > 0) naked.set(id, count);
+  }
+  return naked;
 }
 
 /**

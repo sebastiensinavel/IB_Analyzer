@@ -142,7 +142,8 @@
       "putSells": "Put sales",
       "leapsUncovered": "LEAPS without a sold call",
       "leapsCovered": "LEAPS with a sold call",
-      "shares": "Shares"
+      "shares": "Shares",
+      "condors": "Open condors"
     },
     "columns": {
       "position": "Position",
@@ -157,7 +158,9 @@
       "unrealizedPnl": "Unrealized P&L",
       "coverage": "Coverage"
     },
-    "callBelowAssignment": "Average call strike below the assignment price"
+    "callBelowAssignment": "Average call strike below the assignment price",
+    "closedLeg": "closed",
+    "realizedPart": "of which realized {{amount}}"
   },
   "journal": {
     "empty": "No position for this strategy.",

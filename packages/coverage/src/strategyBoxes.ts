@@ -9,7 +9,15 @@ export type ShareBoxId = (typeof SHARE_BOX_IDS)[number];
 export const LINE_BOX_IDS = ["long", "optionBuys", "optionSells", "other", "callSells", "putSells", "leapsUncovered", "leapsCovered"] as const;
 export type LineBoxId = (typeof LINE_BOX_IDS)[number];
 
-export type StrategyBoxId = ShareBoxId | LineBoxId;
+/** The Condors page's one box: a condor per line, its legs underneath (spec of sub-project 34). */
+export const CONDOR_BOX_ID = "condors" as const;
+export type CondorBoxId = typeof CONDOR_BOX_ID;
+
+export type StrategyBoxId = ShareBoxId | LineBoxId | CondorBoxId;
+
+export function isCondorBoxId(id: StrategyBoxId): id is CondorBoxId {
+  return id === CONDOR_BOX_ID;
+}
 
 export function isShareBoxId(id: StrategyBoxId): id is ShareBoxId {
   return (SHARE_BOX_IDS as readonly string[]).includes(id);

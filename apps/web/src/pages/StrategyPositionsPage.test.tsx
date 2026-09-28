@@ -398,17 +398,63 @@ async function seedCondor() {
 }
 
 describe("StrategyPositionsPage — Condors", () => {
-  it("reads an open condor on its legs, wings bought and body sold, and prices what the snapshot holds", async () => {
+  // Demo condor: 480/485/520/525 sold for 0.75 net (0.75 + 0.5 − 0.25 − 0.25). Snapshot legs:
+  // 480 at 0.1, 485 at 0.3, 520 at 0.2, 525 at 0.1 → 0.3 to close, under half: buy back.
+  const TITLE = "QQQ Oct16'26 IC 480/485/520/525";
+  const searchbox = () => screen.getByRole("textbox", { name: "Rechercher un ticker" });
+
+  it("shows one line per condor: credit, closing cost, total P/L and the buyback decision", async () => {
     await seedCondor();
     renderPage("condors");
-    expect(await screen.findByText("Positions Condors")).toBeInTheDocument();
-    const wing = await rowIn("Achats d'options", "QQQ Oct16'26 480 Put");
-    expect(texts(wing).slice(0, 7)).toEqual(["QQQ Oct16'26 480 Put", "buy of put", "", "$10.00", "1", "0.25", "0.10"]);
-    const sold = await rowIn("Ventes d'options", "QQQ Oct16'26 485 Put");
-    expect(texts(sold)[1]).toBe("sell of put");
-    expect(within(sold).getByText(/spread/)).toBeInTheDocument();
-    // Never the composite: a condor is its legs.
-    expect(screen.queryByText(/IC 480/)).not.toBeInTheDocument();
+    const line = await rowIn("Condors en cours", TITLE);
+    // Position, Type, Sector, Value, Qty, Credit, To close, Day %, Day P&L, P/L, Decision, Coverage.
+    expect(texts(line)).toEqual([TITLE, "iron condor", "", "-$30.00", "-1", "0.75", "0.30", "—", "—", "$45.00", "buy back", ""]);
+    expect(screen.queryByLabelText("Achats d'options")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Ventes d'options")).not.toBeInTheDocument();
+  });
+
+  it("only offers a line break at a space or after a slash, never inside a strike", async () => {
+    await seedCondor();
+    renderPage("condors");
+    const line = await rowIn("Condors en cours", TITLE);
+    const titleCell = cells(line)[0];
+    // One <wbr/> after each of the title's three slashes, none of them splitting a strike number.
+    expect(titleCell.querySelectorAll("wbr")).toHaveLength(3);
+    expect(titleCell.textContent).toBe(TITLE);
+  });
+
+  it("unfolds the four legs under their condor on the chevron, without opening the chart", async () => {
+    await seedCondor();
+    renderPage("condors");
+    const line = await rowIn("Condors en cours", TITLE);
+    expect(screen.queryByText("QQQ Oct16'26 480 Put")).not.toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(within(line).getByRole("button", { name: "Voir les jambes" }));
+    const legs = screen.getAllByTestId("condor-leg");
+    expect(legs.map((leg) => cells(leg)[0].textContent)).toEqual([
+      "QQQ Oct16'26 480 Put", "QQQ Oct16'26 485 Put", "QQQ Oct16'26 520 Call", "QQQ Oct16'26 525 Call",
+    ]);
+    // Leg P/L: −15, +45, +30, −15, summing to the condor's $45.00.
+    expect(legs.map((leg) => texts(leg)[9])).toEqual(["-$15.00", "$45.00", "$30.00", "-$15.00"]);
+    // The chevron folds and unfolds; it never opens the price chart (its row has no chart below).
+    expect(line).not.toHaveAttribute("data-state", "selected");
+    await user.click(within(line).getByRole("button", { name: "Masquer les jambes" }));
+    expect(screen.queryAllByTestId("condor-leg")).toHaveLength(0);
+  });
+
+  it("searches by ticker on the condors and keeps the legs with them", async () => {
+    await seedCondor();
+    renderPage("condors");
+    const line = await rowIn("Condors en cours", TITLE);
+    const user = userEvent.setup();
+    await user.click(within(line).getByRole("button", { name: "Voir les jambes" }));
+    // The page search is a debounced text field (PageSearchInput): typing applies it, no Enter.
+    await user.type(searchbox(), "QQQ");
+    expect(await rowIn("Condors en cours", TITLE)).toBeInTheDocument();
+    expect(screen.getAllByTestId("condor-leg")).toHaveLength(4);
+    await user.clear(searchbox());
+    await user.type(searchbox(), "SPY");
+    await waitFor(() => expect(screen.queryByText(TITLE)).not.toBeInTheDocument());
   });
 });
 
