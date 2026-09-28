@@ -159,6 +159,20 @@ describe("StrategyPositionsPage — Wheel", () => {
     expect(cells(put)[0]).toHaveTextContent("-3.1%");
   });
 
+  it("prefers the assigned stock's own live dayChange over a stale quote, on its shares and on the call sold against it", async () => {
+    mergeQuotes(new Map([["MQZA", 0.5]])); // stale/wrong: the held dayChange below must win
+    await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, XOM_PUT]);
+    await db.snapshots.put({
+      ...SNAPSHOT,
+      positions: SNAPSHOT.positions.map((position) => (position.symbol === "MQZA" && position.secType === "STK" ? { ...position, dayChange: -0.08 } : position)),
+    });
+    renderPage("wheel");
+    const call = await rowIn("Ventes de calls", "MQZA Oct16'26 15 Call");
+    expect(cells(call)[0]).toHaveTextContent("-8.0%");
+    const shares = await rowIn("Actions assignées, call < assignation", "MQZA");
+    expect(cells(shares)[0]).toHaveTextContent("-8.0%");
+  });
+
   it("shows no box at all, and says so once, when the Wheel holds nothing open", async () => {
     renderPage("wheel");
     expect(await screen.findByText("Aucune position ne correspond.")).toBeInTheDocument();

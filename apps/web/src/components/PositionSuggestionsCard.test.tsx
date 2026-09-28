@@ -100,4 +100,31 @@ describe("the Var. jour action column of the suggestion card", () => {
     expect(within(rows[1]).getAllByRole("cell")[0]).toHaveTextContent("-5.0%");
     expect(screen.getAllByRole("columnheader")[0]).toHaveTextContent("Var. jour action");
   });
+
+  it("prefers the account's own live dayChange over a stale quote for a suggestion it already holds", async () => {
+    mergeQuotes(new Map([["BTDR", 0.01]])); // stale/wrong: the held dayChange below must win
+    await db.snapshots.put({
+      accountId: "alpha",
+      source: "agent",
+      asOf: "2026-09-03",
+      importedAt: "2026-09-03T08:00:00.000Z",
+      // marketValue 0 keeps this position out of the suggestion's own exposure ranking.
+      positions: [
+        {
+          symbol: "BTDR", secType: "STK", right: "", strike: null, expiry: null, multiplier: 1,
+          quantity: 1, avgPrice: 1, marketPrice: 1, marketValue: 0, unrealizedPnl: 0,
+          dailyPnl: null, dayChange: -0.42, currency: "USD", conid: "", description: "BITDEER",
+        },
+      ],
+      cashAvailable: 0,
+    });
+    renderSuggestions();
+
+    const rows = (await screen.findAllByRole("row")).slice(1);
+    const cell = within(rows[0]).getAllByRole("cell")[0];
+    expect(cell).toHaveTextContent("-42.0%");
+    await userEvent.setup().hover(within(cell).getByText("-42.0%"));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(screen.queryByText(/cotation différée|Interactive Brokers/i)).not.toBeInTheDocument();
+  });
 });

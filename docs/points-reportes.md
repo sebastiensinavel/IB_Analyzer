@@ -1158,6 +1158,9 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ## Reporté par le sous-projet 35 (Var. jour action)
 
+- **Un ticker exposé seulement par des options reste sur la cotation différée de 15 minutes** :
+  le compte n'a pas d'abonnement temps réel, et le ticker différé d'une option ne porte pas
+  toujours `undPrice`, constaté sur un vrai TWS — le repli reste `/quotes`, jamais `dayChange`.
 - **Seule la sonde hors séance reste à faire** : le type de données de marché (3 contre 4)
   après la clôture et le week-end n'est pas vérifié — la sonde en séance du 2026-09-28 a montré
   3 et 4 identiques, `QUOTES_TIMEOUT_S = 8` (spec §9). Une « Peer closed connection » a été vue

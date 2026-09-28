@@ -2,8 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@ib/ui/badge";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
-import { underlyingDayChangeOf, useUnderlyingQuotesMap } from "@/agent/quotes";
-import { chartProxyOf } from "@/lib/chartProxies";
+import { useUnderlyingDayChange } from "@/hooks/useUnderlyingDayChange";
 import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
 import { decisionBadge, type CoverageBadge } from "@/lib/riskReport";
 import { cn } from "@/lib/utils";
@@ -14,20 +13,26 @@ export const NUMERIC = "text-right font-mono tabular-nums";
 export const toneOf = (value: number | null) => value !== null && (value >= 0 ? "text-success" : "text-destructive");
 
 /**
- * The underlying's day move (spec of sub-project 35, §5), read from the quotes store: every row
- * of one ticker shows the same value. XSP is quoted as SPY, and says so.
+ * The underlying's day move (spec of sub-project 35, §5, held-first addendum): the account on
+ * screen's own live `dayChange` when it holds the ticker as stock, no tooltip; the delayed
+ * `/quotes` value otherwise, with a tooltip saying so — and naming SPY when the ticker is XSP.
+ * Every row of one ticker shows the same value.
  */
 export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
   const { t } = useTranslation();
-  const value = underlyingDayChangeOf(useUnderlyingQuotesMap(), ticker);
-  const proxy = chartProxyOf(ticker);
+  const { value, delayed, proxy } = useUnderlyingDayChange()(ticker);
   const text = formatDayChange(value);
+  const tooltip = delayed
+    ? proxy
+      ? t("quotes.proxy", { proxy, ticker: ticker.toUpperCase() })
+      : t("quotes.delayed")
+    : null;
   return (
     <TableCell className={cn(NUMERIC, toneOf(value))}>
-      {proxy && value !== null ? (
+      {tooltip ? (
         <Tooltip>
           <TooltipTrigger render={<span>{text}</span>} />
-          <TooltipContent>{t("quotes.proxy", { proxy, ticker: ticker.toUpperCase() })}</TooltipContent>
+          <TooltipContent>{tooltip}</TooltipContent>
         </Tooltip>
       ) : (
         text

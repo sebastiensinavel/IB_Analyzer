@@ -278,17 +278,20 @@ describe("PositionsPage", () => {
     });
     renderPositions();
     const withMove = await rowFor("AAPL");
-    expect(within(withMove).getByText("+8.2%")).toBeInTheDocument();
-    // formatMoney, like the unrealized P&L column next to it (spec §7): a signed dollar amount.
-    expect(within(withMove).getByText("$550.45")).toBeInTheDocument();
     // Cell index, not just presence in the row: dayChange is POSITION_COLUMNS[8], dailyPnl is
     // [9], between lastPrice and unrealizedPnl — a swap between the two values (both distinct
     // and non-null here) would fail this, where presence-only assertions would not.
     const moveCells = within(withMove).getAllByRole("cell");
     expect(moveCells[8]).toHaveTextContent("+8.2%");
+    // formatMoney, like the unrealized P&L column next to it (spec §7): a signed dollar amount.
     expect(moveCells[9]).toHaveTextContent("$550.45");
+    // A held stock is its own underlying: "Var. jour action" (column 0) shows the same live
+    // dayChange here, without being the same source — no tooltip, unlike a delayed quote.
+    expect(moveCells[0]).toHaveTextContent("+8.2%");
     const withoutMove = await rowFor("ONDS");
-    expect(within(withoutMove).getAllByText("—").length).toBeGreaterThanOrEqual(2);
+    // dayChange (—), dailyPnl (—), and now underlyingDayChange (—): a held stock with no live
+    // dayChange and no /quotes pass shows a dash there too.
+    expect(within(withoutMove).getAllByText("—").length).toBeGreaterThanOrEqual(3);
   });
 
   it("leaves the day columns of the cash table empty", async () => {
@@ -315,6 +318,36 @@ describe("PositionsPage", () => {
     expect(cells[0]).toHaveTextContent("-3.1%");
   });
 
+  it("shows a delayed-quote tooltip on a sold put not held", async () => {
+    mergeQuotes(new Map([["XOM", -0.0312]]));
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    renderPositions();
+    const cells = within(await rowFor("XOM Mar20'26 100 Put")).getAllByRole("cell");
+    await userEvent.setup().hover(within(cells[0]).getByText("-3.1%"));
+    expect(await screen.findByText("Cotation différée de 15 min.", {}, { timeout: 2000 })).toBeInTheDocument();
+  });
+
+  it("prefers the account's own live dayChange over a stale quote for a held stock, with no tooltip", async () => {
+    mergeQuotes(new Map([["AAPL", -0.5]])); // stale/wrong: the held dayChange below must win
+    await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ dayChange: 0.05 }), ...SAMPLE_POSITIONS.slice(1)] });
+    renderPositions();
+    const cells = within(await rowFor("AAPL")).getAllByRole("cell");
+    expect(cells[0]).toHaveTextContent("+5.0%");
+    await userEvent.setup().hover(within(cells[0]).getByText("+5.0%"));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(screen.queryByText(/cotation différée|Interactive Brokers/i)).not.toBeInTheDocument();
+  });
+
+  it("falls back to the delayed quote when a held stock's own dayChange is null", async () => {
+    mergeQuotes(new Map([["AAPL", 0.02]]));
+    await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ dayChange: null }), ...SAMPLE_POSITIONS.slice(1)] });
+    renderPositions();
+    const cells = within(await rowFor("AAPL")).getAllByRole("cell");
+    expect(cells[0]).toHaveTextContent("+2.0%");
+    await userEvent.setup().hover(within(cells[0]).getByText("+2.0%"));
+    expect(await screen.findByText("Cotation différée de 15 min.", {}, { timeout: 2000 })).toBeInTheDocument();
+  });
+
   it("never sorts the underlying's day move by default", async () => {
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
@@ -330,7 +363,9 @@ describe("PositionsPage", () => {
     const cells = within(row).getAllByRole("cell");
     expect(cells[0]).toHaveTextContent("+0.4%");
     await userEvent.setup().hover(within(cells[0]).getByText("+0.4%"));
-    expect(await screen.findByText("Variation de SPY : Interactive Brokers ne cote pas XSP.", {}, { timeout: 2000 })).toBeInTheDocument();
+    expect(
+      await screen.findByText("Variation de SPY, cotation différée de 15 min : Interactive Brokers ne cote pas XSP.", {}, { timeout: 2000 }),
+    ).toBeInTheDocument();
   });
 
   it("sorts a card on the underlying's day move, unknown values last", async () => {
@@ -343,6 +378,24 @@ describe("PositionsPage", () => {
     await user.click(await screen.findByRole("button", { name: "Croissant" }));
     const order = () => within(sells).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[1].textContent);
     await waitFor(() => expect(order()[0]).toBe("XOM Mar20'26 100 Put"));
+  });
+
+  it("sorts by the resolved value, a held stock's live move ahead of a stale quote for the same ticker", async () => {
+    // AAPL's /quotes value (+2%) must lose to the account's own held dayChange (-50%): both AAPL
+    // option rows below share it, sorting ahead of XOM's quoted -3%.
+    mergeQuotes(new Map([["AAPL", 0.02], ["XOM", -0.03]]));
+    await db.snapshots.put({
+      ...SAMPLE_SNAPSHOT,
+      positions: SAMPLE_POSITIONS.map((position) => (position.symbol === "AAPL" && position.secType === "STK" ? { ...position, dayChange: -0.5 } : position)),
+    });
+    renderPositions();
+    const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
+    const user = userEvent.setup();
+    await openPanel(user, sells, "Var. jour action");
+    await user.click(await screen.findByRole("button", { name: "Croissant" }));
+    const order = () => within(sells).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[1].textContent);
+    await waitFor(() => expect(order()[0]).toBe("AAPL Jan16'26 150 Call"));
+    expect(order()[1]).toBe("AAPL Feb20'26 155 Call");
   });
 });
 

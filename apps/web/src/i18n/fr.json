@@ -791,7 +791,8 @@
     "loading": "Chargement du graphe…"
   },
   "quotes": {
-    "proxy": "Variation de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}."
+    "delayed": "Cotation différée de 15 min.",
+    "proxy": "Variation de {{proxy}}, cotation différée de 15 min : Interactive Brokers ne cote pas {{ticker}}."
   },
   "tableFilter": {
     "panel": "Options de la colonne {{column}}",

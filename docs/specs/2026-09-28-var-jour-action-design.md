@@ -121,6 +121,21 @@ et `fetchBars` dans `apps/web/src/agent/client.ts`, avec les mêmes codes d'éch
 dans le magasin. Toutes les lignes d'un même ticker montrent donc la même valeur : l'action, le
 put vendu, le call couvert, le condor et ses jambes.
 
+**L'action détenue passe devant sa cotation (arbitré après coup, hors sonde)** : `/quotes` est
+différée de 15 minutes, `dayChange` (sous-projet 23, `reqPnLSingle`) temps réel. Constaté sur un
+compte réel : la cotation différée retardait de près de 20 minutes sur `dayChange`, −3,3 % contre
+−2,4 %. `resolveUnderlyingDayChange(ticker, held, quotes)`
+(`apps/web/src/lib/underlyingDayChange.ts`) tranche donc pour un ticker T, dans cet ordre : (1) le
+snapshot du compte à l'écran détient une position `secType === "STK"`, `currency === "USD"`, du
+même ticker T (comparé en majuscules), avec un `dayChange` non nul — sa valeur, sans infobulle ;
+(2) sinon la valeur du magasin `/quotes` pour T (XSP toujours coté SPY) — avec infobulle ; (3)
+sinon `null`, sans infobulle. `buildHeldDayChange(positions)` construit la table ticker → `dayChange`
+détenu, pure, une seule fois par snapshot ; `useUnderlyingDayChange()`
+(`apps/web/src/hooks/useUnderlyingDayChange.ts`) la combine au magasin des cotations et rend le
+même résolveur à la cellule (§5) et aux specs de colonne, pour que le tri corresponde à
+l'affichage. Un snapshot Flex ou de relevé n'a jamais de `dayChange` : il retombe naturellement
+sur la cotation.
+
 ## 5. Les tableaux de positions
 
 **`POSITION_COLUMNS`** (`apps/web/src/lib/positionColumns.ts`) passe de douze à treize colonnes :
@@ -143,7 +158,10 @@ défaut** : le tri actuel de chaque tableau ne change pas, la vue enregistrée e
 non plus.
 
 **Cellule** : pourcentage signé au format de « Var. jour », même couleur de signe, « — » pour
-`null`. Pour XSP, une infobulle dit que la valeur est celle de SPY (§7).
+`null`. La valeur et l'infobulle viennent du même résolveur que le tri (§4) : la part détenue en
+direct n'a aucune infobulle ; une valeur de `/quotes` en porte une disant la cotation différée de
+15 minutes (`quotes.delayed`) ; pour un ticker coté par substitut (XSP), l'infobulle nomme à la
+fois le substitut et le différé (`quotes.proxy`, §7).
 
 **Largeurs** : remesurées par script, jamais itérées sur captures, contre un contenu réaliste —
 `-100.0%` pour la nouvelle colonne comme pour `dayChange`, l'en-tête replié sur son mot le plus
@@ -163,10 +181,12 @@ filtrable, et ne pèse pas dans le score. Même cellule qu'au §5.
 ## 7. Textes
 
 `fr.json` et `en.json` : l'en-tête `underlyingDayChange` dans les colonnes de positions, de la
-Wheel et de la Suggestion — « Var. jour action », « Stock day chg. » — et une clé neuve
-pour l'infobulle du substitut, `quotes.proxy` : « Variation de {{proxy}} : Interactive Brokers ne
-cote pas {{ticker}}. » / « {{proxy}} change: Interactive Brokers does not quote {{ticker}}. ».
-`charts.proxy` ne convient pas : il parle des niveaux du graphe.
+Wheel et de la Suggestion — « Var. jour action », « Stock day chg. » — et deux clés pour
+l'infobulle de la valeur différée (§4) : `quotes.delayed` — « Cotation différée de 15 min. » /
+« Quote delayed 15 min. » — pour un ticker coté sans substitut, et `quotes.proxy` — « Variation de
+{{proxy}}, cotation différée de 15 min : Interactive Brokers ne cote pas {{ticker}}. » /
+« {{proxy}} change, quote delayed 15 min: Interactive Brokers does not quote {{ticker}}. » — pour
+XSP, qui dit les deux à la fois. `charts.proxy` ne convient pas : il parle des niveaux du graphe.
 
 ## 8. Tests
 
