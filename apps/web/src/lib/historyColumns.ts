@@ -1,9 +1,9 @@
-import { tickerOf, type LedgerRow } from "@ib/ledger";
+import { tickerOf, type LedgerRow, type Strategy } from "@ib/ledger";
 import { formatContract, formatDateTime } from "@/lib/format";
 import type { ColumnSpec } from "@/lib/tableView";
 
 /**
- * The eleven columns of the history table, in order, with their widths as a share of the table.
+ * The twelve columns of the history table, in order, with their widths as a share of the table.
  * The widths are fixed because the table is virtualized: under an automatic layout, each scroll
  * renders other rows and the columns would resize under the reader. Keys are the i18n keys of
  * `history.columns`.
@@ -22,15 +22,16 @@ import type { ColumnSpec } from "@/lib/tableView";
 export const HISTORY_COLUMNS = [
   { key: "dateTime", width: "16.25%", numeric: false, balance: false },
   { key: "type", width: "8%", numeric: false, balance: false },
-  { key: "symbol", width: "17%", numeric: false, balance: false },
+  { key: "symbol", width: "13%", numeric: false, balance: false },
+  { key: "strategy", width: "11%", numeric: false, balance: false },
   { key: "quantity", width: "5.5%", numeric: true, balance: false },
-  { key: "price", width: "6.25%", numeric: true, balance: false },
-  { key: "totalPrice", width: "9.5%", numeric: true, balance: false },
-  { key: "fee", width: "6.25%", numeric: true, balance: false },
-  { key: "cash", width: "6.5%", numeric: true, balance: false },
+  { key: "price", width: "5.25%", numeric: true, balance: false },
+  { key: "totalPrice", width: "8.5%", numeric: true, balance: false },
+  { key: "fee", width: "5.25%", numeric: true, balance: false },
+  { key: "cash", width: "5.5%", numeric: true, balance: false },
   { key: "currency", width: "5.75%", numeric: false, balance: false },
-  { key: "usdCash", width: "9.5%", numeric: true, balance: true },
-  { key: "eurCash", width: "9.5%", numeric: true, balance: true },
+  { key: "usdCash", width: "8%", numeric: true, balance: true },
+  { key: "eurCash", width: "8%", numeric: true, balance: true },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean; balance: boolean }[];
 
 /**
@@ -49,11 +50,17 @@ export const SCRUB_LABEL_LINGER_MS = 1000;
 export type Translate = (key: string, options?: { defaultValue?: string }) => string;
 
 /**
+ * The strategies a transaction served, by its externalId (`transactionStrategies`), or `null` while
+ * the journals load. Never stored: the page derives it from the shell's journals.
+ */
+export type StrategiesOf = ((externalId: string) => readonly Strategy[]) | null;
+
+/**
  * What each column of the history compares, filters and sorts on: what its cell shows. Same keys and
  * order as HISTORY_COLUMNS. The balances are the anchored running balances, computed over the whole
  * ledger before any filter, so a row keeps its balance whatever the view.
  */
-export function historyColumnSpecs(t: Translate): ColumnSpec<LedgerRow>[] {
+export function historyColumnSpecs(t: Translate, strategiesOf: StrategiesOf): ColumnSpec<LedgerRow>[] {
   return [
     { key: "dateTime", type: "date", sortable: true, value: (row) => formatDateTime(row.transaction.when) },
     {
@@ -64,6 +71,14 @@ export function historyColumnSpecs(t: Translate): ColumnSpec<LedgerRow>[] {
       label: (kind) => t(`history.kinds.${kind}`, { defaultValue: kind }),
     },
     { key: "symbol", type: "text", sortable: true, value: (row) => formatContract(row.transaction) || row.transaction.description },
+    {
+      key: "strategy",
+      type: "enum",
+      // Several values per row, like Positions' Coverage: the view engine sorts no list.
+      sortable: false,
+      value: (row) => strategiesOf?.(row.transaction.externalId) ?? [],
+      label: (strategy) => t(`history.strategies.${strategy}`),
+    },
     { key: "quantity", type: "number", sortable: true, value: (row) => row.transaction.quantity },
     { key: "price", type: "number", sortable: true, value: (row) => row.transaction.price },
     { key: "totalPrice", type: "number", sortable: true, value: (row) => row.transaction.amount },

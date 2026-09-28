@@ -293,6 +293,7 @@
       "dateTime": "Date/Time",
       "type": "Type",
       "symbol": "Symbol",
+      "strategy": "Strategy",
       "quantity": "Qty",
       "price": "Price",
       "totalPrice": "Total",
@@ -306,6 +307,7 @@
     "timeline": "Timeline",
     "kindFilter": "Type",
     "allKinds": "All types",
+    "strategies": { "wheel": "Wheel", "leaps": "LEAPS", "condors": "Condors", "others": "Others" },
     "kinds": {
       "trade": "Trade",
       "dividend": "Dividend",

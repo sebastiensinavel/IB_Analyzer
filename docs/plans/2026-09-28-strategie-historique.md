@@ -200,7 +200,7 @@ git commit -m "Stratégie dans l'Historique : transactionStrategies, les straté
   - `STRATEGY_BADGE: Record<Strategy, { variant: "success" | "warning" | "outline"; className?: string }>` dans `strategyBadges.ts`.
   - `HistoryTable` prend `strategiesOf: StrategiesOf`.
 
-- [ ] **Step 1: Tests qui échouent — badges et specs**
+- [x] **Step 1: Tests qui échouent — badges et specs**
 
 `apps/web/src/lib/strategyBadges.test.ts` :
 
@@ -245,12 +245,12 @@ it("reads a row's strategies, an empty list for none and while the journals load
 
 Remplacer aussi tous les autres `historyColumnSpecs(t)` / `historyColumnSpecs(translate)` du fichier par `historyColumnSpecs(t, ready)` / `historyColumnSpecs(translate, null)`.
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run strategyBadges historyColumns`
 Expected: FAIL (module `strategyBadges` absent, clé `strategy` absente).
 
-- [ ] **Step 3: Implémenter badges, specs, textes**
+- [x] **Step 3: Implémenter badges, specs, textes**
 
 `apps/web/src/lib/strategyBadges.ts` :
 
@@ -325,12 +325,12 @@ Dans `apps/web/src/i18n/fr.json`, bloc `history` : `"strategy": "Stratégie"` da
 
 Dans `en.json`, mêmes clés : `"strategy": "Strategy"`, `"strategies": { "wheel": "Wheel", "leaps": "LEAPS", "condors": "Condors", "others": "Others" }`.
 
-- [ ] **Step 4: Vérifier le succès des tests unitaires**
+- [x] **Step 4: Vérifier le succès des tests unitaires**
 
 Run: `cd apps/web && npx vitest run strategyBadges historyColumns`
 Expected: PASS.
 
-- [ ] **Step 5: Tests de page qui échouent**
+- [x] **Step 5: Tests de page qui échouent**
 
 Dans `apps/web/src/pages/HistoryPage.test.tsx` :
 
@@ -388,12 +388,12 @@ describe("strategy column", () => {
 
    `rowFor("MQZA")` trouve la ligne dont une cellule vaut exactement `MQZA` : l'achat (l'option s'affiche par `formatContract`, un autre texte). Si la case « — » du panneau porte un autre nom accessible (le composant traduit l'entrée `null` des facets), lire `ColumnHeader`/le panneau de filtre pour prendre son libellé réel — jamais changer le comportement pour faire passer le test.
 
-- [ ] **Step 6: Vérifier l'échec**
+- [x] **Step 6: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run HistoryPage`
 Expected: FAIL (colonne absente de la table).
 
-- [ ] **Step 7: Brancher la page et la table**
+- [x] **Step 7: Brancher la page et la table**
 
 `apps/web/src/pages/HistoryPage.tsx` :
 
@@ -456,12 +456,12 @@ Passer `strategiesOf={strategiesOf}` à `<HistoryTable>`.
 
    (imports : `Badge` de `@ib/ui/badge`, `STRATEGY_BADGE` de `@/lib/strategyBadges`, `type Strategy` de `@ib/ledger`). Mettre à jour le commentaire « ~11 cells ».
 
-- [ ] **Step 8: Vérifier le succès**
+- [x] **Step 8: Vérifier le succès**
 
 Run: `cd apps/web && npx vitest run HistoryPage historyColumns strategyBadges`
 Expected: PASS. Puis `cd apps/web && npx tsc --noEmit -p .` : aucune erreur (d'autres appelants de `historyColumnSpecs` ou de `HistoryTable` ailleurs dans `apps/web` — `grep -rn "historyColumnSpecs\|<HistoryTable" apps/web/src` — doivent recevoir le nouvel argument).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/web/src docs/plans/2026-09-28-strategie-historique.md

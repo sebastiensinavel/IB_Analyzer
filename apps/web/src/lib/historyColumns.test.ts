@@ -4,6 +4,7 @@ import { HISTORY_COLUMNS, historyColumnSpecs, historyTicker } from "@/lib/histor
 import { SAMPLE_DEPOSIT, SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
 
 const t = (key: string) => `t:${key}`;
+const ready = (id: string) => (id === "flex:trade:4" ? (["wheel", "others"] as const) : []);
 
 function row(transaction = SAMPLE_TRANSACTIONS[0]): LedgerRow {
   return { transaction, cash: -18051.5, balances: { USD: -18543.15, EUR: 10000 } } as LedgerRow;
@@ -11,14 +12,23 @@ function row(transaction = SAMPLE_TRANSACTIONS[0]): LedgerRow {
 
 describe("historyColumnSpecs", () => {
   it("types every column of the table, in its order", () => {
-    const specs = historyColumnSpecs(t);
+    const specs = historyColumnSpecs(t, ready);
     expect(specs.map((spec) => spec.key)).toEqual(HISTORY_COLUMNS.map((column) => column.key));
-    expect(specs.map((spec) => spec.type)).toEqual(["date", "enum", "text", "number", "number", "number", "number", "number", "text", "number", "number"]);
-    expect(specs.every((spec) => spec.sortable)).toBe(true);
+    expect(specs.map((spec) => spec.key).slice(2, 4)).toEqual(["symbol", "strategy"]);
+    expect(specs.map((spec) => spec.type)).toEqual(["date", "enum", "text", "enum", "number", "number", "number", "number", "number", "text", "number", "number"]);
+    expect(specs.filter((spec) => !spec.sortable).map((spec) => spec.key)).toEqual(["strategy"]);
+  });
+
+  it("reads a row's strategies, an empty list for none and while the journals load", () => {
+    const strategy = historyColumnSpecs(t, ready).find((spec) => spec.key === "strategy")!;
+    expect(strategy.value(row())).toEqual(["wheel", "others"]);
+    expect(strategy.value(row(SAMPLE_DEPOSIT))).toEqual([]);
+    expect(strategy.label?.("others")).toBe("t:history.strategies.others");
+    expect(historyColumnSpecs(t, null).find((spec) => spec.key === "strategy")!.value(row())).toEqual([]);
   });
 
   it("compares what the cells show", () => {
-    const specs = Object.fromEntries(historyColumnSpecs(t).map((spec) => [spec.key, spec]));
+    const specs = Object.fromEntries(historyColumnSpecs(t, ready).map((spec) => [spec.key, spec]));
     expect(specs.dateTime.value(row())).toBe("2026-08-28 14:30:00");
     expect(specs.type.value(row())).toBe("trade");
     expect(specs.type.label?.("trade")).toBe("t:history.kinds.trade");
@@ -35,7 +45,7 @@ describe("historyColumnSpecs", () => {
 
   it("labels an unknown kind by the kind itself, as its row does", () => {
     const translate = (key: string, options?: { defaultValue?: string }) => (key.startsWith("history.kinds.") ? (options?.defaultValue ?? key) : key);
-    const type = historyColumnSpecs(translate).find((spec) => spec.key === "type");
+    const type = historyColumnSpecs(translate, null).find((spec) => spec.key === "type");
     expect(type?.label?.("mystery_kind")).toBe("mystery_kind");
   });
 

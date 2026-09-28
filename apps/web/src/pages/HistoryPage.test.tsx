@@ -9,6 +9,7 @@ import { refreshPresence, resetAgentState } from "@/agent/useAgentSync";
 import { db } from "@/db/schema";
 import { HISTORY_COLUMNS, HISTORY_ROW_HEIGHT } from "@/lib/historyColumns";
 import { HistoryPage } from "@/pages/HistoryPage";
+import { WithAccountData } from "@/test/WithAccountData";
 import { SAMPLE_DEPOSIT, SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
 
 function renderHistory(accountId = "alpha") {
@@ -16,19 +17,20 @@ function renderHistory(accountId = "alpha") {
     <I18nextProvider i18n={i18n}>
       <MemoryRouter initialEntries={[`/accounts/${accountId}/history`]}>
         <Routes>
-          <Route path="/accounts/:accountId/history" element={<HistoryPage />} />
+          <Route path="/accounts/:accountId/history" element={<WithAccountData><HistoryPage /></WithAccountData>} />
         </Routes>
       </MemoryRouter>
     </I18nextProvider>,
   );
 }
 
-// Column order: date, type, symbol, quantity, price, total price, fee, cash,
+// Column order: date, type, symbol, strategy, quantity, price, total price, fee, cash,
 // currency, USD cash, EUR cash.
-const CASH_CELL = 7;
-const CURRENCY_CELL = 8;
-const USD_CASH_CELL = 9;
-const EUR_CASH_CELL = 10;
+const STRATEGY_CELL = 3;
+const CASH_CELL = 8;
+const CURRENCY_CELL = 9;
+const USD_CASH_CELL = 10;
+const EUR_CASH_CELL = 11;
 
 async function rowFor(text: string | RegExp): Promise<HTMLTableRowElement> {
   const cell = await screen.findByText(text);
@@ -215,7 +217,7 @@ describe("HistoryPage", () => {
     const table = screen.getByRole("table");
     expect([...table.querySelectorAll("col")].map((col) => col.style.width)).toEqual(HISTORY_COLUMNS.map((column) => column.width));
     expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
-      "Date/Heure", "Type", "Symbole", "Qté", "Prix", "Total", "Com.", "Cash", "Dev.", "Cash USD", "Cash EUR",
+      "Date/Heure", "Type", "Symbole", "Stratégie", "Qté", "Prix", "Total", "Com.", "Cash", "Dev.", "Cash USD", "Cash EUR",
     ]);
   });
 
@@ -261,7 +263,7 @@ describe("HistoryPage", () => {
         <MemoryRouter initialEntries={["/accounts/alpha/history"]}>
           <Link to="/accounts/beta/history">switch account</Link>
           <Routes>
-            <Route path="/accounts/:accountId/history" element={<HistoryPage />} />
+            <Route path="/accounts/:accountId/history" element={<WithAccountData><HistoryPage /></WithAccountData>} />
           </Routes>
         </MemoryRouter>
       </I18nextProvider>,
@@ -305,8 +307,8 @@ describe("HistoryPage", () => {
     renderHistory();
     const row = await rowFor("SNZA");
     const cells = within(row).getAllByRole("cell");
-    expect(cells[4]).toHaveTextContent("—");
     expect(cells[5]).toHaveTextContent("—");
+    expect(cells[6]).toHaveTextContent("—");
     expect(cells[CASH_CELL]).toHaveTextContent("—");
     expect(cells[EUR_CASH_CELL]).toHaveTextContent("10,000.00");
   });
@@ -471,5 +473,49 @@ describe("HistoryPage", () => {
     await screen.findByText("AAPL");
     expect(screen.queryByLabelText("Date de début")).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Période" })).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * 100 MQZA bought, then one covered call sold on them: the Wheel takes the shares over at the
+ * strike, so the purchase serves Others and the Wheel, the call the Wheel alone; plus a deposit.
+ * The account row is required: without it the active strategies, hence the journals, never load.
+ */
+async function seedTakeover() {
+  await db.accounts.put({ id: "alpha", label: "alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: ["wheel", "leaps", "condors"] });
+  await db.transactions.bulkAdd([
+    { ...SAMPLE_TRANSACTIONS[0], accountId: "alpha", externalId: "flex:trade:buy", symbol: "MQZA", quantity: 100, price: 10, amount: -1000, when: "2026-03-02T14:30:00.000Z" },
+    { ...SAMPLE_TRANSACTIONS[0], accountId: "alpha", externalId: "flex:trade:call", symbol: "MQZA  260918C00020000", secType: "OPT", right: "C", strike: 20, expiry: "2026-09-18", quantity: -1, price: 0.5, amount: 50, when: "2026-08-03T14:30:00.000Z" },
+    { ...SAMPLE_DEPOSIT, accountId: "alpha" },
+  ]);
+}
+
+function strategyCell(row: HTMLTableRowElement): string {
+  return within(row).getAllByRole("cell")[STRATEGY_CELL].textContent ?? "";
+}
+
+describe("strategy column", () => {
+  it("shows a badge per strategy, Wheel first, and a dash for a deposit", async () => {
+    await seedTakeover();
+    renderHistory();
+    const buy = await rowFor("MQZA");
+    await waitFor(() => expect(strategyCell(buy)).toBe("WheelAutres"));
+    expect(strategyCell(await rowFor("ELECTRONIC FUND TRANSFER"))).toBe("—");
+    expect(within(buy).getAllByText(/^(Wheel|Autres)$/)).toHaveLength(2);
+  });
+
+  it("filters on a strategy's value: Wheel keeps both trades, the dash keeps the deposit alone", async () => {
+    await seedTakeover();
+    renderHistory();
+    const buy = await rowFor("MQZA");
+    await waitFor(() => expect(strategyCell(buy)).toBe("WheelAutres"));
+    const user = userEvent.setup();
+    await openPanel(user, "Stratégie");
+    await user.click(await screen.findByRole("checkbox", { name: /Wheel/ }));
+    await waitFor(() => expect(rowSymbols()).toHaveLength(2));
+    expect(rowSymbols()).not.toContain("ELECTRONIC FUND TRANSFER");
+    await user.click(screen.getByRole("checkbox", { name: /Wheel/ }));
+    await user.click(screen.getByRole("checkbox", { name: /—/ }));
+    await waitFor(() => expect(rowSymbols()).toEqual(["ELECTRONIC FUND TRANSFER"]));
   });
 });
