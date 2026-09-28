@@ -382,7 +382,9 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   serveur** : `/bars` (`apps/tws-agent`), deux ans de journalier `TRADES`, sans cache. Les
   niveaux dessinés sont une vue calculée des journaux (`strategyLevels`,
   `packages/ledger/src/journals/levels.ts`), sans couleur ni texte : `apps/web/src/lib/chartLevels.ts`
-  donne la teinte de la palette et l'étiquette traduite. Une page de stratégie ne dessine que
+  donne la teinte de la palette et l'étiquette traduite. Les actions Wheel s'y dessinent **par prix
+  d'entrée** (`openPrice` des lots ouverts), une ligne par prix, jamais au prix moyen que gardent
+  les tableaux : le graphe montre les lots d'assignation. Une page de stratégie ne dessine que
   la sienne ; Positions et Suggestion de position dessinent les quatre. Les barres `TRADES`
   d'IB sont ajustées des splits et les options n'ont pas d'historique de fin de journée : les
   graphes ne montrent que des sous-jacents, splits non traités (spec §3). **L'axe du temps se
