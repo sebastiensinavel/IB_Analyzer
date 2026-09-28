@@ -54,6 +54,14 @@ function priced(positions: Position[]): PricedSnapshot {
 /** Cost to close 0.15 against a 0.5 credit: under half, so buy back. */
 const CHEAP = () => priced([leg("P", 620, 1, 0.05), leg("P", 625, -1, 0.15), leg("C", 660, -1, 0.1), leg("C", 665, 1, 0.05)]);
 
+/**
+ * A credit to close (−0.4): IB would pay to shut this condor down. Its absolute value (0.4) is
+ * *above* half the 0.5 credit, so `evaluateBuyback(0.5, −0.4)` alone — which takes Math.abs of
+ * both prices — would say "keep"; only the `closingCost <= 0` guard in `condorPositions` catches
+ * this and forces "buy back".
+ */
+const NEGATIVE_CLOSE = () => priced([leg("P", 620, 1, 0.3), leg("P", 625, -1, 0.1), leg("C", 660, -1, 0.1), leg("C", 665, 1, 0.3)]);
+
 describe("condorPositions", () => {
   it("gives one line per open condor: credit, closing cost, value, total P/L and buyback decision", () => {
     const [line] = condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z")], CHEAP());
@@ -72,6 +80,12 @@ describe("condorPositions", () => {
   it("keeps a condor whose closing cost is above half its credit", () => {
     const snapshot = priced([leg("P", 620, 1, 0.1), leg("P", 625, -1, 0.4), leg("C", 660, -1, 0.3), leg("C", 665, 1, 0.1)]);
     expect(condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z")], snapshot)[0].decision).toBe("keep");
+  });
+
+  it("buys back a complete condor with a negative closing cost, even though evaluateBuyback alone would keep it", () => {
+    const [line] = condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z")], NEGATIVE_CLOSE());
+    expect(line.closingCost).toBeCloseTo(-0.4);
+    expect(line.decision).toBe("buy back");
   });
 
   it("sums the day P&L of the open legs and never gives the condor a day change", () => {
