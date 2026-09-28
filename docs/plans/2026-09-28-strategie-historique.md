@@ -481,15 +481,15 @@ git commit -m "Stratégie dans l'Historique : la colonne, ses badges et son filt
 **Interfaces:**
 - Consumes: `HISTORY_COLUMNS` (tâche 2), instance de dev du worktree (`pnpm dev:start`), le skill `run-frontend` (`--seed`) pour peupler une base.
 
-- [ ] **Step 1: Mesurer en une passe**
+- [x] **Step 1: Mesurer en une passe**
 
 Instance de dev démarrée (`pnpm dev:start` dans le worktree), écrire un script Playwright qui ouvre l'Historique semé (`run-frontend --seed`, fenêtre 1280 px, langue fr) et mesure, pour chacune des douze colonnes : la largeur de l'en-tête (libellé + chevron de tri/filtre, comme mesuré au sous-projet 20) et celle de la donnée la plus longue ; pour `strategy`, la largeur du groupe `Wheel` + `Autres` (deux `Badge` et `gap-1`) plus le padding de cellule. Le script sort les pourcentages de la table à sa largeur minimale 64rem (1024 px). Une seule passe, pas d'itération sur captures.
 
-- [ ] **Step 2: Fixer les largeurs**
+- [x] **Step 2: Fixer les largeurs**
 
 Reporter les pourcentages dans `HISTORY_COLUMNS` selon la règle du commentaire existant (en-tête entier sur une ligne, puis `dateTime` entier, puis `symbol`, puis les montants), somme 100. Mettre à jour le commentaire : douze colonnes, et la ligne sur `strategy` (« sized on `Wheel` + `Autres` side by side, the longest pair a takeover leaves »). `npx vitest run historyColumns` : PASS.
 
-- [ ] **Step 3: Documentation**
+- [x] **Step 3: Documentation**
 
 Dans `CLAUDE.md`, section « Règles qui mordent », après la règle « L'Historique ne pagine pas », ajouter :
 
@@ -511,12 +511,12 @@ Dans la même règle « L'Historique ne pagine pas » / la règle des filtres, r
 
 Dans la spec, `Statut : implémenté (2026-09-28).`
 
-- [ ] **Step 4: `pnpm check`**
+- [x] **Step 4: `pnpm check`**
 
 Run: `pnpm check` à la racine du worktree (une seule fois).
 Expected: lint, typage, build et tous les tests verts. Corriger tout échec avant de continuer.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/historyColumns.ts CLAUDE.md docs/specs/2026-09-28-strategie-historique-design.md docs/plans/2026-09-28-strategie-historique.md

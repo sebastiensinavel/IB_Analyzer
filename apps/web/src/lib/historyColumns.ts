@@ -9,29 +9,32 @@ import type { ColumnSpec } from "@/lib/tableView";
  * `history.columns`.
  *
  * They add up to 100 and are measured at 1280 px on the French labels, the longest, where the table
- * sits at its 64rem minimum. Each column takes the room its header needs — the label whole on one
- * line, sort chevron included, a pixel or two to spare — and what is left goes to the data: first
- * `dateTime`, wide enough for a whole `YYYY-MM-DD HH:MM:SS` (163 px measured), then `symbol`, then
- * the amounts. Two labels are abbreviated rather than fed, `Qté` and `Dev.`, because spelling them
- * out would eat a data column for a word the reader does not need.
+ * sits at its 64rem minimum (1024 px, 10.24 px per percent). Each column takes the room its header
+ * needs — the label whole on one line, sort chevron included, a pixel or two to spare — and what is
+ * left goes to the data: first `dateTime`, wide enough for a whole `YYYY-MM-DD HH:MM:SS` (172 px
+ * measured, cell padding included), then `symbol`, then the amounts. Two labels are abbreviated
+ * rather than fed, `Qté` and `Dev.`, because spelling them out would eat a data column for a word
+ * the reader does not need.
  *
- * `type` and `cash` end up under their share: no width shows `Opération sur titre` or a
- * seven-figure amount here, so they are sized on what a reader must see — `Dividende` whole
- * (80 px) and the leading digits of an amount — and give the rest away.
+ * `strategy` is sized on `Wheel` + `Autres` side by side, the longest pair a takeover leaves (two
+ * badges and their `gap-1`, 127 px with the cell padding). With it and `dateTime` served, the headers
+ * leave `symbol` about 13 px over its own: an option label (`AAPL Oct17'26 150 Put`, 178 px) is
+ * clipped, its title keeps it whole. `type` and the amounts are at their header's width: no width
+ * shows `Opération sur titre`, `Dividende` (82 px) or a five-figure amount whole here.
  */
 export const HISTORY_COLUMNS = [
-  { key: "dateTime", width: "16.25%", numeric: false, balance: false },
-  { key: "type", width: "8%", numeric: false, balance: false },
-  { key: "symbol", width: "13%", numeric: false, balance: false },
-  { key: "strategy", width: "11%", numeric: false, balance: false },
+  { key: "dateTime", width: "17%", numeric: false, balance: false },
+  { key: "type", width: "6%", numeric: false, balance: false },
+  { key: "symbol", width: "9.75%", numeric: false, balance: false },
+  { key: "strategy", width: "12.5%", numeric: false, balance: false },
   { key: "quantity", width: "5.5%", numeric: true, balance: false },
-  { key: "price", width: "5.25%", numeric: true, balance: false },
-  { key: "totalPrice", width: "8.5%", numeric: true, balance: false },
-  { key: "fee", width: "5.25%", numeric: true, balance: false },
-  { key: "cash", width: "5.5%", numeric: true, balance: false },
+  { key: "price", width: "5.75%", numeric: true, balance: false },
+  { key: "totalPrice", width: "6.75%", numeric: true, balance: false },
+  { key: "fee", width: "6.25%", numeric: true, balance: false },
+  { key: "cash", width: "6.5%", numeric: true, balance: false },
   { key: "currency", width: "5.75%", numeric: false, balance: false },
-  { key: "usdCash", width: "8%", numeric: true, balance: true },
-  { key: "eurCash", width: "8%", numeric: true, balance: true },
+  { key: "usdCash", width: "9.25%", numeric: true, balance: true },
+  { key: "eurCash", width: "9%", numeric: true, balance: true },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean; balance: boolean }[];
 
 /**

@@ -1,6 +1,6 @@
 # Sous-projet 37 — La stratégie de chaque ligne de l'Historique
 
-Statut : conçu (2026-09-28).
+Statut : implémenté (2026-09-28).
 
 L'Historique liste les transactions du compte sans dire à quelle stratégie chacune a servi : pour
 savoir qu'un achat d'actions est parti dans la Wheel, ou qu'une vente de 300 actions en a pris

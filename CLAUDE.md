@@ -170,6 +170,13 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `resetKey` sans le remonter, pour ne pas fermer le panneau de colonne de l'en-tête, qui porte
   le tri et le filtre ; une ligne arrivée en direct ne fait ni l'un ni l'autre. La barre temporelle n'est rendue que sans tri. La
   position s'écrit dans `scrollTop`, jamais par `scrollToOffset` (jsdom n'a pas `scrollTo`).
+- **La stratégie d'une ligne de l'Historique est calculée, jamais stockée** (sous-projet 37) :
+  `transactionStrategies` (`packages/ledger/src/journals/transactionStrategies.ts`) lit les
+  `openIds`/`closeIds` des lignes de journal — jamais les `closeIds` d'une clôture `integrated`,
+  qui sont ceux du call couvert — et la page Historique la dérive de `useAccountJournals`. Le badge
+  porte le nom seul, jamais une quantité : des tranches fondues puis réparties ne disent pas
+  laquelle est allée où. Teintes dans `STRATEGY_BADGE` (`lib/strategyBadges.ts`) ; la colonne se
+  filtre sur ses valeurs et ne se trie pas, comme la Couverture.
 - **Tri et filtres des tableaux sont un état d'affichage en `localStorage`, jamais en IndexedDB ni
   sur le serveur** : une clé par compte et par tableau (`ib2:tableView:<compte>:history`,
   `…:positions:<groupe>`, `…:positions:<stratégie>:<groupe>`, `…:journal:<stratégie>`) et par page
@@ -523,6 +530,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 34 | La page Positions Condors, un condor par ligne | fait (2026-09-28) |
 | 35 | Var. jour action : la variation du jour du sous-jacent | fait (2026-09-28), sonde hors séance en attente |
 | 36 | Les totaux : P/L du jour, P/L non réalisé, valeur totale | fait (2026-09-28) |
+| 37 | La stratégie de chaque ligne de l'Historique | fait (2026-09-28) |
 
 ## Outillage
 
