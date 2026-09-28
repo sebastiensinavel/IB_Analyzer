@@ -6,3 +6,4 @@ export * from "./corporate.ts";
 export * from "./holdings.ts";
 export * from "./levels.ts";
 export * from "./realized.ts";
+export { transactionStrategies } from "./transactionStrategies.ts";

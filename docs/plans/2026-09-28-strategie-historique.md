@@ -44,7 +44,7 @@
 - Consumes: `JournalRow`, `Strategy`, `STRATEGIES` (`./types.ts`) ; `buildJournals` (`./replay.ts`) dans les tests ; fixtures `option`, `stock`, `resetIds` (`./fixtures.ts`), `tx` (`../fixtures.ts`).
 - Produces: `export function transactionStrategies(rows: readonly JournalRow[]): Map<string, Strategy[]>`, exporté depuis `@ib/ledger`.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/ledger/src/journals/transactionStrategies.test.ts` :
 
@@ -124,12 +124,12 @@ describe("transactionStrategies", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `cd packages/ledger && npx vitest run transactionStrategies`
 Expected: FAIL, module `./transactionStrategies.ts` introuvable.
 
-- [ ] **Step 3: Implémentation minimale**
+- [x] **Step 3: Implémentation minimale**
 
 `packages/ledger/src/journals/transactionStrategies.ts` :
 
@@ -164,12 +164,12 @@ Dans `packages/ledger/src/journals/index.ts`, ajouter :
 export { transactionStrategies } from "./transactionStrategies.ts";
 ```
 
-- [ ] **Step 4: Vérifier le succès**
+- [x] **Step 4: Vérifier le succès**
 
 Run: `cd packages/ledger && npx vitest run transactionStrategies`
 Expected: PASS (6 tests). Si un scénario ne rend pas ce que le test attend, lire `report.rows` avant de toucher au test : le test décrit la spec, un écart est soit un défaut de la fonction, soit un scénario mal construit (par ex. la vente de `sell` reprise par R2 si elle tombait à moins de 60 s d'un rachat — ce n'est pas le cas ici).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ledger/src/journals/transactionStrategies.ts packages/ledger/src/journals/transactionStrategies.test.ts packages/ledger/src/journals/index.ts docs/plans/2026-09-28-strategie-historique.md
