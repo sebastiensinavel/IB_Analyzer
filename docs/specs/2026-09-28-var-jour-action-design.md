@@ -1,6 +1,6 @@
 # Sous-projet 35 — Var. jour action : la variation du jour du sous-jacent
 
-Statut : spec écrite (2026-09-28).
+Statut : spec approuvée (2026-09-28).
 
 La colonne « Var. jour » des tableaux de positions donne la variation du jour **du contrat
 détenu** : pour une action, celle de l'action ; pour une option, celle de l'option. Elle vient
@@ -101,13 +101,15 @@ put vendu, le call couvert, le condor et ses jambes.
 ## 5. Les tableaux de positions
 
 **`POSITION_COLUMNS`** (`apps/web/src/lib/positionColumns.ts`) passe de douze à treize colonnes :
-`underlyingDayChange`, numérique, **juste après `dayChange`**. Elle vaut donc pour la page
+`underlyingDayChange`, numérique, **en première colonne**, avant Position ; les douze autres
+gardent leur ordre, « Var. jour » comprise. Elle vaut donc pour la page
 Positions, les pages de stratégie (Wheel, LEAPS, Condors, Autres) et la page Condors, lignes de
-condor et jambes dépliées comprises. Le tableau du cash la laisse vide, comme les autres colonnes
+condor et jambes dépliées comprises ; le chevron de dépliage reste dans la colonne Position. Le
+tableau du cash la laisse vide, comme les autres colonnes
 hors Position et Valeur de marché.
 
-**`WHEEL_SHARE_COLUMNS`** passe de onze à douze colonnes, `underlyingDayChange` juste après
-`dayChange`. Sur ces lignes, les deux colonnes se ressemblent — une action est son propre
+**`WHEEL_SHARE_COLUMNS`** passe de onze à douze colonnes, `underlyingDayChange` en première
+colonne, les onze autres dans leur ordre. Sur ces lignes, les deux colonnes se ressemblent — une action est son propre
 sous-jacent — mais ne se confondent pas : « Var. jour » est `null` le jour d'une assignation,
 « Var. jour action » non. Les deux restent (arbitré le 2026-09-28).
 
@@ -177,7 +179,7 @@ Le résultat s'écrit dans la spec ; un écart à 1 ou 2 revient à l'utilisateu
 - La cotation n'est pas conservée : mémoire seule, rafraîchie avec la passe de l'agent.
 - Variation du jour seule, sans volatilité implicite.
 - Tri signé, possible sur la colonne, jamais actif par défaut.
-- « Var. jour » reste partout, à côté de la nouvelle colonne.
+- « Var. jour » reste partout, à sa place ; « Var. jour action » est toujours la première colonne.
 - XSP est coté par SPY (pas d'abonnement d'indices CBOE).
 - Données différées de 15 minutes acceptées : pas d'abonnement temps réel, pas de trading à la
   minute.
