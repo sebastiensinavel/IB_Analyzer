@@ -57,7 +57,8 @@ Arbitrages (2026-09-28) :
 - **La date moyenne de vente** est la moyenne des instants de vente pondérée par la quantité
   vendue. Un roll est une vente neuve, avec sa propre ligne de journal, donc sa propre date.
 - Cas limites :
-  - r ≤ 0 (échue à l'instant du prix) : seuil 0 ;
+  - r ≤ 0 (échue à l'instant du prix, p. ex. le snapshot de fin de journée du jour d'échéance) :
+    « keep », seuil 0 — il n'y a plus rien à racheter, l'option expire ;
   - T ≤ 0 (vente datée à ou après l'échéance, incohérent) ou r > T (prix antérieur à la vente,
     incohérent) : on garde la seule règle des 50 % ;
   - date de vente inconnue, échéance inconnue ou `asOf` inconnu : seule règle des 50 %.
@@ -137,7 +138,7 @@ Le tri et le filtre de la colonne Décision ne changent pas.
 
 - `packages/coverage`, Vitest écrit à la main : 30 j / 30 $ / 10 j restants → seuil 10 ;
   première moitié → seuil S/2 ; bascule à mi-vie ; C exactement au seuil → buy back ; échue →
-  seuil 0 ; sans timing → S/2 et jours null ; T ≤ 0 et r > T → S/2 ; asOf en jour seul →
+  keep et seuil 0, même à prix 0 ; sans timing → S/2 et jours null ; T ≤ 0 et r > T → S/2 ; asOf en jour seul →
   16:00 ; moyenne pondérée de deux ventes ; `StrategyLine` et `CondorLine` portent l'avis ;
   `buildRiskReport` avec et sans table.
 - `apps/web`, sur `fake-indexeddb` avec un ledger semé : `saleInstants` alimente la page
