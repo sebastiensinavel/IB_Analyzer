@@ -1,6 +1,6 @@
 # Sous-projet 34 — La page Positions Condors, un condor par ligne
 
-Statut : spec en relecture (2026-09-28).
+Statut : livré (2026-09-28).
 
 La page Positions de la stratégie Condors montre aujourd'hui les jambes une à une, dans les
 encadrés « Options achetées » et « Options vendues » de la page Positions (sous-projet 21). Avec

@@ -937,7 +937,7 @@ git commit -m "Positions Condors : un condor par ligne, jambes dépliables, P/L 
 - Modify: `docs/specs/2026-09-28-positions-condors-design.md` (statut)
 - Modify: `docs/points-reportes.md` (section du sous-projet 34, si la revue en laisse)
 
-- [ ] **Step 1: CLAUDE.md**
+- [x] **Step 1: CLAUDE.md**
 
 Dans la règle « **Les positions d'une stratégie sont une vue calculée** », après la phrase qui se
 termine par « …servies par un seul composant : ses encadrés sont déclarés dans `STRATEGY_BOXES` … et un encadré
@@ -958,25 +958,42 @@ strike, donc rien ne le valorise — »
 Dans le registre des sous-projets, ajouter la ligne :
 `| 34 | La page Positions Condors, un condor par ligne | fait (2026-09-28) |`
 
-- [ ] **Step 2: Spec**
+- [x] **Step 2: Spec**
 
 Statut : `Statut : livré (2026-09-28).`
 
-- [ ] **Step 3: `pnpm check`**
+- [x] **Step 3: `pnpm check`**
 
 Run: `pnpm check` (racine du worktree), **une seule fois**.
 Expected: lint, typage, build et tous les tests verts. Corriger ce qui casse (un test d'une autre
 page qui listait les encadrés Condors, `router.test.tsx`, `AppLayout.test.tsx`…) en expliquant
 dans le commit pourquoi l'attente change.
 
-- [ ] **Step 4: Vérification réelle**
+Vert du premier coup, sans rien à corriger côté tests.
+
+- [x] **Step 4: Vérification réelle**
 
 Depuis la racine du dépôt principal, `run-frontend` avec `--seed` et `--agent`, capture de
 `/accounts/<compte démo>/positions/condors` avant et après un clic sur le chevron du condor QQQ.
 Vérifier : une ligne « QQQ Oct16'26 IC 480/485/520/525 », quatre jambes dépliées, colonnes
 alignées sur celles des autres pages.
 
-- [ ] **Step 5: Commit** (cocher les cases de la tâche 3, même commit)
+Capture faite depuis la racine du worktree (le driver n'a pas d'action de clic générique ; un
+petit script réutilisant son approche — mêmes port/seed/stub d'agent — a cliqué le chevron). La
+première capture a montré un vrai bug : le libellé du condor et le badge « iron condor » de la
+colonne Type se chevauchaient, le texte débordant de la colonne Position. Cause : le titre est
+enveloppé dans un `<span className="flex items-center gap-1">` avec le bouton chevron — un nœud
+de texte nu y devient un item flex dont le `min-width: auto` par défaut l'empêche de rétrécir en
+dessous de sa largeur intrinsèque, donc il déborde la colonne à largeur fixe au lieu de s'y
+envelopper (`PositionRow`, sans ce wrapper flex, n'a jamais ce problème). Corrigé dans
+`apps/web/src/components/CondorRows.tsx` en enveloppant le titre dans son propre
+`<span className="min-w-0 break-words">` et en ajoutant `shrink-0` au bouton. Après correction,
+la ligne s'enveloppe proprement sur quatre lignes dans sa propre colonne (le titre d'un condor,
+plus long que le libellé d'une option à deux mots, dépasse le budget de deux lignes pensé pour un
+contrat simple), sans chevauchement ; les quatre jambes du dépliement s'alignent sur les mêmes
+colonnes que les autres pages de stratégie.
+
+- [x] **Step 5: Commit** (cocher les cases de la tâche 3, même commit)
 
 ```bash
 git add CLAUDE.md docs

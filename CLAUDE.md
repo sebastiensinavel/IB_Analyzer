@@ -350,8 +350,17 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `packages/ledger/src/journals/holdings.ts`). Les quatre stratégies ont leur page
   (`positions/wheel`, `/leaps`, `/condors`, `/others`), servies par un seul composant : ses
   encadrés sont déclarés dans `STRATEGY_BOXES` (`apps/web/src/lib/strategyBoxes.ts`) et un encadré
-  sans ligne ne se rend pas. **Un condor se lit sur ses jambes** — son composite n'a ni right ni
-  strike, donc rien ne le valorise — et les actions de la Wheel restent dans leur table propre,
+  sans ligne ne se rend pas. **La page Condors montre un condor par ligne** (sous-projet 34) :
+  `condorPositions` (`packages/coverage/src/condors.ts`) lit les composites ouverts du journal et
+  prix leurs jambes au snapshot par `contractId`, dépliables sous le condor ; prix init. = crédit,
+  dernier prix = coût net de clôture des jambes ouvertes, P/L = réalisé des jambes fermées +
+  latent des ouvertes, décision `evaluateBuyback(crédit, coût)` pour un condor complet seulement,
+  variation du jour toujours « — ». **Une jambe nue y reste dans son condor**, par exception à la
+  part nue qui quitte une page de stratégie : badge `UNCOVERED ×n` du nombre que
+  `migratedContracts` retire aux Condors (`condorsNakedByContract`), donné d'abord aux jambes dont
+  l'aile est fermée ; la page Autres la montre aussi. Pour tout le reste, un condor se lit sur ses
+  jambes — son composite n'a ni right ni strike, donc rien ne le valorise — et les actions de la
+  Wheel restent dans leur table propre,
   jamais aussi dans le groupe des positions longues. `strategyCoverSources(strategy, active)` donne
   `spread` aux Condors ; **Autres possède les sources des stratégies inactives** — un call vendu
   contre un LEAPS inactif y porte le badge `leaps`, pas `UNCOVERED` — et rien quand les trois sont
@@ -474,6 +483,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 31 | Habillage « finance-desktop » : tokens, polices, tableaux, graphes, barres de défilement | fait (2026-09-24) |
 | 32 | Publication : une prod et une dev sur le VPS | fait (2026-09-25), mise en ligne en attente de la tâche 5 du plan 32 |
 | 33 | L'ordre de sortie des lots d'actions | fait (2026-09-28) |
+| 34 | La page Positions Condors, un condor par ligne | fait (2026-09-28) |
 
 ## Outillage
 

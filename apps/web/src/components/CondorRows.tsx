@@ -43,6 +43,7 @@ export function CondorRows({
             <Button
               variant="ghost"
               size="icon-xs"
+              className="shrink-0"
               onClick={(event) => {
                 event.stopPropagation();
                 onFold();
@@ -51,7 +52,11 @@ export function CondorRows({
             >
               {unfolded ? <ChevronDown /> : <ChevronRight />}
             </Button>
-            {line.title}
+            {/* A bare text node is an anonymous flex item whose default min-width: auto refuses to
+                shrink below its full content width, so it overflows the fixed-width column instead
+                of wrapping (a long condor title, unlike a two-line option label, overran the 12%
+                position column into the Type column). min-w-0 lets it shrink and wrap normally. */}
+            <span className="min-w-0 break-words">{line.title}</span>
           </span>
         </TableCell>
         <TableCell className="text-muted-foreground">{line.label}</TableCell>
