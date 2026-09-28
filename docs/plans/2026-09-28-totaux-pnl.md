@@ -826,4 +826,4 @@ const realizedToday = agentDay ? pick(realizedOnDay(view.report.rows, agentDay))
 
 - [x] **Step 5: Commit** — `git commit -m "Totaux : documentation du sous-projet 36"`.
 
-- [ ] **Step 6: Instance de relecture** — `pnpm dev:start` dans le worktree, donner les deux URL à Seb (et rappeler `ib-tws-agent origin add http://127.0.0.1:<port>` pour voir les valeurs du jour).
+- [x] **Step 6: Instance de relecture** — `pnpm dev:start` dans le worktree, donner les deux URL à Seb (et rappeler `ib-tws-agent origin add http://127.0.0.1:<port>` pour voir les valeurs du jour).
