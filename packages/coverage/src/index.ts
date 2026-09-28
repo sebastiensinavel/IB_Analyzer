@@ -6,4 +6,5 @@ export * from "./coverage.ts";
 export * from "./report.ts";
 export * from "./strategy.ts";
 export * from "./strategyBoxes.ts";
+export * from "./condors.ts";
 export * from "./suggestions.ts";

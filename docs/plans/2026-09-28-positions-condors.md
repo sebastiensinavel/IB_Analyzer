@@ -113,7 +113,7 @@ export function dayShare(position: Position | null, quantity: number): { dailyPn
 export function condorsNakedByContract(rows: readonly JournalRow[], snapshot: PricedSnapshot | null, active: readonly ActivableStrategy[]): Map<string, number>;
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Créer `packages/coverage/src/condors.test.ts` :
 
@@ -260,12 +260,12 @@ describe("condorPositions", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `cd packages/coverage && npx vitest run condors`
 Expected: FAIL — `Cannot find module './condors.ts'` (ou équivalent).
 
-- [ ] **Step 3: Export the helpers from `strategy.ts`**
+- [x] **Step 3: Export the helpers from `strategy.ts`**
 
 Dans `packages/coverage/src/strategy.ts` :
 - `interface Priced` → `export interface Priced` ;
@@ -293,7 +293,7 @@ export function condorsNakedByContract(
 }
 ```
 
-- [ ] **Step 4: Write `condors.ts`**
+- [x] **Step 4: Write `condors.ts`**
 
 ```ts
 import { ACTIVABLE_STRATEGIES, contractId, type ActivableStrategy, type ContractKey, type JournalRow } from "@ib/ledger";
@@ -445,7 +445,7 @@ export function condorPositions(
 
 Ajouter `export * from "./condors.ts";` à `packages/coverage/src/index.ts`, après `./strategyBoxes.ts`.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd packages/coverage && npx vitest run condors strategy`
 Expected: PASS, `strategy.test.ts` inchangé et vert.
@@ -455,7 +455,7 @@ Si « gives the naked part to the condor whose wing is closed » échoue parce q
 (`packages/coverage/src/coverage.ts`) et ajuster **le snapshot du test** (jamais le code) pour
 qu'IB voie exactement un 660 nu ; noter la raison dans le commit.
 
-- [ ] **Step 6: Commit** (cocher les cases de la tâche 1 dans ce plan, même commit)
+- [x] **Step 6: Commit** (cocher les cases de la tâche 1 dans ce plan, même commit)
 
 ```bash
 git add packages/coverage/src docs/plans/2026-09-28-positions-condors.md
