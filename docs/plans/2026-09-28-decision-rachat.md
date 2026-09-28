@@ -497,4 +497,4 @@ i18n, sous `positions` :
   Spec : `Statut : implémenté (<date>).`
 - [x] **Step 2:** `pnpm check` depuis la racine du worktree → tout vert. Corriger ce qui ne l'est pas.
 - [x] **Step 3:** cocher et commit : `Décision de rachat : documentation`.
-- [ ] **Step 4:** `pnpm dev:start` dans le worktree ; donner les deux URL à Seb (`pnpm dev:status`).
+- [x] **Step 4:** `pnpm dev:start` dans le worktree ; donner les deux URL à Seb (`pnpm dev:status`).
