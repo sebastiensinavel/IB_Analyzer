@@ -35,9 +35,9 @@
 
 ### Task 0: Worktree
 
-- [ ] **Step 1:** depuis la racine, sur `main` propre : `git worktree add .claude/worktrees/decision-rachat -b decision-rachat`
-- [ ] **Step 2:** `cd .claude/worktrees/decision-rachat && pnpm install --frozen-lockfile`
-- [ ] **Step 3:** `cd packages/coverage && npx vitest run` → PASS (base saine).
+- [x] **Step 1:** depuis la racine, sur `main` propre : `git worktree add .claude/worktrees/decision-rachat -b decision-rachat`
+- [x] **Step 2:** `cd .claude/worktrees/decision-rachat && pnpm install --frozen-lockfile`
+- [x] **Step 3:** `cd packages/coverage && npx vitest run` → PASS (base saine).
 
 ---
 
