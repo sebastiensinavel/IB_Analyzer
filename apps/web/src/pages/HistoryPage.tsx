@@ -1,18 +1,22 @@
 import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
-import { anchoredBalances } from "@ib/ledger";
+import { anchoredBalances, transactionStrategies, type Strategy } from "@ib/ledger";
 import { Card, CardContent } from "@ib/ui/card";
 import { Input } from "@ib/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ib/ui/select";
 import { HistoryTable } from "@/components/history/HistoryTable";
 import { ActiveFilters } from "@/components/table/ActiveFilters";
+import { useAccountJournals } from "@/db/AccountDataProvider";
 import { useCashPoints, useLedger } from "@/db/hooks";
 import { usePageSearch, useTableView } from "@/hooks/useTableView";
 import { BALANCE_CURRENCIES } from "@/lib/currencies";
-import { historyColumnSpecs, historyTicker } from "@/lib/historyColumns";
+import { historyColumnSpecs, historyTicker, type StrategiesOf } from "@/lib/historyColumns";
 import { applyView, facetValues } from "@/lib/tableView";
 import { pageSearchKey, tableViewKey } from "@/lib/tableViewStorage";
+
+// A stable empty list for a transaction no journal line names: the memoized row does not re-render.
+const NO_STRATEGY: readonly Strategy[] = [];
 
 export function HistoryPage() {
   const { accountId = "" } = useParams<{ accountId: string }>();
@@ -20,7 +24,14 @@ export function HistoryPage() {
   const titleId = useId();
   const ledger = useLedger(accountId);
   const points = useCashPoints(accountId);
-  const specs = useMemo(() => historyColumnSpecs((key, options) => t(key, options)), [t]);
+  // The strategies each transaction served, read from the shell's journals; null while they load.
+  const journals = useAccountJournals();
+  const strategiesOf = useMemo<StrategiesOf>(() => {
+    if (journals.status !== "ready") return null;
+    const map = transactionStrategies(journals.report.rows);
+    return (externalId) => map.get(externalId) ?? NO_STRATEGY;
+  }, [journals]);
+  const specs = useMemo(() => historyColumnSpecs((key, options) => t(key, options), strategiesOf), [t, strategiesOf]);
   const table = useTableView(tableViewKey(accountId, "history"), specs);
   const search = usePageSearch(pageSearchKey(accountId, "history"));
 
@@ -41,10 +52,16 @@ export function HistoryPage() {
   const checkedTypes: readonly (string | null)[] = Array.isArray(typeCriterion) ? typeCriterion : [];
   // A stable key for the memo below: the criterion array is a new object on every stored view.
   const checkedKey = JSON.stringify(checkedTypes);
-  // Counted over the whole ledger: a type does not vanish because another filter emptied its rows.
+  const strategySpec = specs.find((spec) => spec.key === "strategy")!;
+  const strategyCriterion = table.view.criteria.strategy;
+  const checkedStrategiesKey = JSON.stringify(Array.isArray(strategyCriterion) ? strategyCriterion : []);
+  // Counted over the whole ledger: a value does not vanish because another filter emptied its rows.
   const facets = useMemo(
-    () => ({ type: rows ? facetValues(rows, typeSpec, JSON.parse(checkedKey) as (string | null)[]) : [] }),
-    [rows, typeSpec, checkedKey],
+    () => ({
+      type: rows ? facetValues(rows, typeSpec, JSON.parse(checkedKey) as (string | null)[]) : [],
+      strategy: rows ? facetValues(rows, strategySpec, JSON.parse(checkedStrategiesKey) as (string | null)[]) : [],
+    }),
+    [rows, typeSpec, checkedKey, strategySpec, checkedStrategiesKey],
   );
 
   if (!visible) {
@@ -109,6 +126,7 @@ export function HistoryPage() {
             rows={visible}
             labelledBy={titleId}
             specs={specs}
+            strategiesOf={strategiesOf}
             view={table.view}
             facets={facets}
             resetKey={resetKey}

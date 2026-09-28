@@ -44,7 +44,7 @@
 - Consumes: `JournalRow`, `Strategy`, `STRATEGIES` (`./types.ts`) ; `buildJournals` (`./replay.ts`) dans les tests ; fixtures `option`, `stock`, `resetIds` (`./fixtures.ts`), `tx` (`../fixtures.ts`).
 - Produces: `export function transactionStrategies(rows: readonly JournalRow[]): Map<string, Strategy[]>`, exporté depuis `@ib/ledger`.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 `packages/ledger/src/journals/transactionStrategies.test.ts` :
 
@@ -124,12 +124,12 @@ describe("transactionStrategies", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `cd packages/ledger && npx vitest run transactionStrategies`
 Expected: FAIL, module `./transactionStrategies.ts` introuvable.
 
-- [ ] **Step 3: Implémentation minimale**
+- [x] **Step 3: Implémentation minimale**
 
 `packages/ledger/src/journals/transactionStrategies.ts` :
 
@@ -164,12 +164,12 @@ Dans `packages/ledger/src/journals/index.ts`, ajouter :
 export { transactionStrategies } from "./transactionStrategies.ts";
 ```
 
-- [ ] **Step 4: Vérifier le succès**
+- [x] **Step 4: Vérifier le succès**
 
 Run: `cd packages/ledger && npx vitest run transactionStrategies`
 Expected: PASS (6 tests). Si un scénario ne rend pas ce que le test attend, lire `report.rows` avant de toucher au test : le test décrit la spec, un écart est soit un défaut de la fonction, soit un scénario mal construit (par ex. la vente de `sell` reprise par R2 si elle tombait à moins de 60 s d'un rachat — ce n'est pas le cas ici).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ledger/src/journals/transactionStrategies.ts packages/ledger/src/journals/transactionStrategies.test.ts packages/ledger/src/journals/index.ts docs/plans/2026-09-28-strategie-historique.md
@@ -200,7 +200,7 @@ git commit -m "Stratégie dans l'Historique : transactionStrategies, les straté
   - `STRATEGY_BADGE: Record<Strategy, { variant: "success" | "warning" | "outline"; className?: string }>` dans `strategyBadges.ts`.
   - `HistoryTable` prend `strategiesOf: StrategiesOf`.
 
-- [ ] **Step 1: Tests qui échouent — badges et specs**
+- [x] **Step 1: Tests qui échouent — badges et specs**
 
 `apps/web/src/lib/strategyBadges.test.ts` :
 
@@ -245,12 +245,12 @@ it("reads a row's strategies, an empty list for none and while the journals load
 
 Remplacer aussi tous les autres `historyColumnSpecs(t)` / `historyColumnSpecs(translate)` du fichier par `historyColumnSpecs(t, ready)` / `historyColumnSpecs(translate, null)`.
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run strategyBadges historyColumns`
 Expected: FAIL (module `strategyBadges` absent, clé `strategy` absente).
 
-- [ ] **Step 3: Implémenter badges, specs, textes**
+- [x] **Step 3: Implémenter badges, specs, textes**
 
 `apps/web/src/lib/strategyBadges.ts` :
 
@@ -325,12 +325,12 @@ Dans `apps/web/src/i18n/fr.json`, bloc `history` : `"strategy": "Stratégie"` da
 
 Dans `en.json`, mêmes clés : `"strategy": "Strategy"`, `"strategies": { "wheel": "Wheel", "leaps": "LEAPS", "condors": "Condors", "others": "Others" }`.
 
-- [ ] **Step 4: Vérifier le succès des tests unitaires**
+- [x] **Step 4: Vérifier le succès des tests unitaires**
 
 Run: `cd apps/web && npx vitest run strategyBadges historyColumns`
 Expected: PASS.
 
-- [ ] **Step 5: Tests de page qui échouent**
+- [x] **Step 5: Tests de page qui échouent**
 
 Dans `apps/web/src/pages/HistoryPage.test.tsx` :
 
@@ -388,12 +388,12 @@ describe("strategy column", () => {
 
    `rowFor("MQZA")` trouve la ligne dont une cellule vaut exactement `MQZA` : l'achat (l'option s'affiche par `formatContract`, un autre texte). Si la case « — » du panneau porte un autre nom accessible (le composant traduit l'entrée `null` des facets), lire `ColumnHeader`/le panneau de filtre pour prendre son libellé réel — jamais changer le comportement pour faire passer le test.
 
-- [ ] **Step 6: Vérifier l'échec**
+- [x] **Step 6: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run HistoryPage`
 Expected: FAIL (colonne absente de la table).
 
-- [ ] **Step 7: Brancher la page et la table**
+- [x] **Step 7: Brancher la page et la table**
 
 `apps/web/src/pages/HistoryPage.tsx` :
 
@@ -456,12 +456,12 @@ Passer `strategiesOf={strategiesOf}` à `<HistoryTable>`.
 
    (imports : `Badge` de `@ib/ui/badge`, `STRATEGY_BADGE` de `@/lib/strategyBadges`, `type Strategy` de `@ib/ledger`). Mettre à jour le commentaire « ~11 cells ».
 
-- [ ] **Step 8: Vérifier le succès**
+- [x] **Step 8: Vérifier le succès**
 
 Run: `cd apps/web && npx vitest run HistoryPage historyColumns strategyBadges`
 Expected: PASS. Puis `cd apps/web && npx tsc --noEmit -p .` : aucune erreur (d'autres appelants de `historyColumnSpecs` ou de `HistoryTable` ailleurs dans `apps/web` — `grep -rn "historyColumnSpecs\|<HistoryTable" apps/web/src` — doivent recevoir le nouvel argument).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/web/src docs/plans/2026-09-28-strategie-historique.md
@@ -481,15 +481,15 @@ git commit -m "Stratégie dans l'Historique : la colonne, ses badges et son filt
 **Interfaces:**
 - Consumes: `HISTORY_COLUMNS` (tâche 2), instance de dev du worktree (`pnpm dev:start`), le skill `run-frontend` (`--seed`) pour peupler une base.
 
-- [ ] **Step 1: Mesurer en une passe**
+- [x] **Step 1: Mesurer en une passe**
 
 Instance de dev démarrée (`pnpm dev:start` dans le worktree), écrire un script Playwright qui ouvre l'Historique semé (`run-frontend --seed`, fenêtre 1280 px, langue fr) et mesure, pour chacune des douze colonnes : la largeur de l'en-tête (libellé + chevron de tri/filtre, comme mesuré au sous-projet 20) et celle de la donnée la plus longue ; pour `strategy`, la largeur du groupe `Wheel` + `Autres` (deux `Badge` et `gap-1`) plus le padding de cellule. Le script sort les pourcentages de la table à sa largeur minimale 64rem (1024 px). Une seule passe, pas d'itération sur captures.
 
-- [ ] **Step 2: Fixer les largeurs**
+- [x] **Step 2: Fixer les largeurs**
 
 Reporter les pourcentages dans `HISTORY_COLUMNS` selon la règle du commentaire existant (en-tête entier sur une ligne, puis `dateTime` entier, puis `symbol`, puis les montants), somme 100. Mettre à jour le commentaire : douze colonnes, et la ligne sur `strategy` (« sized on `Wheel` + `Autres` side by side, the longest pair a takeover leaves »). `npx vitest run historyColumns` : PASS.
 
-- [ ] **Step 3: Documentation**
+- [x] **Step 3: Documentation**
 
 Dans `CLAUDE.md`, section « Règles qui mordent », après la règle « L'Historique ne pagine pas », ajouter :
 
@@ -511,12 +511,12 @@ Dans la même règle « L'Historique ne pagine pas » / la règle des filtres, r
 
 Dans la spec, `Statut : implémenté (2026-09-28).`
 
-- [ ] **Step 4: `pnpm check`**
+- [x] **Step 4: `pnpm check`**
 
 Run: `pnpm check` à la racine du worktree (une seule fois).
 Expected: lint, typage, build et tous les tests verts. Corriger tout échec avant de continuer.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/lib/historyColumns.ts CLAUDE.md docs/specs/2026-09-28-strategie-historique-design.md docs/plans/2026-09-28-strategie-historique.md

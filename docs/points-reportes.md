@@ -1196,6 +1196,15 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Reporté par le sous-projet 37 (Stratégie dans l'Historique)
+
+- **Les jambes d'une conversion affichent « — » dans la colonne Stratégie.** Un split, un
+  changement de CUSIP ou un renommage 1 pour 1 reporte les lots sans nommer ses jambes dans
+  `openIds`/`closeIds`. Les attribuer demanderait au moteur de noter les ids de l'événement sur
+  les lots reportés.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un

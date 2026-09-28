@@ -1,12 +1,13 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import type { LedgerRow } from "@ib/ledger";
+import type { LedgerRow, Strategy } from "@ib/ledger";
 import { TableBody, TableCell, TableHeader, TableRow } from "@ib/ui/table";
+import { StrategyStack } from "@/components/history/StrategyStack";
 import { TimelineScrubber } from "@/components/history/TimelineScrubber";
 import { ColumnHeader } from "@/components/table/ColumnHeader";
 import { formatAmount, formatContract, formatDateTime, formatPrice } from "@/lib/format";
-import { HISTORY_COLUMNS, HISTORY_HEADER_HEIGHT, HISTORY_ROW_HEIGHT, SCRUB_LABEL_LINGER_MS } from "@/lib/historyColumns";
+import { HISTORY_COLUMNS, HISTORY_HEADER_HEIGHT, HISTORY_ROW_HEIGHT, SCRUB_LABEL_LINGER_MS, type StrategiesOf } from "@/lib/historyColumns";
 import { buildTimeline } from "@/lib/historyTimeline";
 import type { ColumnSpec, Criterion, Facet, SortDirection, TableView } from "@/lib/tableView";
 
@@ -24,6 +25,8 @@ export interface HistoryTableProps {
   labelledBy: string;
   /** Same keys and order as HISTORY_COLUMNS. */
   specs: readonly ColumnSpec<LedgerRow>[];
+  /** The strategies each transaction served, by its externalId; `null` while the journals load. */
+  strategiesOf: StrategiesOf;
   view: TableView;
   /** Values offered by each enum column's filter, by column key. */
   facets: Readonly<Record<string, readonly Facet[]>>;
@@ -42,7 +45,7 @@ export interface HistoryTableProps {
  * Not `Table` from @ib/ui: its `overflow-x-auto` wrapper would become the header's scrolling
  * ancestor, and the header would stick to it rather than to the container that scrolls.
  */
-export function HistoryTable({ rows, labelledBy, specs, view, facets, resetKey, onSort, onCriterion }: HistoryTableProps) {
+export function HistoryTable({ rows, labelledBy, specs, strategiesOf, view, facets, resetKey, onSort, onCriterion }: HistoryTableProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   // A stable function: getItemKey is a dependency of the virtualizer's measurement memo, so a new
@@ -130,7 +133,11 @@ export function HistoryTable({ rows, labelledBy, specs, view, facets, resetKey, 
             )}
             {paddingTop > 0 && <SpacerRow height={paddingTop} />}
             {items.map((item) => (
-              <TransactionRow key={item.key} row={rows[item.index]} />
+              <TransactionRow
+                key={item.key}
+                row={rows[item.index]}
+                strategies={strategiesOf ? strategiesOf(rows[item.index].transaction.externalId) : null}
+              />
             ))}
             {paddingBottom > 0 && <SpacerRow height={paddingBottom} />}
           </TableBody>
@@ -160,9 +167,16 @@ function SpacerRow({ height }: { height: number }) {
   );
 }
 
-// Memoized: each scroll re-render would otherwise re-render every row in view (formatting, ~11
-// cells each) although its `row` object is unchanged.
-const TransactionRow = memo(function TransactionRow({ row }: { row: LedgerRow }) {
+// Memoized: each scroll re-render would otherwise re-render every row in view (formatting, ~12
+// cells each) although its `row` object and its `strategies` list are unchanged.
+const TransactionRow = memo(function TransactionRow({
+  row,
+  strategies,
+}: {
+  row: LedgerRow;
+  /** `null` while the journals load: the cell stays empty rather than claim "none". */
+  strategies: readonly Strategy[] | null;
+}) {
   const { t } = useTranslation();
   const { transaction, cash, balances } = row;
   // Cash movements (deposits, dividends, fees) carry no symbol; IB's own
@@ -177,6 +191,15 @@ const TransactionRow = memo(function TransactionRow({ row }: { row: LedgerRow })
       {/* IB descriptions run up to 512 chars: the fixed column clips them, the title keeps them. */}
       <TableCell className={`${CELL} font-medium`} title={label}>
         {label}
+      </TableCell>
+      {/* The strategies this transaction served, from the journals; empty while they load. Stacked
+          in compact badges, two lines at most, within the row's HISTORY_ROW_HEIGHT. */}
+      <TableCell className={CELL}>
+        {strategies === null ? null : strategies.length === 0 ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <StrategyStack strategies={strategies} />
+        )}
       </TableCell>
       <TableCell className={NUMERIC_CELL} title={transaction.quantity === null ? undefined : String(transaction.quantity)}>
         {transaction.quantity ?? "—"}

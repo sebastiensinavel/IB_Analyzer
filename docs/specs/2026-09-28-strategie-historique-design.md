@@ -1,6 +1,6 @@
 # Sous-projet 37 — La stratégie de chaque ligne de l'Historique
 
-Statut : conçu (2026-09-28).
+Statut : implémenté (2026-09-28).
 
 L'Historique liste les transactions du compte sans dire à quelle stratégie chacune a servi : pour
 savoir qu'un achat d'actions est parti dans la Wheel, ou qu'une vente de 300 actions en a pris
@@ -44,14 +44,20 @@ Autres). Une transaction absente de la map n'appartient à aucune stratégie.
 
 - Les `openIds` d'une ligne comptent toujours pour sa stratégie.
 - Ses `closeIds` comptent aussi, **sauf quand `event === "integrated"`** (§2.2).
-- Un condor se lit sur sa ligne composite : ses `openIds` et `closeIds` sont déjà ceux de ses
-  jambes (`journals/condor.ts`), `legs` n'est pas relu.
+- Un condor se lit sur sa ligne composite **et sur ses jambes** : le composite porte les
+  `openIds` de ses jambes, mais leurs `closeIds` seulement une fois toutes les jambes fermées
+  (`journals/condor.ts`). Les ids de `legs` sont donc relus, selon les mêmes règles — une aile
+  rachetée pendant que le condor reste ouvert porte Condors.
 - Les tranches fondues d'un ordre (`journals/fills.ts`) gardent tous leurs ids dans `openIds` /
   `closeIds` : chaque tranche reçoit la stratégie de la ligne.
 - Les stratégies sont celles que `buildJournals` a calculées avec la liste active du compte : une
   stratégie inactive n'apparaît jamais, ce qu'elle aurait pris est dans Autres.
 
 Exportée par `packages/ledger/src/journals/index.ts`. Aucun texte : l'application traduit.
+
+Une conversion d'opération sur titres (split, changement de CUSIP, renommage 1 pour 1) reporte
+les lots sans nommer ses jambes : ses lignes affichent « — », comme un dividende. Les jambes
+d'une fusion mixte, elles, portent la stratégie des lots qu'elles ferment ou ouvrent.
 
 ### 2.2 La reprise au strike
 
@@ -75,23 +81,28 @@ fausse dans ce cas, et élargirait la colonne. Le nom seul est toujours juste.
   déjà calculés une fois dans la coquille, aucune page n'appelle `useJournals`. Tant que les
   journaux chargent, la cellule reste vide (ni badge ni « — ») ; prêts, une ligne sans stratégie
   affiche « — ».
-- Un badge par stratégie, sur une seule ligne, dans l'ordre de §2.1, espacés de `gap-1` ; la
-  cellule garde `h-9 truncate` : aucune ligne ne grandit (`HISTORY_ROW_HEIGHT`), un débordement
-  est coupé, jamais renvoyé à la ligne.
-- Teintes, dans un seul tableau `STRATEGY_BADGE_CLASS` (`apps/web/src/lib/strategyBadges.ts`),
+- Un badge par stratégie, dans l'ordre de §2.1, **empilés les uns sous les autres** en badges
+  compacts (`StrategyStack`, `h-4`, texte 9,5 px) : deux tiennent dans les 36 px de la ligne,
+  qui ne grandit jamais (`HISTORY_ROW_HEIGHT`). Deux lignes au plus : au-delà, la seconde porte
+  « +n » après son badge, et le titre de la cellule nomme toutes les stratégies. La colonne n'a
+  ainsi besoin que de la largeur d'un badge, ce qui rend la place aux libellés de Symbole
+  (arbitrage de Seb, 2026-09-28).
+- Teintes, dans un seul tableau `STRATEGY_BADGE` (`apps/web/src/lib/strategyBadges.ts`),
   tons discrets fond léger + texte de la même teinte, reprises des rôles existants de la
   palette (`chartColors.ts`, `index.css`) :
-  - **Wheel** : teal, la teinte « ouvert » (série 2) ;
-  - **LEAPS** : violet (série 3, rôle LEAPS) ;
-  - **Condors** : ambre, la teinte du badge `spread` de Couverture ;
+  - **Wheel** : ambre (variante `warning`) ;
+  - **LEAPS** : violet (série 3, rôle LEAPS), par le token `chart-4` d'`index.css`, jamais un
+    hexadécimal ;
+  - **Condors** : teal (variante `success`) — Wheel et Condors échangés à la demande de Seb ;
   - **Autres** : contour neutre (`outline`), sans teinte.
-  Le tableau est un `Record<Strategy, string>` : ajouter une stratégie sans sa teinte ne compile
-  pas.
+  Le tableau est un `Record<Strategy, { variant, className? }>` : ajouter une stratégie sans sa
+  teinte ne compile pas.
 
 ## 4. Filtre et tri
 
 - Colonne `enum` à plusieurs valeurs, comme la Couverture de Positions : `value` rend le tableau
-  des stratégies de la ligne, `null` quand elle n'en a aucune (retenu par `—`), `label` traduit.
+  des stratégies de la ligne, `[]` — une liste vide — quand elle n'en a aucune (que le filtre
+  compte sous `—`), `label` traduit.
   Le filtre lit les valeurs, jamais le texte des badges.
 - **Non triable** (`sortable: false`), comme la Couverture : le moteur de vue ne trie pas une
   valeur multiple, et un ordre sur la première stratégie seule serait arbitraire.
@@ -101,8 +112,8 @@ fausse dans ce cas, et élargirait la colonne. Le nom seul est toujours juste.
 ## 5. Les largeurs
 
 Les douze colonnes sont remesurées d'une passe par un script, à 1280 px sur les libellés
-français, avec pour la nouvelle colonne son en-tête et le cas le plus long, `Wheel` + `Autres`
-côte à côte. Les pourcentages de `HISTORY_COLUMNS` restent à 100 au total. Pas d'itération sur
+français, avec pour la nouvelle colonne son en-tête et sa ligne la plus large, `Condors` suivi de « +1 »
+(89 px avec le padding de cellule, pour 8,75 %). Les pourcentages de `HISTORY_COLUMNS` restent à 100 au total. Pas d'itération sur
 captures ; `pnpm check` une fois à la fin.
 
 ## 6. Textes
@@ -115,10 +126,11 @@ activables : Wheel, LEAPS, Condors, Autres / Others.
 
 - `transactionStrategies.test.ts` : une vente coupée entre Wheel et Autres porte les deux ; une
   reprise au strike donne Wheel seul au call et Autres + Wheel à l'achat d'origine ; les jambes
-  d'un condor portent Condors ; une stratégie inactive n'apparaît jamais ; un dépôt est absent ;
+  d'un condor portent Condors, une aile rachetée pendant que le condor reste ouvert aussi ; un
+  LEAPS acheté porte LEAPS ; une stratégie inactive n'apparaît jamais ; un dépôt est absent ;
   des tranches fondues portent toutes la stratégie ; ordre de `STRATEGIES`.
 - `historyColumns.test.ts` : la colonne `strategy` suit `symbol`, les largeurs somment à 100,
-  sa valeur est la liste des stratégies ou `null`.
+  sa valeur est la liste des stratégies ou `[]`.
 - Page Historique sur `fake-indexeddb` avec un ledger semé : les badges s'affichent, « — » pour
   un dépôt, le filtre Wheel ne garde que les lignes Wheel.
 - `CLAUDE.md` : la règle (vue calculée, jamais stockée, nom seul, `integrated` exclu) et la

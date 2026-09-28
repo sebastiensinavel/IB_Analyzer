@@ -293,6 +293,7 @@
       "dateTime": "Date/Heure",
       "type": "Type",
       "symbol": "Symbole",
+      "strategy": "Stratégie",
       "quantity": "Qté",
       "price": "Prix",
       "totalPrice": "Total",
@@ -306,6 +307,7 @@
     "timeline": "Frise chronologique",
     "kindFilter": "Type",
     "allKinds": "Tous les types",
+    "strategies": { "wheel": "Wheel", "leaps": "LEAPS", "condors": "Condors", "others": "Autres" },
     "kinds": {
       "trade": "Trade",
       "dividend": "Dividende",
