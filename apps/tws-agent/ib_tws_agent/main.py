@@ -63,13 +63,16 @@ CASH_TAGS = ("TotalCashBalance", "CashBalance", "AvailableFunds")
 BARS_DURATION = "2 Y"
 BARS_SIZE = "1 day"
 BARS_WHAT_TO_SHOW = "TRADES"
-# /quotes: how long it waits, in all, for every symbol's last and close; the ceiling of one call,
-# under IB's ~100 simultaneous market data lines; and the market data type asked of TWS — 4,
-# delayed frozen: the user has no real-time subscription, and frozen keeps the last session's
-# values once the market is closed. TWS serves real time instead whenever it is subscribed.
-# MARKET_DATA_TYPE and QUOTES_TIMEOUT_S are provisional until the sub-project 35 probe (spec §9)
-# actually runs.
-QUOTES_TIMEOUT_S = 5
+# /quotes: how long it waits, in all, for qualification plus every symbol's last and close; the
+# ceiling of one call, under IB's ~100 simultaneous market data lines; and the market data type
+# asked of TWS — 4, delayed frozen: the user has no real-time subscription, and frozen keeps the
+# last session's values once the market is closed. TWS serves real time instead whenever it is
+# subscribed. Measured on the real TWS on 2026-09-28, in session: 43 tickers (33 NASDAQ, 8 NYSE,
+# 1 ARCA, 1 AMEX) filled within 4.1 s including ~1.5-2.2 s of qualification, for both
+# MARKET_DATA_TYPE 3 and 4 alike. CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S = 13 s stays under the
+# browser's AGENT_FETCH_TIMEOUT_MS (15 s). The off-hours behaviour (type 3 vs 4 after the close
+# and on weekends) is not yet probed.
+QUOTES_TIMEOUT_S = 8
 QUOTES_POLL_S = 0.05
 QUOTES_MAX_SYMBOLS = 90
 QUOTES_SYMBOL_MAX_LENGTH = 24
@@ -271,17 +274,46 @@ def clean_quote(value: float | None) -> float | None:
 
 
 async def collect_quotes(ib: IB, symbols: list[str]) -> dict[str, Any]:
-    """Subscribe to each symbol, wait for its last and close, cancel, and hand the tickers back.
+    """Qualify each symbol into a real contract, then subscribe each on its own primary
+    exchange, wait for its last and close, cancel, and hand the tickers back.
 
-    Never raises, like collect_pnl: a symbol TWS stays silent about (unknown, no data) is simply
-    absent from the result, and the answer still goes out.
+    ib_async's `reqMktData` needs a `conId`: an unqualified `Stock(symbol, "SMART", "USD")`
+    raises `ValueError` before ever reaching TWS ("can't be hashed because no 'conId' value
+    exists"), so every symbol is qualified first (`qualifyContractsAsync`), bounded by the same
+    deadline as the rest of the call. An unknown or ambiguous symbol keeps `conId 0` and is
+    simply skipped - never subscribed, never raising.
+
+    Never raises overall, like collect_pnl: a symbol TWS stays silent about (unknown, no data,
+    or a failed qualification pass) is simply absent from the result, and the answer still
+    goes out.
     """
     tickers: dict[str, Any] = {}
+    deadline = monotonic() + QUOTES_TIMEOUT_S
+    contracts = {symbol: Stock(symbol, "SMART", "USD") for symbol in symbols}
     try:
         ib.reqMarketDataType(MARKET_DATA_TYPE)
-        for symbol in symbols:
-            tickers[symbol] = ib.reqMktData(Stock(symbol, "SMART", "USD"), "", False, False)
-        deadline = monotonic() + QUOTES_TIMEOUT_S
+        remaining = max(0.0, deadline - monotonic())
+        await asyncio.wait_for(ib.qualifyContractsAsync(*contracts.values()), timeout=remaining)
+    except Exception:  # noqa: BLE001 - whatever ib_async/asyncio raises, the answer is still due
+        logger.warning("qualification unavailable; /quotes answers without it", exc_info=True)
+    try:
+        for symbol, contract in contracts.items():
+            if not contract.conId:
+                continue
+            # Subscribing via SMART routes a NASDAQ listing through an entitlement the API
+            # does not get: TWS answers error 10091 ("Part of requested market data requires
+            # additional subscription for API ... NASDAQ.NMS/TOP/ALL") and serves nothing at
+            # all, not even delayed data - unlike NYSE/AMEX/ARCA, where SMART works (error
+            # 10167, delayed data served). Subscribing on the contract's own primary exchange
+            # instead sidesteps the entitlement and fills every listing (probed on a real TWS,
+            # 2026-09-28: 43/43, all exchanges).
+            exchange = contract.primaryExchange or "SMART"
+            tickers[symbol] = ib.reqMktData(
+                Stock(symbol, exchange, "USD", conId=contract.conId, primaryExchange=contract.primaryExchange),
+                "",
+                False,
+                False,
+            )
         while monotonic() < deadline and any(
             clean_quote(t.last) is None or clean_quote(t.close) is None for t in tickers.values()
         ):

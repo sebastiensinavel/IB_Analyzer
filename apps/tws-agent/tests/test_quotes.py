@@ -1,4 +1,5 @@
-"""`/quotes`: last and close of each underlying, straight out of reqMktData."""
+"""`/quotes`: last and close of each underlying, straight out of reqMktData - once qualified
+and subscribed on its own primary exchange (sub-project 35, real-TWS probe of 2026-09-28)."""
 
 from __future__ import annotations
 
@@ -42,31 +43,48 @@ def test_ib_no_value_markers_become_null(make_client, raw):
 
 
 def test_symbols_are_upper_cased_and_deduplicated_in_order(make_client):
-    ib = FakeIB()
+    ib = FakeIB(qualifiable={"SPY", "AAPL"})
     body = get(make_client(ib), "symbols=spy,AAPL,SPY,%20aapl%20").json()
     assert [q["symbol"] for q in body["quotes"]] == ["SPY", "AAPL"]
     assert [c.symbol for c in ib.mkt_subscribed] == ["SPY", "AAPL"]
 
 
-def test_asks_for_the_market_data_type_then_smart_usd_stocks(make_client):
+def test_asks_for_the_market_data_type_then_qualifies_smart_then_subscribes_on_primary_exchange(make_client):
     from ib_tws_agent.main import MARKET_DATA_TYPE
 
-    ib = FakeIB()
+    ib = FakeIB(qualifiable={"AAPL"}, primary_exchanges={"AAPL": "NASDAQ"})
     get(make_client(ib), "symbols=AAPL")
     assert ib.market_data_types == [MARKET_DATA_TYPE]
-    contract = ib.mkt_subscribed[0]
-    assert (contract.symbol, contract.secType, contract.exchange, contract.currency) == ("AAPL", "STK", "SMART", "USD")
+    # Qualification asks SMART, as always: it is TWS's own resolution step, not a subscription.
+    assert len(ib.qualify_calls) == 1
+    (qualified,) = ib.qualify_calls[0]
+    assert (qualified.symbol, qualified.secType, qualified.exchange, qualified.currency) == (
+        "AAPL",
+        "STK",
+        "SMART",
+        "USD",
+    )
+    # The subscription itself never uses SMART once a primary exchange is known: a NASDAQ
+    # listing subscribed via SMART hits TWS's error 10091 and gets nothing, not even delayed.
+    subscribed = ib.mkt_subscribed[0]
+    assert (subscribed.symbol, subscribed.secType, subscribed.exchange, subscribed.currency) == (
+        "AAPL",
+        "STK",
+        "NASDAQ",
+        "USD",
+    )
+    assert subscribed.conId != 0
 
 
 def test_every_subscription_is_cancelled_and_tws_disconnected(make_client):
-    ib = FakeIB(quotes={"AAPL": FakeTicker(last=1.0, close=1.0)})
+    ib = FakeIB(quotes={"AAPL": FakeTicker(last=1.0, close=1.0), "MSFT": FakeTicker(last=1.0, close=1.0)})
     get(make_client(ib), "symbols=AAPL,MSFT")
     assert [c.symbol for c in ib.mkt_cancelled] == ["AAPL", "MSFT"]
     assert ib.disconnected
 
 
 def test_a_failing_subscription_never_fails_the_answer(make_client):
-    ib = FakeIB(quotes_error=RuntimeError("boom"))
+    ib = FakeIB(quotes_error=RuntimeError("boom"), qualifiable={"AAPL"})
     response = get(make_client(ib), "symbols=AAPL")
     assert response.status_code == 200
     assert response.json()["quotes"] == [{"symbol": "AAPL", "last": None, "close": None}]
@@ -102,3 +120,51 @@ def test_the_query_is_read_only_client_zero(make_client):
     get(make_client(ib), "symbols=AAPL")
     assert ib.connected_to[0] == "127.0.0.1" and ib.connected_to[2] == 0
     assert ib.readonly is True
+
+
+def test_an_unqualifiable_symbol_is_never_subscribed_and_comes_back_null(make_client):
+    ib = FakeIB(quotes={"AAPL": FakeTicker(last=231.4, close=228.9)})
+    body = get(make_client(ib), "symbols=AAPL,ZZZZ").json()
+    assert body["quotes"] == [
+        {"symbol": "AAPL", "last": 231.4, "close": 228.9},
+        {"symbol": "ZZZZ", "last": None, "close": None},
+    ]
+    assert [c.symbol for c in ib.mkt_subscribed] == ["AAPL"]
+
+
+def test_qualification_happens_before_any_subscription(make_client):
+    ib = FakeIB(quotes={"AAPL": FakeTicker(last=1.0, close=1.0)})
+    get(make_client(ib), "symbols=AAPL")
+    assert len(ib.qualify_calls) == 1
+    # The subscribed contract only carries a conId because qualification ran, and wrote it,
+    # before reqMktData was ever called.
+    assert ib.mkt_subscribed[0].conId != 0
+
+
+def test_a_nasdaq_and_a_nyse_symbol_are_each_subscribed_on_their_own_primary_exchange(make_client):
+    ib = FakeIB(
+        quotes={"AAPL": FakeTicker(last=1.0, close=1.0), "IBM": FakeTicker(last=1.0, close=1.0)},
+        primary_exchanges={"AAPL": "NASDAQ", "IBM": "NYSE"},
+    )
+    get(make_client(ib), "symbols=AAPL,IBM")
+    by_symbol = {c.symbol: c for c in ib.mkt_subscribed}
+    assert by_symbol["AAPL"].exchange == "NASDAQ"
+    assert by_symbol["IBM"].exchange == "NYSE"
+    assert by_symbol["AAPL"].conId != 0
+    assert by_symbol["IBM"].conId != 0
+    assert by_symbol["AAPL"].conId != by_symbol["IBM"].conId
+
+
+def test_a_failing_qualification_returns_all_null_with_a_200_and_disconnects(make_client):
+    ib = FakeIB(quotes={"AAPL": FakeTicker(last=1.0, close=1.0)}, qualify_error=RuntimeError("boom"))
+    response = get(make_client(ib), "symbols=AAPL")
+    assert response.status_code == 200
+    assert response.json()["quotes"] == [{"symbol": "AAPL", "last": None, "close": None}]
+    assert ib.mkt_subscribed == []
+    assert ib.disconnected
+
+
+def test_only_subscribed_contracts_are_cancelled(make_client):
+    ib = FakeIB(quotes={"AAPL": FakeTicker(last=1.0, close=1.0)})
+    get(make_client(ib), "symbols=AAPL,ZZZZ")
+    assert [c.symbol for c in ib.mkt_cancelled] == ["AAPL"]

@@ -213,7 +213,11 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `WHEEL_SHARE_COLUMNS` et de la Suggestion de position, triable, jamais triée par défaut ; XSP
   se cote par SPY (`chartProxyOf`). **Une connexion TWS à la fois** : `fetchSnapshot`,
   `fetchBars` et `fetchQuotes` passent par `exclusiveTws` (`agent/client.ts`), parce que TWS
-  refuse deux connexions `clientId 0` simultanées.
+  refuse deux connexions `clientId 0` simultanées. Côté agent, `collect_quotes` qualifie chaque
+  symbole (`qualifyContractsAsync`, `Stock(symbole, 'SMART', 'USD')`) avant de l'abonner, et
+  l'abonne toujours sur sa place principale, jamais sur `SMART` : sur `SMART`, une valeur NASDAQ
+  passe par un abonnement que l'API n'a pas et TWS ne sert rien du tout, pas même en différé
+  (erreur 10091), vérifié contre un vrai TWS le 2026-09-28.
 - **Les couleurs vivent dans les tokens de `apps/web/src/index.css`**, reprises des maquettes
   `docs/style/{dark,white}-finance-desktop.html` (sous-projet 31) : `primary` et `success` sont tous deux teal, si bien
   qu'aucune étiquette ne s'appuie sur leur différence (`journalTone.ts` prend les teintes des
@@ -495,7 +499,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 32 | Publication : une prod et une dev sur le VPS | fait (2026-09-25), mise en ligne en attente de la tâche 5 du plan 32 |
 | 33 | L'ordre de sortie des lots d'actions | fait (2026-09-28) |
 | 34 | La page Positions Condors, un condor par ligne | fait (2026-09-28) |
-| 35 | Var. jour action : la variation du jour du sous-jacent | fait (2026-09-28), sonde en attente |
+| 35 | Var. jour action : la variation du jour du sous-jacent | fait (2026-09-28), sonde hors séance en attente |
 
 ## Outillage
 

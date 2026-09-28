@@ -28,6 +28,7 @@ class FakeContract:
     lastTradeDateOrContractMonth: str = ""
     multiplier: str = ""
     currency: str = "USD"
+    primaryExchange: str = ""
 
 
 @dataclass
@@ -116,6 +117,9 @@ class FakeIB:
         bars_error: Exception | None = None,
         quotes=None,
         quotes_error: Exception | None = None,
+        qualifiable: set[str] | None = None,
+        primary_exchanges: dict[str, str] | None = None,
+        qualify_error: Exception | None = None,
     ):
         self._managed_accounts = managed_accounts if managed_accounts is not None else ["U1234567"]
         self._portfolio = portfolio if portfolio is not None else []
@@ -131,6 +135,12 @@ class FakeIB:
         self._bars_error = bars_error
         self._quotes = quotes if quotes is not None else {}
         self._quotes_error = quotes_error
+        # A symbol qualifies (gets a conId and a primaryExchange) when it is in `quotes` - the
+        # real TWS knows a symbol it can quote - or explicitly listed here, for a symbol that
+        # should qualify but carries no ticker (an unqualifiable ticker has neither).
+        self._qualifiable = qualifiable if qualifiable is not None else set()
+        self._primary_exchanges = primary_exchanges if primary_exchanges is not None else {}
+        self._qualify_error = qualify_error
         # (contract, kwargs) of every reqHistoricalDataAsync call, in order.
         self.historical_requests: list[tuple] = []
         self.pnl_subscribed: list[tuple[str, str, int]] = []
@@ -141,6 +151,9 @@ class FakeIB:
         self.market_data_types: list[int] = []
         self.mkt_subscribed: list[Any] = []
         self.mkt_cancelled: list[Any] = []
+        # Each call's contracts, in order, exactly as qualifyContractsAsync received them.
+        self.qualify_calls: list[tuple] = []
+        self._next_con_id = 1000
 
     async def connectAsync(self, host, port, clientId=0, timeout=4, readonly=False):
         self.connected_to = (host, port, clientId, timeout)
@@ -183,7 +196,31 @@ class FakeIB:
     def reqMarketDataType(self, marketDataType):
         self.market_data_types.append(marketDataType)
 
+    async def qualifyContractsAsync(self, *contracts):
+        """The real one fills in each contract's `conId` (and, here, `primaryExchange`)
+        in place and returns a same-shaped list; an unknown or ambiguous contract keeps
+        `conId 0` and gets `None` in its slot. Qualifiable: a symbol in `quotes` - TWS knows
+        it well enough to have a price for it - or explicitly listed in `qualifiable`."""
+        self.qualify_calls.append(contracts)
+        if self._qualify_error is not None:
+            raise self._qualify_error
+        result: list[Any] = []
+        for contract in contracts:
+            if contract.symbol in self._quotes or contract.symbol in self._qualifiable:
+                contract.conId = self._next_con_id
+                self._next_con_id += 1
+                contract.primaryExchange = self._primary_exchanges.get(contract.symbol, "NASDAQ")
+                result.append(contract)
+            else:
+                result.append(None)
+        return result
+
     def reqMktData(self, contract, genericTickList="", snapshot=False, regulatorySnapshot=False, mktDataOptions=None):
+        if not contract.conId:
+            raise ValueError(
+                f"Contract {contract} can't be hashed because no 'conId' value exists. "
+                "Qualify contract to populate 'conId'."
+            )
         if self._quotes_error is not None:
             raise self._quotes_error
         self.mkt_subscribed.append(contract)

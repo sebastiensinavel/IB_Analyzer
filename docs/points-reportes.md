@@ -1158,8 +1158,10 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ## Reporté par le sous-projet 35 (Var. jour action)
 
-- **La sonde sur un vrai TWS reste à faire** : type de données de marché (3 ou 4) et délai
-  d'attente provisoires.
+- **Seule la sonde hors séance reste à faire** : le type de données de marché (3 contre 4)
+  après la clôture et le week-end n'est pas vérifié — la sonde en séance du 2026-09-28 a montré
+  3 et 4 identiques, `QUOTES_TIMEOUT_S = 8` (spec §9). Une « Peer closed connection » a été vue
+  une fois pendant un run type 4 de cette même séance, jamais reproduite depuis.
 - **Le comportement en pré-ouverture** (le `last` différé d'avant 9:30) n'est pas vérifié.
 - **Un chargement ou un changement de compte fait une passe `/quotes` de trop** : le rapport
   en cours de chargement vaut `null`, puis la liste de tickers change.

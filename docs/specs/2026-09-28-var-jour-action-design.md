@@ -1,6 +1,6 @@
 # Sous-projet 35 — Var. jour action : la variation du jour du sous-jacent
 
-Statut : implémenté (2026-09-28), sonde en attente.
+Statut : implémenté (2026-09-28), sonde hors séance en attente.
 
 La colonne « Var. jour » des tableaux de positions donne la variation du jour **du contrat
 détenu** : pour une action, celle de l'action ; pour une option, celle de l'option. Elle vient
@@ -41,11 +41,23 @@ colonne « Var. jour », inchangés ; le tri de la Suggestion de position.
   la clôture), choisi par la sonde (§9) : IB sert le temps réel quand il est souscrit, le différé
   de 15 minutes sinon. Le compte de l'utilisateur n'a **pas** d'abonnement temps réel
   et s'en satisfait : le différé est le cas nominal, pas un repli.
-- Pour chaque symbole, `reqMktData(Stock(symbole, 'SMART', 'USD'), '', False, False)` en flux ;
-  attente jusqu'à ce que chaque ticker ait `last` et `close`, ou jusqu'à `QUOTES_TIMEOUT_S`
-  (valeur fixée par la sonde, §9, du même ordre que `PNL_TIMEOUT_S`) ; puis `cancelMktData` de
-  tous, dans un `finally`. C'est le patron de `collect_pnl`, et comme lui la collecte ne lève
-  jamais : un symbole que TWS ne sert pas (inconnu, sans données) sort avec des valeurs `null`.
+- Chaque symbole est d'abord **qualifié** : `Stock(symbole, 'SMART', 'USD')` non qualifié n'a
+  pas de `conId`, et `reqMktData` sur un tel contrat lève `ValueError` avant même d'atteindre
+  TWS (« can't be hashed because no 'conId' value exists », vérifié contre un vrai TWS le
+  2026-09-28) — c'est pourquoi `collect_quotes` appelle `ib.qualifyContractsAsync(*contracts)`
+  en premier, borné par le même délai `QUOTES_TIMEOUT_S` que le reste de l'appel
+  (`asyncio.wait_for` sur le budget restant). Un symbole inconnu ou ambigu garde `conId 0` :
+  il n'est jamais souscrit, jamais une erreur, simplement absent du résultat.
+- Pour chaque symbole qualifié, `reqMktData` en flux, **jamais sur `SMART`** mais sur la place
+  principale du contrat (`primaryExchange` rendu par la qualification — NASDAQ, NYSE, ARCA,
+  AMEX) : sur `SMART`, une valeur NASDAQ passe par un abonnement que l'API n'a pas et TWS ne
+  sert rien du tout, pas même en différé (erreur 10091, « Part of requested market data
+  requires additional subscription for API … NASDAQ.NMS/TOP/ALL ») ; NYSE/AMEX/ARCA sur SMART
+  fonctionnent (erreur 10167, différé servi), mais la place principale marche pour les quatre
+  et évite le piège. Attente jusqu'à ce que chaque ticker ait `last` et `close`, ou jusqu'à la
+  même échéance ; puis `cancelMktData` des seules souscriptions ouvertes, dans un `finally`.
+  C'est le patron de `collect_pnl`, et comme lui la collecte ne lève jamais : un symbole que
+  TWS ne sert pas (inconnu, sans données, qualification en échec) sort avec des valeurs `null`.
 - Réponse brute, sans calcul, fidèle au principe de l'agent :
   `{"fetchedAt": "<UTC ISO>", "quotes": [{"symbol": "AAPL", "last": 231.4, "close": 228.9}]}`,
   un élément par symbole demandé, `last` et `close` nettoyés comme `clean_pnl` (`nan`, `DBL_MAX`
@@ -185,8 +197,21 @@ Contre le vrai TWS de l'utilisateur, sans abonnement temps réel, avant tout cod
 
 Le résultat s'écrit dans la spec ; un écart à 1 ou 2 revient à l'utilisateur avant la suite.
 
-Résultat : en attente — `MARKET_DATA_TYPE = 4` et `QUOTES_TIMEOUT_S = 5` sont provisoires
-jusqu'à la sonde (`private/probe_quotes.py`, hors dépôt), qui conditionne le merge.
+Résultat (2026-09-28, en séance, sur le vrai TWS de l'utilisateur, agrégats seulement) : 43/43
+tickers cotés (33 NASDAQ, 8 NYSE, 1 ARCA, 1 AMEX), en 4,1 s en tout, qualification comprise
+(~1,5-2,2 s), pour `MARKET_DATA_TYPE` 3 comme 4 — identiques en séance. Le point 1 a d'abord
+buté sur un défaut distinct de la sonde elle-même : `reqMktData` sur un contrat non qualifié
+lève `ValueError` (« can't be hashed because no 'conId' value exists »), qui existait déjà dans
+`main.py` avant ce sous-projet et que la sonde a révélé — corrigé par la qualification
+(`qualifyContractsAsync`) avant toute souscription (§2). Une fois qualifié, un abonnement `SMART`
+fonctionne pour NYSE/AMEX/ARCA (erreur 10167, différé servi) mais pas pour NASDAQ, qui passe par
+un abonnement que l'API n'a pas et ne reçoit alors rien, pas même en différé (erreur 10091) ;
+s'abonner sur la place principale du contrat plutôt que `SMART` lève ce piège pour les quatre
+places. `MARKET_DATA_TYPE = 4` est gardé (identique à 3 en séance, et 4 fige la dernière valeur
+à la clôture) ; `QUOTES_TIMEOUT_S = 8` (4,1 s arrondi au-dessus avec marge), et
+`CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S = 13 s` reste sous `AGENT_FETCH_TIMEOUT_MS` (15 s). Le
+point 2 (comportement hors séance : `close`/`last` après la clôture et le week-end, type 3
+contre 4) reste à sonder — voir §10 et `docs/points-reportes.md`.
 
 ## 10. Décisions arbitrées (2026-09-28)
 
