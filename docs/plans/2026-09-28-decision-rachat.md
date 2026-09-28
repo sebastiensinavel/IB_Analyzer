@@ -61,7 +61,7 @@
   // AnalyzedPosition gagne : buyback: BuybackAdvice | null
   ```
 
-- [ ] **Step 1: Écrire les tests qui échouent** — `packages/coverage/src/buyback.test.ts` :
+- [x] **Step 1: Écrire les tests qui échouent** — `packages/coverage/src/buyback.test.ts` :
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -177,9 +177,9 @@ it("dates a short option from the sale table, and keeps the 50% rule without it"
 
 (`contractId`, `contractOf` s'importent de `@ib/ledger`. Utiliser la fabrique de positions déjà présente dans `report.test.ts` ou `analyze.test.ts`.)
 
-- [ ] **Step 2:** `cd packages/coverage && npx vitest run buyback report analyze` → FAIL (`./buyback.ts` introuvable).
+- [x] **Step 2:** `cd packages/coverage && npx vitest run buyback report analyze` → FAIL (`./buyback.ts` introuvable).
 
-- [ ] **Step 3: Implémenter** — `packages/coverage/src/buyback.ts` :
+- [x] **Step 3: Implémenter** — `packages/coverage/src/buyback.ts` :
 
 ```ts
 import { contractId, type JournalRow } from "@ib/ledger";
@@ -312,8 +312,8 @@ export function buildRiskReport(positions: readonly Position[], cashAvailable: n
 
 Dans `index.ts` : `export * from "./buyback.ts";`. Toute autre construction d'`AnalyzedPosition` littérale dans les tests du paquet reçoit `buyback: null` (le typage les signale).
 
-- [ ] **Step 4:** `cd packages/coverage && npx vitest run && npx tsc --noEmit -p .` → PASS (les appelants `strategy.ts`/`condors.ts` passent `null` en troisième argument à ce stade : `evaluateBuyback(avgPrice, lastPrice, null).decision`, remplacés à la tâche 2).
-- [ ] **Step 5:** cocher les cases de la tâche 1 et commit : `Décision de rachat : l'avis tient compte du temps`.
+- [x] **Step 4:** `cd packages/coverage && npx vitest run && npx tsc --noEmit -p .` → PASS (les appelants `strategy.ts`/`condors.ts` passent `null` en troisième argument à ce stade : `evaluateBuyback(avgPrice, lastPrice, null).decision`, remplacés à la tâche 2).
+- [x] **Step 5:** cocher les cases de la tâche 1 et commit : `Décision de rachat : l'avis tient compte du temps`.
 
 ---
 

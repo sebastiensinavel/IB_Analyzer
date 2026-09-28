@@ -1,5 +1,6 @@
 import { ACTIVABLE_STRATEGIES, contractId, type ActivableStrategy, type ContractKey, type JournalRow } from "@ib/ledger";
-import { contractMultiplier, evaluateBuyback } from "./classify.ts";
+import { evaluateBuyback } from "./buyback.ts";
+import { contractMultiplier } from "./classify.ts";
 import { DEFAULT_MULTIPLIER, KIND_LABELS, type PositionKind } from "./constants.ts";
 import { condorsNakedByContract, dayShare, pricedByContract, type Priced, type PricedSnapshot } from "./strategy.ts";
 
@@ -173,7 +174,7 @@ export function condorPositions(
         !partial && row.openPrice !== null && closingCost !== null
           ? closingCost <= 0
             ? "buy back"
-            : evaluateBuyback(row.openPrice, closingCost)
+            : evaluateBuyback(row.openPrice, closingCost, null).decision
           : null,
       naked: 0,
       legs,

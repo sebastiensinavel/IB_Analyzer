@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BUYBACK_RATIO, DEFAULT_MULTIPLIER, KIND_LABELS } from "./constants.ts";
-import { analyze, describeContract, evaluateBuyback } from "./classify.ts";
+import { evaluateBuyback } from "./buyback.ts";
+import { analyze, describeContract } from "./classify.ts";
 import { option, stock } from "./fixtures.ts";
 
 describe("evaluateBuyback", () => {
@@ -14,14 +15,14 @@ describe("evaluateBuyback", () => {
     [0.5, 0.25, "buy back"],
     [0.5, 0.26, "keep"],
   ])("sold at %s, now %s -> %s", (sale, current, expected) => {
-    expect(evaluateBuyback(sale, current)).toBe(expected);
+    expect(evaluateBuyback(sale, current, null).decision).toBe(expected);
   });
 
   it("follows BUYBACK_RATIO, not a hard-coded 2", () => {
     const sale = 3;
     const threshold = sale / BUYBACK_RATIO;
-    expect(evaluateBuyback(sale, threshold)).toBe("buy back");
-    expect(evaluateBuyback(sale, threshold * 1.01)).toBe("keep");
+    expect(evaluateBuyback(sale, threshold, null).decision).toBe("buy back");
+    expect(evaluateBuyback(sale, threshold * 1.01, null).decision).toBe("keep");
   });
 
   it.each([
@@ -29,15 +30,15 @@ describe("evaluateBuyback", () => {
     [2.0, -1.0],
     [-2.0, -1.0],
   ])("ignores signs (%s, %s): IB bookkeeping, the rule compares magnitudes", (sale, current) => {
-    expect(evaluateBuyback(sale, current)).toBe("buy back");
+    expect(evaluateBuyback(sale, current, null).decision).toBe("buy back");
   });
 
   it.each([0, -0])("stays safe on a zero sale price (%s)", (sale) => {
-    expect(evaluateBuyback(sale, 0)).toBe("keep");
+    expect(evaluateBuyback(sale, 0, null).decision).toBe("keep");
   });
 
   it("buys back a worthless option", () => {
-    expect(evaluateBuyback(1.5, 0)).toBe("buy back");
+    expect(evaluateBuyback(1.5, 0, null).decision).toBe("buy back");
   });
 });
 

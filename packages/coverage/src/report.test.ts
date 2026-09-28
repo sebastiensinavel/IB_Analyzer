@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { contractId, contractOf } from "@ib/ledger";
 import { analyze } from "./classify.ts";
 import { DETAIL_GROUPS, KIND_LABELS, POSITION_KINDS, STRUCT_IRON_CONDOR, type PositionKind } from "./constants.ts";
 import { option, stock } from "./fixtures.ts";
@@ -119,6 +120,7 @@ function position(description: string, kind: PositionKind, overrides: Partial<An
     dayChange: null,
     action: "to evaluate",
     decision: "buy back",
+    buyback: null,
     symbol: description.split(" ")[0],
     secType: "OPT",
     currency: "USD",
@@ -178,5 +180,18 @@ describe("groupedPositions", () => {
     const groups = groupedPositions([]);
     expect(groups).toHaveLength(DETAIL_GROUPS.length);
     for (const group of groups) expect(group.positions).toEqual([]);
+  });
+});
+
+describe("buildRiskReport sale timing", () => {
+  it("dates a short option from the sale table, and keeps the 50% rule without it", () => {
+    const put = option({ symbol: "SPY", right: "P", strike: 600, expiry: "2026-10-01", quantity: -1, avgPrice: 30, marketPrice: 12 });
+    const id = contractId(contractOf(put));
+    const dated = buildRiskReport([put], 0, { asOf: "2026-09-28T16:00:00.000Z", soldAt: new Map([[id, "2026-09-01T16:00:00.000Z"]]) });
+    expect(dated.positions[0].decision).toBe("keep");
+    expect(dated.positions[0].buyback).toMatchObject({ remainingDays: 3, totalDays: 30 });
+    const plain = buildRiskReport([put], 0);
+    expect(plain.positions[0].decision).toBe("buy back");
+    expect(plain.positions[0].buyback).toEqual({ decision: "buy back", threshold: 15, remainingDays: null, totalDays: null });
   });
 });

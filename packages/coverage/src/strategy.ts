@@ -12,7 +12,8 @@ import {
   type Strategy,
   type WheelHolding,
 } from "@ib/ledger";
-import { contractMultiplier, evaluateBuyback } from "./classify.ts";
+import { evaluateBuyback } from "./buyback.ts";
+import { contractMultiplier } from "./classify.ts";
 import { DEFAULT_MULTIPLIER, DETAIL_GROUPS, KIND_LABELS, type CoverSource, type DetailGroupId, type PositionKind } from "./constants.ts";
 import type { AnalyzedPosition, CoverageAllocation, RiskReport } from "./types.ts";
 
@@ -37,7 +38,7 @@ export interface StrategyLine {
   dailyPnl: number | null;
   /** The IB position's move of the day, unprorated: it does not depend on the quantity. */
   dayChange: number | null;
-  /** Short options only: evaluateBuyback(avgPrice, lastPrice); `null` otherwise or without both prices. */
+  /** Short options only: evaluateBuyback(avgPrice, lastPrice, null).decision; `null` otherwise or without both prices. */
   decision: "buy back" | "keep" | null;
   /** The whole IB position; `null` when the snapshot does not hold the contract. */
   position: AnalyzedPosition | null;
@@ -245,7 +246,7 @@ function line({ contract, kind, contributions, migrated }: LineInput, priced: Pr
     unrealizedPnl: marketValue === null || avgPrice === null ? null : marketValue - avgPrice * quantity * multiplier,
     dailyPnl: day.dailyPnl,
     dayChange: day.dayChange,
-    decision: sold && lastPrice !== null && avgPrice !== null ? evaluateBuyback(avgPrice, lastPrice) : null,
+    decision: sold && lastPrice !== null && avgPrice !== null ? evaluateBuyback(avgPrice, lastPrice, null).decision : null,
     position: priced?.analyzed ?? null,
     coverage: sold && priced ? cappedCoverage(priced, sources, quantity) : [],
     used: bought && priced ? Math.min(Math.abs(quantity), priced.analyzed.usedQuantity) : null,

@@ -1,5 +1,6 @@
-import type { Position } from "@ib/ledger";
-import { BUYBACK_RATIO, DEFAULT_MULTIPLIER, EVALUATE_KINDS, KIND_LABELS, type PositionKind } from "./constants.ts";
+import { contractId, contractOf, type Position } from "@ib/ledger";
+import { evaluateBuyback, type BuybackTiming, type SaleTiming } from "./buyback.ts";
+import { DEFAULT_MULTIPLIER, EVALUATE_KINDS, KIND_LABELS, type PositionKind } from "./constants.ts";
 import { fmtNum } from "./format.ts";
 import type { AnalyzedPosition } from "./types.ts";
 
@@ -34,27 +35,23 @@ export function describeContract(pos: Position): string {
   return `${pos.symbol} (${pos.secType})`;
 }
 
-/**
- * "buy back" when the current price is at least BUYBACK_RATIO times lower
- * than the sale price, i.e. current <= sale / BUYBACK_RATIO. Otherwise "keep".
- */
-export function evaluateBuyback(salePrice: number, currentPrice: number): "buy back" | "keep" {
-  const sale = Math.abs(salePrice);
-  const current = Math.abs(currentPrice);
-  if (sale <= 0) return "keep";
-  return current <= sale / BUYBACK_RATIO ? "buy back" : "keep";
+/** The time a short option has run, from the sale table; `null` when anything is missing. */
+function timingOf(pos: Position, sales: SaleTiming | null): BuybackTiming | null {
+  if (!sales || !pos.expiry) return null;
+  const soldAt = sales.soldAt.get(contractId(contractOf(pos)));
+  return soldAt ? { soldAt, expiry: pos.expiry, asOf: sales.asOf } : null;
 }
 
 /** Turn a raw position into an AnalyzedPosition, coverage not yet computed. */
-export function analyze(pos: Position): AnalyzedPosition {
+export function analyze(pos: Position, sales: SaleTiming | null = null): AnalyzedPosition {
   const kind = classify(pos);
   const multiplier = contractMultiplier(pos);
   const action = EVALUATE_KINDS.has(kind) ? "to evaluate" : "ignore";
   // An unknown sale price counts as 0 for the rule only: sale 0 -> "keep".
   // An unknown current price makes the decision itself unknown: never fabricate
   // a "buy back" from a missing markPrice.
-  const decision =
-    action === "to evaluate" ? (pos.marketPrice === null ? null : evaluateBuyback(pos.avgPrice ?? 0, pos.marketPrice)) : null;
+  const buyback =
+    action === "to evaluate" && pos.marketPrice !== null ? evaluateBuyback(pos.avgPrice ?? 0, pos.marketPrice, timingOf(pos, sales)) : null;
   return {
     description: describeContract(pos),
     kind,
@@ -67,7 +64,8 @@ export function analyze(pos: Position): AnalyzedPosition {
     dailyPnl: pos.dailyPnl,
     dayChange: pos.dayChange,
     action,
-    decision,
+    decision: buyback?.decision ?? null,
+    buyback,
     symbol: pos.symbol,
     secType: pos.secType,
     currency: pos.currency,

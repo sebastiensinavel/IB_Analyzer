@@ -434,7 +434,7 @@ describe("other dangerous positions and sanity", () => {
     const positions = [
       stock({ symbol: "AAPL", quantity: 100, avgPrice: 140 }),
       option({ symbol: "AAPL", right: "C", quantity: -1, strike: 150 }),
-    ].map(analyze);
+    ].map((p) => analyze(p));
     computeCoverage(positions);
     const first = positions.map((p) => [...p.allocations]);
     computeCoverage(positions);
