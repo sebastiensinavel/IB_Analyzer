@@ -1,7 +1,8 @@
 import { render, waitFor } from "@testing-library/react";
-import { act } from "react";
+import { act, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RiskReport } from "@ib/coverage";
+import { useAccount } from "@/db/hooks";
 import { db, type AccountRecord, type SectorRecord } from "@/db/schema";
 import { getQuotesSnapshot, resetQuotes } from "./quotes";
 import { quoteTickers, useUnderlyingQuotes } from "./useUnderlyingQuotes";
@@ -35,7 +36,19 @@ describe("quoteTickers", () => {
   });
 });
 
+/**
+ * Set once `useAccount` has answered (loaded or not), whatever the answer: a test that wants to
+ * prove "no call" must first prove the effect actually ran with a settled account, not that it
+ * merely hasn't resolved yet — `useLiveQuery` on fake-indexeddb settles on a macrotask, one tick
+ * later than the module's own `port === undefined` guard would suggest.
+ */
+let accountLoaded = false;
+
 function Probe({ accountId = "beta" }: { accountId?: string }) {
+  const account = useAccount(accountId);
+  useEffect(() => {
+    if (account !== undefined) accountLoaded = true;
+  }, [account]);
   useUnderlyingQuotes(accountId, REPORT);
   return null;
 }
@@ -77,6 +90,7 @@ function mockAgentAbsent() {
 beforeEach(async () => {
   resetAgentState();
   resetQuotes();
+  accountLoaded = false;
   await db.open();
   await Promise.all(db.tables.map((table) => table.clear()));
 });
@@ -93,6 +107,9 @@ describe("useUnderlyingQuotes", () => {
     const calls = mockAgentAbsent();
     await refreshPresence();
     render(<Probe />);
+    // Prove the effect ran with a settled, ported account before trusting the zero: with
+    // `useLiveQuery` still pending, `port === undefined` alone would explain the zero.
+    await waitFor(() => expect(accountLoaded).toBe(true));
     await act(async () => {
       await Promise.resolve();
     });
@@ -118,6 +135,8 @@ describe("useUnderlyingQuotes", () => {
     const calls = mockAgent();
     await refreshPresence();
     render(<Probe />);
+    // Same proof: a loaded account confirmed to have no port, not merely one not yet loaded.
+    await waitFor(() => expect(accountLoaded).toBe(true));
     await act(async () => {
       await Promise.resolve();
     });
