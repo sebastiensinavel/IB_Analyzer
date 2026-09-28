@@ -16,17 +16,18 @@ import type { ColumnSpec } from "@/lib/tableView";
  * rather than fed, `Qté` and `Dev.`, because spelling them out would eat a data column for a word
  * the reader does not need.
  *
- * `strategy` is sized on `Wheel` + `Autres` side by side, the longest pair a takeover leaves (two
- * badges and their `gap-1`, 127 px with the cell padding). With it and `dateTime` served, the headers
- * leave `symbol` about 13 px over its own: an option label (`AAPL Oct17'26 150 Put`, 178 px) is
- * clipped, its title keeps it whole. `type` and the amounts are at their header's width: no width
- * shows `Opération sur titre`, `Dividende` (82 px) or a five-figure amount whole here.
+ * `strategy` stacks its badges one under the other in compact badges (`StrategyStack`), so it needs
+ * the width of one badge only: its widest line, `Condors` then a `+1` for a third strategy, is 89 px
+ * with the cell padding, just over its header's 81 px. What that leaves `symbol` (138 px) still
+ * clips a long option label (`AAPL Oct17'26 150 Put`, 178 px); its title keeps it whole. `type` and
+ * the amounts are at their header's width: no width shows `Opération sur titre`, `Dividende` (82 px)
+ * or a five-figure amount whole here.
  */
 export const HISTORY_COLUMNS = [
   { key: "dateTime", width: "17%", numeric: false, balance: false },
   { key: "type", width: "6%", numeric: false, balance: false },
-  { key: "symbol", width: "9.75%", numeric: false, balance: false },
-  { key: "strategy", width: "12.5%", numeric: false, balance: false },
+  { key: "symbol", width: "13.5%", numeric: false, balance: false },
+  { key: "strategy", width: "8.75%", numeric: false, balance: false },
   { key: "quantity", width: "5.5%", numeric: true, balance: false },
   { key: "price", width: "5.75%", numeric: true, balance: false },
   { key: "totalPrice", width: "6.75%", numeric: true, balance: false },

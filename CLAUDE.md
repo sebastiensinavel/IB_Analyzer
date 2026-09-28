@@ -177,7 +177,9 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   Condors), et la page Historique la dérive de `useAccountJournals`. Les jambes d'une conversion
   (split, changement de CUSIP) affichent « — ». Le badge
   porte le nom seul, jamais une quantité : des tranches fondues puis réparties ne disent pas
-  laquelle est allée où. Teintes dans `STRATEGY_BADGE` (`lib/strategyBadges.ts`) ; la colonne se
+  laquelle est allée où. Les badges s'empilent en badges compacts, deux lignes au plus dans
+  `HISTORY_ROW_HEIGHT`, « +n » au-delà (`components/history/StrategyStack.tsx`). Teintes dans
+  `STRATEGY_BADGE` (`lib/strategyBadges.ts`) ; la colonne se
   filtre sur ses valeurs et ne se trie pas, comme la Couverture.
 - **Tri et filtres des tableaux sont un état d'affichage en `localStorage`, jamais en IndexedDB ni
   sur le serveur** : une clé par compte et par tableau (`ib2:tableView:<compte>:history`,

@@ -2,14 +2,13 @@ import { memo, useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { LedgerRow, Strategy } from "@ib/ledger";
-import { Badge } from "@ib/ui/badge";
 import { TableBody, TableCell, TableHeader, TableRow } from "@ib/ui/table";
+import { StrategyStack } from "@/components/history/StrategyStack";
 import { TimelineScrubber } from "@/components/history/TimelineScrubber";
 import { ColumnHeader } from "@/components/table/ColumnHeader";
 import { formatAmount, formatContract, formatDateTime, formatPrice } from "@/lib/format";
 import { HISTORY_COLUMNS, HISTORY_HEADER_HEIGHT, HISTORY_ROW_HEIGHT, SCRUB_LABEL_LINGER_MS, type StrategiesOf } from "@/lib/historyColumns";
 import { buildTimeline } from "@/lib/historyTimeline";
-import { STRATEGY_BADGE } from "@/lib/strategyBadges";
 import type { ColumnSpec, Criterion, Facet, SortDirection, TableView } from "@/lib/tableView";
 
 const OVERSCAN = 10;
@@ -193,19 +192,13 @@ const TransactionRow = memo(function TransactionRow({
       <TableCell className={`${CELL} font-medium`} title={label}>
         {label}
       </TableCell>
-      {/* The strategies this transaction served, from the journals; empty while they load. One line,
-          clipped rather than wrapped: every row is HISTORY_ROW_HEIGHT tall. */}
+      {/* The strategies this transaction served, from the journals; empty while they load. Stacked
+          in compact badges, two lines at most, within the row's HISTORY_ROW_HEIGHT. */}
       <TableCell className={CELL}>
         {strategies === null ? null : strategies.length === 0 ? (
           <span className="text-muted-foreground">—</span>
         ) : (
-          <div className="flex gap-1 overflow-hidden">
-            {strategies.map((strategy) => (
-              <Badge key={strategy} variant={STRATEGY_BADGE[strategy].variant} className={STRATEGY_BADGE[strategy].className}>
-                {t(`history.strategies.${strategy}`)}
-              </Badge>
-            ))}
-          </div>
+          <StrategyStack strategies={strategies} />
         )}
       </TableCell>
       <TableCell className={NUMERIC_CELL} title={transaction.quantity === null ? undefined : String(transaction.quantity)}>

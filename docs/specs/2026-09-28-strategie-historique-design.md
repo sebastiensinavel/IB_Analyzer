@@ -81,9 +81,12 @@ fausse dans ce cas, et élargirait la colonne. Le nom seul est toujours juste.
   déjà calculés une fois dans la coquille, aucune page n'appelle `useJournals`. Tant que les
   journaux chargent, la cellule reste vide (ni badge ni « — ») ; prêts, une ligne sans stratégie
   affiche « — ».
-- Un badge par stratégie, sur une seule ligne, dans l'ordre de §2.1, espacés de `gap-1` ; la
-  cellule garde `h-9 truncate` : aucune ligne ne grandit (`HISTORY_ROW_HEIGHT`), un débordement
-  est coupé, jamais renvoyé à la ligne.
+- Un badge par stratégie, dans l'ordre de §2.1, **empilés les uns sous les autres** en badges
+  compacts (`StrategyStack`, `h-4`, texte 9,5 px) : deux tiennent dans les 36 px de la ligne,
+  qui ne grandit jamais (`HISTORY_ROW_HEIGHT`). Deux lignes au plus : au-delà, la seconde porte
+  « +n » après son badge, et le titre de la cellule nomme toutes les stratégies. La colonne n'a
+  ainsi besoin que de la largeur d'un badge, ce qui rend la place aux libellés de Symbole
+  (arbitrage de Seb, 2026-09-28).
 - Teintes, dans un seul tableau `STRATEGY_BADGE` (`apps/web/src/lib/strategyBadges.ts`),
   tons discrets fond léger + texte de la même teinte, reprises des rôles existants de la
   palette (`chartColors.ts`, `index.css`) :
@@ -109,8 +112,8 @@ fausse dans ce cas, et élargirait la colonne. Le nom seul est toujours juste.
 ## 5. Les largeurs
 
 Les douze colonnes sont remesurées d'une passe par un script, à 1280 px sur les libellés
-français, avec pour la nouvelle colonne son en-tête et le cas le plus long, `Wheel` + `Autres`
-côte à côte. Les pourcentages de `HISTORY_COLUMNS` restent à 100 au total. Pas d'itération sur
+français, avec pour la nouvelle colonne son en-tête et sa ligne la plus large, `Condors` suivi de « +1 »
+(89 px avec le padding de cellule, pour 8,75 %). Les pourcentages de `HISTORY_COLUMNS` restent à 100 au total. Pas d'itération sur
 captures ; `pnpm check` une fois à la fin.
 
 ## 6. Textes
