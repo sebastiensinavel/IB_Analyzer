@@ -6,7 +6,10 @@ import { fetchQuotes, QUOTES_MAX_SYMBOLS } from "./client";
 /**
  * The underlyings' day moves, as the last /quotes pass left them (spec of sub-project 35, §4):
  * module state, shared by every account and every page of the tab, never written to IndexedDB nor
- * to localStorage — a reload empties it, and the column shows "—" until the next pass.
+ * to localStorage — a reload empties it. This is only the fallback source of "Var. jour action"
+ * (task addendum to sub-project 35, `apps/web/src/lib/underlyingDayChange.ts`): a ticker held as
+ * stock, with a live `dayChange` on its snapshot, still shows that value after a reload with no
+ * agent, or before the first `/quotes` pass — "—" is only for a ticker neither held nor quoted.
  */
 export type QuoteMap = ReadonlyMap<string, number | null>;
 

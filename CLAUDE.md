@@ -210,9 +210,10 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   **Une action détenue par le compte à l'écran affiche son `dayChange` temps réel
   (`reqPnLSingle`), la cotation différée seulement sinon**, et le dit dans une infobulle
   (`resolveUnderlyingDayChange`, `apps/web/src/lib/underlyingDayChange.ts`) : la cotation traîne
-  jusqu'à 20 minutes derrière sur un compte réel. Le magasin (`apps/web/src/agent/quotes.ts`) vit en mémoire, commun aux comptes, vidé au
-  rechargement ; `useUnderlyingQuotes`, monté par `AccountDataProvider`, le rafraîchit à chaque
-  passe de l'agent. « Var. jour action » est **la première colonne** de `POSITION_COLUMNS`, de
+  jusqu'à 20 minutes derrière sur un compte réel. Le magasin (`apps/web/src/agent/quotes.ts`) vit
+  en mémoire, commun aux comptes, vidé au rechargement ; `useUnderlyingQuotes`, monté par
+  `AccountDataProvider`, le rafraîchit à chaque passe de l'agent. « Var. jour action » est
+  **la première colonne** de `POSITION_COLUMNS`, de
   `WHEEL_SHARE_COLUMNS` et de la Suggestion de position, triable, jamais triée par défaut ; XSP
   se cote par SPY (`chartProxyOf`). **Une connexion TWS à la fois** : `fetchSnapshot`,
   `fetchBars` et `fetchQuotes` passent par `exclusiveTws` (`agent/client.ts`), parce que TWS

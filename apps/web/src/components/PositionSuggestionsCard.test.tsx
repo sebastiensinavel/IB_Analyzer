@@ -123,8 +123,11 @@ describe("the Var. jour action column of the suggestion card", () => {
     const rows = (await screen.findAllByRole("row")).slice(1);
     const cell = within(rows[0]).getAllByRole("cell")[0];
     expect(cell).toHaveTextContent("-42.0%");
-    await userEvent.setup().hover(within(cell).getByText("-42.0%"));
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(screen.queryByText(/cotation différée|Interactive Brokers/i)).not.toBeInTheDocument();
+    // No tooltip wrapper at all for a held value — a hover-and-wait assertion would pass
+    // vacuously here: base-ui's TooltipProvider default OPEN_DELAY is 600 ms and no provider
+    // is mounted in this tree, so the popup never appears within a short wait whether or not
+    // the cell wraps its text in a trigger. The trigger itself (`data-slot="tooltip-trigger"`,
+    // packages/ui/src/components/ui/tooltip.tsx) is the structural fact to check instead.
+    expect(cell.querySelector('[data-slot="tooltip-trigger"]')).toBeNull();
   });
 });

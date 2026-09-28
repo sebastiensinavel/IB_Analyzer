@@ -87,7 +87,10 @@ variation, commune à tous les comptes et à toute la page —, lu par `useSyncE
 (`useUnderlyingQuotesMap()` rend la table, `underlyingDayChangeOf(table, ticker)` la valeur d'un
 ticker), sur le modèle de
 `presence` dans `useAgentSync.ts`. Rien en IndexedDB, rien en `localStorage` : un rechargement de
-la page le vide, et la colonne montre « — » jusqu'à la première passe.
+la page le vide. Ce magasin n'est que le repli de « Var. jour action », pas sa seule source
+(« L'action détenue passe devant sa cotation », plus bas dans cette section) : un ticker détenu
+en actions, avec un `dayChange` sur son snapshot, garde sa valeur après un rechargement sans
+agent ou avant la première passe — « — » ne vaut que pour un ticker ni détenu ni coté.
 
 **Déclenchement** : `useUnderlyingQuotes(accountId, report)`, monté par `AccountDataProvider`, se relance
 chaque fois que `lastAgentSyncAt` du compte change — `syncAgent` ne l'avance qu'après une passe
@@ -197,9 +200,11 @@ XSP, qui dit les deux à la fois. `charts.proxy` ne convient pas : il parle des 
   mal formé.
 - **Web** (`fake-indexeddb`, ledger semé, agent intercepté) : après une passe réussie, la colonne
   est remplie sur Positions, une page de stratégie, une ligne de condor et la Suggestion ;
-  « — » sans agent et avant la première passe ; XSP lit la valeur de SPY ; le tri de la colonne
-  est signé, `null` en dernier ; aucun tri par défaut ; une nouvelle passe (`lastAgentSyncAt`
-  changé) relance les cotations ; un échec de `/quotes` garde les valeurs précédentes ;
+  « — » sans agent, sans quote et sans `dayChange` détenu, avant comme après la première passe ;
+  un ticker détenu en actions garde son `dayChange` sans agent ou avant la première passe ; XSP
+  lit la valeur de SPY ; le tri de la colonne est signé, `null` en dernier ; aucun tri par défaut ;
+  une nouvelle passe (`lastAgentSyncAt` changé) relance les cotations ; un échec de `/quotes`
+  garde les valeurs précédentes ;
   découpage en lots au-delà de 90 tickers ; deux appels à l'agent ne se chevauchent jamais.
 - **Colonnes** : les largeurs de `POSITION_COLUMNS` et `WHEEL_SHARE_COLUMNS` somment à 100 %.
 - Le driver `run-frontend --agent` sert une fixture `/quotes` à côté de celle de `/snapshot`.

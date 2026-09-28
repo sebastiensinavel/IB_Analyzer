@@ -35,15 +35,10 @@ describe("resolveUnderlyingDayChange", () => {
   });
 
   it("falls back to the delayed quote for a ticker not held as stock", () => {
+    // Also covers a held-but-null dayChange: buildHeldDayChange already drops it (see above),
+    // so the caller only ever sees an empty/absent entry there, exactly like this case.
     const quotes = new Map<string, number | null>([["XOM", -0.0312]]);
     expect(resolveUnderlyingDayChange("XOM", new Map(), quotes)).toEqual({ value: -0.0312, delayed: true, proxy: null });
-  });
-
-  it("falls back to the quote when the held stock's own dayChange is null (not in the held map)", () => {
-    // buildHeldDayChange already drops a null dayChange, so a held-but-null ticker never appears
-    // in `held`: the caller sees only the fallback path, exactly as if it were not held.
-    const quotes = new Map<string, number | null>([["AAPL", 0.01]]);
-    expect(resolveUnderlyingDayChange("AAPL", new Map(), quotes)).toEqual({ value: 0.01, delayed: true, proxy: null });
   });
 
   it("reads XSP's delayed quote from SPY and names the substitute", () => {

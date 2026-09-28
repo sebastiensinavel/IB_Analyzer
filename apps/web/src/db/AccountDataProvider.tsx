@@ -1,12 +1,17 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { ActivableStrategy } from "@ib/ledger";
 import { useUnderlyingQuotes } from "@/agent/useUnderlyingQuotes";
+import { buildHeldDayChange } from "@/lib/underlyingDayChange";
 import { useActiveStrategies, useJournals, useRiskReport, type JournalsView, type RiskReportView } from "./hooks";
 
 interface AccountData {
   journals: JournalsView;
   risk: RiskReportView;
   strategies: readonly ActivableStrategy[] | undefined;
+  /** The account's held stocks' live dayChange, built once per snapshot (task addendum to
+   * sub-project 35) — every `UnderlyingDayChangeCell` and column spec reads this same map
+   * instead of rebuilding it from `snapshot.positions` on every row. */
+  heldDayChange: ReadonlyMap<string, number>;
 }
 
 const AccountDataContext = createContext<AccountData | null>(null);
@@ -22,9 +27,10 @@ export function AccountDataProvider({ accountId, children }: { accountId: string
   const journals = useJournals(accountId, strategies);
   const { snapshot, report, sectorOf } = useRiskReport(accountId);
   useUnderlyingQuotes(accountId, report ?? null);
+  const heldDayChange = useMemo(() => buildHeldDayChange(snapshot?.positions ?? []), [snapshot]);
   const value = useMemo(
-    () => ({ journals, risk: { snapshot, report, sectorOf }, strategies }),
-    [journals, snapshot, report, sectorOf, strategies],
+    () => ({ journals, risk: { snapshot, report, sectorOf }, strategies, heldDayChange }),
+    [journals, snapshot, report, sectorOf, strategies, heldDayChange],
   );
   return <AccountDataContext.Provider value={value}>{children}</AccountDataContext.Provider>;
 }
@@ -47,4 +53,10 @@ export function useAccountRiskReport(): RiskReportView {
 /** The account's active strategies, the list its journals were built with; `undefined` while loading. */
 export function useAccountStrategies(): readonly ActivableStrategy[] | undefined {
   return useAccountData("useAccountStrategies").strategies;
+}
+
+/** The account's held stocks' live dayChange (task addendum to sub-project 35, §4): built once
+ * per snapshot by the provider, read by `useUnderlyingDayChange`. */
+export function useAccountHeldDayChange(): ReadonlyMap<string, number> {
+  return useAccountData("useAccountHeldDayChange").heldDayChange;
 }

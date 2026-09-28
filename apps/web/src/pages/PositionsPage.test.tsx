@@ -333,9 +333,12 @@ describe("PositionsPage", () => {
     renderPositions();
     const cells = within(await rowFor("AAPL")).getAllByRole("cell");
     expect(cells[0]).toHaveTextContent("+5.0%");
-    await userEvent.setup().hover(within(cells[0]).getByText("+5.0%"));
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(screen.queryByText(/cotation différée|Interactive Brokers/i)).not.toBeInTheDocument();
+    // No tooltip wrapper at all for a held value — a hover-and-wait assertion would pass
+    // vacuously here: base-ui's TooltipProvider default OPEN_DELAY is 600 ms and no provider
+    // is mounted in this tree, so the popup never appears within a short wait whether or not
+    // the cell wraps its text in a trigger. The trigger itself (`data-slot="tooltip-trigger"`,
+    // packages/ui/src/components/ui/tooltip.tsx) is the structural fact to check instead.
+    expect(cells[0].querySelector('[data-slot="tooltip-trigger"]')).toBeNull();
   });
 
   it("falls back to the delayed quote when a held stock's own dayChange is null", async () => {
