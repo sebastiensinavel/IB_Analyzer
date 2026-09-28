@@ -55,8 +55,8 @@ Sur les douze colonnes de `POSITION_COLUMNS`, dans leur ordre actuel :
 
 | Colonne | Contenu |
 |---|---|
-| Position | libellé du journal (`formatCondorLabel`, p. ex. `XSP 17OCT26 IC 560/565/600/605`), précédé du chevron de dépliage |
-| Type | « Iron condor » ; « Iron condor partiel » dès qu'une de ses jambes est fermée |
+| Position | libellé du journal (`formatCondorLabel`, p. ex. `XSP Oct17'26 IC 560/565/600/605`), précédé du chevron de dépliage |
+| Type | `iron condor` ; `partial iron condor` dès qu'une de ses jambes est fermée — libellés du moteur, en anglais et tels quels comme `KIND_LABELS` (`CONDOR_KIND_LABELS`) |
 | Secteur | secteur du sous-jacent, lu dans la table sectorielle |
 | Valeur de marché | somme des valeurs de marché des jambes ouvertes |
 | Quantité | quantité du composite, négative : −n condors vendus |
@@ -117,8 +117,11 @@ Quand l'aile d'un condor est fermée et sa jambe vendue gardée, IB voit cette v
 quitter cette part à la page de stratégie. **Pour les Condors, la jambe reste dans son condor**
 (arbitré le 2026-09-28) : l'en retirer fausserait le P/L total, qui est l'objet de la page.
 
-La part nue d'un contrat se répartit entre les jambes vendues ouvertes qui le portent, dans
-l'ordre d'ouverture des condors, chacune au plus sa quantité. Une jambe qui en reçoit porte le
+La part nue des Condors sur un contrat est celle que `migratedContracts` leur retire déjà pour
+la page Autres (sous-projet 22) : les deux pages lisent le même nombre et ne se contredisent
+jamais. Elle se répartit entre les jambes vendues ouvertes qui portent ce contrat, chacune au plus sa
+quantité : d'abord celles dont l'aile du même côté (même right, jambe achetée) est fermée — ce
+sont elles qu'IB voit nues —, puis les autres, dans l'ordre d'ouverture des condors. Une jambe qui en reçoit porte le
 badge `UNCOVERED ×n` dans Couverture, et la ligne de son condor `UNCOVERED ×Σn`. Le filtre de
 Couverture de l'encadré lit la valeur `UNCOVERED`, jamais le texte du badge. La page Autres
 continue de montrer cette même part : la jambe paraît sur deux pages, jamais deux fois sur une
@@ -142,10 +145,10 @@ Les clés des anciens encadrés `optionBuys` et `optionSells` des Condors ne son
 ## 7. Textes
 
 En français et en anglais (`apps/web/src/i18n/{fr,en}.json`) : le titre de l'encadré (« Condors
-en cours » / « Open condors »), les deux types (« Iron condor », « Iron condor partiel » /
-« Partial iron condor »), le marqueur de jambe fermée (« fermée » / « closed »), l'infobulle du
+en cours » / « Open condors »), le marqueur de jambe fermée (« fermée » / « closed »), l'infobulle du
 réalisé (« dont réalisé {{amount}} » / « of which realized {{amount}} ») et les libellés du
-chevron (réutiliser `journal.expand` / `journal.collapse`).
+chevron (réutiliser `journal.expand` / `journal.collapse`). Les types restent les libellés
+anglais du moteur (§3), comme ceux des jambes.
 
 ## 8. Tests
 
@@ -157,7 +160,8 @@ Vitest écrits à la main sur `condorPositions` (`packages/coverage`) :
 - rachat partiel en unités : seule la part ouverte paraît, à sa quantité ;
 - jambe ouverte sans prix : valeurs dépendantes `null`, jamais 0 ;
 - sans snapshot : une ligne par condor, prix et P/L `null` ;
-- jambe nue : badge sur la jambe et sur le condor, répartition entre deux condors du même contrat ;
+- jambe nue : badge sur la jambe et sur le condor ; deux condors sur le même contrat, la part nue
+  va à celui dont l'aile est fermée, même ouvert après l'autre ;
 - deux condors sur les mêmes strikes, ouverts à des instants différents : deux lignes.
 
 Page (`StrategyPositionsPage.test.tsx`, `fake-indexeddb`, ledger semé en base) : une ligne par
