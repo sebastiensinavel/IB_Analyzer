@@ -1,6 +1,6 @@
 # Sous-projet 36 — Les totaux : P/L du jour, P/L non réalisé, valeur totale
 
-Statut : conçu (2026-09-28).
+Statut : implémenté (2026-09-28).
 
 Le tableau de bord ne montre qu'un chiffre de résultat, le *Profit/perte total* réalisé des
 journaux (`computeStats`). Les pages de positions montrent ligne par ligne la valeur de marché,

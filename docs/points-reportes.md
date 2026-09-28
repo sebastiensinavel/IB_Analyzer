@@ -1187,6 +1187,15 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Reporté par le sous-projet 36 (Totaux)
+
+- **Une jambe de condor fermée seule n'entre dans aucun réalisé du jour.** Un condor n'a qu'une
+  ligne de journal, son composite ; ses jambes n'en ont aucune. Le composite compte donc une fois,
+  tout son `pnl`, le jour où sa dernière jambe se ferme — le jour où une jambe se ferme plus tôt,
+  seule, ne réalise rien pour `realizedOnDay`.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un

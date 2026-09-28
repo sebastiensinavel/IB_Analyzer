@@ -802,7 +802,7 @@ const realizedToday = agentDay ? pick(realizedOnDay(view.report.rows, agentDay))
 **Files:**
 - Modify: `CLAUDE.md`, `docs/points-reportes.md`, `docs/specs/2026-09-28-totaux-pnl-design.md`
 
-- [ ] **Step 1: `CLAUDE.md`** — ajouter une règle dans « Règles qui mordent » :
+- [x] **Step 1: `CLAUDE.md`** — ajouter une règle dans « Règles qui mordent » :
 
 ```markdown
 - **Les totaux sont des sommes calculées, jamais stockées** (sous-projet 36) : `sumByCurrency`,
@@ -818,12 +818,12 @@ const realizedToday = agentDay ? pick(realizedOnDay(view.report.rows, agentDay))
 
   et la ligne du registre : `| 36 | Les totaux : P/L du jour, P/L non réalisé, valeur totale | fait (2026-09-28) |`.
 
-- [ ] **Step 2: `docs/points-reportes.md`** — section « Reporté par le sous-projet 36 (Totaux) » : une jambe de condor fermée seule n'entre dans aucun réalisé du jour ; le composite compte tout son `pnl` le jour de sa dernière jambe.
+- [x] **Step 2: `docs/points-reportes.md`** — section « Reporté par le sous-projet 36 (Totaux) » : une jambe de condor fermée seule n'entre dans aucun réalisé du jour ; le composite compte tout son `pnl` le jour de sa dernière jambe.
 
-- [ ] **Step 3: Statut de la spec** → « implémenté (2026-09-28) ».
+- [x] **Step 3: Statut de la spec** → « implémenté (2026-09-28) ».
 
-- [ ] **Step 4: `pnpm check`** depuis la racine du worktree — tout vert. Sinon corriger et relancer.
+- [x] **Step 4: `pnpm check`** depuis la racine du worktree — tout vert. Sinon corriger et relancer.
 
-- [ ] **Step 5: Commit** — `git commit -m "Totaux : documentation du sous-projet 36"`.
+- [x] **Step 5: Commit** — `git commit -m "Totaux : documentation du sous-projet 36"`.
 
 - [ ] **Step 6: Instance de relecture** — `pnpm dev:start` dans le worktree, donner les deux URL à Seb (et rappeler `ib-tws-agent origin add http://127.0.0.1:<port>` pour voir les valeurs du jour).
