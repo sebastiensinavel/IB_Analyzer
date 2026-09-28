@@ -6,7 +6,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/t
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
 import { DataTable } from "@/components/table/DataTable";
 import { formatAmount } from "@/lib/format";
-import { POSITION_COLUMNS } from "@/lib/positionColumns";
+import { POSITION_COLUMNS, POSITION_TABLE_MIN_WIDTH } from "@/lib/positionColumns";
 
 interface CashBalancesCardProps {
   /** `anchoredBalances` over the whole ledger of the account, oldest first. */
@@ -30,7 +30,7 @@ export function CashBalancesCard({ rows, checks }: CashBalancesCardProps) {
         <CardTitle>{t("positions.cash.title")}</CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <DataTable columns={POSITION_COLUMNS} minWidth="70rem">
+        <DataTable columns={POSITION_COLUMNS} minWidth={POSITION_TABLE_MIN_WIDTH}>
           <TableHeader>
             <TableRow>
               {POSITION_COLUMNS.map(({ key }) =>

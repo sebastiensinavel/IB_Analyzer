@@ -7,14 +7,15 @@ import { Badge } from "@ib/ui/badge";
 import { Button } from "@ib/ui/button";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
-import { NUMERIC, toneOf } from "@/components/PositionRow";
+import { NUMERIC, toneOf, UnderlyingDayChangeCell } from "@/components/PositionRow";
 import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
 import { decisionBadge, uncoveredBadge } from "@/lib/riskReport";
 import { cn } from "@/lib/utils";
 
 /**
- * One condor and, unfolded, its four legs, on the twelve POSITION_COLUMNS (spec of sub-project 34,
- * §3–§4). A click on the row opens the chart like any position line; the chevron only folds.
+ * One condor and, unfolded, its four legs, on the thirteen POSITION_COLUMNS (spec of sub-project
+ * 34, §3–§4, extended by sub-project 35, §5). A click on the row opens the chart like any
+ * position line; the chevron only folds.
  */
 export function CondorRows({
   line,
@@ -38,6 +39,7 @@ export function CondorRows({
   return (
     <Fragment>
       <TableRow onClick={onChart} data-state={charted ? "selected" : undefined} className="cursor-pointer">
+        <UnderlyingDayChangeCell ticker={line.contract.ticker} />
         <TableCell className="font-medium">
           <span className="flex items-center gap-1">
             <Button
@@ -94,7 +96,10 @@ export function CondorRows({
         <TableCell>{decision && <Badge variant={decision.variant}>{decision.label}</Badge>}</TableCell>
         <TableCell>{line.naked > 0 && <NakedBadge quantity={line.naked} />}</TableCell>
       </TableRow>
-      {unfolded && line.legs.map((leg) => <LegRow key={`${leg.contract.right}${leg.contract.strike}`} leg={leg} sector={sector} />)}
+      {unfolded &&
+        line.legs.map((leg) => (
+          <LegRow key={`${leg.contract.right}${leg.contract.strike}`} leg={leg} sector={sector} ticker={leg.contract.ticker} />
+        ))}
     </Fragment>
   );
 }
@@ -104,10 +109,11 @@ function NakedBadge({ quantity }: { quantity: number }) {
   return <Badge variant={badge.variant}>{badge.label}</Badge>;
 }
 
-function LegRow({ leg, sector }: { leg: CondorLegLine; sector: string | null }) {
+function LegRow({ leg, sector, ticker }: { leg: CondorLegLine; sector: string | null; ticker: string }) {
   const { t } = useTranslation();
   return (
     <TableRow data-testid="condor-leg" className="text-muted-foreground">
+      <UnderlyingDayChangeCell ticker={ticker} />
       <TableCell className="pl-10">{formatContractLabel(leg.contract)}</TableCell>
       <TableCell>{leg.closed ? `${leg.label} · ${t("strategyPositions.closedLeg")}` : leg.label}</TableCell>
       <TableCell>{sector && <Badge variant="outline">{sector}</Badge>}</TableCell>

@@ -1156,6 +1156,37 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Reporté par le sous-projet 35 (Var. jour action)
+
+- **Un ticker exposé seulement par des options reste sur la cotation différée de 15 minutes** :
+  le compte n'a pas d'abonnement temps réel, et le ticker différé d'une option ne porte pas
+  toujours `undPrice`, constaté sur un vrai TWS — le repli reste `/quotes`, jamais `dayChange`.
+- **Après un rechargement sans agent, une action détenue montre la Var. jour de son dernier
+  snapshot**, éventuellement d'une séance précédente, comme la colonne « Var. jour » elle-même.
+- **Seule la sonde hors séance reste à faire** : le type de données de marché (3 contre 4)
+  après la clôture et le week-end n'est pas vérifié — la sonde en séance du 2026-09-28 a montré
+  3 et 4 identiques, `QUOTES_TIMEOUT_S = 8` (spec §9). Une « Peer closed connection » a été vue
+  une fois pendant un run type 4 de cette même séance, jamais reproduite depuis.
+- **Le comportement en pré-ouverture** (le `last` différé d'avant 9:30) n'est pas vérifié.
+- **Un chargement ou un changement de compte fait une passe `/quotes` de trop** : le rapport
+  en cours de chargement vaut `null`, puis la liste de tickers change.
+- **`void refreshQuotes(...)` laisserait une erreur autre que `NormalizationError` en rejet
+  non géré.**
+- **Aucun test ne couvre le passage absent → présent de l'agent ni un changement de la liste
+  des tickers.**
+- **Le test de tri de Positions sur Var. jour action ne vérifie que la première ligne**, pas
+  l'ordre complet ni les `null` en dernier.
+- **Plusieurs colonnes sont à 0 px de marge au plancher mesuré** : toute retouche
+  typographique demande de remesurer.
+- **La fixture `agent-quotes.json` ne cote que AAPL et SPY** : SPY n'est jamais demandé par
+  `--seed --agent`, MSFT (candidat de la Suggestion) n'y est pas.
+- **`/quotes` répète l'échafaudage connexion/503/déconnexion de `/bars` et `/snapshot`.**
+- **La qualification est tout ou rien** : `qualifyContractsAsync` ne remplit les contrats qu'une
+  fois toutes les réponses reçues, donc un seul symbole lent jusqu'au délai rend toute la passe
+  `null` ; acceptable au vu des 1,5–2,2 s mesurées.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un

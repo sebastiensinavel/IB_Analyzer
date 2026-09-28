@@ -98,7 +98,7 @@ describe("the chart row of the strategy pages", () => {
     expect(row.nextElementSibling).toBe(await screen.findByTestId("position-chart-row"));
   });
 
-  it("ouvre le graphe sous une ligne d'actions assignées sans call, sur onze colonnes", async () => {
+  it("ouvre le graphe sous une ligne d'actions assignées sans call, sur douze colonnes", async () => {
     const user = userEvent.setup();
     renderStrategy("wheel");
     const row = await rowFor("MQZA");
@@ -106,7 +106,7 @@ describe("the chart row of the strategy pages", () => {
     await user.click(row);
 
     const cell = (await screen.findByTestId("position-chart-row")).querySelector("td");
-    expect(cell).toHaveAttribute("colspan", "11");
+    expect(cell).toHaveAttribute("colspan", "12");
   });
 
   it("ferme le graphe d'un encart quand on clique une ligne d'un autre", async () => {

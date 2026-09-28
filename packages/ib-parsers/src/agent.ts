@@ -343,3 +343,22 @@ export function parseAgentSnapshot(payload: unknown, accountId: string): AgentSn
   const identities = mergeIdentities([collected.identities]);
   return { accounts, fetchedAt, cashAvailable, positions, transactions, identities, issues: collected.issues };
 }
+
+/**
+ * The underlyings' day moves from `/quotes` (spec of sub-project 35, §3): `(last − close) / close`.
+ * A distinct notion from a position's `dayChange`, which only `reqPnLSingle` gives: an option's last
+ * trade follows its mark badly, a stock's last trade is its price. `null` when TWS gave either term
+ * no value or the close is 0 — never 0 itself.
+ */
+export function parseAgentQuotes(payload: unknown): Map<string, number | null> {
+  const root = obj(payload, "payload");
+  const quotes = new Map<string, number | null>();
+  list(root, "quotes", "payload").forEach((value, i) => {
+    const path = `payload.quotes[${i}]`;
+    const o = obj(value, path);
+    const last = numOrNull(o, "last", path);
+    const close = numOrNull(o, "close", path);
+    quotes.set(str(o, "symbol", path).toUpperCase(), last === null || close === null || close === 0 ? null : (last - close) / close);
+  });
+  return quotes;
+}

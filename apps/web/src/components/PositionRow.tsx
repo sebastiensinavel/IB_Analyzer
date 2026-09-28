@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import { Badge } from "@ib/ui/badge";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
+import { useUnderlyingDayChange } from "@/hooks/useUnderlyingDayChange";
 import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
 import { decisionBadge, type CoverageBadge } from "@/lib/riskReport";
 import { cn } from "@/lib/utils";
@@ -10,8 +12,39 @@ export const NUMERIC = "text-right font-mono tabular-nums";
 /** Green above zero, red below, nothing for an absent value: the tone every day or P&L cell takes. */
 export const toneOf = (value: number | null) => value !== null && (value >= 0 ? "text-success" : "text-destructive");
 
+/**
+ * The underlying's day move (spec of sub-project 35, §5, held-first addendum): the account on
+ * screen's own live `dayChange` when it holds the ticker as stock, no tooltip; the delayed
+ * `/quotes` value otherwise, with a tooltip saying so — and naming SPY when the ticker is XSP.
+ * Every row of one ticker shows the same value.
+ */
+export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
+  const { t } = useTranslation();
+  const { value, delayed, proxy } = useUnderlyingDayChange()(ticker);
+  const text = formatDayChange(value);
+  const tooltip = delayed
+    ? proxy
+      ? t("quotes.proxy", { proxy, ticker: ticker.toUpperCase() })
+      : t("quotes.delayed")
+    : null;
+  return (
+    <TableCell className={cn(NUMERIC, toneOf(value))}>
+      {tooltip ? (
+        <Tooltip>
+          <TooltipTrigger render={<span>{text}</span>} />
+          <TooltipContent>{tooltip}</TooltipContent>
+        </Tooltip>
+      ) : (
+        text
+      )}
+    </TableCell>
+  );
+}
+
 /** What one line of a position table shows, whatever computed it: an IB position, or a strategy's part of one. */
 export interface PositionRowValues {
+  /** The underlying's ticker, which the first column is quoted on. */
+  ticker: string;
   contract: string;
   label: string;
   sector: string | null;
@@ -45,6 +78,7 @@ export function PositionRow({ values, onClick, expanded = false }: PositionRowPr
       data-state={expanded ? "selected" : undefined}
       className={cn(onClick && "cursor-pointer")}
     >
+      <UnderlyingDayChangeCell ticker={values.ticker} />
       <TableCell className="font-medium">{values.contract}</TableCell>
       <TableCell className="text-muted-foreground">{values.label}</TableCell>
       <TableCell>{values.sector && <Badge variant="outline">{values.sector}</Badge>}</TableCell>

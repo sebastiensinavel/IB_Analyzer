@@ -3,11 +3,12 @@
  * `pages/PositionsChart.test.tsx`, rendered through `DashboardPage` since the card takes its
  * `report` as a prop from there rather than computing it itself.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
+import { mergeQuotes, resetQuotes } from "@/agent/quotes";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
 import { DashboardPage } from "@/pages/DashboardPage";
@@ -57,7 +58,7 @@ beforeEach(async () => {
 });
 
 describe("the chart row of the suggestion card", () => {
-  it("ouvre le graphe du ticker suggéré sous sa ligne, sur six colonnes", async () => {
+  it("ouvre le graphe du ticker suggéré sous sa ligne, sur sept colonnes", async () => {
     const user = userEvent.setup();
     renderSuggestions();
     const row = (await screen.findByText("BTDR")).closest("tr") as HTMLTableRowElement;
@@ -65,7 +66,7 @@ describe("the chart row of the suggestion card", () => {
     await user.click(row);
 
     const cell = (await screen.findByTestId("position-chart-row")).querySelector("td");
-    expect(cell).toHaveAttribute("colspan", "6");
+    expect(cell).toHaveAttribute("colspan", "7");
   });
 
   it("ferme le graphe en cliquant à nouveau la même ligne", async () => {
@@ -78,5 +79,55 @@ describe("the chart row of the suggestion card", () => {
     await user.click(row);
 
     expect(screen.queryByTestId("position-chart-row")).not.toBeInTheDocument();
+  });
+});
+
+describe("the Var. jour action column of the suggestion card", () => {
+  afterEach(() => {
+    resetQuotes();
+  });
+
+  it("shows the underlying's day move first, and keeps the rank order", async () => {
+    // BTDR (score 9) ranks first, MSFT (score 7) second: both sector and ticker exposures are
+    // 0 with no report positions, so the tie breaks on score alone.
+    await db.sectors.put({ ticker: "MSFT", name: "", category: "Tech", score: 7, status: "on", updatedAt: "2026-09-03T08:00:00.000Z" });
+    mergeQuotes(new Map([["BTDR", 0.01], ["MSFT", -0.05]]));
+    renderSuggestions();
+
+    const rows = (await screen.findAllByRole("row")).slice(1); // without the header row
+    expect(within(rows[0]).getAllByRole("cell")[0]).toHaveTextContent("+1.0%");
+    expect(within(rows[0]).getAllByRole("cell")[1]).toHaveTextContent("1"); // rank stays the second column
+    expect(within(rows[1]).getAllByRole("cell")[0]).toHaveTextContent("-5.0%");
+    expect(screen.getAllByRole("columnheader")[0]).toHaveTextContent("Var. jour action");
+  });
+
+  it("prefers the account's own live dayChange over a stale quote for a suggestion it already holds", async () => {
+    mergeQuotes(new Map([["BTDR", 0.01]])); // stale/wrong: the held dayChange below must win
+    await db.snapshots.put({
+      accountId: "alpha",
+      source: "agent",
+      asOf: "2026-09-03",
+      importedAt: "2026-09-03T08:00:00.000Z",
+      // marketValue 0 keeps this position out of the suggestion's own exposure ranking.
+      positions: [
+        {
+          symbol: "BTDR", secType: "STK", right: "", strike: null, expiry: null, multiplier: 1,
+          quantity: 1, avgPrice: 1, marketPrice: 1, marketValue: 0, unrealizedPnl: 0,
+          dailyPnl: null, dayChange: -0.42, currency: "USD", conid: "", description: "BITDEER",
+        },
+      ],
+      cashAvailable: 0,
+    });
+    renderSuggestions();
+
+    const rows = (await screen.findAllByRole("row")).slice(1);
+    const cell = within(rows[0]).getAllByRole("cell")[0];
+    expect(cell).toHaveTextContent("-42.0%");
+    // No tooltip wrapper at all for a held value — a hover-and-wait assertion would pass
+    // vacuously here: base-ui's TooltipProvider default OPEN_DELAY is 600 ms and no provider
+    // is mounted in this tree, so the popup never appears within a short wait whether or not
+    // the cell wraps its text in a trigger. The trigger itself (`data-slot="tooltip-trigger"`,
+    // packages/ui/src/components/ui/tooltip.tsx) is the structural fact to check instead.
+    expect(cell.querySelector('[data-slot="tooltip-trigger"]')).toBeNull();
   });
 });

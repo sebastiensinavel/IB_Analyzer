@@ -1,6 +1,6 @@
 # Sous-projet 35 — Var. jour action : la variation du jour du sous-jacent
 
-Statut : spec approuvée (2026-09-28).
+Statut : implémenté (2026-09-28), sonde hors séance en attente.
 
 La colonne « Var. jour » des tableaux de positions donne la variation du jour **du contrat
 détenu** : pour une action, celle de l'action ; pour une option, celle de l'option. Elle vient
@@ -41,11 +41,23 @@ colonne « Var. jour », inchangés ; le tri de la Suggestion de position.
   la clôture), choisi par la sonde (§9) : IB sert le temps réel quand il est souscrit, le différé
   de 15 minutes sinon. Le compte de l'utilisateur n'a **pas** d'abonnement temps réel
   et s'en satisfait : le différé est le cas nominal, pas un repli.
-- Pour chaque symbole, `reqMktData(Stock(symbole, 'SMART', 'USD'), '', False, False)` en flux ;
-  attente jusqu'à ce que chaque ticker ait `last` et `close`, ou jusqu'à `QUOTES_TIMEOUT_S`
-  (valeur fixée par la sonde, §9, du même ordre que `PNL_TIMEOUT_S`) ; puis `cancelMktData` de
-  tous, dans un `finally`. C'est le patron de `collect_pnl`, et comme lui la collecte ne lève
-  jamais : un symbole que TWS ne sert pas (inconnu, sans données) sort avec des valeurs `null`.
+- Chaque symbole est d'abord **qualifié** : `Stock(symbole, 'SMART', 'USD')` non qualifié n'a
+  pas de `conId`, et `reqMktData` sur un tel contrat lève `ValueError` avant même d'atteindre
+  TWS (« can't be hashed because no 'conId' value exists », vérifié contre un vrai TWS le
+  2026-09-28) — c'est pourquoi `collect_quotes` appelle `ib.qualifyContractsAsync(*contracts)`
+  en premier, borné par le même délai `QUOTES_TIMEOUT_S` que le reste de l'appel
+  (`asyncio.wait_for` sur le budget restant). Un symbole inconnu ou ambigu garde `conId 0` :
+  il n'est jamais souscrit, jamais une erreur, simplement absent du résultat.
+- Pour chaque symbole qualifié, `reqMktData` en flux, **jamais sur `SMART`** mais sur la place
+  principale du contrat (`primaryExchange` rendu par la qualification — NASDAQ, NYSE, ARCA,
+  AMEX) : sur `SMART`, une valeur NASDAQ passe par un abonnement que l'API n'a pas et TWS ne
+  sert rien du tout, pas même en différé (erreur 10091, « Part of requested market data
+  requires additional subscription for API … NASDAQ.NMS/TOP/ALL ») ; NYSE/AMEX/ARCA sur SMART
+  fonctionnent (erreur 10167, différé servi), mais la place principale marche pour les quatre
+  et évite le piège. Attente jusqu'à ce que chaque ticker ait `last` et `close`, ou jusqu'à la
+  même échéance ; puis `cancelMktData` des seules souscriptions ouvertes, dans un `finally`.
+  C'est le patron de `collect_pnl`, et comme lui la collecte ne lève jamais : un symbole que
+  TWS ne sert pas (inconnu, sans données, qualification en échec) sort avec des valeurs `null`.
 - Réponse brute, sans calcul, fidèle au principe de l'agent :
   `{"fetchedAt": "<UTC ISO>", "quotes": [{"symbol": "AAPL", "last": 231.4, "close": 228.9}]}`,
   un élément par symbole demandé, `last` et `close` nettoyés comme `clean_pnl` (`nan`, `DBL_MAX`
@@ -75,7 +87,10 @@ variation, commune à tous les comptes et à toute la page —, lu par `useSyncE
 (`useUnderlyingQuotesMap()` rend la table, `underlyingDayChangeOf(table, ticker)` la valeur d'un
 ticker), sur le modèle de
 `presence` dans `useAgentSync.ts`. Rien en IndexedDB, rien en `localStorage` : un rechargement de
-la page le vide, et la colonne montre « — » jusqu'à la première passe.
+la page le vide. Ce magasin n'est que le repli de « Var. jour action », pas sa seule source
+(« L'action détenue passe devant sa cotation », plus bas dans cette section) : un ticker détenu
+en actions, avec un `dayChange` sur son snapshot, garde sa valeur après un rechargement sans
+agent ou avant la première passe — « — » ne vaut que pour un ticker ni détenu ni coté.
 
 **Déclenchement** : `useUnderlyingQuotes(accountId, report)`, monté par `AccountDataProvider`, se relance
 chaque fois que `lastAgentSyncAt` du compte change — `syncAgent` ne l'avance qu'après une passe
@@ -109,6 +124,21 @@ et `fetchBars` dans `apps/web/src/agent/client.ts`, avec les mêmes codes d'éch
 dans le magasin. Toutes les lignes d'un même ticker montrent donc la même valeur : l'action, le
 put vendu, le call couvert, le condor et ses jambes.
 
+**L'action détenue passe devant sa cotation (arbitré après coup, hors sonde)** : `/quotes` est
+différée de 15 minutes, `dayChange` (sous-projet 23, `reqPnLSingle`) temps réel. Constaté sur un
+compte réel : la cotation différée retardait de près de 20 minutes sur `dayChange`, −3,3 % contre
+−2,4 %. `resolveUnderlyingDayChange(ticker, held, quotes)`
+(`apps/web/src/lib/underlyingDayChange.ts`) tranche donc pour un ticker T, dans cet ordre : (1) le
+snapshot du compte à l'écran détient une position `secType === "STK"`, `currency === "USD"`, du
+même ticker T (comparé en majuscules), avec un `dayChange` non nul — sa valeur, sans infobulle ;
+(2) sinon la valeur du magasin `/quotes` pour T (XSP toujours coté SPY) — avec infobulle ; (3)
+sinon `null`, sans infobulle. `buildHeldDayChange(positions)` construit la table ticker → `dayChange`
+détenu, pure, une seule fois par snapshot ; `useUnderlyingDayChange()`
+(`apps/web/src/hooks/useUnderlyingDayChange.ts`) la combine au magasin des cotations et rend le
+même résolveur à la cellule (§5) et aux specs de colonne, pour que le tri corresponde à
+l'affichage. Un snapshot Flex ou de relevé n'a jamais de `dayChange` : il retombe naturellement
+sur la cotation.
+
 ## 5. Les tableaux de positions
 
 **`POSITION_COLUMNS`** (`apps/web/src/lib/positionColumns.ts`) passe de douze à treize colonnes :
@@ -131,7 +161,10 @@ défaut** : le tri actuel de chaque tableau ne change pas, la vue enregistrée e
 non plus.
 
 **Cellule** : pourcentage signé au format de « Var. jour », même couleur de signe, « — » pour
-`null`. Pour XSP, une infobulle dit que la valeur est celle de SPY (§7).
+`null`. La valeur et l'infobulle viennent du même résolveur que le tri (§4) : la part détenue en
+direct n'a aucune infobulle ; une valeur de `/quotes` en porte une disant la cotation différée de
+15 minutes (`quotes.delayed`) ; pour un ticker coté par substitut (XSP), l'infobulle nomme à la
+fois le substitut et le différé (`quotes.proxy`, §7).
 
 **Largeurs** : remesurées par script, jamais itérées sur captures, contre un contenu réaliste —
 `-100.0%` pour la nouvelle colonne comme pour `dayChange`, l'en-tête replié sur son mot le plus
@@ -151,10 +184,12 @@ filtrable, et ne pèse pas dans le score. Même cellule qu'au §5.
 ## 7. Textes
 
 `fr.json` et `en.json` : l'en-tête `underlyingDayChange` dans les colonnes de positions, de la
-Wheel et de la Suggestion — « Var. jour action », « Stock day chg. » — et une clé neuve
-pour l'infobulle du substitut, `quotes.proxy` : « Variation de {{proxy}} : Interactive Brokers ne
-cote pas {{ticker}}. » / « {{proxy}} change: Interactive Brokers does not quote {{ticker}}. ».
-`charts.proxy` ne convient pas : il parle des niveaux du graphe.
+Wheel et de la Suggestion — « Var. jour action », « Stock day chg. » — et deux clés pour
+l'infobulle de la valeur différée (§4) : `quotes.delayed` — « Cotation différée de 15 min. » /
+« Quote delayed 15 min. » — pour un ticker coté sans substitut, et `quotes.proxy` — « Variation de
+{{proxy}}, cotation différée de 15 min : Interactive Brokers ne cote pas {{ticker}}. » /
+« {{proxy}} change, quote delayed 15 min: Interactive Brokers does not quote {{ticker}}. » — pour
+XSP, qui dit les deux à la fois. `charts.proxy` ne convient pas : il parle des niveaux du graphe.
 
 ## 8. Tests
 
@@ -165,9 +200,11 @@ cote pas {{ticker}}. » / « {{proxy}} change: Interactive Brokers does not quot
   mal formé.
 - **Web** (`fake-indexeddb`, ledger semé, agent intercepté) : après une passe réussie, la colonne
   est remplie sur Positions, une page de stratégie, une ligne de condor et la Suggestion ;
-  « — » sans agent et avant la première passe ; XSP lit la valeur de SPY ; le tri de la colonne
-  est signé, `null` en dernier ; aucun tri par défaut ; une nouvelle passe (`lastAgentSyncAt`
-  changé) relance les cotations ; un échec de `/quotes` garde les valeurs précédentes ;
+  « — » sans agent, sans quote et sans `dayChange` détenu, avant comme après la première passe ;
+  un ticker détenu en actions garde son `dayChange` sans agent ou avant la première passe ; XSP
+  lit la valeur de SPY ; le tri de la colonne est signé, `null` en dernier ; aucun tri par défaut ;
+  une nouvelle passe (`lastAgentSyncAt` changé) relance les cotations ; un échec de `/quotes`
+  garde les valeurs précédentes ;
   découpage en lots au-delà de 90 tickers ; deux appels à l'agent ne se chevauchent jamais.
 - **Colonnes** : les largeurs de `POSITION_COLUMNS` et `WHEEL_SHARE_COLUMNS` somment à 100 %.
 - Le driver `run-frontend --agent` sert une fixture `/quotes` à côté de celle de `/snapshot`.
@@ -184,6 +221,22 @@ Contre le vrai TWS de l'utilisateur, sans abonnement temps réel, avant tout cod
    `CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S` sous `AGENT_FETCH_TIMEOUT_MS` (15 s).
 
 Le résultat s'écrit dans la spec ; un écart à 1 ou 2 revient à l'utilisateur avant la suite.
+
+Résultat (2026-09-28, en séance, sur le vrai TWS de l'utilisateur, agrégats seulement) : 43/43
+tickers cotés (33 NASDAQ, 8 NYSE, 1 ARCA, 1 AMEX), en 4,1 s en tout, qualification comprise
+(~1,5-2,2 s), pour `MARKET_DATA_TYPE` 3 comme 4 — identiques en séance. Le point 1 a d'abord
+buté sur un défaut distinct de la sonde elle-même : `reqMktData` sur un contrat non qualifié
+lève `ValueError` (« can't be hashed because no 'conId' value exists »), qui existait déjà dans
+`main.py` avant ce sous-projet et que la sonde a révélé — corrigé par la qualification
+(`qualifyContractsAsync`) avant toute souscription (§2). Une fois qualifié, un abonnement `SMART`
+fonctionne pour NYSE/AMEX/ARCA (erreur 10167, différé servi) mais pas pour NASDAQ, qui passe par
+un abonnement que l'API n'a pas et ne reçoit alors rien, pas même en différé (erreur 10091) ;
+s'abonner sur la place principale du contrat plutôt que `SMART` lève ce piège pour les quatre
+places. `MARKET_DATA_TYPE = 4` est gardé (identique à 3 en séance, et 4 fige la dernière valeur
+à la clôture) ; `QUOTES_TIMEOUT_S = 8` (4,1 s arrondi au-dessus avec marge), et
+`CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S = 13 s` reste sous `AGENT_FETCH_TIMEOUT_MS` (15 s). Le
+point 2 (comportement hors séance : `close`/`last` après la clôture et le week-end, type 3
+contre 4) reste à sonder — voir §10 et `docs/points-reportes.md`.
 
 ## 10. Décisions arbitrées (2026-09-28)
 

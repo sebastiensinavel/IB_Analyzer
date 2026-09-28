@@ -7,6 +7,7 @@ import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@ib/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ib/ui/table";
 import { PositionChartRow } from "@/components/PositionChartRow";
+import { UnderlyingDayChangeCell } from "@/components/PositionRow";
 import { useAccountStrategies } from "@/db/AccountDataProvider";
 import { useSectors } from "@/db/hooks";
 import { useOpenChart } from "@/hooks/useOpenChart";
@@ -14,6 +15,7 @@ import { formatPercent, formatRate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const COLUMNS = [
+  { key: "underlyingDayChange", numeric: true },
   { key: "rank", numeric: true },
   { key: "ticker", numeric: false },
   { key: "sector", numeric: false },
@@ -82,6 +84,7 @@ export function PositionSuggestionsCard({ accountId, report }: { accountId: stri
                 return (
                   <Fragment key={suggestion.ticker}>
                     <TableRow onClick={() => chart.toggle(key)} data-state={chart.isOpen(key) ? "selected" : undefined} className="cursor-pointer">
+                      <UnderlyingDayChangeCell ticker={suggestion.ticker} />
                       <TableCell className={NUMERIC}>{suggestion.rank}</TableCell>
                       <TableCell className="font-medium">{suggestion.ticker}</TableCell>
                       <TableCell>{suggestion.sector}</TableCell>

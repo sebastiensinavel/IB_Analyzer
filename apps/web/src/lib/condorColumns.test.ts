@@ -10,8 +10,8 @@ const LINE = {
 } as CondorLine;
 
 describe("condorColumnSpecs", () => {
-  it("reads the twelve shared columns, in POSITION_COLUMNS order, on a condor line", () => {
-    const specs = condorColumnSpecs(() => "ETF");
+  it("reads the thirteen shared columns, in POSITION_COLUMNS order, on a condor line", () => {
+    const specs = condorColumnSpecs(() => "ETF", () => null);
     expect(specs.map((s) => s.key)).toEqual(POSITION_COLUMNS.map((c) => c.key));
     const value = (key: string) => specs.find((s) => s.key === key)!.value(LINE);
     expect(value("position")).toBe("SPY Aug29'26 IC 620/625/660/665");
@@ -22,5 +22,14 @@ describe("condorColumnSpecs", () => {
     expect(value("dayChange")).toBeNull();
     expect(value("unrealizedPnl")).toBe(39);
     expect(value("coverage")).toEqual(["UNCOVERED"]);
+  });
+
+  it("reads the underlying's day move on the contract's ticker, sortable unlike dayChange", () => {
+    const specs = condorColumnSpecs(() => "ETF", (ticker) => (ticker === "SPY" ? -0.021 : null));
+    const spec = specs.find((s) => s.key === "underlyingDayChange")!;
+    expect(spec.sortable).toBe(true);
+    expect(spec.type).toBe("number");
+    expect(spec.value(LINE)).toBeCloseTo(-2.1, 10);
+    expect(spec.value({ ...LINE, contract: { ...LINE.contract, ticker: "OTHER" } })).toBeNull();
   });
 });

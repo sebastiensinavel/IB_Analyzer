@@ -39,9 +39,9 @@
 
 ### Task 0: Worktree
 
-- [ ] **Step 1:** depuis la racine du dépôt, sur `main` propre : `git worktree add .claude/worktrees/var-jour-action -b var-jour-action`
-- [ ] **Step 2:** `cd .claude/worktrees/var-jour-action && pnpm install --frozen-lockfile && uv sync --all-packages`
-- [ ] **Step 3:** `npx vitest run src/lib/positionColumns` depuis `apps/web` → PASS (base saine).
+- [x] **Step 1:** depuis la racine du dépôt, sur `main` propre : `git worktree add .claude/worktrees/var-jour-action -b var-jour-action`
+- [x] **Step 2:** `cd .claude/worktrees/var-jour-action && pnpm install --frozen-lockfile && uv sync --all-packages`
+- [x] **Step 3:** `npx vitest run src/lib/positionColumns` depuis `apps/web` → PASS (base saine).
 
 ---
 
@@ -52,7 +52,7 @@ TWS ne tourne pas sur la machine de développement : le script est écrit ici et
 **Files:**
 - Create: `private/probe_quotes.py` (dossier ignoré par git : le script lit les positions réelles)
 
-- [ ] **Step 1: Écrire le script**
+- [x] **Step 1: Écrire le script**
 
 ```python
 """Sonde du sous-projet 35 : que rend reqMktData sans abonnement temps réel ?
@@ -115,7 +115,7 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-- [ ] **Step 2:** vérifier qu'il s'importe : `uv run --project apps/tws-agent python -c "import ast,sys; ast.parse(open('private/probe_quotes.py').read())"` → aucune sortie.
+- [x] **Step 2:** vérifier qu'il s'importe : `uv run --project apps/tws-agent python -c "import ast,sys; ast.parse(open('private/probe_quotes.py').read())"` → aucune sortie.
 - [ ] **Step 3:** le contrôleur demande à Seb de lancer, **en séance puis après la clôture ou le week-end** : `! uv run --project apps/tws-agent python private/probe_quotes.py <port TWS>` et recopie la sortie. Rien n'est committé à ce stade (le script est dans `private/`) ; la tâche 9 reporte le verdict dans la spec §9.
 
 ---
@@ -131,7 +131,7 @@ asyncio.run(main())
 - Produces: `GET /quotes?port=<int>&symbols=<A,B,…>` → 200 `{"fetchedAt": str, "quotes": [{"symbol": str, "last": float|null, "close": float|null}]}` (un élément par symbole demandé, dédoublonné, majuscules, dans l'ordre de la requête) ; 422 `{"code": "bad-symbols"}` ; 503 `{"code": "tws-unreachable", "detail": …}`.
 - Constantes : `QUOTES_TIMEOUT_S = 5`, `QUOTES_POLL_S = 0.05`, `QUOTES_MAX_SYMBOLS = 90`, `MARKET_DATA_TYPE = 4` (défaut ; la tâche 9 le fixe d'après la sonde).
 
-- [ ] **Step 1: Étendre `FakeIB`** dans `conftest.py` :
+- [x] **Step 1: Étendre `FakeIB`** dans `conftest.py` :
 
 ```python
 @dataclass
@@ -171,7 +171,7 @@ Méthodes :
         self.mkt_cancelled.append(contract)
 ```
 
-- [ ] **Step 2: Écrire les tests** `apps/tws-agent/tests/test_quotes.py` :
+- [x] **Step 2: Écrire les tests** `apps/tws-agent/tests/test_quotes.py` :
 
 ```python
 """`/quotes`: last and close of each underlying, straight out of reqMktData."""
@@ -282,9 +282,9 @@ def test_the_query_is_read_only_client_zero(make_client):
 
 Note : `symbols=` vide peut être refusé par la validation de FastAPI (`min_length=1`) en 422 sans `code` ; le test paramétré ne vérifie que le statut.
 
-- [ ] **Step 3:** `uv run --project apps/tws-agent pytest apps/tws-agent/tests/test_quotes.py -q` → FAIL (404 sur `/quotes`, `market_data_types` absent).
+- [x] **Step 3:** `uv run --project apps/tws-agent pytest apps/tws-agent/tests/test_quotes.py -q` → FAIL (404 sur `/quotes`, `market_data_types` absent).
 
-- [ ] **Step 4: Implémenter** dans `main.py`. Constantes, après `BARS_WHAT_TO_SHOW` :
+- [x] **Step 4: Implémenter** dans `main.py`. Constantes, après `BARS_WHAT_TO_SHOW` :
 
 ```python
 # /quotes: how long it waits, in all, for every symbol's last and close; the ceiling of one call,
@@ -375,8 +375,8 @@ Route, dans `create_app`, après `/bars` :
 
 Docstring du module : ajouter une phrase après celle du `pnl` — « `/quotes` is the same story: `last` and `close` pass through as the ib_async `Ticker` names them, and the browser derives the underlying's day move. »
 
-- [ ] **Step 5:** `uv run --project apps/tws-agent pytest apps/tws-agent -q` → PASS (toute la suite de l'agent).
-- [ ] **Step 6: Commit**
+- [x] **Step 5:** `uv run --project apps/tws-agent pytest apps/tws-agent -q` → PASS (toute la suite de l'agent).
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/tws-agent docs/plans/2026-09-28-var-jour-action.md
@@ -394,7 +394,7 @@ git commit -m "Agent : /quotes, dernier prix et clôture des sous-jacents, donn�
 **Interfaces:**
 - Produces: `export function parseAgentQuotes(payload: unknown): Map<string, number | null>` — ticker en majuscules → `(last − close) / close`, `null` si `last`/`close` manque ou si `close` vaut 0 ; lève `NormalizationError` sur un payload mal formé. Exporté par `@ib/ib-parsers` (déjà `export * from "./agent.ts"`).
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 ```ts
 describe("parseAgentQuotes", () => {
@@ -435,8 +435,8 @@ describe("parseAgentQuotes", () => {
 
 (importer `parseAgentQuotes` à côté de `parseAgentSnapshot` ; `NormalizationError` est déjà importé par ce fichier de test ou s'importe de `./common.ts` — vérifier l'import existant.)
 
-- [ ] **Step 2:** `npx vitest run src/agent.test.ts` depuis `packages/ib-parsers` → FAIL (`parseAgentQuotes` n'existe pas).
-- [ ] **Step 3: Implémenter**
+- [x] **Step 2:** `npx vitest run src/agent.test.ts` depuis `packages/ib-parsers` → FAIL (`parseAgentQuotes` n'existe pas).
+- [x] **Step 3: Implémenter**
 
 ```ts
 /**
@@ -459,8 +459,8 @@ export function parseAgentQuotes(payload: unknown): Map<string, number | null> {
 }
 ```
 
-- [ ] **Step 4:** `npx vitest run src/agent.test.ts` → PASS.
-- [ ] **Step 5: Commit** — `git add packages/ib-parsers docs/plans/2026-09-28-var-jour-action.md && git commit -m "Parseur : parseAgentQuotes, la variation du jour des sous-jacents"`
+- [x] **Step 4:** `npx vitest run src/agent.test.ts` → PASS.
+- [x] **Step 5: Commit** — `git add packages/ib-parsers docs/plans/2026-09-28-var-jour-action.md && git commit -m "Parseur : parseAgentQuotes, la variation du jour des sous-jacents"`
 
 ---
 
@@ -480,7 +480,7 @@ export function parseAgentQuotes(payload: unknown): Map<string, number | null> {
   - `quotes.ts` : `export type QuoteMap = ReadonlyMap<string, number | null>;` `export function quotedTicker(ticker: string): string;` `export function underlyingDayChangeOf(quotes: QuoteMap, ticker: string): number | null;` `export function useUnderlyingQuotesMap(): QuoteMap;` `export function mergeQuotes(entries: ReadonlyMap<string, number | null>): void;` `export function resetQuotes(): void;` `export async function refreshQuotes(port: number, tickers: readonly string[]): Promise<void>;`
   - `useUnderlyingQuotes.ts` : `export function quoteTickers(report: RiskReport | null, sectors: readonly SectorRecord[]): string[];` `export function useUnderlyingQuotes(accountId: string, report: RiskReport | null): void;`
 
-- [ ] **Step 1: Tests du client** (dans `client.test.ts`, à côté des tests existants, même style de `vi.spyOn(globalThis, "fetch")`) :
+- [x] **Step 1: Tests du client** (dans `client.test.ts`, à côté des tests existants, même style de `vi.spyOn(globalThis, "fetch")`) :
 
 ```ts
 describe("exclusiveTws", () => {
@@ -524,8 +524,8 @@ describe("fetchQuotes", () => {
 });
 ```
 
-- [ ] **Step 2:** `npx vitest run src/agent/client` depuis `apps/web` → FAIL.
-- [ ] **Step 3: Implémenter dans `client.ts`**
+- [x] **Step 2:** `npx vitest run src/agent/client` depuis `apps/web` → FAIL.
+- [x] **Step 3: Implémenter dans `client.ts`**
 
 ```ts
 /** Same ceiling as the agent's QUOTES_MAX_SYMBOLS (apps/tws-agent), one per language. */
@@ -549,9 +549,9 @@ export function fetchQuotes(port: number, symbols: readonly string[]): Promise<A
 
 Factoriser le corps de `fetchSnapshot` en `async function getAgentJson(path: string): Promise<AgentFetchResult>` (le `fetch` avec `AGENT_FETCH_TIMEOUT_MS`, 503 → `tws-unreachable`, non-ok → `agent-error`, JSON invalide → `agent-error`) ; `fetchSnapshot(port)` devient `exclusiveTws(() => getAgentJson(\`/snapshot?port=${port}\`))`. Envelopper le corps actuel de `fetchBars` dans `exclusiveTws(async () => { … })` sans en changer la logique. Les tests existants de `fetchSnapshot`/`fetchBars` doivent passer tels quels.
 
-- [ ] **Step 4:** `npx vitest run src/agent` → PASS (tests du client et de `useAgentSync`/`sync` existants inclus).
+- [x] **Step 4:** `npx vitest run src/agent` → PASS (tests du client et de `useAgentSync`/`sync` existants inclus).
 
-- [ ] **Step 5: Tests du magasin** (`quotes.test.ts`) :
+- [x] **Step 5: Tests du magasin** (`quotes.test.ts`) :
 
 ```ts
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -611,7 +611,7 @@ describe("quotes", () => {
 
 (`getQuotesSnapshot` est exporté par `quotes.ts` pour `useSyncExternalStore` et pour ce test ; l'importer statiquement en tête plutôt que par `await import`.)
 
-- [ ] **Step 6: Implémenter `quotes.ts`**
+- [x] **Step 6: Implémenter `quotes.ts`**
 
 ```ts
 import { useSyncExternalStore } from "react";
@@ -683,9 +683,9 @@ export async function refreshQuotes(port: number, tickers: readonly string[]): P
 
 (Vérifier que `NormalizationError` est exporté par `@ib/ib-parsers` : `grep -n NormalizationError packages/ib-parsers/src/index.ts packages/ib-parsers/src/common.ts` ; sinon l'importer d'où `agent.ts` l'importe.)
 
-- [ ] **Step 7:** `npx vitest run src/agent/quotes` → PASS.
+- [x] **Step 7:** `npx vitest run src/agent/quotes` → PASS.
 
-- [ ] **Step 8: Tests du déclenchement** (`useUnderlyingQuotes.test.tsx`), sur `fake-indexeddb` comme `useAgentSync.test.tsx` (en reprendre `ACCOUNT`, le nettoyage de la base et `resetAgentState`) :
+- [x] **Step 8: Tests du déclenchement** (`useUnderlyingQuotes.test.tsx`), sur `fake-indexeddb` comme `useAgentSync.test.tsx` (en reprendre `ACCOUNT`, le nettoyage de la base et `resetAgentState`) :
 
 ```tsx
 // quoteTickers, pure:
@@ -716,7 +716,7 @@ it("does not call /quotes for an account without a TWS port", async () => { /* A
 
 Écrire ces trois tests en entier sur ce patron ; `afterEach` : `resetQuotes()`, `resetAgentState()`, `vi.restoreAllMocks()`.
 
-- [ ] **Step 9: Implémenter `useUnderlyingQuotes.ts`**
+- [x] **Step 9: Implémenter `useUnderlyingQuotes.ts`**
 
 ```ts
 import { useEffect, useMemo } from "react";
@@ -760,9 +760,9 @@ export function useUnderlyingQuotes(accountId: string, report: RiskReport | null
 
 (Vérifier le type d'entrée de `positionSuggestions` : il prend `readonly SectorEntry[]` ; `SectorRecord` le satisfait déjà puisque `PositionSuggestionsCard` lui passe `[...sectors.values()]`. Si `eslint` signale `syncedAt` comme dépendance inutile, garder la dépendance et ajouter un commentaire d'une ligne : « a pass that moved `lastAgentSyncAt` re-quotes, on purpose ».)
 
-- [ ] **Step 10: Monter le hook** dans `AccountDataProvider` : `const { snapshot, report, sectorOf } = useRiskReport(accountId);` puis `useUnderlyingQuotes(accountId, report);` juste en dessous. Compléter la docstring : « and quotes the account's underlyings for the Var. jour action column (spec of sub-project 35). »
-- [ ] **Step 11:** `npx vitest run src/agent src/db` → PASS.
-- [ ] **Step 12: Commit** — `git add apps/web/src/agent apps/web/src/db/AccountDataProvider.tsx docs/plans/2026-09-28-var-jour-action.md && git commit -m "Web : cotations des sous-jacents en mémoire, une connexion TWS à la fois"`
+- [x] **Step 10: Monter le hook** dans `AccountDataProvider` : `const { snapshot, report, sectorOf } = useRiskReport(accountId);` puis `useUnderlyingQuotes(accountId, report);` juste en dessous. Compléter la docstring : « and quotes the account's underlyings for the Var. jour action column (spec of sub-project 35). »
+- [x] **Step 11:** `npx vitest run src/agent src/db` → PASS.
+- [x] **Step 12: Commit** — `git add apps/web/src/agent apps/web/src/db/AccountDataProvider.tsx docs/plans/2026-09-28-var-jour-action.md && git commit -m "Web : cotations des sous-jacents en mémoire, une connexion TWS à la fois"`
 
 ---
 
@@ -783,7 +783,7 @@ export function useUnderlyingQuotes(accountId: string, report: RiskReport | null
   - `export type UnderlyingOf = (ticker: string) => number | null;` dans `positionColumns.ts` ; `positionColumnSpecs(sectorOf, underlyingOf)`, `strategyColumnSpecs(sectorOf, strategy, underlyingOf)`, `wheelShareColumnSpecs(sectorOf, underlyingOf)`, `condorColumnSpecs(sectorOf, underlyingOf)`.
   - `export function UnderlyingDayChangeCell({ ticker }: { ticker: string })` dans `PositionRow.tsx`.
 
-- [ ] **Step 1: Largeurs provisoires.** `POSITION_COLUMNS` à 75rem, chaque colonne gardant au moins ses pixels d'avant (ancienne part × 70/75, arrondie au 0,25 % supérieur), la nouvelle colonne en tête :
+- [x] **Step 1: Largeurs provisoires.** `POSITION_COLUMNS` à 75rem, chaque colonne gardant au moins ses pixels d'avant (ancienne part × 70/75, arrondie au 0,25 % supérieur), la nouvelle colonne en tête :
 
 ```ts
 export const POSITION_COLUMNS = [
@@ -824,7 +824,7 @@ export const WHEEL_SHARE_COLUMNS = [
 
 Les deux somment à 100. Les commentaires de tête (« twelve columns », « eleven », « 70rem », « 63rem ») sont réécrits par la tâche 6 avec les mesures ; ici, remplacer seulement les nombres de colonnes (« thirteen », « twelve ») et ajouter une ligne : « `underlyingDayChange` leads every table (spec of sub-project 35, §5); widths re-measured by task 6 of its plan. »
 
-- [ ] **Step 2: Tests des colonnes** (`positionColumns.test.ts`) — adapter « declares the twelve shared columns in order, summing to 100 » en treize colonnes, `underlyingDayChange` en tête ; même test pour `WHEEL_SHARE_COLUMNS` (douze, en tête) s'il existe, l'ajouter sinon. Ajouter :
+- [x] **Step 2: Tests des colonnes** (`positionColumns.test.ts`) — adapter « declares the twelve shared columns in order, summing to 100 » en treize colonnes, `underlyingDayChange` en tête ; même test pour `WHEEL_SHARE_COLUMNS` (douze, en tête) s'il existe, l'ajouter sinon. Ajouter :
 
 ```ts
 it("reads the underlying's day move as a percentage, null when unquoted", () => {
@@ -837,8 +837,8 @@ it("reads the underlying's day move as a percentage, null when unquoted", () => 
 
 (`byKey` / `put` : reprendre les aides déjà présentes dans ce fichier de test ; si elles n'existent pas sous ces noms, utiliser celles qui y sont.) Même vérification pour `strategyColumnSpecs`, `wheelShareColumnSpecs` et `condorColumnSpecs` dans leurs tests respectifs (`grep -rln "strategyColumnSpecs\|condorColumnSpecs" apps/web/src --include=*.test.ts`) : chaque spec a `underlyingDayChange` en tête et lit le ticker de la ligne (`line.contract.ticker`, `line.ticker`).
 
-- [ ] **Step 3:** `npx vitest run src/lib` → FAIL.
-- [ ] **Step 4: Specs.** Dans `positionColumns.ts` :
+- [x] **Step 3:** `npx vitest run src/lib` → FAIL.
+- [x] **Step 4: Specs.** Dans `positionColumns.ts` :
 
 ```ts
 /** The underlying's day move of a ticker, as the quotes store has it (spec of sub-project 35). */
@@ -850,9 +850,9 @@ export const asPercent = (ratio: number | null) => (ratio === null ? null : rati
 
 `positionColumnSpecs(sectorOf, underlyingOf: UnderlyingOf)` commence par `{ key: "underlyingDayChange", type: "number", sortable: true, value: (position) => asPercent(underlyingOf(position.symbol)) }` ; ses `dayChange` passent par `asPercent`. Même première entrée dans `strategyColumnSpecs(sectorOf, strategy, underlyingOf)` (`line.contract.ticker`), `wheelShareColumnSpecs(sectorOf, underlyingOf)` (`line.ticker`), `condorColumnSpecs(sectorOf, underlyingOf)` (`line.contract.ticker`, triable : un condor a un sous-jacent). Mettre à jour les docstrings (« thirteen », « twelve »).
 
-- [ ] **Step 5:** `npx vitest run src/lib` → PASS.
+- [x] **Step 5:** `npx vitest run src/lib` → PASS.
 
-- [ ] **Step 6: La cellule.** Dans `PositionRow.tsx` :
+- [x] **Step 6: La cellule.** Dans `PositionRow.tsx` :
 
 ```tsx
 /**
@@ -881,7 +881,7 @@ export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
 
 `PositionRowValues` gagne `/** The underlying's ticker, which the first column is quoted on. */ ticker: string;` et `PositionRow` rend `<UnderlyingDayChangeCell ticker={values.ticker} />` **avant** la cellule Position.
 
-- [ ] **Step 7: Les appelants.**
+- [x] **Step 7: Les appelants.**
   - `PositionGroupCard` : `ticker: position.symbol` ; `minWidth={POSITION_TABLE_MIN_WIDTH}`.
   - `StrategyPositionsPage` / `LinesBox` : `ticker: line.contract.ticker` ; `minWidth={POSITION_TABLE_MIN_WIDTH}` (deux endroits) et `WHEEL_SHARE_TABLE_MIN_WIDTH` (un endroit).
   - `WheelShareRow` : `<UnderlyingDayChangeCell ticker={line.ticker} />` en première cellule.
@@ -890,9 +890,9 @@ export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
   - Chaque appel de `positionColumnSpecs`, `strategyColumnSpecs`, `wheelShareColumnSpecs`, `condorColumnSpecs` : `const quotes = useUnderlyingQuotesMap();` puis `const underlyingOf = useCallback((ticker: string) => underlyingDayChangeOf(quotes, ticker), [quotes]);` passé en dernier argument, et ajouté aux dépendances du `useMemo` qui construit les specs.
   - `pnpm --filter web exec tsc --noEmit` (ou `npx tsc --noEmit -p .` depuis `apps/web`) → aucune erreur : le typage trouve tout appelant oublié.
 
-- [ ] **Step 8: Textes.** `fr.json` : `positions.columns.underlyingDayChange: "Var. jour action"`, `strategyPositions.columns.underlyingDayChange: "Var. jour action"`, clé de tête `"quotes": { "proxy": "Variation de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}." }`. `en.json` : `"Stock day chg."` aux deux endroits, `"quotes": { "proxy": "{{proxy}} change: Interactive Brokers does not quote {{ticker}}." }`. (Le test de parité des clés fr/en, s'il existe, doit passer.)
+- [x] **Step 8: Textes.** `fr.json` : `positions.columns.underlyingDayChange: "Var. jour action"`, `strategyPositions.columns.underlyingDayChange: "Var. jour action"`, clé de tête `"quotes": { "proxy": "Variation de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}." }`. `en.json` : `"Stock day chg."` aux deux endroits, `"quotes": { "proxy": "{{proxy}} change: Interactive Brokers does not quote {{ticker}}." }`. (Le test de parité des clés fr/en, s'il existe, doit passer.)
 
-- [ ] **Step 9: Tests de rendu.** Dans le test existant de la page Positions de stratégie (ledger semé sur `fake-indexeddb`, jamais de hook moqué), avec `mergeQuotes(new Map([["<ticker d'une vente de put semée>", -0.0312]]))` avant le rendu et `resetQuotes()` en `afterEach` :
+- [x] **Step 9: Tests de rendu.** Dans le test existant de la page Positions de stratégie (ledger semé sur `fake-indexeddb`, jamais de hook moqué), avec `mergeQuotes(new Map([["<ticker d'une vente de put semée>", -0.0312]]))` avant le rendu et `resetQuotes()` en `afterEach` :
 
 ```tsx
 it("shows the underlying's day move first, on a put sold on a ticker not held", async () => {
@@ -915,8 +915,8 @@ Et un test XSP : semer (ou reprendre de la fixture de démo) une position XSP, `
 
 Un test `CondorRows` (ou page Condors) : la ligne du condor et, dépliées, ses jambes montrent la variation du sous-jacent en première cellule.
 
-- [ ] **Step 10:** `npx vitest run src/components src/pages src/lib` depuis `apps/web` → PASS.
-- [ ] **Step 11: Commit** — `git add apps/web docs/plans/2026-09-28-var-jour-action.md && git commit -m "Tableaux de positions : Var. jour action en première colonne, triable, XSP via SPY"`
+- [x] **Step 10:** `npx vitest run src/components src/pages src/lib` depuis `apps/web` → PASS.
+- [x] **Step 11: Commit** — `git add apps/web docs/plans/2026-09-28-var-jour-action.md && git commit -m "Tableaux de positions : Var. jour action en première colonne, triable, XSP via SPY"`
 
 ---
 
@@ -928,12 +928,12 @@ Règle du dépôt : un réglage visuel se mesure, il ne s'itère pas sur des cap
 - Modify: `apps/web/src/lib/positionColumns.ts` (largeurs, planchers, commentaires de tête)
 - Create (hors dépôt) : un script de mesure dans le dossier scratchpad de la session
 
-- [ ] **Step 1:** `pnpm dev:start` dans le worktree ; seeder avec le skill `run-frontend` (`--seed --agent`) et laisser l'instance tourner.
-- [ ] **Step 2:** écrire un script Playwright qui, sur la page Positions et sur la page Wheel du compte semé, mesure dans la police réelle : pour chaque en-tête de `POSITION_COLUMNS` et `WHEEL_SHARE_COLUMNS`, fr **et** en, la largeur du mot le plus large plus le chevron de tri ; pour chaque colonne numérique, la largeur de son contenu réaliste (les valeurs listées dans le commentaire de tête de `POSITION_COLUMNS` et de `WHEEL_SHARE_COLUMNS`, `-100.0%` pour `underlyingDayChange`) plus le remplissage de la cellule ; pour `position`, la largeur qui replie « AAPL Jan16'26 150 Call » sur exactement deux lignes (`Range.getClientRects().length`, recherche dichotomique). Le script sort, pour chaque plancher entier en rem à partir de 70 (resp. 63), les parts arrondies au 0,25 % supérieur et s'arrête au plus petit plancher où elles tiennent dans 100 % — `position` prenant le reste.
-- [ ] **Step 3:** reporter les parts et les deux planchers dans `positionColumns.ts` (`POSITION_TABLE_MIN_WIDTH`, `WHEEL_SHARE_TABLE_MIN_WIDTH`) et réécrire les deux commentaires de tête avec les nombres mesurés (colonnes, plancher, ce qui dépasse à 1280 px menu ouvert). Le défaut connu de `coverage` sur la Wheel (`docs/points-reportes.md`, sous-projet 23) reste hors périmètre : ne pas le corriger, ne pas l'aggraver.
-- [ ] **Step 4:** `npx vitest run src/lib/positionColumns` → PASS (sommes à 100).
-- [ ] **Step 5:** deux captures (`run-frontend`), Positions et Wheel à 1280 px, vérifiées : aucune cellule numérique ne déborde. Les joindre au rapport de la tâche, pas au dépôt.
-- [ ] **Step 6: Commit** — `git commit -am "Positions : largeurs remesurées avec Var. jour action"`
+- [x] **Step 1:** `pnpm dev:start` dans le worktree ; seeder avec le skill `run-frontend` (`--seed --agent`) et laisser l'instance tourner.
+- [x] **Step 2:** écrire un script Playwright qui, sur la page Positions et sur la page Wheel du compte semé, mesure dans la police réelle : pour chaque en-tête de `POSITION_COLUMNS` et `WHEEL_SHARE_COLUMNS`, fr **et** en, la largeur du mot le plus large plus le chevron de tri ; pour chaque colonne numérique, la largeur de son contenu réaliste (les valeurs listées dans le commentaire de tête de `POSITION_COLUMNS` et de `WHEEL_SHARE_COLUMNS`, `-100.0%` pour `underlyingDayChange`) plus le remplissage de la cellule ; pour `position`, la largeur qui replie « AAPL Jan16'26 150 Call » sur exactement deux lignes (`Range.getClientRects().length`, recherche dichotomique). Le script sort, pour chaque plancher entier en rem à partir de 70 (resp. 63), les parts arrondies au 0,25 % supérieur et s'arrête au plus petit plancher où elles tiennent dans 100 % — `position` prenant le reste.
+- [x] **Step 3:** reporter les parts et les deux planchers dans `positionColumns.ts` (`POSITION_TABLE_MIN_WIDTH`, `WHEEL_SHARE_TABLE_MIN_WIDTH`) et réécrire les deux commentaires de tête avec les nombres mesurés (colonnes, plancher, ce qui dépasse à 1280 px menu ouvert). Le défaut connu de `coverage` sur la Wheel (`docs/points-reportes.md`, sous-projet 23) reste hors périmètre : ne pas le corriger, ne pas l'aggraver.
+- [x] **Step 4:** `npx vitest run src/lib/positionColumns` → PASS (sommes à 100).
+- [x] **Step 5:** deux captures (`run-frontend`), Positions et Wheel à 1280 px, vérifiées : aucune cellule numérique ne déborde. Les joindre au rapport de la tâche, pas au dépôt.
+- [x] **Step 6: Commit** — `git commit -am "Positions : largeurs remesurées avec Var. jour action"`
 
 ---
 
@@ -947,7 +947,7 @@ Règle du dépôt : un réglage visuel se mesure, il ne s'itère pas sur des cap
 **Interfaces:**
 - Consumes: `UnderlyingDayChangeCell` (tâche 5), `mergeQuotes`/`resetQuotes` (tâche 4).
 
-- [ ] **Step 1: Test** (dans le fichier existant, même préparation que ses tests actuels, `resetQuotes()` en `afterEach`) :
+- [x] **Step 1: Test** (dans le fichier existant, même préparation que ses tests actuels, `resetQuotes()` en `afterEach`) :
 
 ```tsx
 it("shows the underlying's day move first, and keeps the rank order", async () => {
@@ -963,10 +963,10 @@ it("shows the underlying's day move first, and keeps the rank order", async () =
 
 (Adapter le format exact de `formatDayChange` — lire `DAY_CHANGE_FORMATTER` dans `lib/format.ts`.)
 
-- [ ] **Step 2:** `npx vitest run src/components/PositionSuggestionsCard` → FAIL.
-- [ ] **Step 3: Implémenter.** `COLUMNS` gagne `{ key: "underlyingDayChange", numeric: true }` **en tête** ; la ligne rend `<UnderlyingDayChangeCell ticker={suggestion.ticker} />` en première cellule. L'ordre des lignes (`suggestions.map`) ne change pas, aucun tri n'est ajouté. `fr.json` `dashboard.suggestions.columns.underlyingDayChange: "Var. jour action"`, `en.json` `"Stock day chg."`.
-- [ ] **Step 4:** `npx vitest run src/components/PositionSuggestionsCard` → PASS.
-- [ ] **Step 5: Commit** — `git add apps/web docs/plans/2026-09-28-var-jour-action.md && git commit -m "Suggestion de position : Var. jour action en première colonne"`
+- [x] **Step 2:** `npx vitest run src/components/PositionSuggestionsCard` → FAIL.
+- [x] **Step 3: Implémenter.** `COLUMNS` gagne `{ key: "underlyingDayChange", numeric: true }` **en tête** ; la ligne rend `<UnderlyingDayChangeCell ticker={suggestion.ticker} />` en première cellule. L'ordre des lignes (`suggestions.map`) ne change pas, aucun tri n'est ajouté. `fr.json` `dashboard.suggestions.columns.underlyingDayChange: "Var. jour action"`, `en.json` `"Stock day chg."`.
+- [x] **Step 4:** `npx vitest run src/components/PositionSuggestionsCard` → PASS.
+- [x] **Step 5: Commit** — `git add apps/web docs/plans/2026-09-28-var-jour-action.md && git commit -m "Suggestion de position : Var. jour action en première colonne"`
 
 ---
 
@@ -976,11 +976,11 @@ it("shows the underlying's day move first, and keeps the rank order", async () =
 - Create: `apps/web/src/mocks/agent-quotes.json`
 - Modify: `.claude/skills/run-frontend/driver.mjs` (route de l'agent), `.claude/skills/run-frontend/SKILL.md` (une ligne)
 
-- [ ] **Step 1:** `agent-quotes.json` : `{ "fetchedAt": "2026-09-28T14:00:00.000Z", "quotes": [ … ] }`, une entrée par sous-jacent de `apps/web/src/mocks/agent-snapshot.json` plus `SPY`, `last`/`close` inventés (mélange de hausses et de baisses, un `last: null` pour montrer « — »). Aucun montant réel.
-- [ ] **Step 2:** dans la route `http://127.0.0.1:${AGENT_PORT}/**` du driver, servir `agentQuotes` quand `path === "/quotes"`, `{version}` pour `/health`, le snapshot sinon.
-- [ ] **Step 3:** `SKILL.md` : « `--agent` sert aussi `/quotes` (`src/mocks/agent-quotes.json`) ».
-- [ ] **Step 4:** capture de la page Wheel avec `--seed --agent` : la première colonne est remplie. Vérifier la capture.
-- [ ] **Step 5: Commit** — `git add .claude/skills/run-frontend apps/web/src/mocks/agent-quotes.json docs/plans/2026-09-28-var-jour-action.md && git commit -m "run-frontend : l'agent simulé sert /quotes"`
+- [x] **Step 1:** `agent-quotes.json` : `{ "fetchedAt": "2026-09-28T14:00:00.000Z", "quotes": [ … ] }`, une entrée par sous-jacent de `apps/web/src/mocks/agent-snapshot.json` plus `SPY`, `last`/`close` inventés (mélange de hausses et de baisses, un `last: null` pour montrer « — »). Aucun montant réel.
+- [x] **Step 2:** dans la route `http://127.0.0.1:${AGENT_PORT}/**` du driver, servir `agentQuotes` quand `path === "/quotes"`, `{version}` pour `/health`, le snapshot sinon.
+- [x] **Step 3:** `SKILL.md` : « `--agent` sert aussi `/quotes` (`src/mocks/agent-quotes.json`) ».
+- [x] **Step 4:** capture de la page Wheel avec `--seed --agent` : la première colonne est remplie. Vérifier la capture.
+- [x] **Step 5: Commit** — `git add .claude/skills/run-frontend apps/web/src/mocks/agent-quotes.json docs/plans/2026-09-28-var-jour-action.md && git commit -m "run-frontend : l'agent simulé sert /quotes"`
 
 ---
 
@@ -991,8 +991,8 @@ it("shows the underlying's day move first, and keeps the rank order", async () =
 - Modify: `docs/specs/2026-09-28-var-jour-action-design.md` (§9 : résultat de la sonde ; statut « livré »)
 - Modify: `CLAUDE.md` (règle, registre), `docs/points-reportes.md`
 
-- [ ] **Step 1: Sonde.** Avec la sortie que Seb a recopiée (tâche 1) : fixer `MARKET_DATA_TYPE` (3 ou 4 : celui qui remplit `last` et `close` en séance **et** hors séance) et `QUOTES_TIMEOUT_S` (le « last » de la sonde arrondi au-dessus, `CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S` ≤ 10 s pour rester sous `AGENT_FETCH_TIMEOUT_MS`). Écrire le résultat dans la spec §9, en agrégats seulement. Si aucun type ne remplit `close` hors séance, ou si la variation hors séance est nulle ou décalée d'un jour : **s'arrêter et demander à Seb**.
-- [ ] **Step 2: CLAUDE.md.** Ajouter, après la règle « Les valeurs du jour viennent de l'agent seul », une règle :
+- [x] **Step 1: Sonde.** Avec la sortie que Seb a recopiée (tâche 1) : fixer `MARKET_DATA_TYPE` (3 ou 4 : celui qui remplit `last` et `close` en séance **et** hors séance) et `QUOTES_TIMEOUT_S` (le « last » de la sonde arrondi au-dessus, `CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S` ≤ 10 s pour rester sous `AGENT_FETCH_TIMEOUT_MS`). Écrire le résultat dans la spec §9, en agrégats seulement. Si aucun type ne remplit `close` hors séance, ou si la variation hors séance est nulle ou décalée d'un jour : **s'arrêter et demander à Seb**. — fait en séance seulement (2026-09-28) : 43/43, 4,1 s, types 3 et 4 identiques, `QUOTES_TIMEOUT_S = 8`. La sonde a aussi révélé un défaut distinct dans `main.py` (`reqMktData` sur un contrat non qualifié), corrigé par la qualification avant souscription (§2). Le hors séance (point 2, `close`/`last` après la clôture et le week-end) reste à sonder — `docs/points-reportes.md`. Écart au plan : `QUOTES_TIMEOUT_S = 8` fait `CONNECT_TIMEOUT_S + QUOTES_TIMEOUT_S = 13 s`, au-delà des « ≤ 10 s » visés ici, mais toujours sous les 15 s d'`AGENT_FETCH_TIMEOUT_MS` du navigateur.
+- [x] **Step 2: CLAUDE.md.** Ajouter, après la règle « Les valeurs du jour viennent de l'agent seul », une règle :
 
 > - **La variation du jour du sous-jacent vient de `/quotes`, jamais stockée** (sous-projet 35) :
 >   l'agent rend `last` et `close` bruts (`reqMktData`, `MARKET_DATA_TYPE` différé : pas
@@ -1007,7 +1007,7 @@ it("shows the underlying's day move first, and keeps the rank order", async () =
 >   refuse deux connexions `clientId 0` simultanées.
 
 Mettre à jour la règle « Les tableaux de la page Positions partagent leurs colonnes » : « treize colonnes », « douze colonnes » pour `WHEEL_SHARE_COLUMNS`. Mettre à jour la ligne de `run-frontend` (`--agent` sert aussi `/quotes`). Registre : `| 35 | Var. jour action : la variation du jour du sous-jacent | fait (<date>) |`.
-- [ ] **Step 3: points-reportes.md.** Section « Reporté par le sous-projet 35 » : ce que la revue aura jugé non bloquant ; au minimum, si la sonde l'a montré, le comportement en pré-ouverture (le `last` différé d'avant 9:30).
-- [ ] **Step 4:** `pnpm check` à la racine du worktree → vert. `pnpm test:agent` → vert.
-- [ ] **Step 5: Commit** — `git commit -am "Sous-projet 35 : sonde, CLAUDE.md, registre et statut de la spec"`
+- [x] **Step 3: points-reportes.md.** Section « Reporté par le sous-projet 35 » : ce que la revue aura jugé non bloquant ; au minimum, si la sonde l'a montré, le comportement en pré-ouverture (le `last` différé d'avant 9:30).
+- [x] **Step 4:** `pnpm check` à la racine du worktree → vert. `pnpm test:agent` → vert.
+- [x] **Step 5: Commit** — `git commit -am "Sous-projet 35 : sonde, CLAUDE.md, registre et statut de la spec"`
 - [ ] **Step 6:** `pnpm dev:start` dans le worktree ; donner à Seb les deux URL, et lui rappeler `ib-tws-agent origin add http://127.0.0.1:<port Vite du worktree>` puis relancer l'agent pour voir la colonne avec son vrai TWS.

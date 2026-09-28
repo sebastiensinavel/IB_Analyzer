@@ -88,6 +88,7 @@
       "empty": "Aucune suggestion : aucune ligne de la table sectorielle ne remplit les critères.",
       "emptyLink": "Aller à Secteur et Score",
       "columns": {
+        "underlyingDayChange": "Var. jour action",
         "rank": "#",
         "ticker": "Ticker",
         "sector": "Secteur",
@@ -113,6 +114,7 @@
       "other": "Autres positions"
     },
     "columns": {
+      "underlyingDayChange": "Var. jour action",
       "position": "Position",
       "type": "Type",
       "sector": "Secteur",
@@ -146,6 +148,7 @@
       "condors": "Condors en cours"
     },
     "columns": {
+      "underlyingDayChange": "Var. jour action",
       "position": "Position",
       "sector": "Secteur",
       "quantity": "Quantité",
@@ -786,6 +789,10 @@
     "noBars": "Interactive Brokers ne rend aucun historique pour {{ticker}}",
     "proxy": "Cours de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}. Les niveaux restent aux prix de {{ticker}}.",
     "loading": "Chargement du graphe…"
+  },
+  "quotes": {
+    "delayed": "Cotation différée de 15 min.",
+    "proxy": "Variation de {{proxy}}, cotation différée de 15 min : Interactive Brokers ne cote pas {{ticker}}."
   },
   "tableFilter": {
     "panel": "Options de la colonne {{column}}",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildIdentities, buildJournals } from "@ib/ledger";
 import sample from "../tests/fixtures/agent_snapshot_sample.json" with { type: "json" };
-import { describeAgentContract, parseAgentSnapshot, type AgentSnapshotPayload } from "./agent.ts";
+import { describeAgentContract, parseAgentSnapshot, parseAgentQuotes, type AgentSnapshotPayload } from "./agent.ts";
 import { NormalizationError } from "./common.ts";
 
 const ACCOUNT = "test";
@@ -259,5 +259,40 @@ describe("parseAgentSnapshot contract identities", () => {
     const parsed = parseAgentSnapshot(payload, ACCOUNT);
     expect(parsed.identities.find((i) => i.conid === "265598")?.tickers).toEqual(["SYMA"]);
     expect(parsed.identities.find((i) => i.conid === "12087792")?.tickers).toEqual(["EUR.USD"]);
+  });
+});
+
+describe("parseAgentQuotes", () => {
+  it("derives each underlying's day move from last and close", () => {
+    const quotes = parseAgentQuotes({
+      fetchedAt: "2026-09-28T14:00:00.000Z",
+      quotes: [
+        { symbol: "aapl", last: 110, close: 100 },
+        { symbol: "MSFT", last: 95, close: 100 },
+      ],
+    });
+    expect(quotes.get("AAPL")).toBeCloseTo(0.1, 10);
+    expect(quotes.get("MSFT")).toBeCloseTo(-0.05, 10);
+  });
+
+  it("keeps a symbol TWS said nothing about, as null", () => {
+    const quotes = parseAgentQuotes({
+      fetchedAt: "2026-09-28T14:00:00.000Z",
+      quotes: [
+        { symbol: "A", last: null, close: 100 },
+        { symbol: "B", last: 100, close: null },
+        { symbol: "C", last: 100, close: 0 },
+      ],
+    });
+    expect([...quotes.entries()]).toEqual([["A", null], ["B", null], ["C", null]]);
+  });
+
+  it.each([
+    ["no quotes array", { fetchedAt: "x" }],
+    ["a symbol that is not a string", { fetchedAt: "x", quotes: [{ symbol: 1, last: 1, close: 1 }] }],
+    ["a price that is not a number", { fetchedAt: "x", quotes: [{ symbol: "A", last: "1", close: 1 }] }],
+    ["not an object", null],
+  ])("refuses %s", (_, payload) => {
+    expect(() => parseAgentQuotes(payload)).toThrow(NormalizationError);
   });
 });

@@ -30,10 +30,24 @@ export async function probeAgent(): Promise<AgentInfo | null> {
   }
 }
 
-export async function fetchSnapshot(port: number): Promise<AgentFetchResult> {
+/** Same ceiling as the agent's QUOTES_MAX_SYMBOLS (apps/tws-agent), one per language. */
+export const QUOTES_MAX_SYMBOLS = 90;
+
+// Every agent call that opens a TWS connection goes through here, one after the other: the agent
+// connects with clientId 0 each time, and TWS refuses a second connection on the same clientId
+// while the first lives (spec of sub-project 35, §4). A call's own timeout only starts on its turn.
+let twsQueue: Promise<unknown> = Promise.resolve();
+
+export function exclusiveTws<T>(call: () => Promise<T>): Promise<T> {
+  const turn = twsQueue.then(call, call);
+  twsQueue = turn.catch(() => undefined);
+  return turn;
+}
+
+async function getAgentJson(path: string): Promise<AgentFetchResult> {
   let response: Response;
   try {
-    response = await fetch(`${AGENT_URL}/snapshot?port=${port}`, { signal: AbortSignal.timeout(AGENT_FETCH_TIMEOUT_MS) });
+    response = await fetch(`${AGENT_URL}${path}`, { signal: AbortSignal.timeout(AGENT_FETCH_TIMEOUT_MS) });
   } catch {
     return { ok: false, code: "agent-unreachable" };
   }
@@ -45,6 +59,14 @@ export async function fetchSnapshot(port: number): Promise<AgentFetchResult> {
   } catch {
     return { ok: false, code: "agent-error" };
   }
+}
+
+export function fetchSnapshot(port: number): Promise<AgentFetchResult> {
+  return exclusiveTws(() => getAgentJson(`/snapshot?port=${port}`));
+}
+
+export function fetchQuotes(port: number, symbols: readonly string[]): Promise<AgentFetchResult> {
+  return exclusiveTws(() => getAgentJson(`/quotes?port=${port}&symbols=${encodeURIComponent(symbols.join(","))}`));
 }
 
 /** Prototype (graphes) : daily bars of one underlying, straight from TWS. */
@@ -65,23 +87,25 @@ export interface BarsResponse {
 
 export type BarsResult = { ok: true; payload: BarsResponse } | { ok: false; code: AgentFetchCode };
 
-export async function fetchBars(port: number, symbol: string, currency = "USD"): Promise<BarsResult> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `${AGENT_URL}/bars?port=${port}&symbol=${encodeURIComponent(symbol)}&currency=${encodeURIComponent(currency)}`,
-      { signal: AbortSignal.timeout(AGENT_FETCH_TIMEOUT_MS) },
-    );
-  } catch {
-    return { ok: false, code: "agent-unreachable" };
-  }
-  if (response.status === 503) return { ok: false, code: "tws-unreachable" };
-  if (!response.ok) return { ok: false, code: "agent-error" };
-  try {
-    const payload = (await response.json()) as BarsResponse;
-    if (!Array.isArray(payload?.bars)) return { ok: false, code: "agent-error" };
-    return { ok: true, payload };
-  } catch {
-    return { ok: false, code: "agent-error" };
-  }
+export function fetchBars(port: number, symbol: string, currency = "USD"): Promise<BarsResult> {
+  return exclusiveTws(async () => {
+    let response: Response;
+    try {
+      response = await fetch(
+        `${AGENT_URL}/bars?port=${port}&symbol=${encodeURIComponent(symbol)}&currency=${encodeURIComponent(currency)}`,
+        { signal: AbortSignal.timeout(AGENT_FETCH_TIMEOUT_MS) },
+      );
+    } catch {
+      return { ok: false, code: "agent-unreachable" };
+    }
+    if (response.status === 503) return { ok: false, code: "tws-unreachable" };
+    if (!response.ok) return { ok: false, code: "agent-error" };
+    try {
+      const payload = (await response.json()) as BarsResponse;
+      if (!Array.isArray(payload?.bars)) return { ok: false, code: "agent-error" };
+      return { ok: true, payload };
+    } catch {
+      return { ok: false, code: "agent-error" };
+    }
+  });
 }
