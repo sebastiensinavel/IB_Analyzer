@@ -5,8 +5,8 @@ import { STRATEGY_BADGE } from "@/lib/strategyBadges";
 describe("STRATEGY_BADGE", () => {
   it("gives each strategy its role's hue, Others a neutral outline", () => {
     expect(Object.keys(STRATEGY_BADGE).sort()).toEqual([...STRATEGIES].sort());
-    expect(STRATEGY_BADGE.wheel.variant).toBe("success");
-    expect(STRATEGY_BADGE.condors.variant).toBe("warning");
+    expect(STRATEGY_BADGE.wheel.variant).toBe("warning");
+    expect(STRATEGY_BADGE.condors.variant).toBe("success");
     expect(STRATEGY_BADGE.others.variant).toBe("outline");
     // The violet comes from the chart-4 token, never a hex recoded here.
     expect(STRATEGY_BADGE.leaps.className).toContain("text-chart-4");

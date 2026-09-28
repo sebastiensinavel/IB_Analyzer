@@ -87,10 +87,10 @@ fausse dans ce cas, et élargirait la colonne. Le nom seul est toujours juste.
 - Teintes, dans un seul tableau `STRATEGY_BADGE` (`apps/web/src/lib/strategyBadges.ts`),
   tons discrets fond léger + texte de la même teinte, reprises des rôles existants de la
   palette (`chartColors.ts`, `index.css`) :
-  - **Wheel** : teal, la teinte « ouvert » (série 2) ;
+  - **Wheel** : ambre (variante `warning`) ;
   - **LEAPS** : violet (série 3, rôle LEAPS), par le token `chart-4` d'`index.css`, jamais un
     hexadécimal ;
-  - **Condors** : ambre, la teinte du badge `spread` de Couverture ;
+  - **Condors** : teal (variante `success`) — Wheel et Condors échangés à la demande de Seb ;
   - **Autres** : contour neutre (`outline`), sans teinte.
   Le tableau est un `Record<Strategy, { variant, className? }>` : ajouter une stratégie sans sa
   teinte ne compile pas.
