@@ -1,26 +1,32 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
-import { DETAIL_GROUPS, groupedPositions, type AnalyzedPosition, type DetailGroupId } from "@ib/coverage";
-import { anchoredBalances } from "@ib/ledger";
+import { DETAIL_GROUPS, groupedPositions, liquidationValue, type AnalyzedPosition, type DetailGroupId } from "@ib/coverage";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
 import { CashBalancesCard } from "@/components/CashBalancesCard";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
+import { headerTotals, HeaderTotals, type HeaderTotalsValue } from "@/components/HeaderTotals";
 import { PositionGroupCard } from "@/components/PositionGroupCard";
 import { PageSearchInput } from "@/components/table/PageSearchInput";
 import { useAccountRiskReport } from "@/db/AccountDataProvider";
-import { useCashPoints, useLedger } from "@/db/hooks";
+import { useCurrentCash } from "@/hooks/useCurrentCash";
 import { useOpenChart } from "@/hooks/useOpenChart";
 import { usePositionGroupViews } from "@/hooks/usePositionGroupViews";
 import { usePageSearch } from "@/hooks/useTableView";
 import { useUnderlyingDayChange } from "@/hooks/useUnderlyingDayChange";
-import { BALANCE_CURRENCIES } from "@/lib/currencies";
 import { expiryChoices, reportToday } from "@/lib/expiryFilter";
 import { positionColumnSpecs } from "@/lib/positionColumns";
 import { groupTitleKey } from "@/lib/riskReport";
 import { activeExpiry, filterBoxes, searchBoxes } from "@/lib/tableBoxes";
+import { activeCriteria } from "@/lib/tableView";
 import { pageSearchKey } from "@/lib/tableViewStorage";
+
+const POSITION_TOTALS_PICK = {
+  daily: (p: AnalyzedPosition) => p.dailyPnl,
+  value: (p: AnalyzedPosition) => p.marketValue,
+  pnl: (p: AnalyzedPosition) => p.unrealizedPnl,
+};
 
 export function PositionsPage() {
   const { accountId = "" } = useParams<{ accountId: string }>();
@@ -37,14 +43,9 @@ export function PositionsPage() {
   );
   // One chart at a time for the whole page, whichever group holds the line.
   const chart = useOpenChart();
-  const ledger = useLedger(accountId);
-  const points = useCashPoints(accountId);
   // The cash comes from the ledger, not the snapshot: shown with or without positions.
-  const anchored = useMemo(
-    () => (ledger && points ? anchoredBalances(ledger, BALANCE_CURRENCIES, points) : undefined),
-    [ledger, points],
-  );
-  const cashCard = anchored && <CashBalancesCard rows={anchored.rows} checks={anchored.checks} />;
+  const current = useCurrentCash(accountId);
+  const cashCard = current && <CashBalancesCard rows={current.anchored.rows} checks={current.anchored.checks} />;
 
   if (report === undefined || snapshot === undefined) {
     return <div className="p-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
@@ -82,9 +83,29 @@ export function PositionsPage() {
   const expiry = activeExpiry(choices, ids, viewOf);
   const boxes = filterBoxes(searched, specs, viewOf, expiry !== null);
 
+  // Page header: the sum of what the boxes actually show (spec §5), cash included only when no
+  // search or column filter narrows the page — a filter takes the cash out and says so.
+  const shown = boxes.flatMap((box) => box.rows);
+  const filtered = search.applied.trim() !== "" || ids.some((id) => activeCriteria(specs, viewOf[id]).length > 0);
+  // A currency's cash joins the value when the page shows a position in it, or when it is known
+  // and not zero: a USD-only account draws no EUR line, but a USD cash not known stays missing.
+  const shownCurrencies = new Set(shown.map((p) => p.currency));
+  const cash =
+    current &&
+    Object.fromEntries(Object.entries(current.cash).filter(([currency, value]) => shownCurrencies.has(currency) || (value !== null && value !== 0)));
+  const pageTotals: HeaderTotalsValue = {
+    ...headerTotals(shown, (p) => p.currency, POSITION_TOTALS_PICK),
+    ...(filtered ? { valueNote: t("totals.cashExcluded") } : { value: liquidationValue(shown, cash) }),
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
-      <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.positions")}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.positions")}</h1>
+        <div data-testid="page-totals">
+          <HeaderTotals totals={pageTotals} />
+        </div>
+      </div>
 
       <PageSearchInput search={search} />
 
@@ -109,6 +130,7 @@ export function PositionsPage() {
           sectorOf={sectorOf}
           chart={chart}
           boxId={box.id}
+          totals={headerTotals(box.rows, (p) => p.currency, POSITION_TOTALS_PICK)}
         />
       ))}
 

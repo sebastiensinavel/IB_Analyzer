@@ -142,7 +142,7 @@ describe("wheelPositions — assigned shares", () => {
     expect(wheelPositions(held(15), snapshot).shares).toEqual([
       {
         ticker: "MQZA", currency: "USD", quantity: 200, averageAssignmentPrice: 17, assignedTotal: 3400, openCallContracts: 1,
-        averageCallStrike: 15, coveredShares: 100, lastPrice: 18, unrealizedPnl: 200, dailyPnl: null, dayChange: null,
+        averageCallStrike: 15, coveredShares: 100, lastPrice: 18, marketValue: 3600, unrealizedPnl: 200, dailyPnl: null, dayChange: null,
         callStrikeBelowAssignment: true,
       },
     ]);
@@ -155,6 +155,13 @@ describe("wheelPositions — assigned shares", () => {
 
   it("leaves the price and the P&L blank without the IB shares", () => {
     expect(wheelPositions(held(15), null).shares[0]).toMatchObject({ lastPrice: null, unrealizedPnl: null });
+  });
+
+  it("prices the Wheel's shares at lastPrice × quantity, null without a price", () => {
+    const { shares } = wheelPositions(held(15), snapshot);
+    expect(shares[0].marketValue).toBe(shares[0].lastPrice! * shares[0].quantity);
+    const { shares: unpriced } = wheelPositions(held(15), null);
+    expect(unpriced[0].marketValue).toBeNull();
   });
 });
 

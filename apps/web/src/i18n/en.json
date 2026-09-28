@@ -197,6 +197,10 @@
     }
   },
   "stats": {
+    "totalValue": "Total value",
+    "unrealized": "Unrealized P/L",
+    "realizedToday": "Realized today",
+    "dailyUnrealized": "Unrealized P/L today",
     "title": { "wheel": "Wheel statistics", "leaps": "LEAPS statistics", "condors": "Condor statistics" },
     "total": "Total profit/loss",
     "monthly": "Monthly profits/losses",
@@ -819,5 +823,13 @@
       "textOperator": "No comparison nor range on text",
       "syntax": "Incomplete criterion"
     }
+  },
+  "totals": {
+    "daily": "Day P/L",
+    "value": "Value",
+    "pnl": "P/L",
+    "partial_one": "{{count}} line without a value",
+    "partial_other": "{{count}} lines without a value",
+    "cashExcluded": "Cash left out: a filter is active."
   }
 }

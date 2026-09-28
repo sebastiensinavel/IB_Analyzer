@@ -24,7 +24,7 @@ function line(overrides: Partial<StrategyLine> = {}): StrategyLine {
 function holding(overrides: Partial<WheelShareLine> = {}): WheelShareLine {
   return {
     ticker: "MQZA", currency: "USD", quantity: 200, averageAssignmentPrice: 17, assignedTotal: 3400,
-    openCallContracts: 1, averageCallStrike: 15, coveredShares: 100, lastPrice: 18, dailyPnl: null, dayChange: null, unrealizedPnl: 200,
+    openCallContracts: 1, averageCallStrike: 15, coveredShares: 100, lastPrice: 18, marketValue: 3600, dailyPnl: null, dayChange: null, unrealizedPnl: 200,
     callStrikeBelowAssignment: true, ...overrides,
   };
 }

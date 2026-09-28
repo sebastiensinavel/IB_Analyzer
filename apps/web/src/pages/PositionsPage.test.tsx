@@ -400,6 +400,77 @@ describe("PositionsPage", () => {
     await waitFor(() => expect(order()[0]).toBe("AAPL Jan16'26 150 Call"));
     expect(order()[1]).toBe("AAPL Feb20'26 155 Call");
   });
+
+  /**
+   * Two positions only, one per group, so each totals test below sums a known, small set: the
+   * AAPL stock (`stockPosition`) lands under "Positions longues", the MSFT short call (uncovered
+   * here, its LEAPS not seeded) under "Ventes d'options".
+   */
+  function totalsSnapshot(dailyPnlA: number | null, dailyPnlB: number | null) {
+    return {
+      ...SAMPLE_SNAPSHOT,
+      positions: [
+        stockPosition({ marketValue: 1000, unrealizedPnl: 50, dailyPnl: dailyPnlA }),
+        { ...SAMPLE_POSITIONS[4], marketValue: -200, unrealizedPnl: 20, dailyPnl: dailyPnlB },
+      ],
+    };
+  }
+
+  it("heads the page with the day P/L, the liquidation value cash included, and the P/L", async () => {
+    await db.snapshots.put(totalsSnapshot(10, -4));
+    await db.cashPoints.put({ accountId: "alpha", currency: "USD", kind: "end", asOf: "2026-09-02", amount: 5000, source: "flex", importedAt: "" });
+    renderPositions();
+    const header = await screen.findByTestId("page-totals");
+    const usd = within(header).getByTestId("header-totals-USD");
+    expect(usd).toHaveTextContent("6.00"); // 10 − 4
+    expect(usd).toHaveTextContent("5,800.00"); // 1000 − 200 + 5000
+    expect(usd).toHaveTextContent("70.00"); // 50 + 20
+  });
+
+  it("heads each group card with its own lines", async () => {
+    await db.snapshots.put(totalsSnapshot(10, -4));
+    renderPositions();
+    const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
+    expect(within(sells).getByTestId("header-totals-USD")).toHaveTextContent("-200.00");
+  });
+
+  it("leaves the cash out of the page value once a search is active, and says so", async () => {
+    await db.snapshots.put(totalsSnapshot(10, -4));
+    await db.cashPoints.put({ accountId: "alpha", currency: "USD", kind: "end", asOf: "2026-09-02", amount: 5000, source: "flex", importedAt: "" });
+    renderPositions();
+    const user = userEvent.setup();
+    const input = await screen.findByRole("textbox", { name: "Rechercher un ticker" });
+    await user.type(input, "AAPL");
+    await waitFor(() => expect(screen.queryByText("Ventes d'options")).not.toBeInTheDocument());
+    const usd = within(screen.getByTestId("page-totals")).getByTestId("header-totals-USD");
+    expect(usd).not.toHaveTextContent("5,800.00");
+    expect(usd).toHaveTextContent("*");
+  });
+
+  it("draws no line for a currency the page neither holds nor has cash in", async () => {
+    await db.snapshots.put(totalsSnapshot(10, -4));
+    await db.transactions.bulkAdd(SAMPLE_TRANSACTIONS.filter((tx) => tx.currency === "USD"));
+    await db.cashPoints.put({ accountId: "alpha", currency: "USD", kind: "end", asOf: "2026-12-31", amount: 1456.85, source: "flex", importedAt: "" });
+    renderPositions();
+    const header = await screen.findByTestId("page-totals");
+    await waitFor(() => expect(within(header).getByTestId("header-totals-USD")).toHaveTextContent("2,256.85")); // 1000 − 200 + 1456.85
+    expect(within(header).queryByTestId("header-totals-EUR")).not.toBeInTheDocument();
+  });
+
+  it("keeps the line of a currency the account holds cash in, positions or not", async () => {
+    await db.snapshots.put(totalsSnapshot(10, -4));
+    await seedCash();
+    renderPositions();
+    const header = await screen.findByTestId("page-totals");
+    await waitFor(() => expect(within(header).getByTestId("header-totals-EUR")).toHaveTextContent("10,000.00"));
+  });
+
+  it("shows — for the day P/L from a Flex snapshot, never 0.00", async () => {
+    await db.snapshots.put(totalsSnapshot(null, null));
+    renderPositions();
+    const usd = within(await screen.findByTestId("page-totals")).getByTestId("header-totals-USD");
+    expect(usd.textContent).toMatch(/P\/L du jour\s*—/);
+  });
 });
 
 /** The sample expiries — Jan16'26 to Jan21'28 — are all ahead of this day. */

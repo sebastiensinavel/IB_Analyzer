@@ -19,13 +19,14 @@ import {
   type StrategyLine,
   type WheelShareLine,
 } from "@ib/coverage";
-import { contractId, formatContractLabel, type JournalRow } from "@ib/ledger";
+import { addTotals, contractId, formatContractLabel, type JournalRow } from "@ib/ledger";
 import { Badge } from "@ib/ui/badge";
 import { Card, CardContent } from "@ib/ui/card";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
 import { CondorRows } from "@/components/CondorRows";
 import { ExpiryFilterBar } from "@/components/ExpiryFilterBar";
+import { headerTotals, HeaderTotals, type HeaderTotalsValue } from "@/components/HeaderTotals";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { NUMERIC, PositionRow, toneOf, UnderlyingDayChangeCell } from "@/components/PositionRow";
 import { FilteredTableBox } from "@/components/table/FilteredTableBox";
@@ -52,6 +53,15 @@ export type { PositionsStrategy };
 type SectorOf = (symbol: string) => string | null;
 
 const NO_ROWS: readonly JournalRow[] = [];
+
+// The three sums of a box's shown lines (spec of sub-project 36, §4): a condor sums its own P/L
+// column — realized of its closed legs plus latent of its open ones —, never its legs on top.
+const lineTotals = (rows: readonly StrategyLine[]) =>
+  headerTotals(rows, (l) => l.contract.currency, { daily: (l) => l.dailyPnl, value: (l) => l.marketValue, pnl: (l) => l.unrealizedPnl });
+const shareTotals = (rows: readonly WheelShareLine[]) =>
+  headerTotals(rows, (l) => l.currency, { daily: (l) => l.dailyPnl, value: (l) => l.marketValue, pnl: (l) => l.unrealizedPnl });
+const condorTotals = (rows: readonly CondorLine[]) =>
+  headerTotals(rows, (l) => l.contract.currency, { daily: (l) => l.dailyPnl, value: (l) => l.marketValue, pnl: (l) => l.pnl });
 
 function pricedSnapshot(snapshot: SnapshotRecord | null | undefined, report: RiskReport | null | undefined): PricedSnapshot | null {
   return snapshot && report ? { positions: snapshot.positions, report } : null;
@@ -149,9 +159,27 @@ export function StrategyPositionsPage({ strategy }: { strategy: PositionsStrateg
   const shares = new Map(filterBoxes(searchedShares, shareSpecs, viewOf, expiry !== null).map((box) => [box.id, box]));
   const condorBoxes = new Map(filterBoxes(searchedCondors, condorSpecs, viewOf, expiry !== null).map((box) => [box.id, box]));
 
+  // Page header: the shown lines of every rendered box (spec §5). A line is in one box only — the
+  // free and covered parts of a ticker's Wheel shares are distinct lines —, so nothing counts twice.
+  const parts = [
+    ...[...lines.values()].map((box) => lineTotals(box.rows)),
+    ...[...shares.values()].map((box) => shareTotals(box.rows)),
+    ...[...condorBoxes.values()].map((box) => condorTotals(box.rows)),
+  ];
+  const pageTotals: HeaderTotalsValue = {
+    daily: addTotals(...parts.map((part) => part.daily)),
+    value: addTotals(...parts.map((part) => part.value)),
+    pnl: addTotals(...parts.map((part) => part.pnl)),
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
-      <h1 className="font-heading text-lg font-semibold tracking-tight">{t(`strategyPositions.title.${strategy}`)}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="font-heading text-lg font-semibold tracking-tight">{t(`strategyPositions.title.${strategy}`)}</h1>
+        <div data-testid="page-totals">
+          <HeaderTotals totals={pageTotals} />
+        </div>
+      </div>
 
       <PageSearchInput search={search} />
       <ExpiryFilterBar choices={choices} active={expiry} onPick={setExpiry} />
@@ -239,6 +267,7 @@ function LinesBox({
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
+      totals={lineTotals(box.rows)}
       table={table}
       emptyKey="positions.noResults"
       rowKey={(line) => contractId(line.contract)}
@@ -308,6 +337,7 @@ function CondorsBox({
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
+      totals={condorTotals(box.rows)}
       table={table}
       emptyKey="positions.noResults"
       rowKey={(line) => line.id}
@@ -361,6 +391,7 @@ function SharesBox({
       specs={specs}
       facetRows={box.facetRows}
       rows={box.rows}
+      totals={shareTotals(box.rows)}
       table={table}
       emptyKey="positions.noResults"
       rowKey={(line) => `${line.ticker}|${line.currency}`}

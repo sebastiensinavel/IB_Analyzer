@@ -7,7 +7,7 @@ import { DETAIL_GROUPS, KIND_LABELS, type DetailGroupId, type PositionKind } fro
 function share(overrides: Partial<WheelShareLine> = {}): WheelShareLine {
   return {
     ticker: "XYZ", currency: "USD", quantity: 200, averageAssignmentPrice: 17, assignedTotal: 3400,
-    openCallContracts: 1, averageCallStrike: 15, coveredShares: 100, lastPrice: 18, unrealizedPnl: 200,
+    openCallContracts: 1, averageCallStrike: 15, coveredShares: 100, lastPrice: 18, marketValue: 3600, unrealizedPnl: 200,
     dailyPnl: 40, dayChange: 0.01, callStrikeBelowAssignment: true, ...overrides,
   };
 }
@@ -32,15 +32,22 @@ describe("splitWheelShares", () => {
     const { uncovered, covered } = splitWheelShares(share());
     expect(uncovered).toEqual(share({
       quantity: 100, assignedTotal: 1700, openCallContracts: 0, averageCallStrike: null, coveredShares: 0,
-      unrealizedPnl: 100, dailyPnl: 20, callStrikeBelowAssignment: false,
+      marketValue: 1800, unrealizedPnl: 100, dailyPnl: 20, callStrikeBelowAssignment: false,
     }));
-    expect(covered).toEqual(share({ quantity: 100, assignedTotal: 1700, coveredShares: 100, unrealizedPnl: 100, dailyPnl: 20 }));
+    expect(covered).toEqual(share({ quantity: 100, assignedTotal: 1700, coveredShares: 100, marketValue: 1800, unrealizedPnl: 100, dailyPnl: 20 }));
   });
 
   it("keeps a null amount null in both parts", () => {
-    const { uncovered, covered } = splitWheelShares(share({ assignedTotal: null, averageAssignmentPrice: null, unrealizedPnl: null, dailyPnl: null, dayChange: null }));
-    expect(uncovered).toMatchObject({ assignedTotal: null, unrealizedPnl: null, dailyPnl: null });
-    expect(covered).toMatchObject({ assignedTotal: null, unrealizedPnl: null, dailyPnl: null });
+    const { uncovered, covered } = splitWheelShares(share({ assignedTotal: null, averageAssignmentPrice: null, marketValue: null, unrealizedPnl: null, dailyPnl: null, dayChange: null }));
+    expect(uncovered).toMatchObject({ assignedTotal: null, marketValue: null, unrealizedPnl: null, dailyPnl: null });
+    expect(covered).toMatchObject({ assignedTotal: null, marketValue: null, unrealizedPnl: null, dailyPnl: null });
+  });
+
+  it("splits the market value with the quantity: free and covered parts add up to the whole", () => {
+    const whole = share();
+    const { uncovered, covered } = splitWheelShares(whole);
+    const parts = [uncovered, covered].filter((line): line is WheelShareLine => line !== null);
+    expect(parts.reduce((sum, line) => sum + line.marketValue!, 0)).toBe(whole.marketValue);
   });
 
   it("has no free part when everything is covered, and no covered part without a call", () => {

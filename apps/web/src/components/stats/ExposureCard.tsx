@@ -32,7 +32,7 @@ export function ExposureCard({ capital, detailed, empty, sectorOf, isDark, share
   const slices = sectorSlices(capital.exposure, sectorOf, t("stats.exposure.unclassified"));
 
   return (
-    <Card>
+    <Card aria-label={t("stats.exposure.title")}>
       <CardHeader>
         <CardTitle>{t("stats.exposure.title")}</CardTitle>
       </CardHeader>

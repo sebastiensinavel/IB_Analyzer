@@ -1,6 +1,6 @@
 # Sous-projet 36 — Les totaux : P/L du jour, P/L non réalisé, valeur totale
 
-Statut : conçu (2026-09-28).
+Statut : implémenté (2026-09-28).
 
 Le tableau de bord ne montre qu'un chiffre de résultat, le *Profit/perte total* réalisé des
 journaux (`computeStats`). Les pages de positions montrent ligne par ligne la valeur de marché,
@@ -44,7 +44,7 @@ Arbitrages de Seb (2026-09-28) :
   partiel ; « — » seulement quand aucune ligne n'a de valeur.
 - **Les en-têtes suivent les filtres** (§5).
 
-### 2.1 `sumByCurrency` — `packages/coverage/src/totals.ts`
+### 2.1 `sumByCurrency` — `packages/ledger/src/totals.ts` (déplacé là en revue finale, avec `addTotals`)
 
 ```ts
 // CurrencyTotal est défini dans packages/ledger (§2.2), que coverage ré-exporte.

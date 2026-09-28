@@ -9,6 +9,8 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { WithAccountData } from "@/test/WithAccountData";
 import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
+import type { Position, Transaction } from "@ib/ledger";
+import type { SnapshotRecord } from "@/db/schema";
 
 function renderDashboard(accountId = "alpha") {
   return render(
@@ -30,7 +32,7 @@ function renderDashboard(accountId = "alpha") {
 }
 
 beforeEach(async () => {
-  await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.sectors.clear(), db.imports.clear()]);
+  await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.sectors.clear(), db.imports.clear(), db.cashPoints.clear()]);
   // Every strategy on: these tests read the LEAPS and the condors (the default is the Wheel alone).
   await db.accounts.put({ id: "alpha", label: "alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: [...ACTIVABLE_STRATEGIES] });
   await db.accounts.put({ id: "beta", label: "beta", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [], strategies: [...ACTIVABLE_STRATEGIES] });
@@ -61,6 +63,39 @@ async function suggestionRows(): Promise<string[][]> {
     .getAllByRole("row")
     .slice(1)
     .map((row) => within(row).getAllByRole("cell").map((cell) => cell.textContent ?? ""));
+}
+
+const XOM_PUT = { symbol: "XOM   261016P00110000", secType: "OPT" as const, right: "P" as const, strike: 110, expiry: "2026-10-16" };
+const xomTrade = (overrides: Partial<Transaction>): Transaction => ({
+  accountId: "alpha", externalId: "", source: "flex", kind: "trade", quantity: null, price: null, amount: null, commission: -1,
+  currency: "USD", when: "", description: "", ...XOM_PUT, ...overrides,
+});
+/** A put sold on 2026-09-01 for 120 and bought back on 2026-09-25 for 40, 1 of commission each way: 78 realized that day. */
+const XOM_ROUND_TRIP: Transaction[] = [
+  xomTrade({ externalId: "flex:trade:301", quantity: -1, price: 1.2, amount: 120, when: "2026-09-01T14:30:00.000Z" }),
+  xomTrade({ externalId: "flex:trade:302", quantity: 1, price: 0.4, amount: -40, when: "2026-09-25T14:30:00.000Z" }),
+];
+const held = (overrides: Partial<Position>): Position => ({
+  symbol: "", secType: "STK", right: "", strike: null, expiry: null, multiplier: 1, quantity: 0, avgPrice: null, marketPrice: null,
+  marketValue: null, unrealizedPnl: null, dailyPnl: null, dayChange: null, currency: "USD", conid: "", description: "", ...overrides,
+});
+const AGENT_SNAPSHOT: SnapshotRecord = {
+  accountId: "alpha",
+  source: "agent",
+  asOf: "2026-09-25T15:00:00.000Z",
+  importedAt: "2026-09-25T19:00:00.000Z",
+  cashAvailable: 5000,
+  positions: [
+    held({ symbol: "KO", quantity: 10, marketValue: 1000, unrealizedPnl: 50, dailyPnl: 10, description: "COCA-COLA" }),
+    held({ symbol: "PEP", secType: "OPT", right: "C", strike: 200, expiry: "2026-10-16", multiplier: 100, quantity: -1, marketValue: -200, unrealizedPnl: 20, dailyPnl: -4, description: "PEP 16OCT26 200 C" }),
+  ],
+};
+
+/** The totals' fixture: the XOM round trip, a snapshot and an Ending Cash of 5,000 on the buyback's day. */
+async function seedTotals(snapshot: SnapshotRecord = AGENT_SNAPSHOT) {
+  await db.transactions.bulkAdd(XOM_ROUND_TRIP);
+  await db.snapshots.put(snapshot);
+  await db.cashPoints.put({ accountId: "alpha", currency: "USD", kind: "end", asOf: "2026-09-25", amount: 5000, source: "flex", importedAt: "2026-09-26T06:00:00.000Z" });
 }
 
 describe("DashboardPage", () => {
@@ -180,6 +215,66 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("link", { name: "Aller aux sources de données" })).toHaveAttribute("href", "/accounts/beta/sources");
     expect(screen.queryByLabelText("Couverture en Cash")).not.toBeInTheDocument();
     expect(screen.getByTestId("capital-chart")).toBeInTheDocument();
+  });
+
+  it("adds the account's total value to the total P/L card", async () => {
+    await seedTotals();
+    renderDashboard();
+    const card = await screen.findByLabelText("Profit/Perte total");
+    expect(card).toHaveTextContent("78.00 USD");
+    expect(card).toHaveTextContent("Valeur totale");
+    // 1,000 − 200 of market value, and 5,000 of cash.
+    await waitFor(() => expect(card).toHaveTextContent("5,800.00"));
+  });
+
+  it("shows the unrealized P/L with today's realized under it", async () => {
+    await seedTotals();
+    renderDashboard();
+    const card = await screen.findByLabelText("P/L non réalisé");
+    expect(card).toHaveTextContent("70.00");
+    expect(card).toHaveTextContent("Réalisé du jour");
+    expect(card).toHaveTextContent("78.00");
+  });
+
+  it("shows today's realized at 0 on an agent day that closed nothing", async () => {
+    await seedTotals({ ...AGENT_SNAPSHOT, asOf: "2026-09-28T15:00:00.000Z" });
+    renderDashboard();
+    const card = await screen.findByLabelText("P/L non réalisé");
+    expect(card).toHaveTextContent("Réalisé du jour 0.00");
+  });
+
+  it("shows the day's unrealized P/L above the sector exposure", async () => {
+    await seedTotals();
+    renderDashboard();
+    const card = await screen.findByLabelText("P/L non réalisé du jour");
+    expect(card).toHaveTextContent("6.00");
+    const exposure = screen.getByLabelText("Exposition par secteur");
+    expect(card.parentElement).toBe(exposure.parentElement);
+    expect(card.compareDocumentPosition(exposure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("shows — for the day's figures without an agent snapshot", async () => {
+    await seedTotals({ ...AGENT_SNAPSHOT, source: "flex", asOf: "2026-09-25" });
+    renderDashboard();
+    const unrealized = await screen.findByLabelText("P/L non réalisé");
+    expect(unrealized).toHaveTextContent("70.00");
+    expect(unrealized).toHaveTextContent("Réalisé du jour —");
+    expect(screen.getByLabelText("P/L non réalisé du jour")).toHaveTextContent("—");
+  });
+
+  it("shows — for the total value, the unrealized and the day without a snapshot", async () => {
+    await db.transactions.bulkAdd(XOM_ROUND_TRIP);
+    renderDashboard();
+    const total = await screen.findByLabelText("Profit/Perte total");
+    expect(total).toHaveTextContent("Valeur totale —");
+    expect(screen.getByLabelText("P/L non réalisé")).toHaveTextContent("P/L non réalisé—");
+  });
+
+  it("marks a partial unrealized P/L with an asterisk", async () => {
+    await seedTotals({ ...AGENT_SNAPSHOT, positions: [...AGENT_SNAPSHOT.positions, held({ symbol: "T", quantity: 5, marketValue: 100 })] });
+    renderDashboard();
+    const card = await screen.findByLabelText("P/L non réalisé");
+    expect(card).toHaveTextContent("70.00*");
   });
 
   it("suggests the least exposed sectors first, the best score next, with the share of risk already exposed", async () => {

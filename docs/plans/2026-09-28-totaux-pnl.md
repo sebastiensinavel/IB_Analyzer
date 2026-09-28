@@ -65,7 +65,7 @@
   - `export function realizedOnDay(rows: readonly JournalRow[], day: string): CurrencyTotal[]`
   - `export function currentCashBalances(rows: readonly LedgerRow[], checks: readonly CashCheck[]): Record<string, number | null>`
 
-- [ ] **Step 1: Test `realizedOnDay`**
+- [x] **Step 1: Test `realizedOnDay`**
 
 ```ts
 // packages/ledger/src/journals/realized.test.ts
@@ -127,9 +127,9 @@ describe("realizedOnDay", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer, voir échouer** — `cd packages/ledger && npx vitest run realized` → FAIL (module absent).
+- [x] **Step 2: Lancer, voir échouer** — `cd packages/ledger && npx vitest run realized` → FAIL (module absent).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 ```ts
 // packages/ledger/src/journals/realized.ts
@@ -167,7 +167,7 @@ export function realizedOnDay(rows: readonly JournalRow[], day: string): Currenc
 
 Ajouter `export * from "./realized.ts";` dans `packages/ledger/src/journals/index.ts`.
 
-- [ ] **Step 4: Test `currentCashBalances`** — reprend la règle de `CashBalancesCard.tsx:53-55` (« dernière ligne, sinon l'Ending Cash seul, sinon `null` »).
+- [x] **Step 4: Test `currentCashBalances`** — reprend la règle de `CashBalancesCard.tsx:53-55` (« dernière ligne, sinon l'Ending Cash seul, sinon `null` »).
 
 ```ts
 // packages/ledger/src/cash.current.test.ts
@@ -190,7 +190,7 @@ describe("currentCashBalances", () => {
 
 (Si `LedgerRow.balances` porte un autre nom, suivre le type réel de `cash.ts` et ajuster le cast.)
 
-- [ ] **Step 5: Voir échouer**, puis implémenter dans `packages/ledger/src/cash.ts` :
+- [x] **Step 5: Voir échouer**, puis implémenter dans `packages/ledger/src/cash.ts` :
 
 ```ts
 /**
@@ -204,11 +204,11 @@ export function currentCashBalances(rows: readonly LedgerRow[], checks: readonly
 }
 ```
 
-- [ ] **Step 6: `CashBalancesCard` lit `currentCashBalances`** — dans `apps/web/src/components/CashBalancesCard.tsx`, remplacer le calcul local de `amount` par `const current = currentCashBalances(rows, checks);` hors de la boucle et `const amount = current[currency];` dedans (import depuis `@ib/ledger`). Comportement inchangé : `cd apps/web && npx vitest run CashBalances Positions` doit rester vert.
+- [x] **Step 6: `CashBalancesCard` lit `currentCashBalances`** — dans `apps/web/src/components/CashBalancesCard.tsx`, remplacer le calcul local de `amount` par `const current = currentCashBalances(rows, checks);` hors de la boucle et `const amount = current[currency];` dedans (import depuis `@ib/ledger`). Comportement inchangé : `cd apps/web && npx vitest run CashBalances Positions` doit rester vert.
 
-- [ ] **Step 7: Tests verts** — `cd packages/ledger && npx vitest run realized cash`.
+- [x] **Step 7: Tests verts** — `cd packages/ledger && npx vitest run realized cash`.
 
-- [ ] **Step 8: Commit** (cases cochées dans ce plan)
+- [x] **Step 8: Commit** (cases cochées dans ce plan)
 
 ```bash
 git add packages/ledger apps/web/src/components/CashBalancesCard.tsx docs/plans/2026-09-28-totaux-pnl.md
@@ -232,7 +232,7 @@ git commit -m "Totaux : le réalisé du jour et le cash courant, calculés dans 
   - `export function addTotals(...lists: readonly (readonly CurrencyTotal[])[]): CurrencyTotal[]` — additionne par devise `total` (`null + x = x`, `null + null = null`), `missing` et `count`.
   - `WheelShareLine.marketValue: number | null`
 
-- [ ] **Step 1: Tests**
+- [x] **Step 1: Tests**
 
 ```ts
 // packages/coverage/src/totals.test.ts
@@ -296,9 +296,9 @@ describe("liquidationValue", () => {
 
 (Adapter les champs de `position()` au type réel `Position` de `packages/ledger/src/types.ts:66-100` si un nom diffère.)
 
-- [ ] **Step 2: Voir échouer** — `cd packages/coverage && npx vitest run totals`.
+- [x] **Step 2: Voir échouer** — `cd packages/coverage && npx vitest run totals`.
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 ```ts
 // packages/coverage/src/totals.ts
@@ -348,7 +348,7 @@ export function liquidationValue(positions: readonly Position[], cash: Readonly<
 
 Ajouter `export * from "./totals.ts";` dans `packages/coverage/src/index.ts`.
 
-- [ ] **Step 4: `WheelShareLine.marketValue`** — test dans `strategy.test.ts`, à côté des tests existants des `shares` de `strategyPositions` (reprendre leur fixture) :
+- [x] **Step 4: `WheelShareLine.marketValue`** — test dans `strategy.test.ts`, à côté des tests existants des `shares` de `strategyPositions` (reprendre leur fixture) :
 
 ```ts
 it("prices the Wheel's shares at lastPrice × quantity, null without a price", () => {
@@ -379,9 +379,9 @@ it("splits the market value with the quantity: free and covered parts add up to 
 });
 ```
 
-- [ ] **Step 5: Tests verts** — `cd packages/coverage && npx vitest run` puis `npx tsc --noEmit -p .` (le nouveau champ obligatoire peut casser une fixture de test d'`apps/web` : `cd apps/web && npx tsc --noEmit -p .` et compléter les fixtures).
+- [x] **Step 5: Tests verts** — `cd packages/coverage && npx vitest run` puis `npx tsc --noEmit -p .` (le nouveau champ obligatoire peut casser une fixture de test d'`apps/web` : `cd apps/web && npx tsc --noEmit -p .` et compléter les fixtures).
 
-- [ ] **Step 6: Commit** — `git commit -m "Totaux : sommes par devise, valeur de liquidation, valeur de marché des actions Wheel"`.
+- [x] **Step 6: Commit** — `git commit -m "Totaux : sommes par devise, valeur de liquidation, valeur de marché des actions Wheel"`.
 
 ---
 
@@ -399,7 +399,7 @@ it("splits the market value with the quantity: free and covered parts add up to 
   - `export function headerTotals<Row>(rows: readonly Row[], currencyOf: (r: Row) => string, pick: { daily: (r: Row) => number | null; value: (r: Row) => number | null; pnl: (r: Row) => number | null }): HeaderTotalsValue`
   - `FilteredTableBoxProps.totals?: HeaderTotalsValue`
 
-- [ ] **Step 1: Textes** — `fr.json`, nouvelle section racine :
+- [x] **Step 1: Textes** — `fr.json`, nouvelle section racine :
 
 ```json
 "totals": {
@@ -414,7 +414,7 @@ it("splits the market value with the quantity: free and covered parts add up to 
 
 `en.json` : `"daily": "Day P/L"`, `"value": "Value"`, `"pnl": "P/L"`, `"partial_one": "{{count}} line without a value"`, `"partial_other": "{{count}} lines without a value"`, `"cashExcluded": "Cash left out: a filter is active."`.
 
-- [ ] **Step 2: Test**
+- [x] **Step 2: Test**
 
 ```tsx
 // apps/web/src/components/HeaderTotals.test.tsx
@@ -467,9 +467,9 @@ describe("HeaderTotals", () => {
 });
 ```
 
-- [ ] **Step 3: Voir échouer** — `cd apps/web && npx vitest run HeaderTotals`.
+- [x] **Step 3: Voir échouer** — `cd apps/web && npx vitest run HeaderTotals`.
 
-- [ ] **Step 4: Implémenter**
+- [x] **Step 4: Implémenter**
 
 ```tsx
 // apps/web/src/components/HeaderTotals.tsx
@@ -547,7 +547,7 @@ export function HeaderTotals({ totals }: { totals: HeaderTotalsValue }) {
 
 L'astérisque colle au chiffre : le test attend `10.00*`. Si `toHaveTextContent` voit une espace, retirer celle-ci plutôt que d'assouplir le test.
 
-- [ ] **Step 5: `FilteredTableBox`** — prop `totals?: HeaderTotalsValue` ; dans le `CardHeader` :
+- [x] **Step 5: `FilteredTableBox`** — prop `totals?: HeaderTotalsValue` ; dans le `CardHeader` :
 
 ```tsx
 <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
@@ -558,9 +558,9 @@ L'astérisque colle au chiffre : le test attend `10.00*`. Si `toHaveTextContent`
 
 Vérifier dans `packages/ui/src/card.tsx` que `CardHeader` accepte `className` et ne pose pas une grille qui écraserait `flex` (le `CardHeader` shadcn récent est une `grid` avec `CardAction`) ; s'il y a un `CardAction`, poser `HeaderTotals` dedans plutôt que de forcer `flex`.
 
-- [ ] **Step 6: Tests verts** — `cd apps/web && npx vitest run HeaderTotals FilteredTableBox`.
+- [x] **Step 6: Tests verts** — `cd apps/web && npx vitest run HeaderTotals FilteredTableBox`.
 
-- [ ] **Step 7: Commit** — `git commit -m "Totaux : HeaderTotals, dans l'en-tête des tableaux filtrés"`.
+- [x] **Step 7: Commit** — `git commit -m "Totaux : HeaderTotals, dans l'en-tête des tableaux filtrés"`.
 
 ---
 
@@ -574,7 +574,7 @@ Vérifier dans `packages/ui/src/card.tsx` que `CardHeader` accepte `className` e
 - Consumes: `headerTotals`, `HeaderTotals`, `HeaderTotalsValue` (tâche 3), `liquidationValue` (tâche 2), `currentCashBalances` (tâche 1), `activeCriteria` (`lib/tableView.ts`).
 - Produces: `PositionGroupCardProps.totals?: HeaderTotalsValue`.
 
-- [ ] **Step 1: Tests** dans `PositionsPage.test.tsx`, avec sa fixture existante (snapshot semé + ledger + cash points). Ajouter :
+- [x] **Step 1: Tests** dans `PositionsPage.test.tsx`, avec sa fixture existante (snapshot semé + ledger + cash points). Ajouter :
 
 ```tsx
 it("heads the page with the day P/L, the liquidation value cash included, and the P/L", async () => {
@@ -613,9 +613,9 @@ it("shows — for the day P/L from a Flex snapshot, never 0.00", async () => {
 
 Adapter la façon de trouver la carte et le champ de recherche à ce que les tests existants du fichier utilisent déjà (`getByRole` / `aria-label`), sans changer les assertions de montant.
 
-- [ ] **Step 2: Voir échouer.**
+- [x] **Step 2: Voir échouer.**
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
   - `PositionGroupCard` : prop `totals?: HeaderTotalsValue`, passée à `FilteredTableBox`.
   - `PositionsPage` : pour chaque `box`, `const totals = headerTotals(box.rows, (p) => p.currency, { daily: (p) => p.dailyPnl, value: (p) => p.marketValue, pnl: (p) => p.unrealizedPnl })` → `totals={…}`.
   - En-tête de page :
@@ -641,9 +641,9 @@ const pageTotals: HeaderTotalsValue = {
 
   - La branche « aucun snapshot » (`report === null || snapshot === null`) ne reçoit pas d'en-tête.
 
-- [ ] **Step 4: Tests verts** — `cd apps/web && npx vitest run PositionsPage`.
+- [x] **Step 4: Tests verts** — `cd apps/web && npx vitest run PositionsPage`.
 
-- [ ] **Step 5: Commit** — `git commit -m "Totaux : en-têtes de la page Positions"`.
+- [x] **Step 5: Commit** — `git commit -m "Totaux : en-têtes de la page Positions"`.
 
 ---
 
@@ -664,7 +664,7 @@ Sommes par type de ligne :
 | `WheelShareLine` | `dailyPnl` | `marketValue` | `unrealizedPnl` | `currency` |
 | `CondorLine` | `dailyPnl` | `marketValue` | `pnl` | `contract.currency` |
 
-- [ ] **Step 1: Tests** dans `StrategyPositionsPage.test.tsx`, sur la fixture `SNAPSHOT` existante (les montants attendus se calculent sur cette fixture : les écrire en dur dans le test après les avoir dérivés à la main des positions de `SNAPSHOT`, pas en relisant la sortie du code) :
+- [x] **Step 1: Tests** dans `StrategyPositionsPage.test.tsx`, sur la fixture `SNAPSHOT` existante (les montants attendus se calculent sur cette fixture : les écrire en dur dans le test après les avoir dérivés à la main des positions de `SNAPSHOT`, pas en relisant la sortie du code) :
 
 ```tsx
 it("heads the Wheel page with the sums of every box's shown lines", async () => { /* page-totals : value = Σ marketValue des encadrés rendus */ });
@@ -680,9 +680,9 @@ it("marks the day P/L partial when dayShare drops a line", async () => { /* une 
 
 Chaque test écrit ses montants attendus en dur et ses assertions sur `within(screen.getByTestId("page-totals"))` ou sur la carte (`aria-label` = titre de l'encadré).
 
-- [ ] **Step 2: Voir échouer.**
+- [x] **Step 2: Voir échouer.**
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
   - Trois fonctions locales en tête de fichier :
 
 ```ts
@@ -713,9 +713,9 @@ const pageTotals: HeaderTotalsValue = {
     Seuls les encadrés rendus comptent : `lines`, `shares`, `condorBoxes` sont les `Map` que la page construit déjà après `filterBoxes`, et un encadré déclaré mais absent de `defs` n'y est pas.
   - Rendu du titre, identique à la page Positions (`data-testid="page-totals"`).
 
-- [ ] **Step 4: Tests verts** — `cd apps/web && npx vitest run StrategyPositions`.
+- [x] **Step 4: Tests verts** — `cd apps/web && npx vitest run StrategyPositions`.
 
-- [ ] **Step 5: Commit** — `git commit -m "Totaux : en-têtes des pages de stratégie"`.
+- [x] **Step 5: Commit** — `git commit -m "Totaux : en-têtes des pages de stratégie"`.
 
 ---
 
@@ -733,9 +733,9 @@ const pageTotals: HeaderTotalsValue = {
   - `UnrealizedPnlCard({ unrealized, realizedToday }: { unrealized: CurrencyTotal | null; realizedToday: CurrencyTotal | null })`
   - `DailyPnlCard({ daily }: { daily: CurrencyTotal | null })`
 
-- [ ] **Step 1: Textes** — `fr.json` sous `stats` : `"totalValue": "Valeur totale"`, `"unrealized": "P/L non réalisé"`, `"realizedToday": "Réalisé du jour"`, `"dailyUnrealized": "P/L non réalisé du jour"`. `en.json` : `"Total value"`, `"Unrealized P/L"`, `"Realized today"`, `"Unrealized P/L today"`.
+- [x] **Step 1: Textes** — `fr.json` sous `stats` : `"totalValue": "Valeur totale"`, `"unrealized": "P/L non réalisé"`, `"realizedToday": "Réalisé du jour"`, `"dailyUnrealized": "P/L non réalisé du jour"`. `en.json` : `"Total value"`, `"Unrealized P/L"`, `"Realized today"`, `"Unrealized P/L today"`.
 
-- [ ] **Step 2: Tests** dans `DashboardPage.test.tsx`, sur la fixture existante, en semant un snapshot `agent` (`asOf` `2026-09-25T15:00:00.000Z`), deux positions USD (marketValue 1000/-200, unrealizedPnl 50/20, dailyPnl 10/-4), un cash point USD `end` à 5000, et une transaction qui ferme une ligne ce jour-là (rachat d'un put vendu plus tôt, P/L de journal connu) :
+- [x] **Step 2: Tests** dans `DashboardPage.test.tsx`, sur la fixture existante, en semant un snapshot `agent` (`asOf` `2026-09-25T15:00:00.000Z`), deux positions USD (marketValue 1000/-200, unrealizedPnl 50/20, dailyPnl 10/-4), un cash point USD `end` à 5000, et une transaction qui ferme une ligne ce jour-là (rachat d'un put vendu plus tôt, P/L de journal connu) :
 
 ```tsx
 it("adds the account's total value to the total P/L card", async () => {
@@ -764,9 +764,9 @@ it("shows — for the day's figures without an agent snapshot", async () => {
 
 Les cartes portent `aria-label={titre}` sur leur `Card` pour être trouvées par `role="region"` ; ajouter l'`aria-label` à `PnlTotalCard` et `ExposureCard` si absent (vérifier que cela ne casse pas un test existant). Adapter `renderPage` / la manière de semer à ce que le fichier fait déjà.
 
-- [ ] **Step 3: Voir échouer.**
+- [x] **Step 3: Voir échouer.**
 
-- [ ] **Step 4: Implémenter**
+- [x] **Step 4: Implémenter**
   - Grand chiffre : extraire de `PnlTotal` une `SignedAmount({ value, currency, size })` si utile, sinon reprendre ses classes (`font-mono text-2xl font-semibold tabular-nums`, `text-success`/`text-destructive`, « — » en `text-muted-foreground`).
   - `PnlTotalCard` : sous `<PnlTotal/>`, si `value !== undefined`, une ligne `text-sm` : `t("stats.totalValue")` puis la valeur mono neutre (« — » si `null` ou `total === null`, `*` + infobulle `totals.partial` si `missing > 0`).
   - `UnrealizedPnlCard` : titre `stats.unrealized`, grand chiffre signé, puis ligne `text-sm` `stats.realizedToday` + montant signé.
@@ -791,9 +791,9 @@ const realizedToday = agentDay ? pick(realizedOnDay(view.report.rows, agentDay))
 
     Un jour d'agent sans fermeture vaut 0, pas « — » : l'agent a vu la journée. Poser les hooks (`useMemo`) avant le premier `return` de la page. Grille : colonne gauche `PnlTotalCard value` → `UnrealizedPnlCard` → `CashCoverageCard` ; colonne droite `DailyPnlCard` → `ExposureCard` (la colonne droite devient un `flex flex-col gap-4`).
 
-- [ ] **Step 5: Tests verts** — `cd apps/web && npx vitest run DashboardPage Stats PnlTotal`.
+- [x] **Step 5: Tests verts** — `cd apps/web && npx vitest run DashboardPage Stats PnlTotal`.
 
-- [ ] **Step 6: Commit** — `git commit -m "Totaux : valeur totale, P/L non réalisé et P/L du jour au tableau de bord"`.
+- [x] **Step 6: Commit** — `git commit -m "Totaux : valeur totale, P/L non réalisé et P/L du jour au tableau de bord"`.
 
 ---
 
@@ -802,7 +802,7 @@ const realizedToday = agentDay ? pick(realizedOnDay(view.report.rows, agentDay))
 **Files:**
 - Modify: `CLAUDE.md`, `docs/points-reportes.md`, `docs/specs/2026-09-28-totaux-pnl-design.md`
 
-- [ ] **Step 1: `CLAUDE.md`** — ajouter une règle dans « Règles qui mordent » :
+- [x] **Step 1: `CLAUDE.md`** — ajouter une règle dans « Règles qui mordent » :
 
 ```markdown
 - **Les totaux sont des sommes calculées, jamais stockées** (sous-projet 36) : `sumByCurrency`,
@@ -818,12 +818,12 @@ const realizedToday = agentDay ? pick(realizedOnDay(view.report.rows, agentDay))
 
   et la ligne du registre : `| 36 | Les totaux : P/L du jour, P/L non réalisé, valeur totale | fait (2026-09-28) |`.
 
-- [ ] **Step 2: `docs/points-reportes.md`** — section « Reporté par le sous-projet 36 (Totaux) » : une jambe de condor fermée seule n'entre dans aucun réalisé du jour ; le composite compte tout son `pnl` le jour de sa dernière jambe.
+- [x] **Step 2: `docs/points-reportes.md`** — section « Reporté par le sous-projet 36 (Totaux) » : une jambe de condor fermée seule n'entre dans aucun réalisé du jour ; le composite compte tout son `pnl` le jour de sa dernière jambe.
 
-- [ ] **Step 3: Statut de la spec** → « implémenté (2026-09-28) ».
+- [x] **Step 3: Statut de la spec** → « implémenté (2026-09-28) ».
 
-- [ ] **Step 4: `pnpm check`** depuis la racine du worktree — tout vert. Sinon corriger et relancer.
+- [x] **Step 4: `pnpm check`** depuis la racine du worktree — tout vert. Sinon corriger et relancer.
 
-- [ ] **Step 5: Commit** — `git commit -m "Totaux : documentation du sous-projet 36"`.
+- [x] **Step 5: Commit** — `git commit -m "Totaux : documentation du sous-projet 36"`.
 
-- [ ] **Step 6: Instance de relecture** — `pnpm dev:start` dans le worktree, donner les deux URL à Seb (et rappeler `ib-tws-agent origin add http://127.0.0.1:<port>` pour voir les valeurs du jour).
+- [x] **Step 6: Instance de relecture** — `pnpm dev:start` dans le worktree, donner les deux URL à Seb (et rappeler `ib-tws-agent origin add http://127.0.0.1:<port>` pour voir les valeurs du jour).

@@ -545,3 +545,110 @@ describe("StrategyPositionsPage — Others", () => {
     expect(screen.queryByText("ZZZ Jun18'27 15 Call")).not.toBeInTheDocument();
   });
 });
+
+/**
+ * The XOM put of `seed` priced too, so every Wheel box carries amounts: 1 contract at 1.50 against
+ * the 1.20 it was sold for → value −150, P/L −150 + 120 = −30.
+ */
+const XOM_POSITION: Position = {
+  ...zzzLeaps,
+  symbol: "XOM",
+  right: "P",
+  strike: 110,
+  expiry: "2026-10-16",
+  quantity: -1,
+  marketPrice: 1.5,
+  marketValue: -150,
+  description: "XOM 16OCT26 110 P",
+};
+
+async function seedTotals(positions: Position[] = [...SNAPSHOT.positions, XOM_POSITION]) {
+  await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, XOM_PUT]);
+  await db.snapshots.put({ ...SNAPSHOT, positions });
+}
+
+const pageUsd = async () => within(await screen.findByTestId("page-totals")).getByTestId("header-totals-USD");
+const boxUsd = async (title: string) => within(await screen.findByLabelText(title)).getByTestId("header-totals-USD");
+
+describe("StrategyPositionsPage — totals", () => {
+  /*
+   * The Wheel of `seedTotals`, by hand:
+   *   Ventes de puts                         XOM −1 at 1.50      value −150    P/L −30
+   *   Actions assignées sans call            MQZA 100 at 18      value 1 800   P/L (18 − 17) × 100 = 100
+   *   Actions assignées, call < assignation  MQZA 100 at 18      value 1 800   P/L 100
+   *   Ventes de calls                        MQZA −1 at 1.00     value −100    P/L −100 + 80 = −20
+   * No day P/L anywhere (a Flex snapshot).
+   */
+  it("heads the Wheel page with the sums of every box's shown lines", async () => {
+    await seedTotals();
+    renderPage("wheel");
+    const usd = await pageUsd();
+    expect(usd.textContent).toMatch(/Valeur\s*3,350\.00(?!\*)/); // −150 + 1 800 + 1 800 − 100
+    expect(usd.textContent).toMatch(/P\/L\s*150\.00(?!\*)/); // −30 + 100 + 100 − 20
+    expect(usd.textContent).toMatch(/P\/L du jour\s*—/);
+  });
+
+  it("heads each Wheel box with its own lines, free and covered shares never counted twice", async () => {
+    await seedTotals();
+    renderPage("wheel");
+    const puts = await boxUsd("Ventes de puts");
+    expect(puts.textContent).toMatch(/Valeur\s*-150\.00/);
+    expect(puts.textContent).toMatch(/P\/L\s*-30\.00/);
+    // The 200 MQZA shares at 18 are 3 600 in all, cut 1 800 / 1 800 — never 3 600 in each box.
+    const free = await boxUsd("Actions assignées sans call");
+    expect(free.textContent).toMatch(/Valeur\s*1,800\.00/);
+    expect(free.textContent).toMatch(/P\/L\s*100\.00/);
+    const covered = await boxUsd("Actions assignées, call < assignation");
+    expect(covered.textContent).toMatch(/Valeur\s*1,800\.00/);
+    expect(covered.textContent).toMatch(/P\/L\s*100\.00/);
+    const calls = await boxUsd("Ventes de calls");
+    expect(calls.textContent).toMatch(/Valeur\s*-100\.00/);
+    expect(calls.textContent).toMatch(/P\/L\s*-20\.00/);
+  });
+
+  it("narrows every header to the searched ticker", async () => {
+    await seedTotals();
+    renderPage("wheel");
+    await screen.findByLabelText("Ventes de puts");
+    const user = userEvent.setup();
+    await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "MQZA");
+    await waitFor(() => expect(screen.queryByLabelText("Ventes de puts")).not.toBeInTheDocument());
+    const usd = await pageUsd();
+    // The XOM put gone: 1 800 + 1 800 − 100 and 100 + 100 − 20.
+    expect(usd.textContent).toMatch(/Valeur\s*3,500\.00/);
+    expect(usd.textContent).toMatch(/P\/L\s*180\.00/);
+    expect((await boxUsd("Ventes de calls")).textContent).toMatch(/Valeur\s*-100\.00/);
+  });
+
+  it("heads the Condors page with the condor lines' P/L column, never their legs on top", async () => {
+    // The QQQ condor of `seedCondor`: open legs −30 of value in all, P/L −15 + 45 + 30 − 15 = 45 —
+    // the condor line's own $45.00. Counting the legs as well would read −60 and 90.
+    await seedCondor();
+    renderPage("condors");
+    const usd = await pageUsd();
+    expect(usd.textContent).toMatch(/Valeur\s*-30\.00/);
+    expect(usd.textContent).toMatch(/P\/L\s*45\.00/);
+    const box = await boxUsd("Condors en cours");
+    expect(box.textContent).toMatch(/Valeur\s*-30\.00/);
+    expect(box.textContent).toMatch(/P\/L\s*45\.00/);
+  });
+
+  it("marks the day P/L partial when dayShare drops a line", async () => {
+    // Day P/L on the call (−20, day change +5 %) and on the XOM put (+5, +1 %); the MQZA shares
+    // report a day P/L of 40 but no day change, which dayShare drops: −20 + 5 = −15, two share
+    // parts missing — never −15 + 40 = 25.
+    await seedTotals(
+      [...SNAPSHOT.positions, { ...XOM_POSITION, dailyPnl: 5, dayChange: 0.01 }].map((position) =>
+        position === SNAPSHOT.positions[4]
+          ? { ...position, dailyPnl: -20, dayChange: 0.05 }
+          : position === SNAPSHOT.positions[0]
+            ? { ...position, dailyPnl: 40, dayChange: null }
+            : position,
+      ),
+    );
+    renderPage("wheel");
+    const usd = await pageUsd();
+    expect(usd.textContent).toMatch(/P\/L du jour\s*-15\.00\*/);
+    expect((await boxUsd("Actions assignées sans call")).textContent).toMatch(/P\/L du jour\s*—/);
+  });
+});

@@ -1,6 +1,7 @@
 import { Fragment, useMemo } from "react";
 import type { AnalyzedPosition } from "@ib/coverage";
 import type { Strategy } from "@ib/ledger";
+import type { HeaderTotalsValue } from "@/components/HeaderTotals";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { PositionRow } from "@/components/PositionRow";
 import { useAccountStrategies } from "@/db/AccountDataProvider";
@@ -26,6 +27,8 @@ export interface PositionGroupCardProps {
   chart: OpenChart;
   /** This card's own identifier, prefixing its rows' keys: two cards can hold the same contract. */
   boxId: string;
+  /** Sums of `rows`, in the card's header (spec of sub-project 36, §4). */
+  totals?: HeaderTotalsValue;
 }
 
 /** One group of the Positions page: the shared twelve columns over a whole IB position. */
@@ -38,6 +41,7 @@ export function PositionGroupCard({
   sectorOf,
   chart,
   boxId,
+  totals,
 }: PositionGroupCardProps) {
   const active = useAccountStrategies();
   // Stable, never a literal per render: PositionChartRow memoizes its levels on it.
@@ -52,6 +56,7 @@ export function PositionGroupCard({
       facetRows={positions}
       rows={rows}
       table={table}
+      totals={totals}
       emptyKey="positions.noResults"
       rowKey={(position) => position.description}
       renderRow={(position) => {
