@@ -94,7 +94,7 @@ domaine : tous les liens sont relatifs. Tout le texte vit sous `welcome.*` dans
 **Rendu** : tokens `finance-desktop` existants et composants `@ib/ui`, aucune nouvelle couleur.
 Largeur maximale ~1100 px ; sous `md`, une colonne, le texte puis sa capture. Une capture
 s'affiche dans un cadre de fenêtre discret (`ShotFrame`), en `<img loading="lazy">` avec
-`width`/`height` explicites, et s'agrandit au clic dans un `Dialog` à sa taille réelle. Elle
+`width`/`height` explicites, et s'ouvre à sa taille réelle dans un nouvel onglet au clic (lien sur l'image : `packages/ui` n'a pas de `Dialog`). Elle
 choisit son fichier selon le thème et la langue courants (§7). Une image introuvable — hors
 ligne, par exemple — laisse le cadre et son texte alternatif, jamais une icône cassée.
 
@@ -155,7 +155,7 @@ ce sont des préférences du visiteur, pas des données.
 - **`/accounts`** en démo : ne crée rien ; affiche « Vous êtes en démonstration » et « Quitter la
   démo pour ajouter votre compte ». Dans `AccountSwitcher`, « Ajouter un compte » devient
   « Quitter la démo ».
-- **Relais Flex** : `pickFlexRelay` rend `{ relay: null }` en démo ; le compte démo n'a de toute
+- **Relais Flex** : `pickFlexRelay` rend `{ relay: null, reason: "demo" }` en démo ; le compte démo n'a de toute
   façon aucun jeton, donc aucune synchro automatique ne part.
 - Tout le reste — tri, filtres, table sectorielle éditable, journaux, graphes — fonctionne et
   écrit, le cas échéant, dans la base de démo.
@@ -208,7 +208,9 @@ délèguent à `demo/agent.ts` (chargé à la demande), derrière `exclusiveTws`
   du snapshot calculé, `dailyPnL` tiré des prix du jour, aucune exécution). Le vrai pipeline
   tourne ensuite tel quel : `parseAgentSnapshot`, `syncAgent`, snapshot `agent`,
   `lastAgentSyncAt` — donc « En direct », P/L du jour et `dayChange` s'allument par le chemin
-  réel, et la graine n'écrit elle-même aucun snapshot `agent`.
+  réel. La graine n'écrit elle-même aucun snapshot `agent` : elle pose un snapshot `flex` au jour
+  de référence, que la première passe de l'agent simulé remplace, pour que l'application ne
+  s'ouvre jamais sans snapshot.
 - `fetchBars` → les barres de §5.1 ; `fetchQuotes` → `last`/`close` du dernier jour.
 - Le relais Flex par l'agent rend « indisponible » (§4.4).
 
@@ -220,7 +222,7 @@ de Vite, puis ouvre l'application **en mode démo** — jamais `--seed` ni `--ag
 vitrine montre exactement ce que le visiteur explorera. `pnpm check` ne la lance pas.
 
 **Reproductible** : `page.clock.setFixedTime` sur une date fixe déclarée dans le script ;
-`prefers-reduced-motion: reduce` et animation d'entrée d'ECharts coupée ; attente de
+`prefers-reduced-motion: reduce` ; attente de 1 200 ms sur une page qui porte un graphique ECharts, la fin de son animation d'entrée, comme `run-frontend` ; attente de
 `document.fonts.ready` et du réseau au repos ; viewport 1440×900, `deviceScaleFactor: 2`.
 
 **Le manifeste** : `apps/web/src/welcome/shots.ts` déclare chaque capture — identifiant, route,
