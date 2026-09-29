@@ -551,7 +551,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 36 | Les totaux : P/L du jour, P/L non réalisé, valeur totale | fait (2026-09-28) |
 | 37 | La stratégie de chaque ligne de l'Historique | fait (2026-09-28) |
 | 38 | La décision de rachat tient compte du temps | fait (2026-09-28) |
-| 39 | Le rachat doit rapporter : 40 %, marge de 20 %, commission | en cours (2026-09-29) |
+| 39 | Le rachat doit rapporter : 40 %, marge de 20 %, commission | fait (2026-09-29) |
 
 ## Outillage
 
