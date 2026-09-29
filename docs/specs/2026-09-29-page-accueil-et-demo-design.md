@@ -81,7 +81,7 @@ phrase d'explication et sa capture.
    jamais transactions ni positions ; la sauvegarde, facultative, est chiffrée dans le
    navigateur. Renvoie à l'Aide (`/help#security`) pour le détail, sans le dupliquer.
 4. **Comment ça marche** — trois étapes : relevé HTML, Flex Query, agent local facultatif, chacune
-   vers sa section de l'Aide (`#statement`, `#flex`, celle de l'agent).
+   vers sa section de l'Aide (`#statement`, `#flex`, et `#agent`, ancre à ajouter à la section de l'agent).
 5. **FAQ** repliable, cinq questions : *Est-ce gratuit ?* — « Aucun frais d'utilisation. » ;
    *Faut-il un compte serveur ?* ; *Mes identifiants IB sont-ils demandés ?* ; *Fonctionne-t-elle
    hors ligne ?* ; *Quelles stratégies ?*
