@@ -280,3 +280,14 @@ Un testeur externe n'a besoin que de l'origine de la dev.
 Puis `sudo reboot` : le site vitrine et la prod répondent, `iba dev status` montre la dev
 arrêtée. Enfin, dans un navigateur : ouvrir un lien d'invitation, choisir un mot de passe, se
 retrouver connecté.
+
+## 10. Service Worker
+
+Une maintenance n'empêche pas les navigateurs déjà venus d'ouvrir l'application : le Service
+Worker leur sert l'enveloppe depuis son cache, et leurs données sont dans IndexedDB. Seules la
+synchro Flex relayée par le serveur et la sauvegarde attendent son retour.
+
+Un Service Worker cassé se remplace en déployant une version corrigée : `sw.js` est servi en
+`no-cache`, donc chaque navigateur le relit à sa visite. En dernier recours, publier une version
+avec `selfDestroying: true` dans `apps/web/pwa.config.ts` : elle désinstalle le Service Worker
+chez chaque visiteur à sa visite suivante.

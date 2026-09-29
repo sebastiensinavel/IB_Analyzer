@@ -906,7 +906,7 @@ git commit -m "PWA : suite Playwright serveur coupé, 502, mise à jour sur deux
 - Modify: `apps/web/src/pages/HelpPage.tsx`, `apps/web/src/pages/HelpPage.test.tsx`, `apps/web/src/i18n/fr.json`, `apps/web/src/i18n/en.json`
 - Modify: `CLAUDE.md`, `docs/deploiement-vps.md`, `docs/specs/2026-09-29-hors-ligne-installable-design.md`
 
-- [ ] **Step 1: Test qui échoue**
+- [x] **Step 1: Test qui échoue**
 
 Dans `HelpPage.test.tsx`, suivant le style des tests existants du fichier :
 
@@ -921,7 +921,7 @@ it("explique l'installation et l'ouverture serveur en maintenance", () => {
 
 Run: `cd apps/web && npx vitest run src/pages/HelpPage` → FAIL.
 
-- [ ] **Step 2: La section**
+- [x] **Step 2: La section**
 
 `fr.json`, sous `help` :
 
@@ -953,7 +953,7 @@ Run: `cd apps/web && npx vitest run src/pages/HelpPage` → FAIL.
 
 Run: `cd apps/web && npx vitest run src/pages/HelpPage` → PASS.
 
-- [ ] **Step 3: Documentation**
+- [x] **Step 3: Documentation**
 
 - `CLAUDE.md`, section « Règles qui mordent », après la règle « Paramètres et Aide s'atteignent sans aucun compte » :
 
@@ -964,7 +964,7 @@ Run: `cd apps/web && npx vitest run src/pages/HelpPage` → PASS.
 - `docs/deploiement-vps.md` : une courte section « Service Worker » — une maintenance n'empêche pas les navigateurs déjà venus d'ouvrir l'application ; un Service Worker cassé se remplace en déployant une version corrigée (`sw.js` en `no-cache`) ; en dernier recours, publier une version avec `selfDestroying: true` dans `pwa.config.ts`, qui désinstalle le Service Worker chez chaque visiteur à sa visite suivante.
 - La spec : statut « implémenté (<date>) » ; §5, remplacer « fond `#0e9f90` plein cadre » par « le dégradé du logo plein cadre » (ce que fait le script de la tâche 1).
 
-- [ ] **Step 4: Vérification complète**
+- [x] **Step 4: Vérification complète**
 
 Run: `pnpm check`
 Expected: lint, typage, build, tous les tests verts.
@@ -972,7 +972,7 @@ Expected: lint, typage, build, tous les tests verts.
 Run: `pnpm --filter web e2e:offline`
 Expected: 5 PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/pages/HelpPage.tsx apps/web/src/pages/HelpPage.test.tsx apps/web/src/i18n/fr.json apps/web/src/i18n/en.json CLAUDE.md docs/deploiement-vps.md docs/specs/2026-09-29-hors-ligne-installable-design.md docs/plans/2026-09-29-hors-ligne-installable.md

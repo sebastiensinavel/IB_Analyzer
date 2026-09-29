@@ -1,6 +1,6 @@
 # Sous-projet 40 — L'application s'ouvre serveur coupé, et s'installe
 
-Statut : conçu (2026-09-29).
+Statut : implémenté (2026-09-29).
 
 Tout le métier tourne dans le navigateur et toutes les données vivent en IndexedDB : une fois
 chargée, l'application n'a besoin du serveur que pour le proxy Flex et la sauvegarde chiffrée.
@@ -107,7 +107,7 @@ Manifeste produit par `vite-plugin-pwa` :
 
 Icônes PNG tirées de `apps/web/public/favicon.svg` (thème clair) par un script de
 `apps/web/scripts/`, **versionnées** dans `apps/web/public/` : 192 et 512 (`purpose: any`), 512
-`maskable` (le logo réduit dans la zone sûre, fond `#0e9f90` plein cadre), `apple-touch-icon`
+`maskable` (le logo réduit dans la zone sûre, le dégradé du logo plein cadre), `apple-touch-icon`
 180 déclaré dans `index.html` avec `<meta name="theme-color">`. Le script se relance à la main
 quand le logo change ; ni `pnpm build` ni `pnpm check` ne l'exécutent.
 
