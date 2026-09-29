@@ -979,6 +979,6 @@ git add apps/web/src/pages/HelpPage.tsx apps/web/src/pages/HelpPage.test.tsx app
 git commit -m "PWA : l'Aide explique l'installation et le serveur coupé ; règles et exploitation"
 ```
 
-- [ ] **Step 6: Instance de relecture**
+- [x] **Step 6: Instance de relecture**
 
 Run: `pnpm dev:start` dans le worktree, puis donner les deux URL à Seb. Rappel pour lui : en `pnpm dev`, le Service Worker est éteint ; pour l'essayer à la main, `pnpm --filter web build && npx vite preview` depuis `apps/web` du worktree (port affiché par Vite), puis arrêter `vite preview` et recharger.
