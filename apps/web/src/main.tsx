@@ -4,6 +4,7 @@ import App from "@/App";
 import { applyStoredTheme } from "@/hooks/useTheme";
 import { db } from "@/db/schema";
 import { isDemo } from "@/demo/mode";
+import { startApp } from "@/startup";
 import { reloadOnControllerChange } from "@/pwa/updates";
 import { reloadOnVersionChange } from "@/db/reloadOnVersionChange";
 import "@/index.css";
@@ -22,13 +23,16 @@ reloadOnControllerChange(navigator.serviceWorker, () => window.location.reload()
 // est dépassé, on le recharge.
 reloadOnVersionChange(db, () => window.location.reload());
 
-async function start() {
-  // The demo base fills itself before the first render (sub-project 41): no page may meet it empty.
-  if (isDemo()) await (await import("@/demo/seed")).ensureDemoSeeded(db);
-  createRoot(document.getElementById("root")!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-}
-void start();
+// The demo base fills itself before the first render (sub-project 41): no page may meet it empty.
+// A failed seed is logged and the application mounts anyway (`startApp`).
+void startApp(
+  async () => {
+    if (isDemo()) await (await import("@/demo/seed")).ensureDemoSeeded(db);
+  },
+  () =>
+    createRoot(document.getElementById("root")!).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    ),
+);

@@ -31,6 +31,9 @@ it("never calls the real agent in the demo, and a full pass goes through the rea
   const spy = vi.spyOn(globalThis, "fetch");
   await ensureDemoSeeded(db, NOW);
   expect(await probeAgent()).toEqual({ version: "demo" });
+  // The pass reads the real clock through fetchSnapshot (the transport passes no `now`), so its
+  // world may be another day's than the seed's; an agent snapshot always replaces, hence the
+  // assertion on the source only.
   const outcome = await syncAgent({ db, fetchSnapshot, now: () => NOW }, (await db.accounts.get("demo"))!);
   expect(outcome.status).toBe("ok");
   expect(await db.snapshots.get("demo")).toMatchObject({ source: "agent" });

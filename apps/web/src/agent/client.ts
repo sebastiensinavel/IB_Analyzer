@@ -5,8 +5,8 @@ import { isDemo } from "@/demo/mode";
  * payload: that is `parseAgentSnapshot`'s job (packages/ib-parsers). `AGENT_URL` is the
  * user's own machine, never a domain name.
  *
- * En démonstration (sous-projet 41), aucune requête ne part : `src/demo/agent.ts` répond à la
- * place de l'agent, chargé à la demande, derrière `exclusiveTws` comme le vrai.
+ * In the demo (sub-project 41), no request leaves: `src/demo/agent.ts`, loaded on demand, answers
+ * in the agent's place, behind `exclusiveTws` like the real one.
  */
 export const AGENT_URL = "http://127.0.0.1:8100";
 /** A ping must be cheap: the agent is absent far more often than present. */

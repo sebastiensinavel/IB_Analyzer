@@ -1,6 +1,6 @@
 import { ACTIVABLE_STRATEGIES } from "@ib/ledger";
 import type { AppDatabase } from "@/db/schema";
-import { mergeSectorRows, type SectorCsvRow } from "@/db/sectors";
+import { mergeSectorsInto, type SectorCsvRow } from "@/db/sectors";
 import { DEMO_ACCOUNT_ID } from "@/demo/mode";
 import { DEMO_IB_ACCOUNT, generateDemo } from "@/demo/generate";
 
@@ -46,7 +46,6 @@ export async function ensureDemoSeeded(db: AppDatabase, now = new Date()): Promi
     });
     await db.cashPoints.bulkPut(world.cashPoints);
     // Merged like a CSV import, never replaced: the sector table's one rule holds in the demo too.
-    const stored = new Map((await db.sectors.toArray()).map((row) => [row.ticker, row]));
-    await db.sectors.bulkPut(mergeSectorRows(stored, DEMO_SECTORS, at).records);
+    await mergeSectorsInto(db, DEMO_SECTORS, at);
   });
 }
