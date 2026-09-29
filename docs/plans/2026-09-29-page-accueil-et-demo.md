@@ -1804,7 +1804,7 @@ test("les captures ne sont pas pré-cachées", async ({ page }) => {
 **Files:**
 - Modify: `CLAUDE.md`, `.claude/skills/run-frontend/SKILL.md`, `docs/specs/2026-09-29-page-accueil-et-demo-design.md`
 
-- [ ] **Step 1: CLAUDE.md** — add three rules to « Règles qui mordent si on les oublie », after the rule « La base locale appartient au navigateur » :
+- [x] **Step 1: CLAUDE.md** — add three rules to « Règles qui mordent si on les oublie », after the rule « La base locale appartient au navigateur » :
 
 ```markdown
 - **Un navigateur sans compte arrive sur `/welcome`** (sous-projet 41) : `RootRedirect` y mène,
@@ -1829,12 +1829,12 @@ test("les captures ne sont pas pré-cachées", async ({ page }) => {
 
 Registry: add `| 41 | La page d'accueil, la démonstration et ses captures | fait (2026-09-29) |`. In « Outillage », after the `run-frontend` paragraph: « `pnpm screenshots` régénère les captures de `/welcome` depuis la démonstration (sous-projet 41). »
 
-- [ ] **Step 2: run-frontend** — in `SKILL.md`, a short section « Captures de la vitrine » : `pnpm screenshots`, not the driver; `--seed` stays the developers' check tool.
+- [x] **Step 2: run-frontend** — in `SKILL.md`, a short section « Captures de la vitrine » : `pnpm screenshots`, not the driver; `--seed` stays the developers' check tool.
 
-- [ ] **Step 3: Spec** — `Statut : implémenté (<date>).`
+- [x] **Step 3: Spec** — `Statut : implémenté (<date>).`
 
-- [ ] **Step 4: `pnpm check`** at the repository root, **once** → lint, typecheck, build, all tests PASS. Fix anything that fails, re-run.
+- [x] **Step 4: `pnpm check`** at the repository root, **once** → lint, typecheck, build, all tests PASS. Fix anything that fails, re-run.
 
-- [ ] **Step 5: Commit** — `git commit -am "Sous-projet 41 : documentation"`
+- [x] **Step 5: Commit** — `git commit -am "Sous-projet 41 : documentation"`
 
-- [ ] **Step 6: Instance de relecture** — `pnpm dev:start` in the worktree; give Seb the two URLs (Vite and Django of the worktree's slot) and the path to try: `/` on a fresh profile → `/welcome` → « Explorer la démo » → « Quitter la démo ». Stop it with `pnpm dev:stop` **before** any merge.
+- [x] **Step 6: Instance de relecture** — `pnpm dev:start` in the worktree; give Seb the two URLs (Vite and Django of the worktree's slot) and the path to try: `/` on a fresh profile → `/welcome` → « Explorer la démo » → « Quitter la démo ». Stop it with `pnpm dev:stop` **before** any merge.
