@@ -60,7 +60,7 @@
 
 Le script n'est pas testé unitairement (il ne tourne ni dans `pnpm build` ni dans `pnpm check`) : sa vérification est de regarder les quatre PNG produits.
 
-- [ ] **Step 1: Écrire le script**
+- [x] **Step 1: Écrire le script**
 
 `favicon.svg` fait 28×28, un carré arrondi (`rx="8"`) en dégradé et un chemin « IB ». Le script lit le SVG, fabrique trois variantes et les rend avec Playwright (Chromium, `colorScheme: "light"` : les couleurs claires du favicon) :
 
@@ -107,16 +107,16 @@ try {
 
 Si l'un des `replace` ne trouve pas sa cible (le favicon a changé), le script doit échouer plutôt que produire une icône fausse : vérifier chaque remplacement (`if (result === source) throw new Error(...)`).
 
-- [ ] **Step 2: Rendre les icônes**
+- [x] **Step 2: Rendre les icônes**
 
 Run: `cd apps/web && node scripts/render-icons.mjs`
 Expected: quatre PNG dans `apps/web/public/`. Si Chromium manque : `npx playwright install chromium`.
 
-- [ ] **Step 3: Vérifier**
+- [x] **Step 3: Vérifier**
 
 Ouvrir les quatre PNG avec l'outil Read : logo teal lisible, « IB » blanc ; 192/512 avec coins arrondis transparents ; maskable et apple-touch plein cadre, texte plus petit sur la maskable.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/web/scripts/render-icons.mjs apps/web/public/*.png docs/plans/2026-09-29-hors-ligne-installable.md
