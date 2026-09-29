@@ -1,13 +1,12 @@
 import { useState, type FormEvent } from "react";
-import { LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@ib/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { Input } from "@ib/ui/input";
 import { cn } from "@ib/ui/lib/utils";
-import { useSession, useSessionActions } from "@/api/session";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { SessionCorner } from "@/components/SessionCorner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountError, createAccount } from "@/db/accounts";
 import { useDb } from "@/db/DbProvider";
@@ -97,101 +96,7 @@ export function AccountsPage() {
         </CardContent>
       </Card>
 
-      {/* Last, not first (decided 2026-09-22): the page's job is to open or add an account, and
-          a returning user should meet their own accounts before a pitch they have read. The page
-          is short enough that a newcomer still finds it. */}
-      <WelcomeCard />
+      <Link to="/welcome" className="text-sm text-muted-foreground underline">{t("welcome.discover")}</Link>
     </div>
-  );
-}
-
-/**
- * `/accounts` is where a device with no local account lands, and the only route a newcomer
- * reaches on their own — but `SessionMenuItem` lives in the sidebar footer, which this page
- * does not render. Signing in was therefore unreachable here without already knowing the
- * `/login` URL. Written for this header rather than reusing `SessionMenuItem`: that one is
- * shaped for the sidebar (`w-full`, `justify-between`, `text-xs`) and would stretch across
- * this row.
- *
- * The three settled session states get the same treatment as everywhere else: `anonymous` and
- * `unreachable` both simply offer the way in — the server is optional (spec §2), so an
- * unreachable one is never alarmed about — and `loading` renders nothing rather than a
- * placeholder that would flash away.
- */
-function SessionCorner() {
-  const { t } = useTranslation();
-  const session = useSession();
-  const { logout } = useSessionActions();
-
-  if (session.status === "loading") return null;
-
-  if (session.status === "authenticated") {
-    return (
-      <div className="flex items-center gap-1">
-        <span className="max-w-40 truncate text-xs text-muted-foreground" title={session.user.email}>
-          {session.user.email}
-        </span>
-        <Button variant="ghost" size="icon-xs" aria-label={t("auth.signOut")} onClick={() => void logout()}>
-          <LogOut />
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    // `cn(...)` is not decoration: `buttonVariants` emits both `border-transparent` (base)
-    // and `border-border` (outline), and only tailwind-merge picks the winner.
-    <Link
-      to="/login"
-      title={t("auth.serverAccountTitle")}
-      aria-label={t("auth.serverAccountTitle")}
-      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
-    >
-      {t("auth.serverAccount")}
-      <span className="text-xs font-normal text-muted-foreground">{t("auth.optional")}</span>
-    </Link>
-  );
-}
-
-/**
- * `/accounts` is the landing page of a device with no local account, and the only route a
- * newcomer reaches on their own: nothing else tells them what this application is. Rendered
- * whatever the number of accounts — decided 2026-09-22 — because the page keeps serving to
- * add another account and to open one, and a block that vanished on the first add would
- * change the page under the user right after they acted.
- */
-function WelcomeCard() {
-  const { t } = useTranslation();
-  const benefits = t("accounts.welcome.benefits", { returnObjects: true }) as string[];
-  const steps = t("accounts.welcome.steps", { returnObjects: true }) as string[];
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>IB Analyzer</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 text-sm">
-        <p>{t("accounts.welcome.tagline")}</p>
-        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-          {benefits.map((benefit) => (
-            <li key={benefit}>{benefit}</li>
-          ))}
-        </ul>
-        <p className="rounded-md bg-muted px-3 py-2">{t("accounts.welcome.privacy")}</p>
-        <div className="flex flex-col gap-1">
-          <p className="font-medium">{t("accounts.welcome.howTitle")}</p>
-          <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
-            {steps.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-        </div>
-        <div>
-          <Link to="/help" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            {t("accounts.welcome.helpLink")}
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

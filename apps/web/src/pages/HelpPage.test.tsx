@@ -59,6 +59,14 @@ describe("HelpPage", () => {
     ]);
   });
 
+  it("anchors the agent section and links to the welcome page", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    expect(document.getElementById("agent")).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Découvrir IB Analyzer" })).toHaveAttribute("href", "/welcome");
+  });
+
   it("explique l'installation et l'ouverture serveur en maintenance", async () => {
     mockIndex(new Response("", { status: 404 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);

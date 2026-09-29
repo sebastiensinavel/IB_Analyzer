@@ -15,6 +15,7 @@ import { SettingsPage } from "@/pages/SettingsPage";
 import { SourcesPage } from "@/pages/SourcesPage";
 import { StatsPage } from "@/pages/StatsPage";
 import { StrategyPositionsPage } from "@/pages/StrategyPositionsPage";
+import { WelcomePage } from "@/pages/WelcomePage";
 import { StrategyRoute } from "@/routes/StrategyRoute";
 
 // Neither /login nor /invitation/:token sit under an account or under AppLayout: signing in
@@ -25,6 +26,8 @@ export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/invitation/:token", element: <InvitationPage /> },
   { path: "/accounts", element: <AccountsPage /> },
+  // Hors `AppLayout` comme `/accounts` : la page d'un navigateur sans compte, qu'on partage par lien (sous-projet 41).
+  { path: "/welcome", element: <WelcomePage /> },
   {
     path: "/accounts/:accountId",
     element: <AppLayout />,

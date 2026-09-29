@@ -77,20 +77,10 @@ describe("AccountsPage", () => {
     expect(await screen.findByRole("link", { name: "Paramètres" })).toHaveAttribute("href", "/settings");
   });
 
-  it("opens with what the application is, and says data stays in this browser", async () => {
+  it("points to the welcome page instead of pitching the app itself", () => {
     renderPage();
-    expect(await screen.findByText(/Analysez vos portefeuilles Interactive Brokers/)).toBeInTheDocument();
-    expect(screen.getByText(/le serveur ne voit jamais vos transactions/)).toBeInTheDocument();
-    expect(screen.getByText("Comment ça marche")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Premiers pas" })).toHaveAttribute("href", "/help");
-  });
-
-  // Decided 2026-09-22: the page's job is to open or add an account, so the pitch comes last.
-  it("puts the welcome block below the add form, not above the accounts", async () => {
-    renderPage();
-    const tagline = await screen.findByText(/Analysez vos portefeuilles Interactive Brokers/);
-    const addTitle = screen.getByText("Ajouter un compte IB");
-    expect(addTitle.compareDocumentPosition(tagline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Découvrir IB Analyzer" })).toHaveAttribute("href", "/welcome");
+    expect(screen.queryByText("Comment ça marche")).toBeNull();
   });
 
   // The heading gets a line of its own under the buttons: on this `max-w-lg` page it wrapped
@@ -102,15 +92,6 @@ describe("AccountsPage", () => {
     expect(settings.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The heading is not a child of the button row: that row is what used to squeeze it.
     expect(settings.parentElement).not.toContainElement(title);
-  });
-
-  // Decided 2026-09-22: adding an account does not wipe the page a newcomer just read — the
-  // same page keeps serving to add another account and to open one.
-  it("keeps the welcome block once accounts exist", async () => {
-    await db.accounts.add({ id: "alpha", label: "Alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [] });
-    renderPage();
-    expect(await screen.findByText("Alpha")).toBeInTheDocument();
-    expect(screen.getByText(/Analysez vos portefeuilles Interactive Brokers/)).toBeInTheDocument();
   });
 });
 

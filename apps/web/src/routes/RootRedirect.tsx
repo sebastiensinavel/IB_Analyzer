@@ -11,5 +11,5 @@ export function RootRedirect() {
   }
   const remembered = getLastAccountId();
   const target = accounts.find((a) => a.id === remembered) ?? accounts[0];
-  return <Navigate to={target ? `/accounts/${target.id}/dashboard` : "/accounts"} replace />;
+  return <Navigate to={target ? `/accounts/${target.id}/dashboard` : "/welcome"} replace />;
 }

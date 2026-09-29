@@ -110,6 +110,9 @@ export function HelpPage() {
 
       <Section title={t("help.app.title")}>
         <p className="text-muted-foreground">{t("help.app.text")}</p>
+        <p>
+          <Link to="/welcome" className="underline">{t("welcome.discover")}</Link>
+        </p>
         <p className="rounded-md bg-muted px-3 py-2">{t("help.app.privacy")}</p>
         <p className="text-muted-foreground">{t("help.app.sources")}</p>
         <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
@@ -159,7 +162,7 @@ export function HelpPage() {
         <p className="text-muted-foreground">{t("help.flex.missing")}</p>
       </Section>
 
-      <Section title={t("help.what.title")}>
+      <Section id="agent" title={t("help.what.title")}>
         <p className="text-muted-foreground">{t("help.what.tws")}</p>
         <p className="text-muted-foreground">{t("help.what.text")}</p>
         <p className="text-muted-foreground">{t("help.what.dayValues")}</p>

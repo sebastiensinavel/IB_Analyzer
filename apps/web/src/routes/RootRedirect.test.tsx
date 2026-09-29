@@ -31,9 +31,9 @@ beforeEach(async () => {
 });
 
 describe("RootRedirect", () => {
-  it("goes to the accounts page when there is no account", async () => {
+  it("sends a browser with no account to the welcome page", async () => {
     renderRoot();
-    expect(await screen.findByTestId("location")).toHaveTextContent("/accounts");
+    expect(await screen.findByTestId("location")).toHaveTextContent("/welcome");
   });
 
   it("goes to the last visited account, else the first one", async () => {

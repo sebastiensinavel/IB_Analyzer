@@ -31,24 +31,15 @@
     "loading": "Loading…",
     "cancel": "Cancel"
   },
+  "welcome": {
+    "discover": "Discover IB Analyzer",
+    "addAccount": "Add an IB account",
+    "exploreDemo": "Explore the demo",
+    "help": "Help",
+    "restore": "Restore a backup"
+  },
   "accounts": {
     "title": "Your Interactive Brokers accounts",
-    "welcome": {
-      "tagline": "Analyze your Interactive Brokers portfolios, shares and options.",
-      "benefits": [
-        "Coverage of your option sales and the cash they require, at any time.",
-        "Wheel, LEAPS and Condor journals rebuilt from your own history.",
-        "Full history, positions and per-strategy statistics."
-      ],
-      "privacy": "Your data stays in this browser: the server never sees your transactions or your positions.",
-      "howTitle": "How it works",
-      "steps": [
-        "Add an IB account.",
-        "Import an activity statement, or set up a Flex Query.",
-        "Read your dashboard; the local agent, optional, adds live data."
-      ],
-      "helpLink": "Getting started"
-    },
     "empty": "No IB account yet. Add the first one below.",
     "addTitle": "Add an IB account",
     "addHint": "An account here is an Interactive Brokers account you track. It is created in this browser; nothing is sent.",

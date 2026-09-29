@@ -41,6 +41,9 @@ function renderAt(path: string) {
             <Route path="positions" element={<AccountDataProbe />} />
             <Route path="stateful" element={<StatefulPage />} />
           </Route>
+          <Route path="/help" element={<AppLayout />}>
+            <Route index element={<div>help</div>} />
+          </Route>
           <Route path="/settings" element={<AppLayout />}>
             <Route index element={<div>settings content</div>} />
           </Route>
@@ -121,6 +124,8 @@ describe("AppLayout", () => {
       "/accounts/beta/consistency",
       "/settings",
       "/help",
+      // The footer's discreet link back to the welcome page.
+      "/welcome",
     ]);
   });
 
@@ -154,6 +159,19 @@ describe("AppLayout", () => {
     expect(screen.queryByText("accounts page")).not.toBeInTheDocument();
   });
 
+  it("offers adding an account and the welcome page when there is no account at all", async () => {
+    await db.accounts.clear();
+    renderAt("/help");
+    expect(await screen.findByRole("link", { name: "Ajouter un compte IB" })).toHaveAttribute("href", "/accounts");
+    expect(screen.getByRole("link", { name: "Découvrir IB Analyzer" })).toHaveAttribute("href", "/welcome");
+  });
+
+  it("keeps a discreet link to the welcome page with accounts", async () => {
+    renderAt("/accounts/alpha/dashboard");
+    expect(await screen.findByRole("link", { name: "Découvrir IB Analyzer" })).toHaveAttribute("href", "/welcome");
+    expect(screen.queryByRole("link", { name: "Ajouter un compte IB" })).toBeNull();
+  });
+
   it("still sends a scoped route to the accounts page when there is no account at all", async () => {
     await db.accounts.clear();
     renderAt("/accounts/alpha/dashboard");
@@ -164,7 +182,8 @@ describe("AppLayout", () => {
     await db.accounts.clear();
     renderAt("/settings");
     await screen.findByText("settings content");
-    expect(navHrefs()).toEqual(["/settings", "/help"]);
+    // The two header links (add an account, discover) come before the account-less nav entries.
+    expect(navHrefs()).toEqual(["/accounts", "/welcome", "/settings", "/help"]);
   });
 });
 

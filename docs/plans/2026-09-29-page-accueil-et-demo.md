@@ -204,7 +204,7 @@ export const db = new AppDatabase(databaseName());
 **Interfaces:**
 - Produces: route `/welcome` → `WelcomePage` ; `SessionCorner` (export nommé, déplacé tel quel d'`AccountsPage.tsx`) ; clés i18n `welcome.discover` (« Découvrir IB Analyzer » / « Discover IB Analyzer »), `welcome.addAccount` (« Ajouter un compte IB » / « Add an IB account »), `welcome.exploreDemo` (« Explorer la démo » / « Explore the demo »), `welcome.help` (« Aide » / « Help »), `welcome.restore` (« Restaurer une sauvegarde » / « Restore a backup ») ; ancre `#agent` sur la section de l'agent de l'Aide.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `RootRedirect.test.tsx` — change the no-account case (keep `renderRoot`, `Probe`):
 
@@ -296,7 +296,7 @@ it("anchors the agent section and links to the welcome page", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail** — `npx vitest run src/routes src/pages/WelcomePage src/pages/AccountsPage src/pages/HelpPage` → FAIL.
+- [x] **Step 2: Run to verify they fail** — `npx vitest run src/routes src/pages/WelcomePage src/pages/AccountsPage src/pages/HelpPage` → FAIL.
 
 - [ ] **Step 3: Implement**
 

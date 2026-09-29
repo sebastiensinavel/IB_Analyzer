@@ -15,6 +15,8 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@ib/ui/sidebar";
+import { buttonVariants } from "@ib/ui/button";
+import { cn } from "@ib/ui/lib/utils";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { SessionMenuItem } from "@/components/SessionMenuItem";
 import { NAV_SECTIONS } from "@/lib/navigation";
@@ -59,7 +61,22 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
           </div>
           <span className="font-heading text-sm font-semibold tracking-tight">IB Analyzer</span>
         </div>
-        {accountId !== null && <AccountSwitcher accountId={accountId} accounts={accounts} />}
+        {accountId !== null ? (
+          <AccountSwitcher accountId={accountId} accounts={accounts} />
+        ) : (
+          <div className="flex flex-col gap-1">
+            <Link to="/accounts" onClick={() => setOpenMobile(false)} className={cn(buttonVariants({ size: "sm" }), "w-full")}>
+              {t("welcome.addAccount")}
+            </Link>
+            <Link
+              to="/welcome"
+              onClick={() => setOpenMobile(false)}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-full")}
+            >
+              {t("welcome.discover")}
+            </Link>
+          </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         {visibleSections.map((section, index) => (
@@ -94,6 +111,15 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
         ))}
       </SidebarContent>
       <SidebarFooter className="gap-2">
+        {accountId !== null && (
+          <Link
+            to="/welcome"
+            onClick={() => setOpenMobile(false)}
+            className="px-2 text-xs text-muted-foreground underline-offset-2 hover:underline"
+          >
+            {t("welcome.discover")}
+          </Link>
+        )}
         <SessionMenuItem />
       </SidebarFooter>
     </Sidebar>
