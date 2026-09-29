@@ -298,7 +298,7 @@ it("anchors the agent section and links to the welcome page", () => {
 
 - [x] **Step 2: Run to verify they fail** — `npx vitest run src/routes src/pages/WelcomePage src/pages/AccountsPage src/pages/HelpPage` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 1. Move `SessionCorner` (and its doc comment) from `AccountsPage.tsx` into `components/SessionCorner.tsx` as `export function SessionCorner()`; `AccountsPage` imports it.
 2. `router.tsx`: `{ path: "/welcome", element: <WelcomePage /> },` right after `/accounts`, with a comment: « Hors `AppLayout` comme `/accounts` : la page d'un navigateur sans compte, qu'on partage par lien (sous-projet 41). »
@@ -383,9 +383,9 @@ and in `SidebarFooter`, above `<SessionMenuItem />`, when `accountId !== null`:
 
 8. Add the `welcome.*` keys of the Interfaces block to `fr.json` and `en.json`.
 
-- [ ] **Step 4: Run** — same command as step 2 → PASS.
+- [x] **Step 4: Run** — same command as step 2 → PASS.
 
-- [ ] **Step 5: Commit** — `git commit -am "Accueil : /welcome, la redirection sans compte et le menu qui mène à l'ajout d'un compte"` (after `git add` of the new files).
+- [x] **Step 5: Commit** — `git commit -am "Accueil : /welcome, la redirection sans compte et le menu qui mène à l'ajout d'un compte"` (after `git add` of the new files).
 
 ---
 

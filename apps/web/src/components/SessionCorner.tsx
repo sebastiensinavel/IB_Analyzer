@@ -6,9 +6,9 @@ import { cn } from "@ib/ui/lib/utils";
 import { useSession, useSessionActions } from "@/api/session";
 
 /**
- * `/accounts` is where a device with no local account lands, and the only route a newcomer
- * reaches on their own — but `SessionMenuItem` lives in the sidebar footer, which this page
- * does not render. Signing in was therefore unreachable here without already knowing the
+ * Since sub-project 41 a browser with no local account lands on `/welcome`, and `/accounts` is
+ * one step further; both are outside `AppLayout`, so neither renders `SessionMenuItem`, which
+ * lives in the sidebar footer. This component is shared by the two pages. Signing in was therefore unreachable from them without already knowing the
  * `/login` URL. Written for this header rather than reusing `SessionMenuItem`: that one is
  * shaped for the sidebar (`w-full`, `justify-between`, `text-xs`) and would stretch across
  * this row.
