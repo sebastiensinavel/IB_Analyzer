@@ -40,14 +40,14 @@ function stubScrollIntoView(): { scrolled: Element[]; restore: () => void } {
 const ORIGIN = window.location.origin; // jsdom: http://localhost:3000
 
 describe("HelpPage", () => {
-  it("opens on what the application is, then the two data sources, then the agent, and ends on the server", async () => {
+  it("opens on what the application is, then the two data sources, then the agent and the server, and ends on security", async () => {
     mockIndex(new Response("", { status: 404 }));
     const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
     await screen.findByText("L'application");
     const titles = [...container.querySelectorAll("[data-slot=card-title]")].map((el) => el.textContent);
-    // Six sections, not twelve: everything about the optional agent lives inside the third one,
+    // Seven sections, not thirteen: everything about the optional agent lives inside the third one,
     // so a newcomer does not read six installation cards as prerequisites. The server comes
-    // last: a fallback and an option, never a step on the way in.
+    // after the agent: a fallback and an option, never a step on the way in. Security closes the page.
     expect(titles).toEqual([
       "L'application",
       "Installer l'application, travailler serveur coupé",
@@ -55,6 +55,7 @@ describe("HelpPage", () => {
       "2. Configurer une Flex Query",
       "3. L'agent local, facultatif",
       "4. Le serveur, facultatif",
+      "5. La sécurité de vos données",
     ]);
   });
 
@@ -84,7 +85,7 @@ describe("HelpPage", () => {
       "F. Renseigner le port",
     ]);
     // The steps are inside the agent card, so they are not cards of their own.
-    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(6);
+    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(7);
   });
 
   // The three sources and what each can and cannot do: a newcomer choosing between them needs
@@ -377,5 +378,25 @@ describe("HelpPage", () => {
     render(<MemoryRouter><HelpPage /></MemoryRouter>);
     expect(await screen.findByText(/Var\. jour et P&L jour viennent de l'agent local/)).toBeInTheDocument();
     expect(screen.getByText(/comme un contrat acheté ou vendu le jour même/)).toBeInTheDocument();
+  });
+
+  it("explains security in plain words: local data guarded by the session, the server encrypted and by invitation", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    const card = (await screen.findByText("5. La sécurité de vos données")).closest("[data-slot=card]") as HTMLElement;
+    expect(card).toHaveAttribute("id", "security");
+    const steps = [...card.querySelectorAll("p.font-heading")].map((el) => el.textContent);
+    expect(steps).toEqual([
+      "Sur votre ordinateur : protégées par votre session",
+      "Sur le serveur : rien par défaut, et chiffré si vous l'activez",
+      "L'agent local : sur votre ordinateur, en lecture seule",
+    ]);
+    expect(within(card).getByText(/de la même façon qu'une feuille de calcul enregistrée sur votre disque : par le mot de passe de votre session/)).toBeInTheDocument();
+    expect(within(card).getByText(/Verrouillez votre session/)).toBeInTheDocument();
+    expect(within(card).getByText(/Exporter un fichier » est en clair/)).toBeInTheDocument();
+    expect(within(card).getByText(/chiffrées dans votre navigateur avant de partir, avec votre phrase de passe/)).toBeInTheDocument();
+    expect(within(card).getByText(/votre jeton Flex le traverse, sans y être enregistré ni conservé/)).toBeInTheDocument();
+    expect(within(card).getByText(/L'utilisation du serveur demande une invitation, afin d'en limiter le trafic/)).toBeInTheDocument();
+    expect(within(card).getByText(/ne passe aucun ordre/)).toBeInTheDocument();
   });
 });

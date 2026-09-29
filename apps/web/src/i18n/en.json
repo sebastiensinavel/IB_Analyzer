@@ -805,6 +805,28 @@
         "encrypted": "Your data is encrypted in your browser before it leaves, with a key protected by a passphrase you choose. The server keeps only an unreadable block and never sees the passphrase or the key: no one, not even us, can recover it, and once forgotten, the backup is lost for good.",
         "link": "Open Settings"
       }
+    },
+    "security": {
+      "title": "5. Your data's security",
+      "intro": "Your data stays on your computer. Nothing goes to the server unless you turn it on, and whatever goes there is encrypted.",
+      "local": {
+        "title": "On your computer: protected by your session",
+        "text": "Your accounts, statements, transactions and positions are stored in your browser, on your computer, and nowhere else. They are protected the same way as a spreadsheet saved on your disk: by your session password. Someone who cannot open your session cannot read them; someone who opens it can see them, as they would see your other files.",
+        "advice": [
+          "Lock your session when you leave your computer, as you would for your other documents.",
+          "Avoid a shared computer or a guest session: whoever has access to it would see your data.",
+          "The file made by \"Settings › Export a file\" is plain, unencrypted: keep it as you would keep a bank statement."
+        ]
+      },
+      "server": {
+        "title": "On the server: nothing by default, encrypted if you turn it on",
+        "text": "As long as you turn nothing on, no portfolio data leaves your computer. If you turn on the backup, your data is encrypted in your browser before it leaves, with your passphrase: the server only receives an unreadable block. Neither the host nor the administrator can read it. Choose a long passphrase that you use nowhere else. If you have the server relay your Flex Queries, your Flex token passes through it, without being logged or kept.",
+        "invitation": "Using the server requires an invitation, to keep its traffic limited: no one can sign up freely. Your server account is protected by a password, and you can add two-step verification with an authenticator app (Settings)."
+      },
+      "agent": {
+        "title": "The local agent: on your computer, read-only",
+        "text": "The agent only answers requests coming from your own computer and from the sites you gave it. It reads your positions in TWS but places no orders."
+      }
     }
   },
   "accountSwitcher": {

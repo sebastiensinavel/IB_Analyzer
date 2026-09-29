@@ -805,6 +805,28 @@
         "encrypted": "Vos données sont chiffrées dans votre navigateur avant de partir, avec une clé protégée par une phrase de passe que vous choisissez. Le serveur ne conserve qu'un bloc illisible et ne voit jamais ni la phrase ni la clé : personne, pas même nous, ne peut la retrouver, et oubliée, la sauvegarde est définitivement perdue.",
         "link": "Ouvrir les Paramètres"
       }
+    },
+    "security": {
+      "title": "5. La sécurité de vos données",
+      "intro": "Vos données restent sur votre ordinateur. Rien ne part sur le serveur sans que vous l'ayez activé, et ce qui y part est chiffré.",
+      "local": {
+        "title": "Sur votre ordinateur : protégées par votre session",
+        "text": "Vos comptes, relevés, transactions et positions sont enregistrés dans votre navigateur, sur votre ordinateur, et nulle part ailleurs. Ils sont protégés de la même façon qu'une feuille de calcul enregistrée sur votre disque : par le mot de passe de votre session. Quelqu'un qui ne peut pas ouvrir votre session ne peut pas les lire ; quelqu'un qui l'ouvre peut les voir, comme il verrait vos autres fichiers.",
+        "advice": [
+          "Verrouillez votre session quand vous quittez votre poste, comme vous le feriez pour vos autres documents.",
+          "Évitez un ordinateur partagé ou une session invitée : ceux qui y ont accès verraient vos données.",
+          "Le fichier créé par « Paramètres › Exporter un fichier » est en clair, non chiffré : rangez-le comme vous rangeriez un relevé bancaire."
+        ]
+      },
+      "server": {
+        "title": "Sur le serveur : rien par défaut, et chiffré si vous l'activez",
+        "text": "Tant que vous n'activez rien, aucune donnée de portefeuille ne quitte votre ordinateur. Si vous activez la sauvegarde, vos données sont chiffrées dans votre navigateur avant de partir, avec votre phrase de passe : le serveur ne reçoit qu'un bloc illisible. Ni l'hébergeur ni l'administrateur ne peuvent le lire. Choisissez une phrase de passe longue, que vous n'utilisez nulle part ailleurs. Si vous faites relayer vos Flex Query par le serveur, votre jeton Flex le traverse, sans y être enregistré ni conservé.",
+        "invitation": "L'utilisation du serveur demande une invitation, afin d'en limiter le trafic : on ne peut pas s'y inscrire librement. Votre compte serveur est protégé par un mot de passe, et vous pouvez y ajouter une double vérification par une application d'authentification (Paramètres)."
+      },
+      "agent": {
+        "title": "L'agent local : sur votre ordinateur, en lecture seule",
+        "text": "L'agent ne répond qu'aux demandes venant de votre propre ordinateur et des sites que vous lui avez indiqués. Il lit vos positions dans TWS mais ne passe aucun ordre."
+      }
     }
   },
   "accountSwitcher": {

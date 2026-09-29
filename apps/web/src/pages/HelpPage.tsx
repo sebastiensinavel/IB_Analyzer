@@ -254,6 +254,29 @@ export function HelpPage() {
           </div>
         </Step>
       </Section>
+
+      {/* Written for readers who are not computer people: where the data lives, and who can read it. */}
+      <Section id="security" title={t("help.security.title")}>
+        <p className="rounded-md bg-muted px-3 py-2">{t("help.security.intro")}</p>
+
+        <Step title={t("help.security.local.title")}>
+          <p className="text-muted-foreground">{t("help.security.local.text")}</p>
+          <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+            {(t("help.security.local.advice", { returnObjects: true }) as string[]).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </Step>
+
+        <Step title={t("help.security.server.title")}>
+          <p className="text-muted-foreground">{t("help.security.server.text")}</p>
+          <p className="text-muted-foreground">{t("help.security.server.invitation")}</p>
+        </Step>
+
+        <Step title={t("help.security.agent.title")}>
+          <p className="text-muted-foreground">{t("help.security.agent.text")}</p>
+        </Step>
+      </Section>
     </div>
   );
 }
