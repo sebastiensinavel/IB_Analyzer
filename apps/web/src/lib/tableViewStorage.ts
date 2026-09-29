@@ -1,3 +1,4 @@
+import { storageKey } from "@/demo/mode";
 import { EMPTY_VIEW, isActiveCriterion, type ColumnMeta, type Criterion, type SortKey, type TableView } from "@/lib/tableView";
 
 /**
@@ -11,11 +12,11 @@ const SEARCH_PREFIX = "ib2:pageSearch:";
 const VERSION = 1;
 
 export function tableViewKey(accountId: string, table: string): string {
-  return `${VIEW_PREFIX}${accountId}:${table}`;
+  return storageKey(`${VIEW_PREFIX}${accountId}:${table}`);
 }
 
 export function pageSearchKey(accountId: string, page: string): string {
-  return `${SEARCH_PREFIX}${accountId}:${page}`;
+  return storageKey(`${SEARCH_PREFIX}${accountId}:${page}`);
 }
 
 function readJson(key: string): unknown {
@@ -88,7 +89,7 @@ export function writePageSearch(key: string, text: string): void {
 /** Forgets every table view and page search of one account; the trailing ":" spares an id it prefixes. */
 export function clearTableViews(accountId: string): void {
   try {
-    const prefixes = [`${VIEW_PREFIX}${accountId}:`, `${SEARCH_PREFIX}${accountId}:`];
+    const prefixes = [storageKey(`${VIEW_PREFIX}${accountId}:`), storageKey(`${SEARCH_PREFIX}${accountId}:`)];
     const doomed: string[] = [];
     for (let index = 0; index < window.localStorage.length; index += 1) {
       const key = window.localStorage.key(index);

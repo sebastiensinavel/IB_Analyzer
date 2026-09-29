@@ -67,7 +67,7 @@
   - `storageKey(key: string): string` (en démo, `ib2:x` → `ib2:demo:x` ; toute autre clé inchangée)
   - `navigation: { assign(url: string): void }` (le point de navigation pleine page, remplaçable en test)
 
-- [ ] **Step 1: Write the failing tests** — `apps/web/src/demo/mode.test.ts`
+- [x] **Step 1: Write the failing tests** — `apps/web/src/demo/mode.test.ts`
 
 ```ts
 import { afterEach, describe, expect, it } from "vitest";
@@ -120,9 +120,9 @@ describe("storageKey", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails** — `cd apps/web && npx vitest run src/demo/mode` → FAIL (module absent).
+- [x] **Step 2: Run to verify it fails** — `cd apps/web && npx vitest run src/demo/mode` → FAIL (module absent).
 
-- [ ] **Step 3: Implement** — `apps/web/src/demo/mode.ts`
+- [x] **Step 3: Implement** — `apps/web/src/demo/mode.ts`
 
 ```ts
 /**
@@ -189,9 +189,9 @@ import { databaseName } from "@/demo/mode";
 export const db = new AppDatabase(databaseName());
 ```
 
-- [ ] **Step 4: Run** — `npx vitest run src/demo/mode src/lib/tableViewStorage src/lib/accountStorage` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/demo/mode src/lib/tableViewStorage src/lib/accountStorage` → PASS.
 
-- [ ] **Step 5: Commit** — `git add -A apps/web/src/demo apps/web/src/db/schema.ts apps/web/src/lib && git commit -m "Démo : le drapeau choisit la base et cloisonne le stockage local"`
+- [x] **Step 5: Commit** — `git add -A apps/web/src/demo apps/web/src/db/schema.ts apps/web/src/lib && git commit -m "Démo : le drapeau choisit la base et cloisonne le stockage local"`
 
 ---
 
