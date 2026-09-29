@@ -3,6 +3,8 @@ import type { AppDatabase } from "@/db/schema";
 import { mergeSectorsInto, type SectorCsvRow } from "@/db/sectors";
 import { DEMO_ACCOUNT_ID } from "@/demo/mode";
 import { DEMO_IB_ACCOUNT, generateDemo } from "@/demo/generate";
+import { setDemoSeedInstant } from "@/demo/agent";
+import { referenceDay } from "@/demo/calendar";
 
 /**
  * The demo's sector table: every ticker of the scenario. Short English sectors, read alike in both
@@ -20,14 +22,35 @@ export const DEMO_SECTORS: readonly SectorCsvRow[] = [
   { ticker: "XSP", name: "Mini-SPX", category: "Index", score: 7, status: "on" },
 ];
 
-/** Writes the demo account on an empty demo base, once, in one transaction (sub-project 41, spec §4.2). */
+/** A demo account seeded on the reference day of `now`: kept as is. */
+function seededFor(account: { createdAt: string } | undefined, now: Date): boolean {
+  return account !== undefined && referenceDay(new Date(account.createdAt)) === referenceDay(now);
+}
+
+/**
+ * Writes the demo account on an empty demo base, in one transaction (sub-project 41, spec §4.2).
+ * Seeded on another visit day, the demo account is dropped and seeded again: the scenario ends on
+ * the reference day, and the agent's world is the seed's (`setDemoSeedInstant`), never the clock's.
+ */
 export async function ensureDemoSeeded(db: AppDatabase, now = new Date()): Promise<void> {
-  if (await db.accounts.get(DEMO_ACCOUNT_ID)) return;
+  const existing = await db.accounts.get(DEMO_ACCOUNT_ID);
+  if (existing && seededFor(existing, now)) {
+    setDemoSeedInstant(new Date(existing.createdAt));
+    return;
+  }
   const world = generateDemo(now);
   const at = now.toISOString();
-  await db.transaction("rw", [db.accounts, db.transactions, db.snapshots, db.cashPoints, db.sectors], async () => {
+  let seededAt = at;
+  await db.transaction("rw", [db.accounts, db.transactions, db.snapshots, db.cashPoints, db.contracts, db.sectors], async () => {
     // Two tabs opening the demo at once: the second finds the first one's work and stops.
-    if (await db.accounts.get(DEMO_ACCOUNT_ID)) return;
+    const current = await db.accounts.get(DEMO_ACCOUNT_ID);
+    if (current && seededFor(current, now)) {
+      seededAt = current.createdAt;
+      return;
+    }
+    for (const table of [db.transactions, db.snapshots, db.cashPoints, db.contracts]) {
+      await table.where("accountId").equals(DEMO_ACCOUNT_ID).delete();
+    }
     await db.accounts.put({
       id: DEMO_ACCOUNT_ID,
       label: "Démo",
@@ -52,4 +75,5 @@ export async function ensureDemoSeeded(db: AppDatabase, now = new Date()): Promi
     // Merged like a CSV import, never replaced: the sector table's one rule holds in the demo too.
     await mergeSectorsInto(db, DEMO_SECTORS, at);
   });
+  setDemoSeedInstant(new Date(seededAt));
 }

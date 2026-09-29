@@ -14,6 +14,14 @@ export function demoProbe(): AgentInfo {
   return { version: "demo" };
 }
 
+// The instant the demo ledger was seeded at (`ensureDemoSeeded` sets it at every startup, from the
+// demo account's `createdAt`): the agent's world is the seed's, never the clock's alone, or a tab
+// left open past the visit day would lay another day's snapshot over the seeded ledger.
+let seedInstant: Date | null = null;
+export function setDemoSeedInstant(at: Date): void {
+  seedInstant = at;
+}
+
 // One world per visit day: a pass every few minutes must not replay the whole scenario.
 let cached: { day: string; world: DemoWorld } | null = null;
 function worldAt(now: Date): DemoWorld {
@@ -67,9 +75,13 @@ export function agentPayload(world: DemoWorld, now: Date): AgentSnapshotPayload 
 }
 
 /** The agent's GET routes: `/snapshot`, `/bars`, `/quotes`. Anything else answers like an agent error. */
-export function demoAgentJson(path: string, now = new Date()): AgentFetchResult {
+export function demoAgentJson(path: string, clock = new Date()): AgentFetchResult {
   const url = new URL(path, "http://demo.invalid");
-  const world = worldAt(now);
+  const seed = seedInstant ?? clock;
+  // Past the seed's visit day, the pass stays at the seed's instant: a later `fetchedAt` would date
+  // the snapshot after options the seeded ledger never saw expire.
+  const now = referenceDay(clock) === referenceDay(seed) ? clock : seed;
+  const world = worldAt(seed);
   switch (url.pathname) {
     case "/snapshot":
       return { ok: true, payload: agentPayload(world, now) };

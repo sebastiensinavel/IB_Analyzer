@@ -130,7 +130,11 @@ vie de l'onglet : aucun `DbProvider` ne bascule à chaud, et rien ne dépend de 
 n'existe que pendant la démo.
 
 **Remplissage** : en démo, `main.tsx` attend `ensureDemoSeeded(db)` avant de monter l'application.
-Base vide → la graine (§5) s'écrit en une transaction ; base remplie → rien. Tout `src/demo/`
+Base vide → la graine (§5) s'écrit en une transaction ; base remplie le même jour de référence →
+rien ; remplie un autre jour de référence (onglet restauré le lendemain) → le compte démo est
+effacé et la graine réécrite, dans la même transaction. L'agent simulé (§6) bâtit son monde à
+l'instant de la graine (`createdAt` du compte démo), jamais à l'horloge seule : un onglet resté
+ouvert après minuit garde un snapshot qui se réconcilie avec son historique. Tout `src/demo/`
 sauf `mode.ts` se charge par `import()` dynamique : le bundle principal ne grossit que de
 `mode.ts`. Le Service Worker pré-cache ce morceau comme le reste du build : une démo déjà vue
 s'ouvre hors ligne.

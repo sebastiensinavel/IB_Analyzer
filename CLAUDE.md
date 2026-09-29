@@ -77,7 +77,9 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `databaseName()` au chargement du module (`ib-analyzer-demo`), seule exception à « une seule
   base par origine », et entrer ou quitter recharge toujours la page. Les clés d'affichage du
   `localStorage` passent par `storageKey` (`ib2:demo:…`). En démo, `agent/client.ts` délègue à
-  `src/demo/agent.ts` et `relayThroughAgent` (`flex/proxy.ts`) refuse : **aucune requête ne part
+  `src/demo/agent.ts`, qui bâtit son monde à l'instant de la graine (`setDemoSeedInstant`, le
+  `createdAt` du compte démo), jamais à l'horloge seule ; `ensureDemoSeeded` réécrit la graine
+  quand le jour de référence a changé. `relayThroughAgent` (`flex/proxy.ts`) refuse : **aucune requête ne part
   vers `127.0.0.1:8100`**, et `pickFlexRelay` rend la raison `demo` ; Sources, sauvegarde et relais
   Flex sont grisés. La graine est un scénario (`demo/scenario.ts`) dont `generate.ts` calcule
   snapshot et cash ; `generate.test.ts` la tient sans écart de reconstitution ni de cash sur les
