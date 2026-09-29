@@ -31,6 +31,8 @@ describe("SettingsPage", () => {
     renderPage();
 
     expect(await screen.findByText("Non connecté.")).toBeInTheDocument();
+    // The card is the server account, not the IB accounts the application analyzes.
+    expect(screen.getByText("Compte serveur", { selector: "[data-slot=card-title]" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Compte serveur, facultatif/ })).toHaveAttribute("href", "/login");
     // The word must be readable, not only announced.
     expect(screen.getByText("facultatif")).toBeInTheDocument();

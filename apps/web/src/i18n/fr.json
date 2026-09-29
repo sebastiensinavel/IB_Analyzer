@@ -552,7 +552,7 @@
     "title": "Paramètres",
     "display": "Affichage",
     "theme": "Thème",
-    "account": "Compte",
+    "account": "Compte serveur",
     "signedInAs": "Connecté en tant que {{email}}",
     "signedOut": "Non connecté.",
     "unreachableHint": "Serveur injoignable : les réglages de compte sont indisponibles pour l'instant.",

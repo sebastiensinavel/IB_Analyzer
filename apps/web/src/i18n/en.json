@@ -552,7 +552,7 @@
     "title": "Settings",
     "display": "Display",
     "theme": "Theme",
-    "account": "Account",
+    "account": "Server account",
     "signedInAs": "Signed in as {{email}}",
     "signedOut": "Not signed in.",
     "unreachableHint": "Server unreachable: account settings are unavailable for now.",
