@@ -116,7 +116,9 @@ quand le logo change ; ni `pnpm build` ni `pnpm check` ne l'exécutent.
 Une courte section, en français et en anglais (`i18n/{fr,en}.json`) :
 
 - l'application s'installe par le menu du navigateur (Chrome, Edge ; Safari sur iPhone :
-  Partager → Sur l'écran d'accueil) et partage alors les données de l'onglet ;
+  Partager → Sur l'écran d'accueil) ; dans Chrome et Edge il partage alors les données de
+  l'onglet, sur iPhone l'application ajoutée à l'écran d'accueil a son propre stockage et
+  démarre vide (restaurer la sauvegarde chiffrée de Paramètres, ou réimporter les relevés) ;
 - un navigateur qui a déjà ouvert le site l'ouvre encore quand le serveur est en maintenance ;
   seules la synchro Flex relayée par le serveur et la sauvegarde attendent son retour ;
 - une nouvelle version s'annonce par un bandeau.

@@ -26,7 +26,12 @@ export function UpdateBanner() {
       style={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}
     >
       <span>{t("pwa.updateAvailable")}</span>
-      {/* Constaté : la bibliothèque ignore son argument et recharge l'onglet du clic sur « controlling », sauf dans l'onglet de la première installation ; notre écouteur recharge aussi, deux window.location.reload() dans la même tâche, une seule navigation. */}
+      {/*
+        Constaté : la bibliothèque ignore son argument et recharge tout onglet qui a montré
+        l'invite, sur « controlling » avec `isUpdate` vrai (jamais l'onglet de la première
+        installation) ; notre écouteur recharge aussi : deux window.location.reload() dans la
+        même tâche, une seule navigation.
+      */}
       <Button size="sm" onClick={() => void updateServiceWorker(false)}>
         {t("pwa.reload")}
       </Button>

@@ -13,8 +13,9 @@ describe("reloadOnVersionChange", () => {
 
     const newer = new Dexie(name);
     newer.version(old.verno + 1).stores({});
-    await newer.open(); // se bloquerait si l'ancienne connexion restait ouverte
+    await newer.open(); // la version plus récente s'ouvre : l'ancienne connexion a dû être fermée
 
+    // Prouve : le rechargement est demandé une fois et la connexion finit fermée.
     expect(reload).toHaveBeenCalledTimes(1);
     expect(old.isOpen()).toBe(false);
     newer.close();

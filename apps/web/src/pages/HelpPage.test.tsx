@@ -65,6 +65,7 @@ describe("HelpPage", () => {
     expect(screen.getByText("Installer l'application, travailler serveur coupé")).toBeInTheDocument();
     expect(screen.getByText(/l'ouvre encore quand le serveur est en maintenance/)).toBeInTheDocument();
     expect(screen.getByText(/Sur l'écran d'accueil/)).toBeInTheDocument();
+    expect(screen.getByText(/Sur iPhone, l'application ajoutée à l'écran d'accueil a son propre stockage et démarre vide/)).toBeInTheDocument();
   });
 
   it("keeps the agent's steps, the terminal first and then six lettered, in order, inside that one section", async () => {

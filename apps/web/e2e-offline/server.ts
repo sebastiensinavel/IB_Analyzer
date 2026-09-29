@@ -52,6 +52,11 @@ export async function startServer(root: string): Promise<StaticServer> {
       const body = await readFile(file);
       res.writeHead(200, { "Content-Type": TYPES[extname(file)] ?? "application/octet-stream", "Cache-Control": cache }).end(body);
     } catch {
+      if (path.startsWith("/assets/")) {
+        // nginx : `location /assets/` n'a pas de try_files, un fichier absent est un 404.
+        res.writeHead(404, { "Content-Type": "text/plain" }).end("Not Found");
+        return;
+      }
       const body = await readFile(join(current, "index.html"));
       res.writeHead(200, { "Content-Type": TYPES[".html"], "Cache-Control": "no-cache" }).end(body);
     }

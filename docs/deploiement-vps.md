@@ -288,6 +288,11 @@ Worker leur sert l'enveloppe depuis son cache, et leurs données sont dans Index
 synchro Flex relayée par le serveur et la sauvegarde attendent son retour.
 
 Un Service Worker cassé se remplace en déployant une version corrigée : `sw.js` est servi en
-`no-cache`, donc chaque navigateur le relit à sa visite. En dernier recours, publier une version
-avec `selfDestroying: true` dans `apps/web/pwa.config.ts` : elle désinstalle le Service Worker
-chez chaque visiteur à sa visite suivante.
+`no-cache`, donc chaque navigateur relit le fichier à sa visite. Mais avec `registerType:
+"prompt"` le nouveau worker **attend** : il ne prend la main qu'au clic du bandeau ou quand tous
+les onglets et l'application installée sont fermés, jamais à un simple rechargement. Une version
+qui plante au chargement des modules ou au premier rendu ne monte pas le bandeau : ses
+utilisateurs restent sur la version cassée jusqu'à la fermeture de tout. Deux issues : publier
+une version avec `selfDestroying: true` dans `apps/web/pwa.config.ts` (le Service Worker
+disparaît à la visite suivante), ou une version construite en `registerType: "autoUpdate"` (le
+correctif s'active sans clic).
