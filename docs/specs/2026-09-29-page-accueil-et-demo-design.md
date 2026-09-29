@@ -1,6 +1,6 @@
 # Sous-projet 41 — La page d'accueil, la démonstration et ses captures
 
-Statut : conçu (2026-09-29).
+Statut : implémenté (2026-09-29).
 
 Un navigateur sans compte IB atterrit aujourd'hui sur `/accounts` : une page de gestion, sans
 menu, dont la seule présentation de l'application est une carte `WelcomeCard` en bas de page.

@@ -179,6 +179,12 @@ pnpm lint                     # oxlint sur le monorepo, un petit nombre d'averti
   liés à la main, `pnpm` résout les paquets du monorepo depuis le store partagé :
   pas de lien symbolique à créer.
 
+## Captures de la vitrine
+
+Les captures de la page `/welcome` ne passent pas par ce driver : `pnpm screenshots` (depuis la
+racine) les régénère depuis la démonstration, horloge figée, dans `apps/web/public/welcome/`.
+`--seed` reste l'outil de vérification des développeurs, pas celui de la vitrine.
+
 ## Dépannage
 
 | Symptôme | Cause / correctif |

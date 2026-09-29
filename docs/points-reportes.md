@@ -1205,6 +1205,21 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 
 ---
 
+## Sous-projet 41 — Accueil et démonstration
+
+Vus pendant les captures, non corrigés.
+
+- **Un nom de secteur long déborde du badge Secteur** dans la colonne « Valeur de marché » des
+  tableaux de Positions.
+- **À 1280 px de large, le graphe de cours dépasse sa carte** (les deux derniers mois environ
+  sont coupés) et **les dernières colonnes du tableau Condors sont tronquées**.
+- **L'état replié du menu latéral (cookie) n'est jamais relu** : le menu se rouvre à la
+  navigation.
+- **`screenshots.mjs` laisse le Vite qu'il a lancé si le démarrage échoue** avant son
+  `try/finally`.
+- **Les jours de marché de la démonstration ne sautent que les week-ends**, pas les jours fériés
+  américains.
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un
