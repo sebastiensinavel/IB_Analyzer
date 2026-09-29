@@ -45,16 +45,27 @@ describe("HelpPage", () => {
     const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
     await screen.findByText("L'application");
     const titles = [...container.querySelectorAll("[data-slot=card-title]")].map((el) => el.textContent);
-    // Five sections, not eleven: everything about the optional agent lives inside the third one,
+    // Six sections, not twelve: everything about the optional agent lives inside the third one,
     // so a newcomer does not read six installation cards as prerequisites. The server comes
     // last: a fallback and an option, never a step on the way in.
     expect(titles).toEqual([
       "L'application",
+      "Installer l'application, travailler serveur coupé",
       "1. Obtenir un relevé d'activité",
       "2. Configurer une Flex Query",
       "3. L'agent local, facultatif",
       "4. Le serveur, facultatif",
     ]);
+  });
+
+  it("explique l'installation et l'ouverture serveur en maintenance", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    expect(screen.getByText("Installer l'application, travailler serveur coupé")).toBeInTheDocument();
+    expect(screen.getByText(/l'ouvre encore quand le serveur est en maintenance/)).toBeInTheDocument();
+    expect(screen.getByText(/Sur l'écran d'accueil/)).toBeInTheDocument();
+    expect(screen.getByText(/Sur iPhone, l'application ajoutée à l'écran d'accueil a son propre stockage et démarre vide/)).toBeInTheDocument();
   });
 
   it("keeps the agent's steps, the terminal first and then six lettered, in order, inside that one section", async () => {
@@ -73,7 +84,7 @@ describe("HelpPage", () => {
       "F. Renseigner le port",
     ]);
     // The steps are inside the agent card, so they are not cards of their own.
-    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(5);
+    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(6);
   });
 
   // The three sources and what each can and cannot do: a newcomer choosing between them needs

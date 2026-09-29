@@ -1,6 +1,6 @@
 # Sous-projet 40 — L'application s'ouvre serveur coupé, et s'installe
 
-Statut : conçu (2026-09-29).
+Statut : implémenté (2026-09-29).
 
 Tout le métier tourne dans le navigateur et toutes les données vivent en IndexedDB : une fois
 chargée, l'application n'a besoin du serveur que pour le proxy Flex et la sauvegarde chiffrée.
@@ -63,7 +63,7 @@ autre module n'importe `virtual:pwa-register`.
 ## 3. Mise à jour : le bandeau « Recharger »
 
 `registerType: "prompt"` : une nouvelle version est téléchargée et mise en attente, jamais
-activée d'office.
+activée d'office, sauf quand l'onglet est rechargé (« Rechargement », plus bas).
 
 - **Détection** : au chargement de la page, puis toutes les heures (`UPDATE_CHECK_INTERVAL_MS`,
   une seule définition dans `apps/web/src/pwa/`) par `registration.update()`, sauf quand
@@ -82,6 +82,17 @@ activée d'office.
   L'écouteur relève `navigator.serviceWorker.controller` au démarrage pour le savoir.
 - Un rechargement pendant un import est la décision de l'utilisateur, qui a cliqué ; aucune
   logique d'attente de `withImportLock` n'est ajoutée.
+- **Rechargement** : quand un onglet est rechargé (type de navigation `reload`) et qu'une version
+  est déjà active, une nouvelle version publiée est appliquée d'office : `registration.update()`
+  tout de suite, puis `SKIP_WAITING` à la version en attente ou à celle que cet `update()` vient
+  d'installer, et la prise de contrôle recharge l'onglet une fois — les autres onglets aussi,
+  comme au clic. Un chargement qui n'est pas un rechargement (nouvel onglet, lien, application
+  installée) ne change rien : le bandeau reste la règle. Ce code vit dans un script inline
+  d'`apps/web/index.html`, hors du bundle, parce qu'une version qui plante au chargement de ses
+  modules ou au premier rendu ne monte jamais le bandeau : c'est ainsi qu'un correctif publié
+  s'applique par un seul F5. `update()` n'attend pas la vérification propre à la navigation,
+  qui ne finirait qu'après le chargement. Pas de boucle : après ce rechargement, plus rien
+  n'attend. Tout échec, serveur coupé compris, est silencieux.
 
 ## 4. Le filet `versionchange` de Dexie
 
@@ -107,7 +118,7 @@ Manifeste produit par `vite-plugin-pwa` :
 
 Icônes PNG tirées de `apps/web/public/favicon.svg` (thème clair) par un script de
 `apps/web/scripts/`, **versionnées** dans `apps/web/public/` : 192 et 512 (`purpose: any`), 512
-`maskable` (le logo réduit dans la zone sûre, fond `#0e9f90` plein cadre), `apple-touch-icon`
+`maskable` (le logo réduit dans la zone sûre, le dégradé du logo plein cadre), `apple-touch-icon`
 180 déclaré dans `index.html` avec `<meta name="theme-color">`. Le script se relance à la main
 quand le logo change ; ni `pnpm build` ni `pnpm check` ne l'exécutent.
 
@@ -116,7 +127,9 @@ quand le logo change ; ni `pnpm build` ni `pnpm check` ne l'exécutent.
 Une courte section, en français et en anglais (`i18n/{fr,en}.json`) :
 
 - l'application s'installe par le menu du navigateur (Chrome, Edge ; Safari sur iPhone :
-  Partager → Sur l'écran d'accueil) et partage alors les données de l'onglet ;
+  Partager → Sur l'écran d'accueil) ; dans Chrome et Edge il partage alors les données de
+  l'onglet, sur iPhone l'application ajoutée à l'écran d'accueil a son propre stockage et
+  démarre vide (restaurer la sauvegarde chiffrée de Paramètres, ou réimporter les relevés) ;
 - un navigateur qui a déjà ouvert le site l'ouvre encore quand le serveur est en maintenance ;
   seules la synchro Flex relayée par le serveur et la sauvegarde attendent son retour ;
 - une nouvelle version s'annonce par un bandeau.
@@ -156,5 +169,9 @@ Une courte section, en français et en anglais (`i18n/{fr,en}.json`) :
   3. une navigation à laquelle le réseau répondrait 502 est tout de même servie par le cache ;
   4. une requête `/api/...` n'est jamais servie depuis le cache ;
   5. un second build publié fait apparaître le bandeau, et un clic fait passer deux onglets
-     ouverts à la nouvelle version.
+     ouverts à la nouvelle version ;
+  6. une version publiée dont l'application ne démarre pas, puis un correctif : un seul
+     `page.reload()` fait démarrer l'application ;
+  7. un nouvel onglet ouvert alors qu'une version attend montre le bandeau, et la version reste
+     en attente.
   Comme les autres e2e, il n'entre pas dans `pnpm check`.

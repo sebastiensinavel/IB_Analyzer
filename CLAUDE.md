@@ -82,6 +82,25 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `/accounts` que pour une route scopée à un compte, jamais pour ces deux-là. C'est le seul
   chemin de restauration d'une sauvegarde sur un navigateur neuf, qui n'a par définition aucun
   compte — resserrer la garde le referme.
+- **Le Service Worker ne met en cache que l'enveloppe de l'application** (sous-projet 40) :
+  `vite-plugin-pwa`, `generateSW`, options dans `apps/web/pwa.config.ts` seul. Tout le build est
+  pré-caché sauf `agent/**` (plafond `maximumFileSizeToCacheInBytes` à 5 Mio : le bundle principal
+  fait environ 2,2 Mo), toute navigation reçoit `index.html` sauf `SERVER_PREFIXES` (`/api`,
+  `/_allauth`, `/static`, `/admin`, `/agent`), et **aucun `runtimeCaching`** : aucune réponse du
+  serveur ni de l'agent ne passe par un cache. Une nouvelle version attend le clic du bandeau
+  (`src/pwa/UpdateBanner.tsx`), puis chaque onglet recharge (`reloadOnControllerChange`,
+  `src/pwa/updates.ts`, branché dans `main.tsx`) : un onglet recharge au `controllerchange` s'il
+  avait un contrôleur au chargement ou une inscription active (onglet ouvert par Maj + Recharger),
+  au plus une fois ; seul un onglet de toute première installation saute son premier
+  `controllerchange`, celui du `clientsClaim`, et recharge aux suivants. Un onglet dépassé par un
+  schéma Dexie plus récent recharge (`db/reloadOnVersionChange.ts`). Seul `src/pwa/` importe
+  `virtual:pwa-register`. Désactivé en `pnpm dev` ; `pnpm --filter web e2e:offline` le teste
+  contre un vrai build. `sw.js` n'est jamais mis en cache par nginx : un correctif se récupère à
+  la visite, et le nouveau worker attend le clic du bandeau (`registerType: "prompt"`), **sauf à
+  un rechargement** : un script inline d'`index.html`, hors du bundle pour tourner même quand
+  l'application plante, lui envoie `SKIP_WAITING`. Une version cassée se corrige donc en publiant
+  un correctif, puis **un F5** ; une simple navigation garde la règle du bandeau. Dernier recours
+  si `sw.js` lui-même est cassé : une version avec `selfDestroying: true`.
 - **Propriété de plage, jamais comparaison de contenu** (spec §6.2) : Flex est propriétaire
   de ses jours réels, le relevé HTML n'écrit qu'avant, l'agent n'écrit qu'après. Deux
   transactions jumelles le même jour sont légitimes. **Cette plage ne descend jamais sous la
@@ -554,6 +573,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 37 | La stratégie de chaque ligne de l'Historique | fait (2026-09-28) |
 | 38 | La décision de rachat tient compte du temps | fait (2026-09-28) |
 | 39 | Le rachat doit rapporter : 40 %, marge de 20 %, commission | fait (2026-09-29) |
+| 40 | L'application s'ouvre serveur coupé, et s'installe | fait (2026-09-29) |
 
 ## Outillage
 
@@ -614,6 +634,10 @@ généré est committé, sa fraîcheur est ce que vérifie `pnpm check`. Django 
 Python 3.14. `pnpm --filter web e2e` (Playwright, dossier `apps/web/e2e/`) tourne à part,
 contre un serveur Django et un PostgreSQL réellement démarrés : ni `pnpm check` ni
 `pnpm test:api` ne l'incluent.
+`pnpm --filter web e2e:offline` (dossier `apps/web/e2e-offline/`) construit l'application pour la
+production, la sert par un petit serveur Node sur un port libre, sans Django ni PostgreSQL, et
+teste le Service Worker contre ce vrai build ; `pnpm check` ne l'inclut pas non plus. Les icônes
+de l'application se régénèrent à la main par `apps/web/scripts/render-icons.mjs`.
 
 ## Tests
 

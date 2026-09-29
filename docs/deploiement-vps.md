@@ -280,3 +280,19 @@ Un testeur externe n'a besoin que de l'origine de la dev.
 Puis `sudo reboot` : le site vitrine et la prod répondent, `iba dev status` montre la dev
 arrêtée. Enfin, dans un navigateur : ouvrir un lien d'invitation, choisir un mot de passe, se
 retrouver connecté.
+
+## 10. Service Worker
+
+Une maintenance n'empêche pas les navigateurs déjà venus d'ouvrir l'application : le Service
+Worker leur sert l'enveloppe depuis son cache, et leurs données sont dans IndexedDB. Seules la
+synchro Flex relayée par le serveur et la sauvegarde attendent son retour.
+
+Une version cassée se corrige en déployant un correctif : `sw.js` est servi en `no-cache`, donc
+chaque navigateur relit le fichier à sa visite. Avec `registerType: "prompt"` le nouveau worker
+attend le clic du bandeau, mais **un rechargement (F5) l'applique d'office** : un script inline
+d'`index.html`, hors du bundle, tourne même quand l'application plante au chargement de ses
+modules ou au premier rendu et ne monte pas le bandeau. Un correctif publié, puis un F5, suffit
+donc. Une simple navigation (nouvel onglet, application installée rouverte) ne l'applique pas.
+Dernier recours, si c'est `sw.js` lui-même qui est cassé : publier une version avec
+`selfDestroying: true` dans `apps/web/pwa.config.ts` (le Service Worker disparaît à la visite
+suivante).

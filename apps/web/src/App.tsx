@@ -4,6 +4,7 @@ import { SessionProvider } from "@/api/session";
 import { BackupSync } from "@/db/backup/BackupSync";
 import { DbProvider } from "@/db/DbProvider";
 import i18n from "@/i18n";
+import { UpdateBanner } from "@/pwa/UpdateBanner";
 import { router } from "@/routes/router";
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <DbProvider>
           <BackupSync />
           <RouterProvider router={router} />
+          <UpdateBanner />
         </DbProvider>
       </SessionProvider>
     </I18nextProvider>

@@ -60,7 +60,7 @@
 
 Le script n'est pas testé unitairement (il ne tourne ni dans `pnpm build` ni dans `pnpm check`) : sa vérification est de regarder les quatre PNG produits.
 
-- [ ] **Step 1: Écrire le script**
+- [x] **Step 1: Écrire le script**
 
 `favicon.svg` fait 28×28, un carré arrondi (`rx="8"`) en dégradé et un chemin « IB ». Le script lit le SVG, fabrique trois variantes et les rend avec Playwright (Chromium, `colorScheme: "light"` : les couleurs claires du favicon) :
 
@@ -107,16 +107,16 @@ try {
 
 Si l'un des `replace` ne trouve pas sa cible (le favicon a changé), le script doit échouer plutôt que produire une icône fausse : vérifier chaque remplacement (`if (result === source) throw new Error(...)`).
 
-- [ ] **Step 2: Rendre les icônes**
+- [x] **Step 2: Rendre les icônes**
 
 Run: `cd apps/web && node scripts/render-icons.mjs`
 Expected: quatre PNG dans `apps/web/public/`. Si Chromium manque : `npx playwright install chromium`.
 
-- [ ] **Step 3: Vérifier**
+- [x] **Step 3: Vérifier**
 
 Ouvrir les quatre PNG avec l'outil Read : logo teal lisible, « IB » blanc ; 192/512 avec coins arrondis transparents ; maskable et apple-touch plein cadre, texte plus petit sur la maskable.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/web/scripts/render-icons.mjs apps/web/public/*.png docs/plans/2026-09-29-hors-ligne-installable.md
@@ -135,11 +135,11 @@ git commit -m "PWA : icônes de l'application installée, rendues depuis le favi
 - Consumes: les PNG de la tâche 1.
 - Produces: `export const pwaOptions: Partial<VitePWAOptions>` et `export const SERVER_PREFIXES: readonly string[]` dans `apps/web/pwa.config.ts` ; le module virtuel `virtual:pwa-register/react` disponible au typage (types `vite-plugin-pwa/react`) ; un build qui écrit `dist/sw.js` et `dist/manifest.webmanifest`.
 
-- [ ] **Step 1: Installer**
+- [x] **Step 1: Installer**
 
 Run: `pnpm --filter web add -D vite-plugin-pwa@^1.3.0 workbox-window@^7.4.1`
 
-- [ ] **Step 2: Écrire le test qui échoue**
+- [x] **Step 2: Écrire le test qui échoue**
 
 ```ts
 // apps/web/pwa.config.test.ts
@@ -194,12 +194,12 @@ describe("pwaOptions", () => {
 
 Note : `/apiary` et `/agents` ne sont pas des routes, mais prouvent que la règle porte sur un segment entier (`^/api(/|$)`), pas un début de chaîne.
 
-- [ ] **Step 3: Vérifier l'échec**
+- [x] **Step 3: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run pwa.config`
 Expected: FAIL, module `./pwa.config` introuvable.
 
-- [ ] **Step 4: Écrire `pwa.config.ts`**
+- [x] **Step 4: Écrire `pwa.config.ts`**
 
 ```ts
 // apps/web/pwa.config.ts
@@ -252,7 +252,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
 
 Vérifier que la taille du plus gros chunk ne dépasse pas `maximumFileSizeToCacheInBytes` (2 Mio par défaut) : si le build avertit qu'un fichier est ignoré, relever la limite dans `workbox` (par ex. `5 * 1024 * 1024`) et le commenter — un chunk ignoré serait absent serveur coupé.
 
-- [ ] **Step 5: Brancher le plugin**
+- [x] **Step 5: Brancher le plugin**
 
 `apps/web/vite.config.ts` :
 
@@ -275,7 +275,7 @@ import { pwaOptions } from "./pwa.config";
 
 (Le plugin injecte lui-même le `<link rel="manifest">` au build.)
 
-- [ ] **Step 6: nginx**
+- [x] **Step 6: nginx**
 
 `nginx:alpine` ne connaît pas l'extension `.webmanifest` (vérifié le 2026-09-29 : absente de `/etc/nginx/mime.types`) et la servirait en `application/octet-stream`. Ajouter avant `location /` :
 
@@ -289,7 +289,7 @@ import { pwaOptions } from "./pwa.config";
     }
 ```
 
-- [ ] **Step 7: Tests et build**
+- [x] **Step 7: Tests et build**
 
 Run: `cd apps/web && npx vitest run pwa.config`
 Expected: PASS.
@@ -299,7 +299,7 @@ Expected: les deux fichiers existent ; `0` occurrence de `agent/` dans la liste 
 
 Si Docker est disponible : `docker run --rm -v $PWD/apps/web/nginx.conf:/etc/nginx/conf.d/default.conf:ro nginx:alpine nginx -t` → `syntax is ok`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/web/pwa.config.ts apps/web/pwa.config.test.ts apps/web/vite.config.ts apps/web/package.json pnpm-lock.yaml apps/web/tsconfig.app.json apps/web/tsconfig.node.json apps/web/index.html apps/web/nginx.conf docs/plans/2026-09-29-hors-ligne-installable.md
@@ -324,7 +324,7 @@ git commit -m "PWA : Service Worker pré-caché, manifeste, routes du serveur ex
   - `export function UpdateBanner(): JSX.Element | null`
   - clés i18n `pwa.updateAvailable`, `pwa.reload`.
 
-- [ ] **Step 1: Tests qui échouent — `updates.test.ts`**
+- [x] **Step 1: Tests qui échouent — `updates.test.ts`**
 
 ```ts
 // apps/web/src/pwa/updates.test.ts
@@ -406,12 +406,12 @@ describe("scheduleUpdateChecks", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run src/pwa/updates`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 3: Écrire `updates.ts`**
+- [x] **Step 3: Écrire `updates.ts`**
 
 ```ts
 // apps/web/src/pwa/updates.ts
@@ -457,12 +457,12 @@ export function scheduleUpdateChecks(
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `cd apps/web && npx vitest run src/pwa/updates`
 Expected: PASS.
 
-- [ ] **Step 5: Tests qui échouent — `UpdateBanner.test.tsx`**
+- [x] **Step 5: Tests qui échouent — `UpdateBanner.test.tsx`**
 
 Le Service Worker n'existe pas dans jsdom : `virtual:pwa-register/react` est la seule doublure du sous-projet (spec §8). `vi.mock` du module virtuel ; si Vitest ne résout pas le module virtuel pour le moquer, ajouter dans `vite.config.ts`, bloc `test`, `alias: { "virtual:pwa-register/react": "<chemin>/src/pwa/testing/registerStub.ts" }` avec un stub qui exporte `useRegisterSW` — et le mock du test le remplace de la même façon.
 
@@ -529,12 +529,12 @@ describe("UpdateBanner", () => {
 });
 ```
 
-- [ ] **Step 6: Vérifier l'échec**
+- [x] **Step 6: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run src/pwa/UpdateBanner`
 Expected: FAIL, module `./UpdateBanner` introuvable.
 
-- [ ] **Step 7: Écrire le bandeau et les textes**
+- [x] **Step 7: Écrire le bandeau et les textes**
 
 `fr.json`, nouvelle clé de premier niveau `"pwa": { "updateAvailable": "Nouvelle version disponible", "reload": "Recharger" }` ; `en.json` : `"pwa": { "updateAvailable": "New version available", "reload": "Reload" }`.
 
@@ -580,7 +580,7 @@ Vérifier le chemin réel de `Button` (`grep -rn "export.*Button" apps/web/src/c
 
 **Double rechargement (Review Focus 5)** : lire `node_modules/vite-plugin-pwa/dist/client/build/register.js` (ou l'équivalent sous `dist/`). Si `updateServiceWorker(false)` recharge malgré tout l'onglet sur l'événement `controlling` de workbox-window, notre `reloadOnControllerChange` recharge aussi ; les deux appellent `location.reload()` dans la même tâche, ce qui ne produit qu'une navigation. Consigner ce qui a été constaté en un commentaire d'une ligne au-dessus de l'appel `updateServiceWorker`.
 
-- [ ] **Step 8: Brancher**
+- [x] **Step 8: Brancher**
 
 `apps/web/src/main.tsx`, avant `createRoot` :
 
@@ -596,12 +596,12 @@ reloadOnControllerChange(navigator.serviceWorker, () => window.location.reload()
 
 Vérifier que `App.test.tsx` passe toujours : s'il échoue sur le module virtuel, y ajouter le même `vi.mock` que ci-dessus avec `needRefresh: false`.
 
-- [ ] **Step 9: Vérifier**
+- [x] **Step 9: Vérifier**
 
 Run: `cd apps/web && npx vitest run src/pwa src/App`
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add apps/web/src/pwa apps/web/src/main.tsx apps/web/src/App.tsx apps/web/src/App.test.tsx apps/web/src/i18n/fr.json apps/web/src/i18n/en.json apps/web/vite.config.ts docs/plans/2026-09-29-hors-ligne-installable.md
@@ -620,7 +620,7 @@ git commit -m "PWA : bandeau de mise à jour, tous les onglets rechargent ensemb
 - Consumes: `db` et `AppDatabase` de `apps/web/src/db/schema.ts`.
 - Produces: `export function reloadOnVersionChange(database: Dexie, reload: () => void): void`.
 
-- [ ] **Step 1: Test qui échoue**
+- [x] **Step 1: Test qui échoue**
 
 ```ts
 // apps/web/src/db/reloadOnVersionChange.test.ts
@@ -665,12 +665,12 @@ describe("reloadOnVersionChange", () => {
 
 Note : `newer.version(...).stores({})` n'efface aucune table dans Dexie 4 (une table absente d'une version postérieure n'est supprimée que si déclarée `null`). Si Dexie proteste, recopier les `stores` de la dernière version d'`AppDatabase`.
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run src/db/reloadOnVersionChange`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 ```ts
 // apps/web/src/db/reloadOnVersionChange.ts
@@ -700,12 +700,12 @@ import { reloadOnVersionChange } from "@/db/reloadOnVersionChange";
 reloadOnVersionChange(db, () => window.location.reload());
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `cd apps/web && npx vitest run src/db`
 Expected: PASS, y compris `schema.test.ts` (qui ouvre des bases en versions successives sur d'autres noms).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/db/reloadOnVersionChange.ts apps/web/src/db/reloadOnVersionChange.test.ts apps/web/src/main.tsx docs/plans/2026-09-29-hors-ligne-installable.md
@@ -726,7 +726,7 @@ git commit -m "PWA : un onglet dépassé par un schéma plus récent recharge"
 
 Pourquoi un serveur maison plutôt que `vite preview` : le test doit pouvoir le faire répondre 502, l'arrêter, et publier une seconde version, ce que `vite preview` ne sait pas faire. Il reproduit `nginx.conf` : `assets/` immuables, tout le reste `no-cache`, un fichier absent donne `index.html`, `/api/*` répond du JSON et compte ses appels. Il écoute sur le port 0 : aucun port en dur, aucune collision avec les instances de dev.
 
-- [ ] **Step 1: Le serveur**
+- [x] **Step 1: Le serveur**
 
 ```ts
 // apps/web/e2e-offline/server.ts
@@ -799,7 +799,7 @@ export async function startServer(root: string): Promise<StaticServer> {
 }
 ```
 
-- [ ] **Step 2: Le build de la suite**
+- [x] **Step 2: Le build de la suite**
 
 `global-setup.ts` construit une fois l'application (`vite build --outDir e2e-offline/.dist/a`, sans `tsc -b`, depuis `apps/web`) puis dérive la version « b » : copie de `a` où `sw.js` reçoit une ligne `// e2e: version b` en fin de fichier. Un Service Worker qui diffère d'un octet est une mise à jour pour le navigateur ; c'est tout ce que le test du bandeau vérifie.
 
@@ -845,7 +845,7 @@ export default defineConfig({
 
 `apps/web/package.json` : `"e2e:offline": "playwright test -c playwright.offline.config.ts"`. `tsconfig.node.json` : ajouter `"playwright.offline.config.ts"` et `"e2e-offline/**/*.ts"` à `include` (vérifier comment `e2e/` est typé aujourd'hui et faire de même si c'est ailleurs).
 
-- [ ] **Step 3: Les tests**
+- [x] **Step 3: Les tests**
 
 ```ts
 // apps/web/e2e-offline/offline.spec.ts
@@ -886,12 +886,12 @@ Cas à écrire, chacun un `test(...)` :
 4. **Bandeau et deux onglets** — dans un même `context`, deux pages sur `${server.url}/accounts`, toutes deux contrôlées (la seconde : recharger une fois si `controller` est nul) ; marquer chacune `window.__e2eMark = 1` ; `server.setRoot(join(DIST, "b"))` ; déclencher la vérification dans la première : `page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r!.update()))` ; attendre `getByRole("status")` « Nouvelle version disponible » dans les deux pages ; cliquer « Recharger » dans la première ; attendre dans **chacune** que `window.__e2eMark` soit `undefined` (rechargée) et que le bandeau ait disparu.
 5. **Première installation sans rechargement** — page neuve sur `${server.url}/accounts`, `window.__e2eMark = 1` posé aussitôt après `domcontentloaded` ; attendre `waitForControl` ; `__e2eMark` vaut toujours 1.
 
-- [ ] **Step 4: Lancer**
+- [x] **Step 4: Lancer**
 
 Run: `pnpm --filter web e2e:offline`
 Expected: 5 tests PASS. Un échec du cas 4 sur l'apparition du bandeau dans la seconde page : vérifier que `useRegisterSW` écoute bien l'état `waiting` d'une mise à jour trouvée par un autre onglet (workbox-window `waiting` avec `isExternal`) ; sinon, déclencher `update()` aussi dans la seconde page — le test doit prouver que les **deux** onglets rechargent après **un** clic, pas que les deux trouvent la mise à jour seuls.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/e2e-offline apps/web/playwright.offline.config.ts apps/web/package.json apps/web/tsconfig.node.json .gitignore docs/plans/2026-09-29-hors-ligne-installable.md
@@ -906,7 +906,7 @@ git commit -m "PWA : suite Playwright serveur coupé, 502, mise à jour sur deux
 - Modify: `apps/web/src/pages/HelpPage.tsx`, `apps/web/src/pages/HelpPage.test.tsx`, `apps/web/src/i18n/fr.json`, `apps/web/src/i18n/en.json`
 - Modify: `CLAUDE.md`, `docs/deploiement-vps.md`, `docs/specs/2026-09-29-hors-ligne-installable-design.md`
 
-- [ ] **Step 1: Test qui échoue**
+- [x] **Step 1: Test qui échoue**
 
 Dans `HelpPage.test.tsx`, suivant le style des tests existants du fichier :
 
@@ -921,7 +921,7 @@ it("explique l'installation et l'ouverture serveur en maintenance", () => {
 
 Run: `cd apps/web && npx vitest run src/pages/HelpPage` → FAIL.
 
-- [ ] **Step 2: La section**
+- [x] **Step 2: La section**
 
 `fr.json`, sous `help` :
 
@@ -953,7 +953,7 @@ Run: `cd apps/web && npx vitest run src/pages/HelpPage` → FAIL.
 
 Run: `cd apps/web && npx vitest run src/pages/HelpPage` → PASS.
 
-- [ ] **Step 3: Documentation**
+- [x] **Step 3: Documentation**
 
 - `CLAUDE.md`, section « Règles qui mordent », après la règle « Paramètres et Aide s'atteignent sans aucun compte » :
 
@@ -964,7 +964,7 @@ Run: `cd apps/web && npx vitest run src/pages/HelpPage` → PASS.
 - `docs/deploiement-vps.md` : une courte section « Service Worker » — une maintenance n'empêche pas les navigateurs déjà venus d'ouvrir l'application ; un Service Worker cassé se remplace en déployant une version corrigée (`sw.js` en `no-cache`) ; en dernier recours, publier une version avec `selfDestroying: true` dans `pwa.config.ts`, qui désinstalle le Service Worker chez chaque visiteur à sa visite suivante.
 - La spec : statut « implémenté (<date>) » ; §5, remplacer « fond `#0e9f90` plein cadre » par « le dégradé du logo plein cadre » (ce que fait le script de la tâche 1).
 
-- [ ] **Step 4: Vérification complète**
+- [x] **Step 4: Vérification complète**
 
 Run: `pnpm check`
 Expected: lint, typage, build, tous les tests verts.
@@ -972,13 +972,13 @@ Expected: lint, typage, build, tous les tests verts.
 Run: `pnpm --filter web e2e:offline`
 Expected: 5 PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/pages/HelpPage.tsx apps/web/src/pages/HelpPage.test.tsx apps/web/src/i18n/fr.json apps/web/src/i18n/en.json CLAUDE.md docs/deploiement-vps.md docs/specs/2026-09-29-hors-ligne-installable-design.md docs/plans/2026-09-29-hors-ligne-installable.md
 git commit -m "PWA : l'Aide explique l'installation et le serveur coupé ; règles et exploitation"
 ```
 
-- [ ] **Step 6: Instance de relecture**
+- [x] **Step 6: Instance de relecture**
 
 Run: `pnpm dev:start` dans le worktree, puis donner les deux URL à Seb. Rappel pour lui : en `pnpm dev`, le Service Worker est éteint ; pour l'essayer à la main, `pnpm --filter web build && npx vite preview` depuis `apps/web` du worktree (port affiché par Vite), puis arrêter `vite preview` et recharger.

@@ -1,4 +1,8 @@
 {
+  "pwa": {
+    "updateAvailable": "Nouvelle version disponible",
+    "reload": "Recharger"
+  },
   "nav": {
     "sections": {
       "overview": "Vue d'ensemble",
@@ -616,6 +620,14 @@
         "L'agent local, facultatif, ajoute les positions et les exécutions du jour. Il récolte aussi les données nécessaires aux graphiques. Il ne permet pas de récupérer un historique : il vient donc en complément des autres."
       ],
       "history": "Pour que l'application fonctionne bien, il est fortement recommandé d'importer l'ensemble de l'historique. C'est ce qui permet de vérifier que toutes les transactions sont bien présentes et qu'elles reconstituent les dernières valeurs connues de votre portefeuille."
+    },
+    "offline": {
+      "title": "Installer l'application, travailler serveur coupé",
+      "items": [
+        "L'application s'installe par le menu du navigateur : « Installer l'application » dans Chrome et Edge, Partager → « Sur l'écran d'accueil » dans Safari sur iPhone. Elle s'ouvre alors dans sa propre fenêtre ; dans Chrome et Edge, elle retrouve les mêmes données que l'onglet. Sur iPhone, l'application ajoutée à l'écran d'accueil a son propre stockage et démarre vide : restaurez la sauvegarde chiffrée (Paramètres) ou réimportez les relevés.",
+        "Un navigateur qui a déjà ouvert le site l'ouvre encore quand le serveur est en maintenance : vos données sont dans ce navigateur. Seules la synchro Flex relayée par le serveur et la sauvegarde attendent son retour.",
+        "Quand une nouvelle version est publiée, un bandeau propose de recharger ; tous les onglets passent ensemble à la nouvelle version."
+      ]
     },
     "modes": {
       "title": "Trois façons de s'en servir",

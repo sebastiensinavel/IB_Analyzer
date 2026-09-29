@@ -124,6 +124,14 @@ export function HelpPage() {
         </div>
       </Section>
 
+      <Section title={t("help.offline.title")}>
+        <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+          {(t("help.offline.items", { returnObjects: true }) as string[]).map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </Section>
+
       <Section id="statement" title={t("help.statement.title")}>
         <p className="text-muted-foreground">{t("help.statement.portal")}</p>
         <p className="text-muted-foreground">{t("help.statement.text")}</p>

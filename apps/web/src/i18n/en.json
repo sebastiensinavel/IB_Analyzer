@@ -1,4 +1,8 @@
 {
+  "pwa": {
+    "updateAvailable": "New version available",
+    "reload": "Reload"
+  },
   "nav": {
     "sections": {
       "overview": "Overview",
@@ -616,6 +620,14 @@
         "The local agent, optional, adds today's positions and fills. It also collects the data the charts need. It cannot fetch any history: it comes on top of the other sources."
       ],
       "history": "For the application to work well, importing your whole history is strongly recommended. That is what makes it possible to check that every transaction is there and that together they rebuild the last known values of your portfolio."
+    },
+    "offline": {
+      "title": "Install the app, work with the server down",
+      "items": [
+        "Install the app from the browser menu: \"Install app\" in Chrome and Edge, Share → \"Add to Home Screen\" in Safari on iPhone. It then opens in its own window; in Chrome and Edge it sees the same data as the tab. On iPhone, the app added to the Home Screen has its own storage and starts empty: restore the encrypted backup (Settings) or re-import the statements.",
+        "A browser that has opened the site before still opens it while the server is under maintenance: your data lives in this browser. Only the Flex sync relayed by the server and the backup wait for it to come back.",
+        "When a new version is published, a banner offers to reload; every tab switches to the new version together."
+      ]
     },
     "modes": {
       "title": "Three ways to use it",
