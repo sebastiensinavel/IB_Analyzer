@@ -36,7 +36,92 @@
     "addAccount": "Add an IB account",
     "exploreDemo": "Explore the demo",
     "help": "Help",
-    "restore": "Restore a backup"
+    "restore": "Restore a backup",
+    "title": "Your Interactive Brokers options, read strategy by strategy.",
+    "subtitle": "Wheel, LEAPS, Condors: the coverage of each sale, when to buy back, the capital committed and the return — computed in your browser, from your IB statements.",
+    "heroAlt": "Dashboard of a demo account",
+    "features": {
+      "positions": {
+        "title": "Every sale, its coverage",
+        "text": "Cash, shares, LEAPS or spread: each option sold shows what covers it, and what is not covered flashes in the title bar. A buyback decision accounts for the time left, not only the price.",
+        "alt": "Positions with their coverage and the buyback decision"
+      },
+      "wheel": {
+        "title": "The Wheel, cycle by cycle",
+        "text": "Puts sold, assignments, covered calls and call-aways follow one another on the underlying's chart, at the price of each lot.",
+        "alt": "Wheel positions and price chart"
+      },
+      "journal": {
+        "title": "Rebuilt journals",
+        "text": "Each strategy has its journal, its tied-up capital and its monthly return, recomputed from your transaction history.",
+        "alt": "Wheel journal"
+      },
+      "condors": {
+        "title": "One condor per row",
+        "text": "Credit received, closing cost, realized and unrealized P/L; the legs unfold under their condor.",
+        "alt": "Condors positions, one condor expanded"
+      }
+    },
+    "more": {
+      "title": "And also",
+      "items": [
+        "A full history, filterable by column",
+        "A Consistency page that checks positions and cash",
+        "A Sector and Score table shared by your accounts",
+        "A position suggestion by sector"
+      ],
+      "alt": "Transaction history"
+    },
+    "privacy": {
+      "title": "Your data does not leave your computer",
+      "text": "All the computing happens in your browser. The server never sees your transactions or your positions; the backup, optional, is encrypted before it leaves.",
+      "link": "The security of your data"
+    },
+    "how": {
+      "title": "How it works",
+      "steps": [
+        {
+          "title": "An HTML statement",
+          "text": "Export an activity statement from the Client Portal and import it."
+        },
+        {
+          "title": "A Flex Query",
+          "text": "Connect a Flex Query for a daily update."
+        },
+        {
+          "title": "The local agent, optional",
+          "text": "It reads TWS on your computer for today's data."
+        }
+      ]
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "items": [
+        {
+          "q": "Is it free?",
+          "a": "There are no usage fees."
+        },
+        {
+          "q": "Do I need a server account?",
+          "a": "No. It is only used for the Flex relay when the local agent is missing and for the encrypted backup, both optional."
+        },
+        {
+          "q": "Are my IB credentials requested?",
+          "a": "Never. The app reads statements you export, a read-only Flex Query and, if you install it, TWS on your own computer."
+        },
+        {
+          "q": "Does it work offline?",
+          "a": "Yes, once opened: it installs and keeps your data in the browser. Only synchronization needs the network."
+        },
+        {
+          "q": "Which strategies?",
+          "a": "The Wheel, LEAPS and Iron Condors; everything else is tracked in Others."
+        }
+      ]
+    },
+    "footer": {
+      "shots": "The screenshots show fictitious data."
+    }
   },
   "accounts": {
     "title": "Your Interactive Brokers accounts",

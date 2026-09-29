@@ -25,7 +25,10 @@ beforeEach(async () => {
 it("leads to adding an account, to the help and to a backup restore", () => {
   renderPage();
   expect(screen.getByRole("link", { name: "Ajouter un compte IB" })).toHaveAttribute("href", "/accounts");
-  expect(screen.getByRole("link", { name: "Aide" })).toHaveAttribute("href", "/help");
+  // Once in the actions, once in the footer.
+  const help = screen.getAllByRole("link", { name: "Aide" });
+  expect(help).toHaveLength(2);
+  for (const link of help) expect(link).toHaveAttribute("href", "/help");
   expect(screen.getByRole("link", { name: "Restaurer une sauvegarde" })).toHaveAttribute("href", "/settings");
   expect(screen.getByRole("button", { name: "Explorer la démo" })).toBeInTheDocument();
 });
@@ -34,4 +37,15 @@ it("still renders when accounts exist", async () => {
   await db.accounts.put({ id: "alpha", label: "alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [] });
   renderPage();
   expect(screen.getByRole("link", { name: "Ajouter un compte IB" })).toBeInTheDocument();
+});
+
+it("walks through the features, privacy, how it works and the FAQ", () => {
+  renderPage();
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Vos options Interactive Brokers, lues stratégie par stratégie.");
+  for (const id of ["dashboard", "positions", "wheel", "journal-wheel", "condors", "history"]) {
+    expect(document.querySelector(`img[src^="/welcome/${id}."]`)).not.toBeNull();
+  }
+  expect(screen.getByRole("link", { name: /sécurité/i })).toHaveAttribute("href", "/help#security");
+  expect(screen.getByText("Est-ce gratuit ?")).toBeInTheDocument();
+  expect(screen.getByText("Aucun frais d'utilisation.")).toBeInTheDocument();
 });

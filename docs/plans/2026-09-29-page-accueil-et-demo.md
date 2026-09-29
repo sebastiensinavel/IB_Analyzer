@@ -403,7 +403,7 @@ and in `SidebarFooter`, above `<SessionMenuItem />`, when `accountId !== null`:
   - `shotPath(id: ShotId, theme: "light"|"dark", lang: "fr"|"en"): string` → `/welcome/<id>.<theme>.<lang>.webp`
   - `ShotFrame({ id, alt, className? })`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `ShotFrame.test.tsx`:
 
@@ -449,9 +449,9 @@ it("walks through the features, privacy, how it works and the FAQ", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail** — `npx vitest run src/components/welcome src/pages/WelcomePage` → FAIL.
+- [x] **Step 2: Run to verify they fail** — `npx vitest run src/components/welcome src/pages/WelcomePage` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `welcome/shots.ts`:
 
@@ -557,9 +557,9 @@ i18n — add under `welcome` in both files (FR shown; write the EN equivalents w
 "footer": { "shots": "Les captures montrent des données fictives." }
 ```
 
-- [ ] **Step 4: Run** — `npx vitest run src/components/welcome src/pages/WelcomePage` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/components/welcome src/pages/WelcomePage` → PASS.
 
-- [ ] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Accueil : le contenu de la page et ses cadres de capture"`
+- [x] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Accueil : le contenu de la page et ses cadres de capture"`
 
 ---
 

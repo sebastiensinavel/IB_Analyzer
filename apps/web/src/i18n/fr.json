@@ -36,7 +36,92 @@
     "addAccount": "Ajouter un compte IB",
     "exploreDemo": "Explorer la démo",
     "help": "Aide",
-    "restore": "Restaurer une sauvegarde"
+    "restore": "Restaurer une sauvegarde",
+    "title": "Vos options Interactive Brokers, lues stratégie par stratégie.",
+    "subtitle": "Wheel, LEAPS, Condors : la couverture de chaque vente, le moment de racheter, le capital engagé et le rendement — calculés dans votre navigateur, à partir de vos relevés IB.",
+    "heroAlt": "Tableau de bord d'un compte de démonstration",
+    "features": {
+      "positions": {
+        "title": "Chaque vente, sa couverture",
+        "text": "Cash, actions, LEAPS ou spread : chaque option vendue affiche ce qui la couvre, et ce qui ne l'est pas clignote dans la barre de titre. Une décision de rachat tient compte du temps qui reste, pas seulement du prix.",
+        "alt": "Positions avec leur couverture et la décision de rachat"
+      },
+      "wheel": {
+        "title": "La Wheel, cycle par cycle",
+        "text": "Puts vendus, assignations, calls couverts et rappels se suivent sur le graphe du sous-jacent, au prix de chaque lot.",
+        "alt": "Positions de la Wheel et graphe de cours"
+      },
+      "journal": {
+        "title": "Des journaux reconstitués",
+        "text": "Chaque stratégie a son journal, son capital immobilisé et son rendement mensuel, recalculés depuis l'historique de vos transactions.",
+        "alt": "Journal de la Wheel"
+      },
+      "condors": {
+        "title": "Un condor par ligne",
+        "text": "Crédit reçu, coût de clôture, P/L réalisé et latent ; les jambes se déplient sous leur condor.",
+        "alt": "Positions Condors, un condor déplié"
+      }
+    },
+    "more": {
+      "title": "Et aussi",
+      "items": [
+        "Un historique complet, filtrable par colonne",
+        "Une page Consistance qui vérifie positions et cash",
+        "Une table Secteur et Score commune à vos comptes",
+        "Une suggestion de position par secteur"
+      ],
+      "alt": "Historique des transactions"
+    },
+    "privacy": {
+      "title": "Vos données ne quittent pas votre ordinateur",
+      "text": "Tout le calcul se fait dans votre navigateur. Le serveur ne voit jamais vos transactions ni vos positions ; la sauvegarde, facultative, est chiffrée avant de partir.",
+      "link": "La sécurité de vos données"
+    },
+    "how": {
+      "title": "Comment ça marche",
+      "steps": [
+        {
+          "title": "Un relevé HTML",
+          "text": "Exportez un relevé d'activité du Client Portal et importez-le."
+        },
+        {
+          "title": "Une Flex Query",
+          "text": "Branchez une Flex Query pour une mise à jour quotidienne."
+        },
+        {
+          "title": "L'agent local, facultatif",
+          "text": "Il lit TWS sur votre ordinateur pour les données du jour."
+        }
+      ]
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "items": [
+        {
+          "q": "Est-ce gratuit ?",
+          "a": "Aucun frais d'utilisation."
+        },
+        {
+          "q": "Faut-il un compte serveur ?",
+          "a": "Non. Il ne sert qu'au relais Flex quand l'agent local manque et à la sauvegarde chiffrée, tous deux facultatifs."
+        },
+        {
+          "q": "Mes identifiants IB sont-ils demandés ?",
+          "a": "Jamais. L'application lit des relevés que vous exportez, une Flex Query en lecture seule et, si vous l'installez, TWS sur votre propre ordinateur."
+        },
+        {
+          "q": "Fonctionne-t-elle hors ligne ?",
+          "a": "Oui, une fois ouverte : elle s'installe et garde vos données dans le navigateur. Seule la synchronisation demande le réseau."
+        },
+        {
+          "q": "Quelles stratégies ?",
+          "a": "La Wheel, les LEAPS et les Iron Condors ; le reste est suivi dans Autres."
+        }
+      ]
+    },
+    "footer": {
+      "shots": "Les captures montrent des données fictives."
+    }
   },
   "accounts": {
     "title": "Vos comptes Interactive Brokers",
