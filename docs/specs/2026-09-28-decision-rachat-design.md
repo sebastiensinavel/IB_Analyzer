@@ -1,6 +1,6 @@
 # Sous-projet 38 — La décision de rachat tient compte du temps
 
-Statut : implémenté (2026-09-28).
+Statut : implémenté (2026-09-28), règle remplacée par l’addendum du sous-projet 39 (2026-09-29), en fin de document.
 
 La colonne « Décision » des tableaux de positions propose « buy back » ou « keep » pour une
 option vendue. La règle actuelle, `evaluateBuyback` (`packages/coverage/src/classify.ts`), ne
@@ -148,3 +148,35 @@ Le tri et le filtre de la colonne Décision ne changent pas.
 
 Plancher de fin de vie, commission, modèle de decay non linéaire, décision de roll, toute
 colonne nouvelle, tout stockage.
+
+---
+
+## Addendum — sous-projet 39 : le rachat doit rapporter (2026-09-29)
+
+La règle du §1 rachetait dès que le rendement restant égalait celui de la vente : un rachat sans
+gain, qui ne fait que payer une commission. Elle rachetait aussi à 50 % de la prime en début de
+vie, pour un gain que les frais et l'écart achat/vente mangent.
+
+> **Racheter si C ≤ min(0,4 × S ; S × r / (1,2 × T) − f × jambes)** — sinon garder.
+
+- **Ce qui reste, jamais ce qui est acquis.** Garder rapporte encore C en r jours ; racheter coûte
+  C plus la commission f et libère la marge pour une vente neuve, supposée rapporter au rythme de
+  celle-ci, S en T jours. Le rachat doit rapporter par jour au moins 20 % de plus que ce qui reste
+  (`BUYBACK_YIELD_MARGIN = 1.2`) : la marge couvre l'écart achat/vente — C est le prix de marque,
+  pas l'ask — et l'incertitude de retrouver une aussi bonne vente. Une règle qui jugeait le
+  rendement déjà acquis sur la période écoulée a été écartée : elle ne rachetait plus jamais en
+  fin de vie, là où un reste bon marché immobilise la marge pour presque rien.
+- **Jamais au-dessus de 40 % de la prime** (`BUYBACK_MAX_SHARE = 0.4`), qui ne pèse qu'en début de
+  vie ; sans le temps (§2), cette règle seule.
+- **Commission** `BUYBACK_FEE = 0.01` par unité et par jambe (≈ 1 USD le contrat) ; un condor
+  complet en paie une par jambe ouverte, quatre. L'arbitrage « pas de commission » du §1 est levé.
+- **Seuil ≤ 0 : garder, même à C = 0** — le reste ne paie pas la commission. Une prime de 0,05 à
+  30 jours ne se rachète donc presque jamais : c'est voulu. **Pas de plancher absolu** (racheter
+  sous 0,05 quoi qu'il arrive) : des calls se vendent 0,05 sur des penny stocks.
+- Le rendement réel d'une vente neuve (chaîne d'options par l'agent) n'est pas utilisé : S / T
+  en tient lieu.
+
+Exemple, un call de 30 jours vendu 30 $ : seuil 12 $ tant qu'il reste plus de 14,4 jours, puis
+8,32 $ à 10 jours, 4,16 $ à 5 jours, 0,82 $ à 1 jour.
+
+L'infobulle sans le temps dit « {{share}} % de la prime », `share` lu de `BUYBACK_MAX_SHARE`.

@@ -73,13 +73,13 @@ describe("wheelPositions — option sales", () => {
     ];
     const snapshot = priced([
       stock({ symbol: "MQZA", quantity: 100, avgPrice: 17, marketPrice: 18, marketValue: 1800 }),
-      option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -2, avgPrice: 0.5, marketPrice: 0.25, marketValue: -50 }),
+      option({ symbol: "MQZA", right: "C", strike: 20, expiry: "2026-11-20", quantity: -2, avgPrice: 0.5, marketPrice: 0.2, marketValue: -40 }),
     ]);
     const { optionSales } = wheelPositions(rows, snapshot);
     expect(optionSales).toHaveLength(1);
     expect(optionSales[0]).toMatchObject({
       contract: MARA_CALL, kind: "short_call", label: "sell of call", quantity: -1, avgPrice: 0.5,
-      lastPrice: 0.25, marketValue: -25, unrealizedPnl: 25, decision: "buy back",
+      lastPrice: 0.2, marketValue: -20, unrealizedPnl: 30, decision: "buy back",
     });
     expect(optionSales[0].position).toMatchObject({ quantity: -2, uncoveredQuantity: 1 });
     // The naked contract belongs to the Others journal: its UNCOVERED is not the Wheel's.
@@ -308,14 +308,14 @@ describe("leapsPositions", () => {
   ];
   const snapshot = priced([
     option({ symbol: "ZZZ", right: "C", strike: 15, expiry: "2027-06-18", quantity: 1, avgPrice: 3, marketPrice: 4, marketValue: 400 }),
-    option({ symbol: "ZZZ", right: "C", strike: 20, expiry: "2026-09-18", quantity: -1, avgPrice: 0.5, marketPrice: 0.25, marketValue: -25 }),
+    option({ symbol: "ZZZ", right: "C", strike: 20, expiry: "2026-09-18", quantity: -1, avgPrice: 0.5, marketPrice: 0.2, marketValue: -20 }),
     stock({ symbol: "ZZZ", quantity: 100, multiplier: null, avgPrice: 20, marketPrice: 21, marketValue: 2100 }),
   ]);
 
   it("splits the LEAPS bought, the calls sold against them and the shares they delivered, leaving the Wheel out", () => {
     const { optionBuys, optionSales, shares: delivered } = leapsPositions(rows, snapshot);
     expect(optionBuys).toEqual([expect.objectContaining({ kind: "long_call", label: "buy of call", marketValue: 400, unrealizedPnl: 100, decision: null })]);
-    expect(optionSales).toEqual([expect.objectContaining({ kind: "short_call", marketValue: -25, unrealizedPnl: 25, decision: "buy back" })]);
+    expect(optionSales).toEqual([expect.objectContaining({ kind: "short_call", marketValue: -20, unrealizedPnl: 30, decision: "buy back" })]);
     // The whole IB position, whatever covers it there: the 100 ZZZ shares of this snapshot come first.
     expect(optionSales[0].position).toMatchObject({ symbol: "ZZZ", strike: 20, quantity: -1 });
     // Shares count one unit each, whatever multiplier the IB row carries or lacks.
@@ -345,7 +345,7 @@ describe("leapsPositions", () => {
     ];
     const twoContracts = priced([
       option({ symbol: "ZZZ", right: "C", strike: 15, expiry: "2027-06-18", quantity: 2, avgPrice: 3, marketPrice: 4, marketValue: 800 }),
-      option({ symbol: "ZZZ", right: "C", strike: 20, expiry: "2026-09-18", quantity: -2, avgPrice: 0.5, marketPrice: 0.25, marketValue: -50 }),
+      option({ symbol: "ZZZ", right: "C", strike: 20, expiry: "2026-09-18", quantity: -2, avgPrice: 0.5, marketPrice: 0.2, marketValue: -40 }),
     ]);
     expect(leapsPositions(twoSold, twoContracts).optionBuys[0].used).toBe(1);
   });
@@ -712,11 +712,11 @@ describe("strategyPositions — the buyback advice is timed", () => {
     expect(line.decision).toBe(line.buyback?.decision);
   });
 
-  it("falls back on the 50% rule without the snapshot's instant", () => {
+  it("falls back on the 40% rule without the snapshot's instant", () => {
     const rows = [row({ contract: XOM_PUT, quantity: -1, openPrice: 2 })];
     const positions = [option({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-10-16", quantity: -1, marketPrice: 0.5, marketValue: -50 })];
     const [line] = strategyPositions(rows, "wheel", priced(positions)).groups.optionSells;
-    expect(line.buyback).toMatchObject({ remainingDays: null, totalDays: null, threshold: 1, decision: "buy back" });
+    expect(line.buyback).toMatchObject({ remainingDays: null, totalDays: null, threshold: 0.8, decision: "buy back" });
   });
 
   it("dates a line made only of contracts taken over by Others from their strategy's rows", () => {

@@ -158,7 +158,7 @@ export function condorPositions(
     const realizedPnl = sum(legs.filter((leg) => leg.closed).map((leg) => leg.pnl));
     const latent = sum(open.map((leg) => leg.pnl));
     const timing = snapshot?.asOf && row.contract.expiry ? { soldAt: row.startWhen, expiry: row.contract.expiry, asOf: snapshot.asOf } : null;
-    const advice = !partial && row.openPrice !== null && closingCost !== null ? evaluateBuyback(row.openPrice, closingCost, timing) : null;
+    const advice = !partial && row.openPrice !== null && closingCost !== null ? evaluateBuyback(row.openPrice, closingCost, timing, open.length) : null;
     // closingCost <= 0 means IB would pay to close: always a buyback, whatever the rule says of
     // |closingCost| against a small credit.
     const buyback = advice && closingCost !== null && closingCost <= 0 ? { ...advice, decision: "buy back" as const, threshold: 0 } : advice;

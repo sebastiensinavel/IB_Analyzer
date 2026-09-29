@@ -92,21 +92,26 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   lit en **jour de marché** pour les seules lignes de l'agent — avant 04:00 la veille, un
   week-end le vendredi —, parce qu'IB passe les assignations d'une échéance dans la nuit qui
   la suit. `marketDayOf` et `MARKET_DAY_START_HOUR` vivent dans `packages/ledger/src/filter.ts`.
-- **Constantes métier** : `BUYBACK_RATIO` et `MAX_STRUCTURE_LOSS` dans `packages/coverage`,
+- **Constantes métier** : `BUYBACK_MAX_SHARE`, `BUYBACK_YIELD_MARGIN`, `BUYBACK_FEE` et `MAX_STRUCTURE_LOSS` dans `packages/coverage`,
   `DEFAULT_MULTIPLIER` dans `packages/ledger/src/constants.ts` — le moteur de journaux en a
   besoin et `coverage` dépend de `ledger`, donc l'inverse serait un cycle ; `coverage` la
   ré-exporte seule. `CASH_CHECK_TOLERANCE` vit dans `packages/ledger/src/cash.ts`, que
   `coverage` ne touche pas. Une seule définition chacune, jamais recodées ailleurs.
-- **La décision de rachat se mesure au temps, jamais au seul prix** (sous-projet 38) :
-  `evaluateBuyback` (`packages/coverage/src/buyback.ts`) rachète si C ≤ S × min(½, r/T), T depuis
+- **La décision de rachat se mesure au temps, jamais au seul prix** (sous-projets 38 et 39) :
+  `evaluateBuyback` (`packages/coverage/src/buyback.ts`) rachète si C ≤ min(0,4 × S, S × r / (1,2 × T)
+  − 0,01 × jambes) : ce qui reste (C en r jours) doit rapporter par jour 20 % de moins que la vente
+  (S en T jours), commission de rachat déduite, et jamais au-dessus de 40 % de la prime — un seuil
+  ≤ 0 garde, même à C = 0, si bien qu'une prime de quelques cents ne se rachète presque jamais ;
+  pas de plancher absolu. Le jugement porte sur ce qui reste à gagner, jamais sur le rendement
+  déjà acquis. T depuis
   la date moyenne de vente pondérée par la quantité, r depuis l'`asOf` du snapshot — jamais
   l'horloge —, échéance à 16:00 New York ; un `asOf` sans heure compte à 16:00 ; échue à l'`asOf`,
   garder. La page Positions date ses positions par `saleInstants` des journaux, passé par
-  `AccountDataProvider` à `useRiskReport` ; sans journaux, la seule règle des 50 %. Les lignes de
+  `AccountDataProvider` à `useRiskReport` ; sans journaux, la seule règle des 40 %. Les lignes de
   stratégie et de Condors se datent de leurs propres contributions au journal, et du `startWhen`
-  du composite pour un condor, jamais par `saleInstants`. Toute sortie qui porte `decision` porte
-  aussi `buyback`, non nul exactement quand `decision` l'est. Ni plancher de fin de vie ni
-  commission. L'infobulle du badge (`DecisionBadge`) dit le seuil.
+  du composite pour un condor, jamais par `saleInstants`, qui paie une commission par jambe ouverte.
+  Toute sortie qui porte `decision` porte aussi `buyback`, non nul exactement quand `decision`
+  l'est. L'infobulle du badge (`DecisionBadge`) dit le seuil.
 - **Le moteur de couverture n'a plus d'oracle Python** : `packages/coverage` a été validé au
   sous-projet 2 contre un oracle Python, depuis retiré avec ses fixtures. Seuls ses tests
   Vitest écrits à la main le fixent désormais ; ne pas réintroduire de Python pour lui.
@@ -546,6 +551,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 36 | Les totaux : P/L du jour, P/L non réalisé, valeur totale | fait (2026-09-28) |
 | 37 | La stratégie de chaque ligne de l'Historique | fait (2026-09-28) |
 | 38 | La décision de rachat tient compte du temps | fait (2026-09-28) |
+| 39 | Le rachat doit rapporter : 40 %, marge de 20 %, commission | en cours (2026-09-29) |
 
 ## Outillage
 

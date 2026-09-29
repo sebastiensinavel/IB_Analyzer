@@ -1,8 +1,14 @@
 // The one place where the business constants of the coverage engine live.
 // Nothing outside this package may redefine them (apps/web has a test for it).
 
-/** A short option is bought back when current <= sale / BUYBACK_RATIO. */
-export const BUYBACK_RATIO = 2;
+/** A short option is never bought back above this share of its sale price. */
+export const BUYBACK_MAX_SHARE = 0.4;
+
+/** A buyback must free margin for a sale earning at least this many times what the rest still earns. */
+export const BUYBACK_YIELD_MARGIN = 1.2;
+
+/** Commission of a buyback, per unit (per share) and per leg: about 1 USD a contract. */
+export const BUYBACK_FEE = 0.01;
 
 /**
  * Options multiplier when the contract does not report one. Defined in

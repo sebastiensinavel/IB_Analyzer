@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const sources = import.meta.glob("/src/**/*.{ts,tsx}", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 
 const FORBIDDEN = [
-  /\b(BUYBACK_RATIO|MAX_STRUCTURE_LOSS|DEFAULT_MULTIPLIER|MIN_SUGGESTION_SCORE|MAX_SUGGESTIONS|MAX_SUGGESTION_TICKER_SHARE)\s*=/,
+  /\b(BUYBACK_MAX_SHARE|BUYBACK_YIELD_MARGIN|BUYBACK_FEE|MAX_STRUCTURE_LOSS|DEFAULT_MULTIPLIER|MIN_SUGGESTION_SCORE|MAX_SUGGESTIONS|MAX_SUGGESTION_TICKER_SHARE)\s*=/,
   /["'](sell of (call|put)|buy of (call|put)|iron condor|call spread|put spread)["']/,
 ];
 

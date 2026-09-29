@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_MULTIPLIER as fromLedger } from "@ib/ledger";
 import {
-  BUYBACK_RATIO,
+  BUYBACK_FEE,
+  BUYBACK_MAX_SHARE,
+  BUYBACK_YIELD_MARGIN,
   DEFAULT_MULTIPLIER,
   DETAIL_GROUPS,
   EVALUATE_KINDS,
@@ -30,7 +32,9 @@ describe("constants", () => {
 
 describe("business constants", () => {
   it("keeps the coverage engine's own constants here", () => {
-    expect(BUYBACK_RATIO).toBe(2);
+    expect(BUYBACK_MAX_SHARE).toBe(0.4);
+    expect(BUYBACK_YIELD_MARGIN).toBe(1.2);
+    expect(BUYBACK_FEE).toBe(0.01);
     expect(MAX_STRUCTURE_LOSS).toBe(1000);
   });
 

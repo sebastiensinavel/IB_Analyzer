@@ -30,7 +30,7 @@ describe("positionColumnSpecs", () => {
     expect(specs.type.value(put)).toBe("short_put");
     expect(specs.type.label?.("short_put")).toBe("sell of put");
     expect(specs.sector.value(put)).toBe("Energy");
-    expect(specs.unrealizedPnl.value(put)).toBe(490);
+    expect(specs.unrealizedPnl.value(put)).toBe(520);
     expect(specs.decision.value(put)).toBe(put.decision);
     expect(specs.coverage.value(put)).toEqual(["cash"]);
   });

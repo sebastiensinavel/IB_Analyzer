@@ -34,7 +34,7 @@ export const SAMPLE_POSITIONS: Position[] = [
   position({ symbol: "AAPL", right: "C", strike: 155, expiry: "2026-02-20", quantity: -2, avgPrice: 3, marketPrice: 3.1, marketValue: -620, unrealizedPnl: -20 }),
   position({ symbol: "MSFT", right: "C", strike: 300, expiry: "2028-01-21", quantity: 1, avgPrice: 90, marketPrice: 95, marketValue: 9500, unrealizedPnl: 500 }),
   position({ symbol: "MSFT", right: "C", strike: 400, expiry: "2026-03-20", quantity: -1, avgPrice: 6.1, marketPrice: 6.2, marketValue: -620, unrealizedPnl: -10 }),
-  position({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-03-20", quantity: -2, avgPrice: 4.2, marketPrice: 1.75, marketValue: -350, unrealizedPnl: 490 }),
+  position({ symbol: "XOM", right: "P", strike: 100, expiry: "2026-03-20", quantity: -2, avgPrice: 4.2, marketPrice: 1.6, marketValue: -320, unrealizedPnl: 520 }),
   position({ symbol: "XYZ", right: "P", strike: 90, expiry: "2026-03-20", quantity: 1, avgPrice: 1, marketPrice: 0.5, marketValue: 50, unrealizedPnl: -50 }),
   position({ symbol: "XYZ", right: "P", strike: 95, expiry: "2026-03-20", quantity: -1, avgPrice: 2, marketPrice: 1, marketValue: -100, unrealizedPnl: 100 }),
   position({ symbol: "XYZ", right: "C", strike: 105, expiry: "2026-03-20", quantity: -1, avgPrice: 2, marketPrice: 1.5, marketValue: -150, unrealizedPnl: 50 }),

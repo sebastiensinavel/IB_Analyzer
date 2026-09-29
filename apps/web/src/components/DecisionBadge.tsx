@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
-import type { BuybackAdvice } from "@ib/coverage";
+import { BUYBACK_MAX_SHARE, type BuybackAdvice } from "@ib/coverage";
 import { Badge } from "@ib/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
 import { formatPrice } from "@/lib/format";
 import { decisionBadge } from "@/lib/riskReport";
 
-/** The Décision column: the badge, and the price under which a buyback pays (spec of sub-project 38, §5). */
+/** The Décision column: the badge, and the price under which a buyback pays (spec of sub-project 38, §5 and addendum). */
 export function DecisionBadge({
   decision,
   advice,
@@ -24,7 +24,7 @@ export function DecisionBadge({
   const text =
     advice.remainingDays !== null && advice.totalDays !== null
       ? t("positions.buyback.timed", { price, remaining: Math.round(advice.remainingDays), total: Math.round(advice.totalDays) })
-      : t("positions.buyback.half", { price });
+      : t("positions.buyback.share", { price, share: Math.round(BUYBACK_MAX_SHARE * 100) });
   return (
     <Tooltip>
       <TooltipTrigger render={node} />

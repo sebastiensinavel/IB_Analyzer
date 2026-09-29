@@ -12,10 +12,10 @@ describe("DecisionBadge", () => {
     expect(await screen.findByText("Rachat rentable sous 0.42 USD : 12 j restants sur 30", {}, { timeout: 2000 })).toBeInTheDocument();
   });
 
-  it("falls back to the half-premium wording without days", async () => {
+  it("falls back to the premium-share wording without days", async () => {
     render(<DecisionBadge decision="keep" advice={{ decision: "keep", threshold: 0.75, remainingDays: null, totalDays: null }} currency="USD" />);
     await userEvent.setup().hover(screen.getByText("keep"));
-    expect(await screen.findByText("Rachat rentable sous 0.75 USD : 50 % de la prime", {}, { timeout: 2000 })).toBeInTheDocument();
+    expect(await screen.findByText("Rachat rentable sous 0.75 USD : 40 % de la prime", {}, { timeout: 2000 })).toBeInTheDocument();
   });
 
   it("renders nothing without a decision", () => {
