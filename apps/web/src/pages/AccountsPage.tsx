@@ -39,7 +39,7 @@ export function AccountsPage() {
       {/* The title sits UNDER the buttons, on a line of its own. This page is `max-w-lg`, and
           four controls plus a six-word heading on one row wrapped the heading onto four lines.
           Giving it the full width costs one line and reads straight. */}
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         {/* The one path into Settings from a device that holds no account at all: without it,
             restoring a backup onto a fresh browser needs a URL nobody would guess. */}
         <Link to="/settings" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
