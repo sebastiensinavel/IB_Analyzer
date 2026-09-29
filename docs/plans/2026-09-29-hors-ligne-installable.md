@@ -135,11 +135,11 @@ git commit -m "PWA : icônes de l'application installée, rendues depuis le favi
 - Consumes: les PNG de la tâche 1.
 - Produces: `export const pwaOptions: Partial<VitePWAOptions>` et `export const SERVER_PREFIXES: readonly string[]` dans `apps/web/pwa.config.ts` ; le module virtuel `virtual:pwa-register/react` disponible au typage (types `vite-plugin-pwa/react`) ; un build qui écrit `dist/sw.js` et `dist/manifest.webmanifest`.
 
-- [ ] **Step 1: Installer**
+- [x] **Step 1: Installer**
 
 Run: `pnpm --filter web add -D vite-plugin-pwa@^1.3.0 workbox-window@^7.4.1`
 
-- [ ] **Step 2: Écrire le test qui échoue**
+- [x] **Step 2: Écrire le test qui échoue**
 
 ```ts
 // apps/web/pwa.config.test.ts
@@ -194,12 +194,12 @@ describe("pwaOptions", () => {
 
 Note : `/apiary` et `/agents` ne sont pas des routes, mais prouvent que la règle porte sur un segment entier (`^/api(/|$)`), pas un début de chaîne.
 
-- [ ] **Step 3: Vérifier l'échec**
+- [x] **Step 3: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run pwa.config`
 Expected: FAIL, module `./pwa.config` introuvable.
 
-- [ ] **Step 4: Écrire `pwa.config.ts`**
+- [x] **Step 4: Écrire `pwa.config.ts`**
 
 ```ts
 // apps/web/pwa.config.ts
@@ -252,7 +252,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
 
 Vérifier que la taille du plus gros chunk ne dépasse pas `maximumFileSizeToCacheInBytes` (2 Mio par défaut) : si le build avertit qu'un fichier est ignoré, relever la limite dans `workbox` (par ex. `5 * 1024 * 1024`) et le commenter — un chunk ignoré serait absent serveur coupé.
 
-- [ ] **Step 5: Brancher le plugin**
+- [x] **Step 5: Brancher le plugin**
 
 `apps/web/vite.config.ts` :
 
@@ -275,7 +275,7 @@ import { pwaOptions } from "./pwa.config";
 
 (Le plugin injecte lui-même le `<link rel="manifest">` au build.)
 
-- [ ] **Step 6: nginx**
+- [x] **Step 6: nginx**
 
 `nginx:alpine` ne connaît pas l'extension `.webmanifest` (vérifié le 2026-09-29 : absente de `/etc/nginx/mime.types`) et la servirait en `application/octet-stream`. Ajouter avant `location /` :
 
@@ -289,7 +289,7 @@ import { pwaOptions } from "./pwa.config";
     }
 ```
 
-- [ ] **Step 7: Tests et build**
+- [x] **Step 7: Tests et build**
 
 Run: `cd apps/web && npx vitest run pwa.config`
 Expected: PASS.
@@ -299,7 +299,7 @@ Expected: les deux fichiers existent ; `0` occurrence de `agent/` dans la liste 
 
 Si Docker est disponible : `docker run --rm -v $PWD/apps/web/nginx.conf:/etc/nginx/conf.d/default.conf:ro nginx:alpine nginx -t` → `syntax is ok`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/web/pwa.config.ts apps/web/pwa.config.test.ts apps/web/vite.config.ts apps/web/package.json pnpm-lock.yaml apps/web/tsconfig.app.json apps/web/tsconfig.node.json apps/web/index.html apps/web/nginx.conf docs/plans/2026-09-29-hors-ligne-installable.md

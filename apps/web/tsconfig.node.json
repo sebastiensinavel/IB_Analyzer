@@ -7,5 +7,5 @@
     "module": "nodenext",
     "moduleResolution": "nodenext"
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "dev-env.test.ts"]
+  "include": ["vite.config.ts", "playwright.config.ts", "dev-env.test.ts", "pwa.config.ts", "pwa.config.test.ts"]
 }

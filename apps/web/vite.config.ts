@@ -1,7 +1,9 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 import { configDefaults, defineConfig } from "vitest/config";
 import { devPorts } from "../../tools/dev-env/ports.mjs";
+import { pwaOptions } from "./pwa.config.ts";
 
 // 5173 / 8000 in the main checkout, an offset per git worktree: two checkouts served at
 // the same time never answer for each other (tools/dev-env/ports.mjs).
@@ -9,7 +11,7 @@ const ports = devPorts();
 const api = `http://127.0.0.1:${ports.api}`;
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), VitePWA(pwaOptions)],
   resolve: {
     alias: { "@": `${import.meta.dirname}/src` },
   },
