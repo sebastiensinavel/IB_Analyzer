@@ -1594,7 +1594,7 @@ export function DemoBanner() {
 **Interfaces:**
 - Consumes: `SHOTS`, `SHOT_THEMES`, `SHOT_LANGUAGES`, `SHOT_WIDTH`, `SHOT_HEIGHT` (task 3) ; the demo (tasks 5-7) ; `devPorts` de `tools/dev-env/ports.mjs`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `welcome/shots.test.ts`:
 
@@ -1614,9 +1614,9 @@ it("has every shot the welcome page shows, in every theme and language", () => {
 
 `pwa.config.test.ts` — add: `expect(pwaOptions.workbox?.globIgnores).toEqual(["agent/**", "welcome/**"]);`
 
-- [ ] **Step 2: Run** — `npx vitest run src/welcome pwa.config` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/welcome pwa.config` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `pwa.config.ts`: `globIgnores: ["agent/**", "welcome/**"]`, with the comment « Les captures de `/welcome` : des images de vitrine pour un visiteur en ligne, qui n'ont pas à peser sur chaque installation (sous-projet 41). »
 
@@ -1734,9 +1734,9 @@ The `En direct` wait: check the exact label of `snapshot.live` in `fr.json`/`en.
 
 Then generate: `pnpm screenshots`. **Open every file** — at least the six `light.fr` ones with the Read tool — and check: the demo banner is visible, « En direct » shows, the Wheel shot has a chart with its levels, the Condors shot has an expanded condor, no « — » where a value is expected, no error. Fix the scenario or the preparation if a shot is wrong, then regenerate.
 
-- [ ] **Step 4: Run** — `npx vitest run src/welcome pwa.config` → PASS ; `du -sh apps/web/public/welcome` → under 4 Mo.
+- [x] **Step 4: Run** — `npx vitest run src/welcome pwa.config` → PASS ; `du -sh apps/web/public/welcome` → under 4 Mo.
 
-- [ ] **Step 5: Commit** — `git add package.json apps/web/package.json pnpm-lock.yaml apps/web/pwa.config.ts apps/web/pwa.config.test.ts apps/web/scripts/screenshots.mjs apps/web/src/welcome apps/web/public/welcome && git commit -m "Accueil : captures générées depuis la démo par pnpm screenshots"`
+- [x] **Step 5: Commit** — `git add package.json apps/web/package.json pnpm-lock.yaml apps/web/pwa.config.ts apps/web/pwa.config.test.ts apps/web/scripts/screenshots.mjs apps/web/src/welcome apps/web/public/welcome && git commit -m "Accueil : captures générées depuis la démo par pnpm screenshots"`
 
 ---
 

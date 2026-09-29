@@ -35,7 +35,9 @@ export const pwaOptions: Partial<VitePWAOptions> = {
   workbox: {
     globPatterns: ["**/*.{html,js,css,svg,png,woff2,webmanifest}"],
     // `pnpm build:agent` écrit la roue dans public/agent/, que le build recopie : jamais en cache.
-    globIgnores: ["agent/**"],
+    // Les captures de `/welcome` : des images de vitrine pour un visiteur en ligne, qui n'ont pas
+    // à peser sur chaque installation (sous-projet 41).
+    globIgnores: ["agent/**", "welcome/**"],
     // Le bundle principal pèse ~2,2 Mio, au-dessus des 2 Mio par défaut : un fichier ignoré
     // serait absent serveur coupé, et le build échoue plutôt que de le taire.
     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,

@@ -22,6 +22,7 @@
     "anonymize:statement": "node packages/ib-parsers/scripts/anonymize-statement.mjs",
     "test:api": "node tools/dev-env/run.mjs uv run --project apps/api pytest apps/api",
     "test:agent": "uv run --project apps/tws-agent pytest apps/tws-agent",
+    "screenshots": "node apps/web/scripts/screenshots.mjs",
     "build:agent": "rm -rf apps/web/public/agent && uv build --wheel --out-dir apps/web/public/agent --package ib-tws-agent && uv run --project apps/tws-agent python apps/tws-agent/scripts/write_index.py apps/web/public/agent && rm -f apps/web/public/agent/.gitignore"
   },
   "devDependencies": {

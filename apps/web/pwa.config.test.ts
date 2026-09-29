@@ -23,6 +23,7 @@ describe("pwaOptions", () => {
 
   it("ne pré-cache jamais la roue de l'agent et ne met rien en cache à l'exécution", () => {
     expect(pwaOptions.workbox!.globIgnores).toContain("agent/**");
+    expect(pwaOptions.workbox?.globIgnores).toEqual(["agent/**", "welcome/**"]);
     expect(pwaOptions.workbox!.runtimeCaching).toBeUndefined();
   });
 
