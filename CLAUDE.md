@@ -69,8 +69,9 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   éteint ou simplement lent affichaient un portefeuille vide.
 - **Un navigateur sans compte arrive sur `/welcome`** (sous-projet 41) : `RootRedirect` y mène,
   la page reste accessible avec des comptes — c'est le lien qu'on partage —, et le menu sans
-  compte offre « Ajouter un compte IB » et « Découvrir IB Analyzer ». `/accounts` reste la page
-  de gestion ; aucune présentation n'y revit.
+  compte offre « Ajouter un compte IB » et « Découvrir IB Analyzer ». Avec au moins un compte,
+  le bouton principal de `/welcome` devient « Explorer vos comptes IB » et mène à `/`, donc au
+  dernier compte visité. `/accounts` reste la page de gestion ; aucune présentation n'y revit.
 - **La démonstration a sa propre base, jamais un compte dans la vraie** : `isDemo()`
   (`apps/web/src/demo/mode.ts`, avec `enterDemo`, `clearDemo` et `leaveDemo`) est le seul lecteur
   du drapeau `sessionStorage` `ib2:demo`, par onglet ; `schema.ts` en tire le nom de la base par

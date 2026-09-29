@@ -40,10 +40,11 @@ it("leads to adding an account, to the help and to a backup restore", () => {
   expect(screen.getByRole("button", { name: "Explorer la démo" })).toBeInTheDocument();
 });
 
-it("still renders when accounts exist", async () => {
+it("leads back into the app once an account exists", async () => {
   await db.accounts.put({ id: "alpha", label: "alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [] });
   renderPage();
-  expect(screen.getByRole("link", { name: "Ajouter un compte IB" })).toBeInTheDocument();
+  expect(await screen.findByRole("link", { name: "Explorer vos comptes IB" })).toHaveAttribute("href", "/");
+  expect(screen.queryByRole("link", { name: "Ajouter un compte IB" })).toBeNull();
 });
 
 it("walks through the features, privacy, how it works and the FAQ", () => {

@@ -42,6 +42,7 @@
   "welcome": {
     "discover": "Discover IB Analyzer",
     "addAccount": "Add an IB account",
+    "openAccounts": "Explore your IB accounts",
     "exploreDemo": "Explore the demo",
     "help": "Help",
     "restore": "Restore a backup",

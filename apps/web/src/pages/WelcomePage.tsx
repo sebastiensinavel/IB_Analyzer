@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { DemoBanner } from "@/components/DemoBanner";
 import { ShotFrame } from "@/components/welcome/ShotFrame";
 import { useDb } from "@/db/DbProvider";
+import { useAccounts } from "@/db/hooks";
 import { DEMO_ACCOUNT_ID, enterDemo, isDemo, leaveDemo } from "@/demo/mode";
 import type { ShotId } from "@/welcome/shots";
 
@@ -131,6 +132,8 @@ export function WelcomeActions() {
   const { t } = useTranslation();
   const db = useDb();
   const demo = isDemo();
+  const accounts = useAccounts();
+  const hasAccounts = (accounts?.length ?? 0) > 0;
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
@@ -141,7 +144,14 @@ export function WelcomeActions() {
           </>
         ) : (
           <>
-            <Link to="/accounts" className={cn(buttonVariants())}>{t("welcome.addAccount")}</Link>
+            {/* A browser that already holds an account goes back into the app — `/` opens the
+                last account visited — rather than to the add form. Until the list is read it
+                keeps the add label, the state of a browser with no account. */}
+            {hasAccounts ? (
+              <Link to="/" className={cn(buttonVariants())}>{t("welcome.openAccounts")}</Link>
+            ) : (
+              <Link to="/accounts" className={cn(buttonVariants())}>{t("welcome.addAccount")}</Link>
+            )}
             <Button variant="outline" onClick={enterDemo}>{t("welcome.exploreDemo")}</Button>
           </>
         )}
