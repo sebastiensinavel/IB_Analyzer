@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
 import { HelpPage } from "@/pages/HelpPage";
 import { setLastAccountId } from "@/lib/accountStorage";
+import { navigation } from "@/demo/mode";
 
 function mockIndex(body: Response | Promise<Response>) {
   vi.spyOn(globalThis, "fetch").mockImplementation(async () => body);
@@ -14,6 +15,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  window.sessionStorage.clear();
 });
 
 /**
@@ -57,6 +59,24 @@ describe("HelpPage", () => {
       "4. Le serveur, facultatif",
       "5. La sécurité de vos données",
     ]);
+  });
+
+  it("anchors the agent section and links to the welcome page", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    expect(document.getElementById("agent")).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Découvrir IB Analyzer" })).toHaveAttribute("href", "/welcome");
+  });
+
+  it("enters the demo from the help page, next to the welcome link", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const assign = vi.spyOn(navigation, "assign").mockImplementation(() => {});
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("L'application");
+    fireEvent.click(screen.getByRole("button", { name: "Explorer la démo" }));
+    expect(assign).toHaveBeenCalledWith("/accounts/demo/dashboard");
+    expect(window.sessionStorage.getItem("ib2:demo")).toBe("1");
   });
 
   it("explique l'installation et l'ouverture serveur en maintenance", async () => {

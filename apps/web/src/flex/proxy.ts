@@ -1,5 +1,6 @@
 import { AGENT_URL } from "@/agent/client";
 import { csrfToken } from "@/api/csrf";
+import { isDemo } from "@/demo/mode";
 import type { FlexRelay } from "./relay";
 
 export type ProxyErrorCode =
@@ -71,6 +72,9 @@ async function relayThroughServer(path: FlexPath, body: unknown): Promise<ProxyR
  * Origin. It has no rate limit either, so no 429 to read here.
  */
 async function relayThroughAgent(path: FlexPath, body: unknown): Promise<ProxyResult> {
+  // The demo never reaches 127.0.0.1:8100 (sub-project 41, spec §4.4): the simulated agent
+  // relays no Flex call. Guarded here as well as upstream, so no path can reach the real agent.
+  if (isDemo()) return { ok: false, code: "agent-unreachable" };
   let response: Response;
   try {
     response = await fetch(`${AGENT_URL}/flex/${path}`, {

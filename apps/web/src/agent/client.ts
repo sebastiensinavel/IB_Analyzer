@@ -1,7 +1,12 @@
+import { isDemo } from "@/demo/mode";
+
 /**
  * The network boundary with the local agent (apps/tws-agent). Nothing here interprets the
  * payload: that is `parseAgentSnapshot`'s job (packages/ib-parsers). `AGENT_URL` is the
  * user's own machine, never a domain name.
+ *
+ * In the demo (sub-project 41), no request leaves: `src/demo/agent.ts`, loaded on demand, answers
+ * in the agent's place, behind `exclusiveTws` like the real one.
  */
 export const AGENT_URL = "http://127.0.0.1:8100";
 /** A ping must be cheap: the agent is absent far more often than present. */
@@ -17,6 +22,7 @@ export interface AgentInfo {
 }
 
 export async function probeAgent(): Promise<AgentInfo | null> {
+  if (isDemo()) return (await import("@/demo/agent")).demoProbe();
   try {
     const response = await fetch(`${AGENT_URL}/health`, { signal: AbortSignal.timeout(AGENT_PROBE_TIMEOUT_MS) });
     if (!response.ok) return null;
@@ -45,6 +51,7 @@ export function exclusiveTws<T>(call: () => Promise<T>): Promise<T> {
 }
 
 async function getAgentJson(path: string): Promise<AgentFetchResult> {
+  if (isDemo()) return (await import("@/demo/agent")).demoAgentJson(path);
   let response: Response;
   try {
     response = await fetch(`${AGENT_URL}${path}`, { signal: AbortSignal.timeout(AGENT_FETCH_TIMEOUT_MS) });
@@ -89,6 +96,11 @@ export type BarsResult = { ok: true; payload: BarsResponse } | { ok: false; code
 
 export function fetchBars(port: number, symbol: string, currency = "USD"): Promise<BarsResult> {
   return exclusiveTws(async () => {
+    if (isDemo()) {
+      const path = `/bars?port=${port}&symbol=${encodeURIComponent(symbol)}&currency=${encodeURIComponent(currency)}`;
+      const result = (await import("@/demo/agent")).demoAgentJson(path);
+      return result.ok ? { ok: true, payload: result.payload as BarsResponse } : result;
+    }
     let response: Response;
     try {
       response = await fetch(

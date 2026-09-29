@@ -1,6 +1,6 @@
 # Sous-projet 41 — La page d'accueil, la démonstration et ses captures
 
-Statut : conçu (2026-09-29).
+Statut : implémenté (2026-09-29).
 
 Un navigateur sans compte IB atterrit aujourd'hui sur `/accounts` : une page de gestion, sans
 menu, dont la seule présentation de l'application est une carte `WelcomeCard` en bas de page.
@@ -130,7 +130,11 @@ vie de l'onglet : aucun `DbProvider` ne bascule à chaud, et rien ne dépend de 
 n'existe que pendant la démo.
 
 **Remplissage** : en démo, `main.tsx` attend `ensureDemoSeeded(db)` avant de monter l'application.
-Base vide → la graine (§5) s'écrit en une transaction ; base remplie → rien. Tout `src/demo/`
+Base vide → la graine (§5) s'écrit en une transaction ; base remplie le même jour de référence →
+rien ; remplie un autre jour de référence (onglet restauré le lendemain) → le compte démo est
+effacé et la graine réécrite, dans la même transaction. L'agent simulé (§6) bâtit son monde à
+l'instant de la graine (`createdAt` du compte démo), jamais à l'horloge seule : un onglet resté
+ouvert après minuit garde un snapshot qui se réconcilie avec son historique. Tout `src/demo/`
 sauf `mode.ts` se charge par `import()` dynamique : le bundle principal ne grossit que de
 `mode.ts`. Le Service Worker pré-cache ce morceau comme le reste du build : une démo déjà vue
 s'ouvre hors ligne.
@@ -231,11 +235,14 @@ décision), dimensions affichées. Le script le lit pour capturer, `/welcome` le
 Liste de départ : `dashboard`, `positions` (badges de couverture et décision de rachat),
 `wheel` (graphe de cours et niveaux), `journal-wheel`, `condors` (un condor déplié), `history`.
 
-**Les sorties** : `apps/web/public/welcome/<id>.<light|dark>.<fr|en>.webp`, WebP qualité 85,
+**Les sorties** : `apps/web/public/shots/<id>.<light|dark>.<fr|en>.webp`, WebP qualité 85,
 1600 px de large, versionnés — ~24 fichiers, 2 à 3 Mo au total. **Exclus du pré-cache du Service
-Worker** (`globIgnores: ["welcome/**"]` à côté d'`agent/**`, `pwa.config.ts`) : ce sont des
+Worker** (`globIgnores: ["shots/**"]` à côté d'`agent/**`, `pwa.config.ts`) : ce sont des
 images de vitrine pour un visiteur en ligne, qui n'ont pas à peser sur l'installation de chaque
-utilisateur ; hors ligne, `/welcome` garde ses cadres et ses textes (§3).
+utilisateur ; hors ligne, `/welcome` garde ses cadres et ses textes (§3). `/shots` rejoint
+`SERVER_PREFIXES` : une capture ouverte dans un onglet n'est jamais remplacée par `index.html`.
+Jamais sous `public/welcome/` : un dossier réel au nom de la route ferait répondre à nginx
+(`try_files $uri $uri/`) 301 puis 403 sur `/welcome` (revue finale du sous-projet 41).
 
 **Mettre à jour** : relancer `pnpm screenshots`, relire le diff d'images dans git, committer.
 
@@ -261,7 +268,7 @@ comportement change.
 - **Agent simulé** : le payload de `fetchSnapshot` passe `parseAgentSnapshot` ; les barres
   couvrent deux ans et finissent au jour de référence ; `markPrice` du snapshot = clôture du
   dernier jour des barres.
-- **Captures** : chaque entrée de `shots.ts` a ses quatre fichiers dans `public/welcome/`.
+- **Captures** : chaque entrée de `shots.ts` a ses quatre fichiers dans `public/shots/`.
 - **Playwright** (`e2e:offline`, contre le vrai build) : `/` sans compte → `/welcome` ;
   « Explorer la démo » → tableau de bord rempli et bandeau ; « Quitter la démo » → `/welcome`,
   base `ib-analyzer-demo` absente, `ib-analyzer` sans compte.

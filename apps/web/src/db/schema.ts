@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
+import { databaseName } from "@/demo/mode";
 import type { ActivableStrategy, DroppedCount, Position, Transaction, TransactionKind, TransactionSource } from "@ib/ledger";
 import { toReportTime, type ParseIssue } from "@ib/ib-parsers";
 import type { BackupFailure } from "@/api/backup";
@@ -266,5 +267,5 @@ export class AppDatabase extends Dexie {
   }
 }
 
-/** The one database of the app. Tests wipe its tables between cases. */
-export const db = new AppDatabase();
+/** The one database of the tab: the demo's while the demo flag is set (sub-project 41). Tests wipe its tables between cases. */
+export const db = new AppDatabase(databaseName());

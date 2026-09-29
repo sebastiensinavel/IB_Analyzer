@@ -27,28 +27,99 @@
     "settings": "Paramètres",
     "help": "Aide"
   },
+  "demo": {
+    "banner": "Mode démonstration — données fictives",
+    "leave": "Quitter la démo",
+    "continue": "Continuer la démo",
+    "unavailable": "Indisponible en démonstration",
+    "accountsTitle": "Vous êtes en démonstration",
+    "accountsText": "Quittez la démo pour ajouter votre compte IB."
+  },
   "common": {
     "loading": "Chargement…",
     "cancel": "Annuler"
   },
+  "welcome": {
+    "discover": "Découvrir IB Analyzer",
+    "addAccount": "Ajouter un compte IB",
+    "openAccounts": "Explorer vos comptes IB",
+    "exploreDemo": "Explorer la démo",
+    "help": "Aide",
+    "restore": "Restaurer une sauvegarde",
+    "title": "Vos options Interactive Brokers, lues stratégie par stratégie.",
+    "subtitle": "Wheel, LEAPS, Condors : la couverture de chaque vente, le moment de racheter, le capital engagé et le rendement — calculés dans votre navigateur, à partir de vos relevés IB.",
+    "heroAlt": "Tableau de bord d'un compte de démonstration",
+    "features": {
+      "positions": {
+        "title": "Chaque vente, sa couverture",
+        "text": "Cash, actions, LEAPS ou spread : chaque option vendue affiche ce qui la couvre, et ce qui ne l'est pas clignote dans la barre de titre. Une décision de rachat tient compte du temps qui reste, pas seulement du prix.",
+        "alt": "Positions avec leur couverture et la décision de rachat"
+      },
+      "wheel": {
+        "title": "La Wheel, cycle par cycle",
+        "text": "Puts vendus, assignations, calls couverts et rappels se suivent sur le graphe du sous-jacent, au prix de chaque lot.",
+        "alt": "Positions de la Wheel et graphe de cours"
+      },
+      "journal": {
+        "title": "Des journaux reconstitués",
+        "text": "Chaque stratégie a son journal, son capital immobilisé et son rendement mensuel, recalculés depuis l'historique de vos transactions.",
+        "alt": "Journal de la Wheel"
+      },
+      "condors": {
+        "title": "Un condor par ligne",
+        "text": "Crédit reçu, coût de clôture, P/L réalisé et latent ; les jambes se déplient sous leur condor.",
+        "alt": "Positions Condors, un condor déplié"
+      }
+    },
+    "more": {
+      "title": "Et aussi",
+      "items": [
+        "Un historique complet, filtrable par colonne",
+        "Une page Consistance qui vérifie positions et cash",
+        "Une table Secteur et Score commune à vos comptes",
+        "Une suggestion de position par secteur"
+      ],
+      "alt": "Historique des transactions"
+    },
+    "privacy": {
+      "title": "Vos données ne quittent pas votre ordinateur",
+      "text": "Tout le calcul se fait dans votre navigateur. Le serveur ne voit jamais vos transactions ni vos positions ; la sauvegarde, facultative, est chiffrée avant de partir.",
+      "link": "La sécurité de vos données"
+    },
+    "how": {
+      "title": "Comment ça marche",
+      "steps": [
+        {
+          "title": "Un relevé HTML",
+          "text": "Exportez un relevé d'activité du Client Portal et importez-le."
+        },
+        {
+          "title": "Une Flex Query",
+          "text": "Branchez une Flex Query pour une mise à jour quotidienne."
+        },
+        {
+          "title": "L'agent local, facultatif",
+          "text": "Il lit TWS sur votre ordinateur pour les données du jour."
+        }
+      ]
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "items": [
+      { "q": "Est-ce gratuit ?", "a": "Aucun frais d'utilisation." },
+      { "q": "Quelles stratégies l'application suit-elle ?", "a": "Trois stratégies d'options : la Wheel (vendre des puts, puis des calls sur les actions reçues), les LEAPS (options d'achat à longue échéance) et les Iron Condors. Toutes les autres opérations restent visibles, regroupées dans « Autres »." },
+      { "q": "Que faire si une seule stratégie m'intéresse ?", "a": "Vous choisissez les stratégies actives de chaque compte, dans la page Sources de données. Un nouveau compte commence avec la seule Wheel : vous n'ajoutez les LEAPS ou les Iron Condors que si vous les pratiquez. Une stratégie inactive n'apparaît plus dans le menu, et ses opérations sont rangées dans « Autres »." },
+      { "q": "Dois-je donner mon identifiant et mon mot de passe Interactive Brokers ?", "a": "Jamais. Vous importez vous-même un relevé téléchargé depuis votre espace client Interactive Brokers, ou vous autorisez une récupération automatique en lecture seule, qu'Interactive Brokers appelle « Flex Query ». L'application ne passe jamais d'ordre." },
+      { "q": "Dois-je créer un compte sur ce site ?", "a": "Non. L'application fonctionne sans inscription et vos données restent sur votre ordinateur. Un compte, sur invitation, ajoute seulement deux options : récupérer automatiquement vos relevés même sans le petit programme facultatif à installer sur votre ordinateur, et garder une copie chiffrée de vos données pour les retrouver sur un autre appareil." },
+      { "q": "Fonctionne-t-elle sans connexion internet ?", "a": "Oui, une fois ouverte une première fois : elle s'installe comme une application et garde vos données sur votre ordinateur. Seule la mise à jour de vos données depuis Interactive Brokers demande une connexion." }
+    ]
+    },
+    "footer": {
+      "shots": "Les captures montrent des données fictives."
+    }
+  },
   "accounts": {
     "title": "Vos comptes Interactive Brokers",
-    "welcome": {
-      "tagline": "Analysez vos portefeuilles Interactive Brokers, actions et options.",
-      "benefits": [
-        "Couverture de vos ventes d'options et cash requis, à tout instant.",
-        "Journaux Wheel, LEAPS et Condors reconstitués depuis votre historique.",
-        "Historique complet, positions et statistiques par stratégie."
-      ],
-      "privacy": "Vos données restent dans ce navigateur : le serveur ne voit jamais vos transactions ni vos positions.",
-      "howTitle": "Comment ça marche",
-      "steps": [
-        "Ajoutez un compte IB.",
-        "Importez un relevé d'activité, ou branchez une Flex Query.",
-        "Lisez votre tableau de bord ; l'agent local, facultatif, ajoute les données en direct."
-      ],
-      "helpLink": "Premiers pas"
-    },
     "empty": "Aucun compte IB pour l'instant. Ajoutez le premier ci-dessous.",
     "addTitle": "Ajouter un compte IB",
     "addHint": "Un compte ici est un compte Interactive Brokers que vous suivez. Il est créé dans ce navigateur ; rien n'est envoyé.",

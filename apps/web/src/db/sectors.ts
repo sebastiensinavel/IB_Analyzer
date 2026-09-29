@@ -101,13 +101,23 @@ export async function importSectorCsv(db: AppDatabase, file: File): Promise<Sect
     throw e;
   }
   const at = new Date().toISOString();
-  let result!: ReturnType<typeof mergeSectorRows>;
-  await db.transaction("rw", db.sectors, async () => {
-    const stored = new Map((await db.sectors.toArray()).map((record) => [record.ticker, record]));
-    result = mergeSectorRows(stored, rows, at);
-    await db.sectors.bulkPut(result.records);
-  });
+  const result = await db.transaction("rw", db.sectors, () => mergeSectorsInto(db, rows, at));
   return { status: "ok", added: result.added, updated: result.updated };
+}
+
+/**
+ * Reads the stored table, merges `rows` onto it (`mergeSectorRows`) and writes the result. Called
+ * inside the caller's transaction, which must include `db.sectors`: a CSV import, the demo's seed.
+ */
+export async function mergeSectorsInto(
+  db: AppDatabase,
+  rows: readonly SectorCsvRow[],
+  updatedAt: string,
+): Promise<{ added: number; updated: number }> {
+  const stored = new Map((await db.sectors.toArray()).map((record) => [record.ticker, record]));
+  const result = mergeSectorRows(stored, rows, updatedAt);
+  await db.sectors.bulkPut(result.records);
+  return { added: result.added, updated: result.updated };
 }
 
 /** What an IB import read: every row it parsed, not only those it chose to write. */

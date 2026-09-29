@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { flexRelayMode, pickFlexRelay } from "./relay";
 
 const SESSIONS = ["loading", "anonymous", "unreachable", "authenticated"] as const;
@@ -29,5 +29,15 @@ describe("pickFlexRelay", () => {
     expect(pickFlexRelay("agent-and-server", false, "anonymous")).toEqual({ relay: null, reason: "needs-agent-or-account" });
     expect(pickFlexRelay("agent-and-server", false, "unreachable")).toEqual({ relay: null, reason: "server-unreachable" });
     expect(pickFlexRelay("agent-and-server", false, "loading")).toEqual({ relay: null, reason: "session-loading" });
+  });
+});
+
+describe("pickFlexRelay in the demo", () => {
+  afterEach(() => window.sessionStorage.clear());
+
+  it("never relays, whatever the agent, the mode or the session", () => {
+    window.sessionStorage.setItem("ib2:demo", "1");
+    expect(pickFlexRelay("agent", true, "authenticated")).toEqual({ relay: null, reason: "demo" });
+    expect(pickFlexRelay("agent-and-server", false, "authenticated")).toEqual({ relay: null, reason: "demo" });
   });
 });

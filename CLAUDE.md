@@ -67,6 +67,35 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   proxy Flex et la sauvegarde chiffrée, et ne touche jamais aux données. Un `DbProvider` qui
   relirait la session ferait réapparaître le bug du 2026-09-21 : session expirée, serveur
   éteint ou simplement lent affichaient un portefeuille vide.
+- **Un navigateur sans compte arrive sur `/welcome`** (sous-projet 41) : `RootRedirect` y mène,
+  la page reste accessible avec des comptes — c'est le lien qu'on partage —, et le menu sans
+  compte offre « Ajouter un compte IB » et « Découvrir IB Analyzer ». Avec au moins un compte,
+  le bouton principal de `/welcome` devient « Explorer vos comptes IB » et mène à `/`, donc au
+  dernier compte visité. `/accounts` reste la page de gestion ; aucune présentation n'y revit.
+- **La démonstration a sa propre base, jamais un compte dans la vraie** : `isDemo()`
+  (`apps/web/src/demo/mode.ts`, avec `enterDemo`, `clearDemo` et `leaveDemo`) est le seul lecteur
+  du drapeau `sessionStorage` `ib2:demo`, par onglet ; `schema.ts` en tire le nom de la base par
+  `databaseName()` au chargement du module (`ib-analyzer-demo`), seule exception à « une seule
+  base par origine », et entrer ou quitter recharge toujours la page. Les clés d'affichage du
+  `localStorage` passent par `storageKey` (`ib2:demo:…`). En démo, `agent/client.ts` délègue à
+  `src/demo/agent.ts`, qui bâtit son monde à l'instant de la graine (`setDemoSeedInstant`, le
+  `createdAt` du compte démo), jamais à l'horloge seule ; `ensureDemoSeeded` réécrit la graine
+  quand le jour de référence a changé. `relayThroughAgent` (`flex/proxy.ts`) refuse : **aucune requête ne part
+  vers `127.0.0.1:8100`**, et `pickFlexRelay` rend la raison `demo` ; Sources, sauvegarde et relais
+  Flex sont grisés. La graine est un scénario (`demo/scenario.ts`) dont `generate.ts` calcule
+  snapshot et cash ; `generate.test.ts` la tient sans écart de reconstitution ni de cash sur les
+  cinq jours de semaine de visite et un samedi. Elle écrit ses secteurs par `mergeSectorsInto`
+  (`db/sectors.ts`), noms de catégorie courts en anglais, statut `on`. `main.tsx` passe par
+  `startApp` (`src/startup.ts`), qui rend toujours l'application même si la graine échoue. Hors
+  `mode.ts`, tout `src/demo/` se charge par `import()`.
+- **Les captures de `/welcome` se régénèrent, jamais à la main** : `pnpm screenshots`
+  (`apps/web/scripts/screenshots.mjs`) lit le manifeste `src/welcome/shots.ts` (`scrollTo`,
+  `prepare`), ouvre la démonstration horloge figée (`clock.install`, fuseau `America/New_York`),
+  fenêtre 1280×800 à DSF 2, et écrit des WebP 1600×1000 (q85) dans
+  `public/shots/<id>.<thème>.<langue>.webp`, exclus du pré-cache du Service Worker
+  (`globIgnores`). `shots.test.ts` exige les quatre fichiers de chaque capture déclarée. **Jamais
+  un dossier de `public/` au nom d'une route du SPA** : nginx (`try_files $uri $uri/`) répondrait
+  301 puis 403 sur la route ; le serveur d'`e2e:offline` fait de même.
 - **La sauvegarde est un blob opaque, opt-in** : `core.Backup` ne stocke que des octets
   chiffrés par le navigateur (AES-GCM 256), leur taille et leur date, plafonnés à 20 Mo. La
   clé vit en IndexedDB et **voyage enveloppée dans l'en-tête du blob** : une phrase de passe
@@ -89,9 +118,11 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   key>`) : aucun état local d'une page ne suit le changement de compte.
 - **Le Service Worker ne met en cache que l'enveloppe de l'application** (sous-projet 40) :
   `vite-plugin-pwa`, `generateSW`, options dans `apps/web/pwa.config.ts` seul. Tout le build est
-  pré-caché sauf `agent/**` (plafond `maximumFileSizeToCacheInBytes` à 5 Mio : le bundle principal
+  pré-caché sauf `agent/**` et `shots/**` — la roue de l'agent et les captures de `/welcome`
+  (sous-projet 41) — (plafond `maximumFileSizeToCacheInBytes` à 5 Mio : le bundle principal
   fait environ 2,2 Mo), toute navigation reçoit `index.html` sauf `SERVER_PREFIXES` (`/api`,
-  `/_allauth`, `/static`, `/admin`, `/agent`), et **aucun `runtimeCaching`** : aucune réponse du
+  `/_allauth`, `/static`, `/admin`, `/agent`, `/shots` : une capture ouverte dans un onglet reste
+  une image), et **aucun `runtimeCaching`** : aucune réponse du
   serveur ni de l'agent ne passe par un cache. Une nouvelle version attend le clic du bandeau
   (`src/pwa/UpdateBanner.tsx`), puis chaque onglet recharge (`reloadOnControllerChange`,
   `src/pwa/updates.ts`, branché dans `main.tsx`) : un onglet recharge au `controllerchange` s'il
@@ -579,6 +610,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 38 | La décision de rachat tient compte du temps | fait (2026-09-28) |
 | 39 | Le rachat doit rapporter : 40 %, marge de 20 %, commission | fait (2026-09-29) |
 | 40 | L'application s'ouvre serveur coupé, et s'installe | fait (2026-09-29) |
+| 41 | La page d'accueil, la démonstration et ses captures | fait (2026-09-29) |
 
 ## Outillage
 
@@ -616,6 +648,7 @@ première visite. Il accepte aussi `--agent`, qui intercepte l'agent local
 (`127.0.0.1:8100`) avec une fixture au lieu d'un vrai TWS, `/quotes` compris. Une page
 qui porte un graphique ECharts attend d'elle-même 1 200 ms avant sa capture, la fin de
 l'animation d'entrée ; `--wait=<ms>` impose un autre délai, sur toute page.
+`pnpm screenshots` régénère les captures de `/welcome` depuis la démonstration (sous-projet 41).
 L'anonymiseur Flex (`packages/ib-parsers/scripts/anonymize-flex.mjs`) accepte `--full`, qui lève
 le plafond de lignes par section pour produire un corpus complet — utilisé pour l'oracle des
 journaux. `pnpm --filter web test -- <motif>` ne filtre pas : le script est `vitest run`, donc

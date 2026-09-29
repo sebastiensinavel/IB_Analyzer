@@ -67,7 +67,7 @@
   - `storageKey(key: string): string` (en démo, `ib2:x` → `ib2:demo:x` ; toute autre clé inchangée)
   - `navigation: { assign(url: string): void }` (le point de navigation pleine page, remplaçable en test)
 
-- [ ] **Step 1: Write the failing tests** — `apps/web/src/demo/mode.test.ts`
+- [x] **Step 1: Write the failing tests** — `apps/web/src/demo/mode.test.ts`
 
 ```ts
 import { afterEach, describe, expect, it } from "vitest";
@@ -120,9 +120,9 @@ describe("storageKey", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails** — `cd apps/web && npx vitest run src/demo/mode` → FAIL (module absent).
+- [x] **Step 2: Run to verify it fails** — `cd apps/web && npx vitest run src/demo/mode` → FAIL (module absent).
 
-- [ ] **Step 3: Implement** — `apps/web/src/demo/mode.ts`
+- [x] **Step 3: Implement** — `apps/web/src/demo/mode.ts`
 
 ```ts
 /**
@@ -189,9 +189,9 @@ import { databaseName } from "@/demo/mode";
 export const db = new AppDatabase(databaseName());
 ```
 
-- [ ] **Step 4: Run** — `npx vitest run src/demo/mode src/lib/tableViewStorage src/lib/accountStorage` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/demo/mode src/lib/tableViewStorage src/lib/accountStorage` → PASS.
 
-- [ ] **Step 5: Commit** — `git add -A apps/web/src/demo apps/web/src/db/schema.ts apps/web/src/lib && git commit -m "Démo : le drapeau choisit la base et cloisonne le stockage local"`
+- [x] **Step 5: Commit** — `git add -A apps/web/src/demo apps/web/src/db/schema.ts apps/web/src/lib && git commit -m "Démo : le drapeau choisit la base et cloisonne le stockage local"`
 
 ---
 
@@ -204,7 +204,7 @@ export const db = new AppDatabase(databaseName());
 **Interfaces:**
 - Produces: route `/welcome` → `WelcomePage` ; `SessionCorner` (export nommé, déplacé tel quel d'`AccountsPage.tsx`) ; clés i18n `welcome.discover` (« Découvrir IB Analyzer » / « Discover IB Analyzer »), `welcome.addAccount` (« Ajouter un compte IB » / « Add an IB account »), `welcome.exploreDemo` (« Explorer la démo » / « Explore the demo »), `welcome.help` (« Aide » / « Help »), `welcome.restore` (« Restaurer une sauvegarde » / « Restore a backup ») ; ancre `#agent` sur la section de l'agent de l'Aide.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `RootRedirect.test.tsx` — change the no-account case (keep `renderRoot`, `Probe`):
 
@@ -296,9 +296,9 @@ it("anchors the agent section and links to the welcome page", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail** — `npx vitest run src/routes src/pages/WelcomePage src/pages/AccountsPage src/pages/HelpPage` → FAIL.
+- [x] **Step 2: Run to verify they fail** — `npx vitest run src/routes src/pages/WelcomePage src/pages/AccountsPage src/pages/HelpPage` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 1. Move `SessionCorner` (and its doc comment) from `AccountsPage.tsx` into `components/SessionCorner.tsx` as `export function SessionCorner()`; `AccountsPage` imports it.
 2. `router.tsx`: `{ path: "/welcome", element: <WelcomePage /> },` right after `/accounts`, with a comment: « Hors `AppLayout` comme `/accounts` : la page d'un navigateur sans compte, qu'on partage par lien (sous-projet 41). »
@@ -383,9 +383,9 @@ and in `SidebarFooter`, above `<SessionMenuItem />`, when `accountId !== null`:
 
 8. Add the `welcome.*` keys of the Interfaces block to `fr.json` and `en.json`.
 
-- [ ] **Step 4: Run** — same command as step 2 → PASS.
+- [x] **Step 4: Run** — same command as step 2 → PASS.
 
-- [ ] **Step 5: Commit** — `git commit -am "Accueil : /welcome, la redirection sans compte et le menu qui mène à l'ajout d'un compte"` (after `git add` of the new files).
+- [x] **Step 5: Commit** — `git commit -am "Accueil : /welcome, la redirection sans compte et le menu qui mène à l'ajout d'un compte"` (after `git add` of the new files).
 
 ---
 
@@ -403,7 +403,7 @@ and in `SidebarFooter`, above `<SessionMenuItem />`, when `accountId !== null`:
   - `shotPath(id: ShotId, theme: "light"|"dark", lang: "fr"|"en"): string` → `/welcome/<id>.<theme>.<lang>.webp`
   - `ShotFrame({ id, alt, className? })`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `ShotFrame.test.tsx`:
 
@@ -449,9 +449,9 @@ it("walks through the features, privacy, how it works and the FAQ", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail** — `npx vitest run src/components/welcome src/pages/WelcomePage` → FAIL.
+- [x] **Step 2: Run to verify they fail** — `npx vitest run src/components/welcome src/pages/WelcomePage` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `welcome/shots.ts`:
 
@@ -557,9 +557,9 @@ i18n — add under `welcome` in both files (FR shown; write the EN equivalents w
 "footer": { "shots": "Les captures montrent des données fictives." }
 ```
 
-- [ ] **Step 4: Run** — `npx vitest run src/components/welcome src/pages/WelcomePage` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/components/welcome src/pages/WelcomePage` → PASS.
 
-- [ ] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Accueil : le contenu de la page et ses cadres de capture"`
+- [x] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Accueil : le contenu de la page et ses cadres de capture"`
 
 ---
 
@@ -584,7 +584,7 @@ i18n — add under `welcome` in both files (FR shown; write the EN equivalents w
   - `optionMark(spot: number, strike: number, right: "C" | "P", days: number, vol: number): number`
   - `VOLATILITY: Record<string, number>`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `calendar.test.ts`:
 
@@ -654,9 +654,9 @@ it("prices an option at intrinsic plus time value", () => {
 
 (Import `vi` from vitest in `prices.test.ts`.)
 
-- [ ] **Step 2: Run** — `npx vitest run src/demo/calendar src/demo/prices` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/demo/calendar src/demo/prices` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `calendar.ts`:
 
@@ -813,9 +813,9 @@ export function optionMark(spot: number, strike: number, right: "C" | "P", days:
 
 (Check the `date` format `lightweight-charts` expects from `PriceBar` in `PositionChartRow`/`PriceChart`: if the agent sends `YYYYMMDD` or another form, `barsFor` produces that form — read one bar of `apps/web/src/mocks/` or the agent's `/bars` handler in `apps/tws-agent` first.)
 
-- [ ] **Step 4: Run** — `npx vitest run src/demo/calendar src/demo/prices` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/demo/calendar src/demo/prices` → PASS.
 
-- [ ] **Step 5: Commit** — `git add apps/web/src/demo && git commit -m "Démo : calendrier et prix synthétiques"`
+- [x] **Step 5: Commit** — `git add apps/web/src/demo && git commit -m "Démo : calendrier et prix synthétiques"`
 
 ---
 
@@ -832,7 +832,7 @@ export function optionMark(spot: number, strike: number, right: "C" | "P", days:
   - `generateDemo(now: Date): DemoWorld`
   - `DEMO_IB_ACCOUNT = "U0000000"`, `DEMO_CURRENCIES = ["USD", "EUR"] as const`
 
-- [ ] **Step 1: Write the failing oracle** — `generate.test.ts`
+- [x] **Step 1: Write the failing oracle** — `generate.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -894,9 +894,9 @@ it("generates the same world twice for the same visit", () => {
 
 (Check the field names against `packages/ledger/src/journals/types.ts` before running: `JournalRow.strategy` and its values, `endWhen`. Adapt the test to the real names, never the reverse.)
 
-- [ ] **Step 2: Run** — `npx vitest run src/demo/generate` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/demo/generate` → FAIL.
 
-- [ ] **Step 3: Implement the scenario** — `scenario.ts`
+- [x] **Step 3: Implement the scenario** — `scenario.ts`
 
 ```ts
 /**
@@ -956,7 +956,7 @@ export const DEMO_SCENARIO: readonly DemoEvent[] = [
 
 (`buyBack` closes the position opened under `id`, whatever its side: it buys back a sale and sells a purchase.)
 
-- [ ] **Step 4: Implement the generator** — `generate.ts`
+- [x] **Step 4: Implement the generator** — `generate.ts`
 
 ```ts
 import { DEFAULT_MULTIPLIER, dayOf, packedOptionSymbol, runningBalances, type Position, type Transaction } from "@ib/ledger";
@@ -1162,9 +1162,9 @@ export function conidOf(key: string): number {
 
 (The positions carry `dailyPnl`/`dayChange` `null`, as a Flex snapshot does; the simulated agent of task 6 gives the day's P&L.)
 
-- [ ] **Step 5: Run and tune** — `npx vitest run src/demo/generate`. If an assertion fails, **tune the scenario or the anchors of `prices.ts`** (a strike, a `dte`, an anchor level), never the assertion: each assertion is a promise of the spec. Common adjustments: the MSFT put must be deep enough out of the money for `buy back` (spec of sub-project 39: `C ≤ min(0,4 S, S r / (1,2 T) − 0,01)`); an XSP condor must stay out of the money at its expiry on every visit day; the NVDA/JPM LEAPS expiry must stay after the reference day. Re-run until PASS.
+- [x] **Step 5: Run and tune** — `npx vitest run src/demo/generate`. If an assertion fails, **tune the scenario or the anchors of `prices.ts`** (a strike, a `dte`, an anchor level), never the assertion: each assertion is a promise of the spec. Common adjustments: the MSFT put must be deep enough out of the money for `buy back` (spec of sub-project 39: `C ≤ min(0,4 S, S r / (1,2 T) − 0,01)`); an XSP condor must stay out of the money at its expiry on every visit day; the NVDA/JPM LEAPS expiry must stay after the reference day. Re-run until PASS.
 
-- [ ] **Step 6: Commit** — `git add apps/web/src/demo && git commit -m "Démo : le scénario, son générateur et l'oracle de cohérence"`
+- [x] **Step 6: Commit** — `git add apps/web/src/demo && git commit -m "Démo : le scénario, son générateur et l'oracle de cohérence"`
 
 ---
 
@@ -1183,7 +1183,7 @@ export function conidOf(key: string): number {
   - `ensureDemoSeeded(db: AppDatabase, now?: Date): Promise<void>`
   - `DEMO_SECTORS: SectorRecord[]` (dans `seed.ts`)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `agent.test.ts`:
 
@@ -1267,9 +1267,9 @@ it("never calls the real agent in the demo, and a full pass goes through the rea
 
 (`strategies` must equal `ACTIVABLE_STRATEGIES`' order; read it from `@ib/ledger` in the assertion if it differs.)
 
-- [ ] **Step 2: Run** — `npx vitest run src/demo/agent src/demo/seed` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/demo/agent src/demo/seed` → FAIL.
 
-- [ ] **Step 3: Implement** — `demo/agent.ts`
+- [x] **Step 3: Implement** — `demo/agent.ts`
 
 ```ts
 import type { AgentSnapshotPayload } from "@ib/ib-parsers";
@@ -1419,9 +1419,9 @@ async function start() {
 void start();
 ```
 
-- [ ] **Step 4: Run** — `npx vitest run src/demo src/agent` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/demo src/agent` → PASS.
 
-- [ ] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Démo : l'agent simulé et le remplissage de la base de démo"`
+- [x] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Démo : l'agent simulé et le remplissage de la base de démo"`
 
 ---
 
@@ -1434,7 +1434,7 @@ void start();
 **Interfaces:**
 - Produces (dans `mode.ts`) : `enterDemo(): void`, `clearDemo(db: Dexie): Promise<void>`, `leaveDemo(db: Dexie, destination?: string): Promise<void>` (défaut `/welcome`) ; `FlexRelayUnavailable` gagne `"demo"` ; clés i18n `demo.banner` (« Mode démonstration — données fictives » / « Demo mode — fictitious data »), `demo.leave` (« Quitter la démo » / « Leave the demo »), `demo.continue` (« Continuer la démo » / « Continue the demo »), `demo.unavailable` (« Indisponible en démonstration » / « Unavailable in the demo »), `demo.accountsTitle` (« Vous êtes en démonstration » / « You are in the demo »), `demo.accountsText` (« Quittez la démo pour ajouter votre compte IB. » / « Leave the demo to add your IB account. »).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `mode.test.ts` — add:
 
@@ -1501,9 +1501,9 @@ it("says it is the demo and leaves it to the welcome page", async () => {
 
 `relay.test.ts` — add: in the demo, `pickFlexRelay("agent", true, "authenticated")` → `{ relay: null, reason: "demo" }`.
 
-- [ ] **Step 2: Run** — `npx vitest run src/demo src/components src/pages src/flex` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/demo src/components src/pages src/flex` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `mode.ts` — add:
 
@@ -1579,9 +1579,9 @@ export function DemoBanner() {
 
 `relay.ts`: `FlexRelayUnavailable` gains `"demo"`; first line of `pickFlexRelay`: `if (isDemo()) return { relay: null, reason: "demo" };` with a comment « Le compte démo n'a aucun jeton, et aucune requête Flex ne part d'une démonstration (sous-projet 41). »
 
-- [ ] **Step 4: Run** — `npx vitest run src/demo src/components src/pages src/flex src/routes` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/demo src/components src/pages src/flex src/routes` → PASS.
 
-- [ ] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Démo : entrer, quitter, et ce que la démonstration désactive"`
+- [x] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Démo : entrer, quitter, et ce que la démonstration désactive"`
 
 ---
 
@@ -1594,7 +1594,7 @@ export function DemoBanner() {
 **Interfaces:**
 - Consumes: `SHOTS`, `SHOT_THEMES`, `SHOT_LANGUAGES`, `SHOT_WIDTH`, `SHOT_HEIGHT` (task 3) ; the demo (tasks 5-7) ; `devPorts` de `tools/dev-env/ports.mjs`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `welcome/shots.test.ts`:
 
@@ -1614,9 +1614,9 @@ it("has every shot the welcome page shows, in every theme and language", () => {
 
 `pwa.config.test.ts` — add: `expect(pwaOptions.workbox?.globIgnores).toEqual(["agent/**", "welcome/**"]);`
 
-- [ ] **Step 2: Run** — `npx vitest run src/welcome pwa.config` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/welcome pwa.config` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `pwa.config.ts`: `globIgnores: ["agent/**", "welcome/**"]`, with the comment « Les captures de `/welcome` : des images de vitrine pour un visiteur en ligne, qui n'ont pas à peser sur chaque installation (sous-projet 41). »
 
@@ -1734,9 +1734,9 @@ The `En direct` wait: check the exact label of `snapshot.live` in `fr.json`/`en.
 
 Then generate: `pnpm screenshots`. **Open every file** — at least the six `light.fr` ones with the Read tool — and check: the demo banner is visible, « En direct » shows, the Wheel shot has a chart with its levels, the Condors shot has an expanded condor, no « — » where a value is expected, no error. Fix the scenario or the preparation if a shot is wrong, then regenerate.
 
-- [ ] **Step 4: Run** — `npx vitest run src/welcome pwa.config` → PASS ; `du -sh apps/web/public/welcome` → under 4 Mo.
+- [x] **Step 4: Run** — `npx vitest run src/welcome pwa.config` → PASS ; `du -sh apps/web/public/welcome` → under 4 Mo.
 
-- [ ] **Step 5: Commit** — `git add package.json apps/web/package.json pnpm-lock.yaml apps/web/pwa.config.ts apps/web/pwa.config.test.ts apps/web/scripts/screenshots.mjs apps/web/src/welcome apps/web/public/welcome && git commit -m "Accueil : captures générées depuis la démo par pnpm screenshots"`
+- [x] **Step 5: Commit** — `git add package.json apps/web/package.json pnpm-lock.yaml apps/web/pwa.config.ts apps/web/pwa.config.test.ts apps/web/scripts/screenshots.mjs apps/web/src/welcome apps/web/public/welcome && git commit -m "Accueil : captures générées depuis la démo par pnpm screenshots"`
 
 ---
 
@@ -1748,7 +1748,7 @@ Then generate: `pnpm screenshots`. **Open every file** — at least the six `lig
 **Interfaces:**
 - Consumes: `startServer`, `DIST` (`e2e-offline/server.ts`, `global-setup.ts`).
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 ```ts
 import { join } from "node:path";
@@ -1793,9 +1793,9 @@ test("les captures ne sont pas pré-cachées", async ({ page }) => {
 
 (The route `/` must not be a server prefix of `server.ts`; check that the static server serves `public/welcome/*.webp` from the build — Vite copies `public/` into `dist/`.)
 
-- [ ] **Step 2: Run** — `pnpm --filter web e2e:offline` → PASS (the whole suite: the 7 existing tests still pass).
+- [x] **Step 2: Run** — `pnpm --filter web e2e:offline` → PASS (the whole suite: the 7 existing tests still pass).
 
-- [ ] **Step 3: Commit** — `git add apps/web/e2e-offline/demo.spec.ts && git commit -m "e2e : entrer dans la démo et la quitter sur un vrai build"`
+- [x] **Step 3: Commit** — `git add apps/web/e2e-offline/demo.spec.ts && git commit -m "e2e : entrer dans la démo et la quitter sur un vrai build"`
 
 ---
 
@@ -1804,7 +1804,7 @@ test("les captures ne sont pas pré-cachées", async ({ page }) => {
 **Files:**
 - Modify: `CLAUDE.md`, `.claude/skills/run-frontend/SKILL.md`, `docs/specs/2026-09-29-page-accueil-et-demo-design.md`
 
-- [ ] **Step 1: CLAUDE.md** — add three rules to « Règles qui mordent si on les oublie », after the rule « La base locale appartient au navigateur » :
+- [x] **Step 1: CLAUDE.md** — add three rules to « Règles qui mordent si on les oublie », after the rule « La base locale appartient au navigateur » :
 
 ```markdown
 - **Un navigateur sans compte arrive sur `/welcome`** (sous-projet 41) : `RootRedirect` y mène,
@@ -1829,12 +1829,12 @@ test("les captures ne sont pas pré-cachées", async ({ page }) => {
 
 Registry: add `| 41 | La page d'accueil, la démonstration et ses captures | fait (2026-09-29) |`. In « Outillage », after the `run-frontend` paragraph: « `pnpm screenshots` régénère les captures de `/welcome` depuis la démonstration (sous-projet 41). »
 
-- [ ] **Step 2: run-frontend** — in `SKILL.md`, a short section « Captures de la vitrine » : `pnpm screenshots`, not the driver; `--seed` stays the developers' check tool.
+- [x] **Step 2: run-frontend** — in `SKILL.md`, a short section « Captures de la vitrine » : `pnpm screenshots`, not the driver; `--seed` stays the developers' check tool.
 
-- [ ] **Step 3: Spec** — `Statut : implémenté (<date>).`
+- [x] **Step 3: Spec** — `Statut : implémenté (<date>).`
 
-- [ ] **Step 4: `pnpm check`** at the repository root, **once** → lint, typecheck, build, all tests PASS. Fix anything that fails, re-run.
+- [x] **Step 4: `pnpm check`** at the repository root, **once** → lint, typecheck, build, all tests PASS. Fix anything that fails, re-run.
 
-- [ ] **Step 5: Commit** — `git commit -am "Sous-projet 41 : documentation"`
+- [x] **Step 5: Commit** — `git commit -am "Sous-projet 41 : documentation"`
 
-- [ ] **Step 6: Instance de relecture** — `pnpm dev:start` in the worktree; give Seb the two URLs (Vite and Django of the worktree's slot) and the path to try: `/` on a fresh profile → `/welcome` → « Explorer la démo » → « Quitter la démo ». Stop it with `pnpm dev:stop` **before** any merge.
+- [x] **Step 6: Instance de relecture** — `pnpm dev:start` in the worktree; give Seb the two URLs (Vite and Django of the worktree's slot) and the path to try: `/` on a fresh profile → `/welcome` → « Explorer la démo » → « Quitter la démo ». Stop it with `pnpm dev:stop` **before** any merge.

@@ -3,10 +3,11 @@ import type { VitePWAOptions } from "vite-plugin-pwa";
 /**
  * Chemins qui n'appartiennent pas au SPA (sous-projet 40) : Traefik envoie les trois premiers
  * à Django (`docker-compose.yml`, routeur `api`), `/admin` ne se joint que par tunnel SSH, et
- * nginx sert `/agent/` (la roue de l'agent). Le Service Worker ne leur substitue jamais
+ * nginx sert `/agent/` (la roue de l'agent) et `/shots/` (les captures de `/welcome`, sous-projet
+ * 41, qu'un visiteur peut ouvrir dans un onglet). Le Service Worker ne leur substitue jamais
  * `index.html` : serveur coupé, leur appel échoue comme avant, et l'application le gère déjà.
  */
-export const SERVER_PREFIXES = ["/api", "/_allauth", "/static", "/admin", "/agent"] as const;
+export const SERVER_PREFIXES = ["/api", "/_allauth", "/static", "/admin", "/agent", "/shots"] as const;
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -35,7 +36,10 @@ export const pwaOptions: Partial<VitePWAOptions> = {
   workbox: {
     globPatterns: ["**/*.{html,js,css,svg,png,woff2,webmanifest}"],
     // `pnpm build:agent` écrit la roue dans public/agent/, que le build recopie : jamais en cache.
-    globIgnores: ["agent/**"],
+    // Les captures de `/welcome` : des images de vitrine pour un visiteur en ligne, qui n'ont pas
+    // à peser sur chaque installation (sous-projet 41). Jamais sous `welcome/` : ce dossier
+    // ferait répondre à nginx 301 puis 403 sur la route `/welcome` (`try_files $uri $uri/`).
+    globIgnores: ["agent/**", "shots/**"],
     // Le bundle principal pèse ~2,2 Mio, au-dessus des 2 Mio par défaut : un fichier ignoré
     // serait absent serveur coupé, et le build échoue plutôt que de le taire.
     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
