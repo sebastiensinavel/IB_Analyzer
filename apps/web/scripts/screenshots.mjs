@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Régénère les captures de /welcome depuis la démonstration (sous-projet 41, spec §7) :
 // `pnpm screenshots`. Démarre ou réutilise le Vite du checkout (tools/dev-env/ports.mjs), ouvre
-// l'application en mode démo, horloge figée, et écrit public/welcome/<id>.<thème>.<langue>.webp.
+// l'application en mode démo, horloge figée, et écrit public/shots/<id>.<thème>.<langue>.webp.
 import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -10,7 +10,7 @@ import { devPorts } from "../../../tools/dev-env/ports.mjs";
 
 const WEB = join(dirname(fileURLToPath(import.meta.url)), "..");
 const ROOT = join(WEB, "..", "..");
-const OUT = join(WEB, "public", "welcome");
+const OUT = join(WEB, "public", "shots");
 const BASE = `http://127.0.0.1:${devPorts(`${ROOT}/`).web}`;
 // A Friday during the session, New York time: every capture shows the same day. The browser runs
 // in New York too, so « En direct » reads the session's hour, not the machine's.

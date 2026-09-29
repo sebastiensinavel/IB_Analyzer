@@ -231,11 +231,14 @@ décision), dimensions affichées. Le script le lit pour capturer, `/welcome` le
 Liste de départ : `dashboard`, `positions` (badges de couverture et décision de rachat),
 `wheel` (graphe de cours et niveaux), `journal-wheel`, `condors` (un condor déplié), `history`.
 
-**Les sorties** : `apps/web/public/welcome/<id>.<light|dark>.<fr|en>.webp`, WebP qualité 85,
+**Les sorties** : `apps/web/public/shots/<id>.<light|dark>.<fr|en>.webp`, WebP qualité 85,
 1600 px de large, versionnés — ~24 fichiers, 2 à 3 Mo au total. **Exclus du pré-cache du Service
-Worker** (`globIgnores: ["welcome/**"]` à côté d'`agent/**`, `pwa.config.ts`) : ce sont des
+Worker** (`globIgnores: ["shots/**"]` à côté d'`agent/**`, `pwa.config.ts`) : ce sont des
 images de vitrine pour un visiteur en ligne, qui n'ont pas à peser sur l'installation de chaque
-utilisateur ; hors ligne, `/welcome` garde ses cadres et ses textes (§3).
+utilisateur ; hors ligne, `/welcome` garde ses cadres et ses textes (§3). `/shots` rejoint
+`SERVER_PREFIXES` : une capture ouverte dans un onglet n'est jamais remplacée par `index.html`.
+Jamais sous `public/welcome/` : un dossier réel au nom de la route ferait répondre à nginx
+(`try_files $uri $uri/`) 301 puis 403 sur `/welcome` (revue finale du sous-projet 41).
 
 **Mettre à jour** : relancer `pnpm screenshots`, relire le diff d'images dans git, committer.
 
@@ -261,7 +264,7 @@ comportement change.
 - **Agent simulé** : le payload de `fetchSnapshot` passe `parseAgentSnapshot` ; les barres
   couvrent deux ans et finissent au jour de référence ; `markPrice` du snapshot = clôture du
   dernier jour des barres.
-- **Captures** : chaque entrée de `shots.ts` a ses quatre fichiers dans `public/welcome/`.
+- **Captures** : chaque entrée de `shots.ts` a ses quatre fichiers dans `public/shots/`.
 - **Playwright** (`e2e:offline`, contre le vrai build) : `/` sans compte → `/welcome` ;
   « Explorer la démo » → tableau de bord rempli et bandeau ; « Quitter la démo » → `/welcome`,
   base `ib-analyzer-demo` absente, `ib-analyzer` sans compte.

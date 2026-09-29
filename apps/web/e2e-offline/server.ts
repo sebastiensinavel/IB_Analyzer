@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import type { AddressInfo } from "node:net";
 
@@ -28,7 +28,9 @@ export interface StaticServer {
 
 /**
  * Reproduit `nginx.conf` (sous-projet 40) : `assets/` immuables, tout le reste `no-cache`, un
- * fichier absent donne `index.html`, `/api/*` répond du JSON et compte ses appels. Écoute sur
+ * fichier absent donne `index.html`, `/api/*` répond du JSON et compte ses appels. Un dossier
+ * réel suit `try_files $uri $uri/` : 301 vers `chemin/`, puis son `index.html` ou 403 — si
+ * bien qu'un dossier de `public/` qui porterait le nom d'une route du SPA la casse ici aussi. Écoute sur
  * le port 0 : aucun port en dur, aucune collision avec les instances de dev.
  */
 export async function startServer(root: string): Promise<StaticServer> {
@@ -49,6 +51,17 @@ export async function startServer(root: string): Promise<StaticServer> {
     const safe = normalize(path).replace(/^(\.\.[/\\])+/, "");
     const file = join(current, safe === "/" ? "index.html" : safe);
     const cache = path.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache";
+    const isDir = safe !== "/" && (await stat(file).catch(() => null))?.isDirectory();
+    if (isDir && !path.endsWith("/")) {
+      res.writeHead(301, { Location: `${path}/`, "Content-Type": "text/html" }).end("Moved Permanently");
+      return;
+    }
+    if (isDir) {
+      const index = await readFile(join(file, "index.html")).catch(() => null);
+      if (index === null) res.writeHead(403, { "Content-Type": "text/html" }).end("Forbidden");
+      else res.writeHead(200, { "Content-Type": TYPES[".html"], "Cache-Control": "no-cache" }).end(index);
+      return;
+    }
     try {
       const body = await readFile(file);
       res.writeHead(200, { "Content-Type": TYPES[extname(file)] ?? "application/octet-stream", "Cache-Control": cache }).end(body);

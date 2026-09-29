@@ -51,6 +51,8 @@ export const SHOTS: readonly ShotSpec[] = [
   { id: "history", route: "/accounts/demo/history", waitFor: "main table" },
 ];
 
+// Under /shots/, never /welcome/: a real directory named like the SPA route makes nginx's
+// `try_files $uri $uri/` answer /welcome with a 301 then a 403.
 export function shotPath(id: ShotId, theme: (typeof SHOT_THEMES)[number], lang: (typeof SHOT_LANGUAGES)[number]): string {
-  return `/welcome/${id}.${theme}.${lang}.webp`;
+  return `/shots/${id}.${theme}.${lang}.webp`;
 }

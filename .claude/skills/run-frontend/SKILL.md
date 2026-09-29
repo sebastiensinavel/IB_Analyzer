@@ -182,7 +182,7 @@ pnpm lint                     # oxlint sur le monorepo, un petit nombre d'averti
 ## Captures de la vitrine
 
 Les captures de la page `/welcome` ne passent pas par ce driver : `pnpm screenshots` (depuis la
-racine) les régénère depuis la démonstration, horloge figée, dans `apps/web/public/welcome/`.
+racine) les régénère depuis la démonstration, horloge figée, dans `apps/web/public/shots/`.
 `--seed` reste l'outil de vérification des développeurs, pas celui de la vitrine.
 
 ## Dépannage

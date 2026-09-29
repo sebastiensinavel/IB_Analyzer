@@ -37,17 +37,35 @@ test("les captures ne sont pas pré-cachées", async ({ page }) => {
   const cached = await page.evaluate(async () => {
     const keys = await caches.keys();
     const urls = (await Promise.all(keys.map(async (k) => (await (await caches.open(k)).keys()).map((r) => r.url)))).flat();
-    return { all: urls, welcome: urls.filter((u) => u.includes("/welcome/")) };
+    return { all: urls, shots: urls.filter((u) => u.includes("/shots/")) };
   });
   // Positive checks first: the precache is populated, so an empty welcome list is meaningful.
   expect(cached.all.length).toBeGreaterThan(0);
   expect(cached.all.some((u) => /\.js$/.test(u) || u.endsWith("index.html"))).toBe(true);
-  expect(cached.welcome).toEqual([]);
+  expect(cached.shots).toEqual([]);
   // The shots exist in the build and are served: they are just not precached.
   const shot = await page.evaluate(async () => {
-    const r = await fetch("/welcome/dashboard.light.fr.webp");
+    const r = await fetch("/shots/dashboard.light.fr.webp");
     return { status: r.status, type: r.headers.get("content-type") };
   });
   expect(shot.status).toBe(200);
   expect(shot.type).toMatch(/^image\//);
+});
+
+test("/welcome est la page du SPA, jamais un dossier, avant tout Service Worker", async ({ request }) => {
+  // The server mimics nginx's `try_files $uri $uri/`: a real directory answers 301 then 403.
+  const dir = await request.get(`${server.url}/shots`, { maxRedirects: 0 });
+  expect(dir.status()).toBe(301);
+  expect((await request.get(`${server.url}/shots/`, { maxRedirects: 0 })).status()).toBe(403);
+  const welcome = await request.get(`${server.url}/welcome`, { maxRedirects: 0 });
+  expect(welcome.status()).toBe(200);
+  expect(welcome.headers()["content-type"]).toMatch(/^text\/html/);
+});
+
+test("une capture ouverte dans un onglet sous le Service Worker reste une image", async ({ page }) => {
+  await page.goto(`${server.url}/welcome`);
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+  const response = await page.goto(`${server.url}/shots/dashboard.light.fr.webp`);
+  expect(response?.status()).toBe(200);
+  expect(response?.headers()["content-type"]).toBe("image/webp");
 });

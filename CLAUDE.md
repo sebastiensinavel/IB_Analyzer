@@ -89,8 +89,10 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   (`apps/web/scripts/screenshots.mjs`) lit le manifeste `src/welcome/shots.ts` (`scrollTo`,
   `prepare`), ouvre la démonstration horloge figée (`clock.install`, fuseau `America/New_York`),
   fenêtre 1280×800 à DSF 2, et écrit des WebP 1600×1000 (q85) dans
-  `public/welcome/<id>.<thème>.<langue>.webp`, exclus du pré-cache du Service Worker
-  (`globIgnores`). `shots.test.ts` exige les quatre fichiers de chaque capture déclarée.
+  `public/shots/<id>.<thème>.<langue>.webp`, exclus du pré-cache du Service Worker
+  (`globIgnores`). `shots.test.ts` exige les quatre fichiers de chaque capture déclarée. **Jamais
+  un dossier de `public/` au nom d'une route du SPA** : nginx (`try_files $uri $uri/`) répondrait
+  301 puis 403 sur la route ; le serveur d'`e2e:offline` fait de même.
 - **La sauvegarde est un blob opaque, opt-in** : `core.Backup` ne stocke que des octets
   chiffrés par le navigateur (AES-GCM 256), leur taille et leur date, plafonnés à 20 Mo. La
   clé vit en IndexedDB et **voyage enveloppée dans l'en-tête du blob** : une phrase de passe
@@ -113,9 +115,11 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   key>`) : aucun état local d'une page ne suit le changement de compte.
 - **Le Service Worker ne met en cache que l'enveloppe de l'application** (sous-projet 40) :
   `vite-plugin-pwa`, `generateSW`, options dans `apps/web/pwa.config.ts` seul. Tout le build est
-  pré-caché sauf `agent/**` et `welcome/**`, les captures de `/welcome` (plafond `maximumFileSizeToCacheInBytes` à 5 Mio : le bundle principal
+  pré-caché sauf `agent/**` et `shots/**` — la roue de l'agent et les captures de `/welcome`
+  (sous-projet 41) — (plafond `maximumFileSizeToCacheInBytes` à 5 Mio : le bundle principal
   fait environ 2,2 Mo), toute navigation reçoit `index.html` sauf `SERVER_PREFIXES` (`/api`,
-  `/_allauth`, `/static`, `/admin`, `/agent`), et **aucun `runtimeCaching`** : aucune réponse du
+  `/_allauth`, `/static`, `/admin`, `/agent`, `/shots` : une capture ouverte dans un onglet reste
+  une image), et **aucun `runtimeCaching`** : aucune réponse du
   serveur ni de l'agent ne passe par un cache. Une nouvelle version attend le clic du bandeau
   (`src/pwa/UpdateBanner.tsx`), puis chaque onglet recharge (`reloadOnControllerChange`,
   `src/pwa/updates.ts`, branché dans `main.tsx`) : un onglet recharge au `controllerchange` s'il

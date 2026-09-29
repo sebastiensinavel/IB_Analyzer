@@ -50,7 +50,7 @@ it("walks through the features, privacy, how it works and the FAQ", () => {
   renderPage();
   expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Vos options Interactive Brokers, lues stratégie par stratégie.");
   for (const id of ["dashboard", "positions", "wheel", "journal-wheel", "condors", "history"]) {
-    expect(document.querySelector(`img[src^="/welcome/${id}."]`)).not.toBeNull();
+    expect(document.querySelector(`img[src^="/shots/${id}."]`)).not.toBeNull();
   }
   expect(screen.getByRole("link", { name: /sécurité/i })).toHaveAttribute("href", "/help#security");
   expect(screen.getByText("Est-ce gratuit ?")).toBeInTheDocument();

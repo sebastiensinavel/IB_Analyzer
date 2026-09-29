@@ -11,19 +11,27 @@ describe("pwaOptions", () => {
     }
   });
 
+  it("n'envoie jamais une capture de l'accueil sur index.html, même ouverte dans un onglet", () => {
+    for (const path of ["/shots/dashboard.light.fr.webp", "/shots/", "/shots"]) {
+      expect(denied(path), path).toBe(true);
+    }
+    expect(denied("/welcome"), "/welcome").toBe(false);
+    expect(denied("/shotsx"), "/shotsx").toBe(false);
+  });
+
   it("sert index.html à toute route du SPA, y compris hors compte", () => {
     for (const path of ["/", "/accounts", "/accounts/alpha/positions", "/accounts/alpha/journal/wheel", "/login", "/invitation/abc", "/apiary", "/agents"]) {
       expect(denied(path), path).toBe(false);
     }
   });
 
-  it("couvre exactement les préfixes routés vers Django et la roue de l'agent", () => {
-    expect([...SERVER_PREFIXES].sort()).toEqual(["/_allauth", "/admin", "/agent", "/api", "/static"]);
+  it("couvre exactement les préfixes routés vers Django, la roue de l'agent et les captures", () => {
+    expect([...SERVER_PREFIXES].sort()).toEqual(["/_allauth", "/admin", "/agent", "/api", "/shots", "/static"]);
   });
 
   it("ne pré-cache jamais la roue de l'agent et ne met rien en cache à l'exécution", () => {
     expect(pwaOptions.workbox!.globIgnores).toContain("agent/**");
-    expect(pwaOptions.workbox?.globIgnores).toEqual(["agent/**", "welcome/**"]);
+    expect(pwaOptions.workbox?.globIgnores).toEqual(["agent/**", "shots/**"]);
     expect(pwaOptions.workbox!.runtimeCaching).toBeUndefined();
   });
 
