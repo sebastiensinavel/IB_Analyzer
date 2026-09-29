@@ -243,6 +243,13 @@ describe("DashboardPage", () => {
     expect(card).toHaveTextContent("Réalisé du jour 0.00");
   });
 
+  it("starts a new day at midnight New York, like TWS's daily P&L, never at the 04:00 market day", async () => {
+    await seedTotals({ ...AGENT_SNAPSHOT, asOf: "2026-09-26T03:29:00.000Z" });
+    renderDashboard();
+    const card = await screen.findByLabelText("P/L non réalisé");
+    expect(card).toHaveTextContent("Réalisé du jour 0.00");
+  });
+
   it("shows the day's unrealized P/L above the sector exposure", async () => {
     await seedTotals();
     renderDashboard();

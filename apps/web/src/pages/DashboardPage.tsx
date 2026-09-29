@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 import { liquidationValue } from "@ib/coverage";
-import { marketDayOf, realizedOnDay, sumByCurrency, type CurrencyTotal, type StrategyStats } from "@ib/ledger";
+import { dayOf, realizedOnDay, sumByCurrency, type CurrencyTotal, type StrategyStats } from "@ib/ledger";
 import { buttonVariants } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
 import { CashCoverageCard } from "@/components/CashCoverageCard";
@@ -50,7 +50,7 @@ export function DashboardPage() {
   const currency = stats?.currency ?? "USD";
   const pick = (list: CurrencyTotal[]) => list.find((entry) => entry.currency === currency) ?? null;
   const positions = snapshot?.positions ?? [];
-  const agentDay = snapshot?.source === "agent" ? marketDayOf(snapshot.asOf) : null;
+  const agentDay = snapshot?.source === "agent" ? dayOf(snapshot.asOf) : null;
   const value = snapshot ? pick(liquidationValue(positions, current?.cash)) : null;
   const unrealized = snapshot ? pick(sumByCurrency(positions, (p) => p.currency, (p) => p.unrealizedPnl)) : null;
   const daily = agentDay ? pick(sumByCurrency(positions, (p) => p.currency, (p) => p.dailyPnl)) : null;

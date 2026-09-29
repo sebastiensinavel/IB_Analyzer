@@ -241,7 +241,9 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   compris ; celui de la page Positions ne compte le cash que sans filtre, et le cash d'une devise
   seulement si une ligne affichée est dans cette devise ou si ce cash est connu et non nul : un compte
   en USD seul n'a pas de ligne EUR. « Le jour » est
-  `marketDayOf` d'un snapshot `agent` : sans lui, P/L du jour et réalisé du jour valent « — ». Le
+  le jour calendaire New York (`dayOf`) d'un snapshot `agent`, jamais `marketDayOf` : le P&L du
+  jour de TWS bascule à minuit, et une borne à 04:00 afficherait le réalisé de la veille à côté ;
+  sans snapshot `agent`, P/L du jour et réalisé du jour valent « — ». Le
   réalisé du jour compte toute fermeture — une ouverture ne réalise rien — et un condor le jour de
   sa dernière jambe. **Les totaux du sous-projet 36 — en-têtes des pages et des tableaux, cartes du
   tableau de bord — s'affichent par `TotalAmount` seul** (`apps/web/src/components/stats/TotalAmount.tsx`),

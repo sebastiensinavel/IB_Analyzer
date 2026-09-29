@@ -17,7 +17,7 @@ const closed = (endWhen: string, pnl: number | null, extra: Partial<JournalRow> 
   row({ endWhen, pnl, ongoing: false, event: "buyback", ...extra });
 
 describe("realizedOnDay", () => {
-  it("sums the pnl of the lines closed that market day, across strategies, Others included", () => {
+  it("sums the pnl of the lines closed that day, across strategies, Others included", () => {
     const rows = [
       closed("2026-09-25T15:00:00.000Z", 200),
       closed("2026-09-25T10:00:00.000Z", 500, { strategy: "others", kind: "shares" }),
@@ -30,9 +30,10 @@ describe("realizedOnDay", () => {
     expect(realizedOnDay([row({ startWhen: "2026-09-25T15:00:00.000Z" })], "2026-09-25")).toEqual([]);
   });
 
-  it("counts an assignment stamped Saturday 01:02 on the Friday it belongs to", () => {
-    const rows = [closed("2026-09-26T01:02:00.000Z", 150, { event: "assigned" })];
-    expect(realizedOnDay(rows, "2026-09-25")).toEqual([{ currency: "USD", total: 150, missing: 0, count: 1 }]);
+  it("reads the calendar day, never the market day: before 04:00 is already the new day", () => {
+    const rows = [closed("2026-09-29T02:00:00.000Z", 150, { event: "assigned" }), closed("2026-09-28T15:00:00.000Z", 999)];
+    expect(realizedOnDay(rows, "2026-09-29")).toEqual([{ currency: "USD", total: 150, missing: 0, count: 1 }]);
+    expect(realizedOnDay(rows, "2026-09-28")).toEqual([{ currency: "USD", total: 999, missing: 0, count: 1 }]);
   });
 
   it("counts a line without pnl as missing, total null when none has one", () => {
