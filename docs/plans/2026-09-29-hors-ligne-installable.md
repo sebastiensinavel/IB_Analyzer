@@ -886,7 +886,7 @@ Cas à écrire, chacun un `test(...)` :
 4. **Bandeau et deux onglets** — dans un même `context`, deux pages sur `${server.url}/accounts`, toutes deux contrôlées (la seconde : recharger une fois si `controller` est nul) ; marquer chacune `window.__e2eMark = 1` ; `server.setRoot(join(DIST, "b"))` ; déclencher la vérification dans la première : `page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r!.update()))` ; attendre `getByRole("status")` « Nouvelle version disponible » dans les deux pages ; cliquer « Recharger » dans la première ; attendre dans **chacune** que `window.__e2eMark` soit `undefined` (rechargée) et que le bandeau ait disparu.
 5. **Première installation sans rechargement** — page neuve sur `${server.url}/accounts`, `window.__e2eMark = 1` posé aussitôt après `domcontentloaded` ; attendre `waitForControl` ; `__e2eMark` vaut toujours 1.
 
-- [ ] **Step 4: Lancer**
+- [x] **Step 4: Lancer**
 
 Run: `pnpm --filter web e2e:offline`
 Expected: 5 tests PASS. Un échec du cas 4 sur l'apparition du bandeau dans la seconde page : vérifier que `useRegisterSW` écoute bien l'état `waiting` d'une mise à jour trouvée par un autre onglet (workbox-window `waiting` avec `isExternal`) ; sinon, déclencher `update()` aussi dans la seconde page — le test doit prouver que les **deux** onglets rechargent après **un** clic, pas que les deux trouvent la mise à jour seuls.

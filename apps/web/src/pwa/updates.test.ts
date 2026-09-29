@@ -1,35 +1,90 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UPDATE_CHECK_INTERVAL_MS, reloadOnControllerChange, scheduleUpdateChecks } from "./updates";
 
-function fakeContainer(controller: object | null) {
+/**
+ * `registration` : ce que `getRegistration()` rend au chargement — `"active"` pour un onglet
+ * dont l'origine a déjà un Service Worker actif (Maj+Recharger), `null` pour la première
+ * visite ; une promesse passée telle quelle permet de retenir la réponse.
+ */
+function fakeContainer(
+  controller: object | null,
+  registration: "active" | null | Promise<ServiceWorkerRegistration | undefined> = controller ? "active" : null,
+) {
   const target = new EventTarget();
-  return Object.assign(target, { controller }) as unknown as ServiceWorkerContainer;
+  const getRegistration = vi.fn(() =>
+    registration instanceof Promise
+      ? registration
+      : Promise.resolve(registration === "active" ? ({ active: {} } as ServiceWorkerRegistration) : undefined),
+  );
+  return Object.assign(target, { controller, getRegistration }) as unknown as ServiceWorkerContainer;
 }
+
+const change = (container: ServiceWorkerContainer) => container.dispatchEvent(new Event("controllerchange"));
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("reloadOnControllerChange", () => {
   it("recharge un onglet qui avait déjà un contrôleur : une mise à jour a pris la main", () => {
     const container = fakeContainer({});
     const reload = vi.fn();
     reloadOnControllerChange(container, reload);
-    container.dispatchEvent(new Event("controllerchange"));
+    change(container);
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it("ne recharge pas l'onglet de la première installation", () => {
-    const container = fakeContainer(null);
+  it("première installation : ignore la prise de contrôle, recharge à la mise à jour suivante", async () => {
+    const container = fakeContainer(null, null);
     const reload = vi.fn();
     reloadOnControllerChange(container, reload);
-    container.dispatchEvent(new Event("controllerchange"));
+    await flush();
+    change(container);
     expect(reload).not.toHaveBeenCalled();
+    change(container);
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it("ne recharge qu'une fois, même sur deux événements", () => {
-    const container = fakeContainer({});
+  it("onglet sans contrôleur mais Service Worker déjà actif (Maj+Recharger) : recharge au premier changement", async () => {
+    const container = fakeContainer(null, "active");
     const reload = vi.fn();
     reloadOnControllerChange(container, reload);
-    container.dispatchEvent(new Event("controllerchange"));
-    container.dispatchEvent(new Event("controllerchange"));
+    await flush();
+    change(container);
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("un changement arrivé avant la réponse de getRegistration compte pour la première installation", async () => {
+    let answer!: (r: ServiceWorkerRegistration | undefined) => void;
+    const container = fakeContainer(null, new Promise((resolve) => (answer = resolve)));
+    const reload = vi.fn();
+    reloadOnControllerChange(container, reload);
+    change(container);
+    answer({ active: {} } as ServiceWorkerRegistration);
+    await flush();
+    expect(reload).not.toHaveBeenCalled();
+    change(container);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("getRegistration en échec : se comporte comme une première installation", async () => {
+    const container = fakeContainer(null, Promise.reject(new Error("SecurityError")));
+    const reload = vi.fn();
+    reloadOnControllerChange(container, reload);
+    await flush();
+    change(container);
+    expect(reload).not.toHaveBeenCalled();
+    change(container);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("ne recharge qu'une fois, même sur plusieurs événements", async () => {
+    for (const container of [fakeContainer({}), fakeContainer(null, "active"), fakeContainer(null, null)]) {
+      const reload = vi.fn();
+      reloadOnControllerChange(container, reload);
+      await flush();
+      change(container);
+      change(container);
+      change(container);
+      expect(reload).toHaveBeenCalledTimes(1);
+    }
   });
 
   it("ne fait rien sans Service Worker dans le navigateur", () => {
