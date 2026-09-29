@@ -38,3 +38,6 @@ apps/web/playwright-report/
 apps/web/blob-report/
 # Builds de la suite serveur coupé (apps/web/e2e-offline)
 apps/web/e2e-offline/.dist/
+
+# Maquettes de conception (superpowers:brainstorming)
+.superpowers/
