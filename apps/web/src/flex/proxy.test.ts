@@ -125,6 +125,17 @@ describe("proxy, agent relay", () => {
     expect(JSON.parse(String(init.body))).toEqual({ token: "tok", queryId: "123" });
   });
 
+  it("never reaches the real agent in the demo (sub-project 41)", async () => {
+    window.sessionStorage.setItem("ib2:demo", "1");
+    try {
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+      expect(await sendRequest("agent", { token: "tok", queryId: "123" })).toEqual({ ok: false, code: "agent-unreachable" });
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      window.sessionStorage.clear();
+    }
+  });
+
   it("targets get-statement on the agent", async () => {
     const fetchSpy = mockFetchOnce(200, "<x/>");
     await getStatement("agent", { token: "tok", referenceCode: "REF1" });

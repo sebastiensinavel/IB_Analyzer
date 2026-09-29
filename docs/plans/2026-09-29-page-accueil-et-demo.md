@@ -1183,7 +1183,7 @@ export function conidOf(key: string): number {
   - `ensureDemoSeeded(db: AppDatabase, now?: Date): Promise<void>`
   - `DEMO_SECTORS: SectorRecord[]` (dans `seed.ts`)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `agent.test.ts`:
 
@@ -1267,9 +1267,9 @@ it("never calls the real agent in the demo, and a full pass goes through the rea
 
 (`strategies` must equal `ACTIVABLE_STRATEGIES`' order; read it from `@ib/ledger` in the assertion if it differs.)
 
-- [ ] **Step 2: Run** — `npx vitest run src/demo/agent src/demo/seed` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/demo/agent src/demo/seed` → FAIL.
 
-- [ ] **Step 3: Implement** — `demo/agent.ts`
+- [x] **Step 3: Implement** — `demo/agent.ts`
 
 ```ts
 import type { AgentSnapshotPayload } from "@ib/ib-parsers";
@@ -1419,9 +1419,9 @@ async function start() {
 void start();
 ```
 
-- [ ] **Step 4: Run** — `npx vitest run src/demo src/agent` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/demo src/agent` → PASS.
 
-- [ ] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Démo : l'agent simulé et le remplissage de la base de démo"`
+- [x] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Démo : l'agent simulé et le remplissage de la base de démo"`
 
 ---
 
