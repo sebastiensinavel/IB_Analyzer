@@ -1748,7 +1748,7 @@ Then generate: `pnpm screenshots`. **Open every file** — at least the six `lig
 **Interfaces:**
 - Consumes: `startServer`, `DIST` (`e2e-offline/server.ts`, `global-setup.ts`).
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 ```ts
 import { join } from "node:path";
@@ -1793,9 +1793,9 @@ test("les captures ne sont pas pré-cachées", async ({ page }) => {
 
 (The route `/` must not be a server prefix of `server.ts`; check that the static server serves `public/welcome/*.webp` from the build — Vite copies `public/` into `dist/`.)
 
-- [ ] **Step 2: Run** — `pnpm --filter web e2e:offline` → PASS (the whole suite: the 7 existing tests still pass).
+- [x] **Step 2: Run** — `pnpm --filter web e2e:offline` → PASS (the whole suite: the 7 existing tests still pass).
 
-- [ ] **Step 3: Commit** — `git add apps/web/e2e-offline/demo.spec.ts && git commit -m "e2e : entrer dans la démo et la quitter sur un vrai build"`
+- [x] **Step 3: Commit** — `git add apps/web/e2e-offline/demo.spec.ts && git commit -m "e2e : entrer dans la démo et la quitter sur un vrai build"`
 
 ---
 
