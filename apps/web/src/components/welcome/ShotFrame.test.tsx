@@ -8,7 +8,7 @@ it("shows the shot of the current theme and language, full size in a new tab", a
   await i18n.changeLanguage("en");
   render(<I18nextProvider i18n={i18n}><ShotFrame id="positions" alt="Positions" /></I18nextProvider>);
   const img = screen.getByRole("img", { name: "Positions" });
-  expect(img).toHaveAttribute("src", "/welcome/positions.light.en.webp");
+  expect(img).toHaveAttribute("src", "/shots/positions.light.en.webp");
   expect(img).toHaveAttribute("width", "1600");
   expect(img).toHaveAttribute("loading", "lazy");
   expect(screen.getByRole("link")).toHaveAttribute("target", "_blank");
@@ -29,7 +29,7 @@ it("tries again with the new shot after a language switch", async () => {
   fireEvent.error(screen.getByRole("img", { name: "Historique" }));
   expect(screen.queryByRole("img")).toBeNull();
   await act(() => i18n.changeLanguage("en"));
-  expect(screen.getByRole("img", { name: "Historique" })).toHaveAttribute("src", "/welcome/history.light.en.webp");
+  expect(screen.getByRole("img", { name: "Historique" })).toHaveAttribute("src", "/shots/history.light.en.webp");
   await i18n.changeLanguage("fr");
 });
 
