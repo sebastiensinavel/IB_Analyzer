@@ -217,16 +217,16 @@ describe("DashboardPage", () => {
     expect(screen.getByTestId("capital-chart")).toBeInTheDocument();
   });
 
-  it("shows the account's total value in its own card, above the day's unrealized P/L", async () => {
+  it("shows the account's total value in its own card, above the unrealized P/L", async () => {
     await seedTotals();
     renderDashboard();
     const card = await screen.findByLabelText("Valeur totale");
     // 1,000 − 200 of market value, and 5,000 of cash.
     await waitFor(() => expect(card).toHaveTextContent("5,800.00"));
     expect(screen.getByLabelText("Profit/Perte total")).not.toHaveTextContent("Valeur totale");
-    const daily = screen.getByLabelText("P/L non réalisé du jour");
-    expect(card.parentElement).toBe(daily.parentElement);
-    expect(card.compareDocumentPosition(daily) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const unrealized = screen.getByLabelText("P/L non réalisé");
+    expect(card.parentElement).toBe(unrealized.parentElement);
+    expect(card.compareDocumentPosition(unrealized) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("shows the unrealized P/L with today's realized under it", async () => {
@@ -252,14 +252,18 @@ describe("DashboardPage", () => {
     expect(card).toHaveTextContent("Réalisé du jour 0.00");
   });
 
-  it("shows the day's unrealized P/L above the sector exposure", async () => {
+  it("shows the unrealized P/L above the sector exposure, the day's under the total P/L", async () => {
     await seedTotals();
     renderDashboard();
-    const card = await screen.findByLabelText("P/L non réalisé du jour");
-    expect(card).toHaveTextContent("6.00");
+    const card = await screen.findByLabelText("P/L non réalisé");
     const exposure = screen.getByLabelText("Exposition par secteur");
     expect(card.parentElement).toBe(exposure.parentElement);
     expect(card.compareDocumentPosition(exposure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const daily = screen.getByLabelText("P/L non réalisé du jour");
+    expect(daily).toHaveTextContent("6.00");
+    const total = screen.getByLabelText("Profit/Perte total");
+    expect(daily.parentElement).toBe(total.parentElement);
+    expect(total.compareDocumentPosition(daily) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("shows — for the day's figures without an agent snapshot", async () => {

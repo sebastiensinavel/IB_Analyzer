@@ -93,12 +93,12 @@ export function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-4">
           {stats && <PnlTotalCard stats={stats} />}
-          <UnrealizedPnlCard unrealized={unrealized} realizedToday={realizedToday} />
+          <DailyPnlCard daily={daily} />
           {report === null ? noPositions : <CashCoverageCard report={report} isDark={isDark} />}
         </div>
         <div className="flex flex-col gap-4">
           <TotalValueCard value={value} />
-          <DailyPnlCard daily={daily} />
+          <UnrealizedPnlCard unrealized={unrealized} realizedToday={realizedToday} />
           {capital && <ExposureCard capital={capital} detailed={false} empty={t("stats.exposure.empty.portfolio")} sectorOf={sectorOf} isDark={isDark} shareOnly />}
         </div>
       </div>
