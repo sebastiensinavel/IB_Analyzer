@@ -656,3 +656,17 @@ describe("BackupCard", () => {
     expect(screen.queryByLabelText(i18n.t("settings.backupPassphrasePrompt"))).not.toBeInTheDocument();
   });
 });
+
+describe("BackupCard in the demo", () => {
+  afterEach(() => window.sessionStorage.clear());
+
+  it("disables every control and says why", async () => {
+    window.sessionStorage.setItem("ib2:demo", "1");
+    renderCard();
+    expect(await screen.findByText("Indisponible en démonstration")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupExport") })).toBeDisabled();
+    expect(screen.getByRole("button", { name: i18n.t("settings.backupImport") })).toBeDisabled();
+    expect(screen.getByLabelText(i18n.t("settings.backupImport"))).toBeDisabled();
+    for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
+  });
+});

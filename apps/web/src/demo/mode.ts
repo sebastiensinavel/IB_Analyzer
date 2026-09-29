@@ -1,3 +1,5 @@
+import Dexie from "dexie";
+
 /**
  * The demonstration mode (sub-project 41): the only reader of the per-tab flag. Entering or
  * leaving always reloads the page, so everything decided from it — the database name first —
@@ -31,3 +33,34 @@ export const navigation = {
     window.location.assign(url);
   },
 };
+
+export function enterDemo(): void {
+  try {
+    window.sessionStorage.setItem(DEMO_FLAG, "1");
+  } catch {
+    return; // No per-tab storage: the demo cannot be kept apart, so it does not start.
+  }
+  navigation.assign(`/accounts/${DEMO_ACCOUNT_ID}/dashboard`);
+}
+
+/** Deletes the demo base and every demo key; the real base and keys are never touched. */
+export async function clearDemo(db: Dexie): Promise<void> {
+  db.close();
+  await Dexie.delete(DEMO_DB_NAME);
+  try {
+    const doomed: string[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith("ib2:demo:")) doomed.push(key);
+    }
+    doomed.forEach((key) => window.localStorage.removeItem(key));
+    window.sessionStorage.removeItem(DEMO_FLAG);
+  } catch {
+    // Best-effort, like every other storage access.
+  }
+}
+
+export async function leaveDemo(db: Dexie, destination = "/welcome"): Promise<void> {
+  await clearDemo(db);
+  navigation.assign(destination);
+}

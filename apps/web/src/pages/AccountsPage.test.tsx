@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import i18n from "@/i18n";
 import { SessionProvider } from "@/api/session";
 import { db } from "@/db/schema";
+import { navigation } from "@/demo/mode";
 import { AccountsPage } from "@/pages/AccountsPage";
 
 function Probe() {
@@ -159,5 +160,23 @@ describe("AccountsPage: session", () => {
     renderWithSession(() => new Promise(() => {}));
     expect(screen.queryByRole("link", { name: /Compte serveur, facultatif/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Se déconnecter" })).not.toBeInTheDocument();
+  });
+});
+
+describe("AccountsPage in the demo", () => {
+  afterEach(() => {
+    window.sessionStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("offers no form, says so, and leaves the demo on request", async () => {
+    window.sessionStorage.setItem("ib2:demo", "1");
+    vi.spyOn(db, "close").mockImplementation(() => {});
+    const assign = vi.spyOn(navigation, "assign").mockImplementation(() => {});
+    renderPage();
+    expect(screen.queryByRole("button", { name: "Ajouter ce compte" })).toBeNull();
+    expect(screen.getByText("Vous êtes en démonstration")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Quitter la démo" }));
+    await waitFor(() => expect(assign).toHaveBeenCalledWith("/accounts"));
   });
 });

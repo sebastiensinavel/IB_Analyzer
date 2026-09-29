@@ -27,6 +27,14 @@
     "settings": "Paramètres",
     "help": "Aide"
   },
+  "demo": {
+    "banner": "Mode démonstration — données fictives",
+    "leave": "Quitter la démo",
+    "continue": "Continuer la démo",
+    "unavailable": "Indisponible en démonstration",
+    "accountsTitle": "Vous êtes en démonstration",
+    "accountsText": "Quittez la démo pour ajouter votre compte IB."
+  },
   "common": {
     "loading": "Chargement…",
     "cancel": "Annuler"

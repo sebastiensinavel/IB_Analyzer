@@ -1023,3 +1023,28 @@ describe("SourcesPage: active strategies", () => {
     await waitFor(async () => expect((await db.accounts.get("test"))?.strategies).toEqual(["wheel", "leaps", "condors"]));
   });
 });
+
+describe("SourcesPage in the demo", () => {
+  afterEach(() => window.sessionStorage.clear());
+
+  it("disables every write control but the strategies, and says why", async () => {
+    window.sessionStorage.setItem("ib2:demo", "1");
+    renderSources();
+    expect(await screen.findByText("U0000001")).toBeInTheDocument();
+    expect(screen.getByText("Indisponible en démonstration", { selector: "p.text-sm" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Importer des fichiers")).toBeDisabled();
+    for (const name of [
+      "Importer des fichiers",
+      "Relire les relevés",
+      "Supprimer les transactions",
+      i18n.t("sources.saveCredentials"),
+      i18n.t("agent.savePort"),
+      i18n.t("sources.delete.button"),
+    ]) {
+      for (const button of screen.getAllByRole("button", { name })) expect(button).toBeDisabled();
+    }
+    for (const radio of screen.getAllByRole("radio")) expect(radio).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByLabelText(i18n.t("sources.flexToken"))).toBeDisabled();
+    for (const box of screen.getAllByRole("checkbox")) expect(box).toBeEnabled();
+  });
+});

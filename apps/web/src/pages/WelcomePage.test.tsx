@@ -1,9 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { beforeEach, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
+import { navigation } from "@/demo/mode";
 import { WelcomePage } from "@/pages/WelcomePage";
 
 function renderPage() {
@@ -17,6 +19,11 @@ function renderPage() {
     </I18nextProvider>,
   );
 }
+
+afterEach(() => {
+  window.sessionStorage.clear();
+  vi.restoreAllMocks();
+});
 
 beforeEach(async () => {
   await db.accounts.clear();
@@ -48,4 +55,23 @@ it("walks through the features, privacy, how it works and the FAQ", () => {
   expect(screen.getByRole("link", { name: /sécurité/i })).toHaveAttribute("href", "/help#security");
   expect(screen.getByText("Est-ce gratuit ?")).toBeInTheDocument();
   expect(screen.getByText("Aucun frais d'utilisation.")).toBeInTheDocument();
+});
+
+it("enters the demo from the welcome page", async () => {
+  const assign = vi.spyOn(navigation, "assign").mockImplementation(() => {});
+  renderPage();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Explorer la démo" }));
+  expect(assign).toHaveBeenCalledWith("/accounts/demo/dashboard");
+});
+
+it("in the demo, shows the banner, continues the demo and leaves it to add an account", async () => {
+  window.sessionStorage.setItem("ib2:demo", "1");
+  vi.spyOn(db, "close").mockImplementation(() => {});
+  const assign = vi.spyOn(navigation, "assign").mockImplementation(() => {});
+  renderPage();
+  expect(screen.getByRole("status")).toHaveTextContent("Mode démonstration — données fictives");
+  expect(screen.getByRole("link", { name: "Continuer la démo" })).toHaveAttribute("href", "/accounts/demo/dashboard");
+  expect(screen.queryByRole("link", { name: "Ajouter un compte IB" })).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ajouter un compte IB" }));
+  await waitFor(() => expect(assign).toHaveBeenCalledWith("/accounts"));
 });

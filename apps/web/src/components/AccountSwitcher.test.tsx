@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
@@ -59,5 +59,18 @@ describe("AccountSwitcher", () => {
     await user.click(screen.getByRole("combobox"));
     await user.click(await screen.findByText("Ajouter un compte…"));
     expect(screen.getByTestId("location")).toHaveTextContent("/accounts");
+  });
+});
+
+describe("AccountSwitcher in the demo", () => {
+  afterEach(() => window.sessionStorage.clear());
+
+  it("offers to leave the demo instead of adding an account", async () => {
+    window.sessionStorage.setItem("ib2:demo", "1");
+    const user = userEvent.setup();
+    renderSwitcher();
+    await user.click(screen.getByRole("combobox"));
+    expect(await screen.findByText("Quitter la démo")).toBeInTheDocument();
+    expect(screen.queryByText("Ajouter un compte…")).toBeNull();
   });
 });

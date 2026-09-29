@@ -27,6 +27,7 @@ import {
 } from "@/db/backup/crypto";
 import { BackupSchemaError } from "@/db/backup/payload";
 import { formatBytes, formatDateTime } from "@/lib/format";
+import { isDemo } from "@/demo/mode";
 
 /** Ce que le formulaire en ligne demande : choisir une phrase, en changer, ou en donner une
  *  pour ouvrir la sauvegarde du serveur — seul mode à ne rien faire confirmer. */
@@ -336,7 +337,8 @@ export function BackupCard() {
    * `backupChangePending` est la promesse (spec §5), mais sans l'avertissement, qui ne se
    * rend qu'en mode `change`.
    */
-  const serverDisabled = !authenticated || busy || form !== null;
+  const demo = isDemo();
+  const serverDisabled = !authenticated || busy || form !== null || demo;
 
   return (
     <Card>
@@ -344,6 +346,7 @@ export function BackupCard() {
         <CardTitle>{t("settings.backup")}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        {demo && <p className="text-sm text-muted-foreground">{t("demo.unavailable")}</p>}
         {!enabled && <p className="text-sm text-muted-foreground">{t("settings.backupDisabled")}</p>}
         {enabled && (
           <p className="text-sm text-muted-foreground">
@@ -466,14 +469,14 @@ export function BackupCard() {
           accept=".gz,application/gzip"
           aria-label={t("settings.backupImport")}
           className="sr-only"
-          disabled={busy}
+          disabled={busy || demo}
           onChange={(event) => void handleImportFile(event)}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => void handleExport()} disabled={busy}>
+          <Button size="sm" variant="outline" onClick={() => void handleExport()} disabled={busy || demo}>
             {t("settings.backupExport")}
           </Button>
-          <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={busy}>
+          <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={busy || demo}>
             {t("settings.backupImport")}
           </Button>
         </div>

@@ -6,7 +6,10 @@ import { cn } from "@ib/ui/lib/utils";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { SessionCorner } from "@/components/SessionCorner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { DemoBanner } from "@/components/DemoBanner";
 import { ShotFrame } from "@/components/welcome/ShotFrame";
+import { useDb } from "@/db/DbProvider";
+import { enterDemo, isDemo, leaveDemo } from "@/demo/mode";
 import type { ShotId } from "@/welcome/shots";
 
 interface Step { title: string; text: string }
@@ -39,6 +42,8 @@ export function WelcomePage() {
   const steps = t("welcome.how.steps", { returnObjects: true }) as Step[];
   const faq = t("welcome.faq.items", { returnObjects: true }) as Faq[];
   return (
+    <>
+    <DemoBanner />
     <div className="mx-auto flex max-w-5xl flex-col gap-12 p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-heading text-sm font-semibold tracking-tight">IB Analyzer</span>
@@ -118,16 +123,28 @@ export function WelcomePage() {
         <span>{t("welcome.footer.shots")}</span>
       </footer>
     </div>
+    </>
   );
 }
 
 export function WelcomeActions() {
   const { t } = useTranslation();
+  const db = useDb();
+  const demo = isDemo();
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
-        <Link to="/accounts" className={cn(buttonVariants())}>{t("welcome.addAccount")}</Link>
-        <Button variant="outline">{t("welcome.exploreDemo")}</Button>
+        {demo ? (
+          <>
+            <Button onClick={() => void leaveDemo(db, "/accounts")}>{t("welcome.addAccount")}</Button>
+            <Link to="/accounts/demo/dashboard" className={cn(buttonVariants({ variant: "outline" }))}>{t("demo.continue")}</Link>
+          </>
+        ) : (
+          <>
+            <Link to="/accounts" className={cn(buttonVariants())}>{t("welcome.addAccount")}</Link>
+            <Button variant="outline" onClick={enterDemo}>{t("welcome.exploreDemo")}</Button>
+          </>
+        )}
       </div>
       <div className="flex gap-4 text-sm text-muted-foreground">
         <Link to="/help" className="underline">{t("welcome.help")}</Link>

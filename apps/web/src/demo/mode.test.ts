@@ -1,9 +1,12 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { DEMO_DB_NAME, REAL_DB_NAME, databaseName, isDemo, storageKey } from "@/demo/mode";
+import Dexie from "dexie";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { AppDatabase } from "@/db/schema";
+import { DEMO_DB_NAME, REAL_DB_NAME, clearDemo, databaseName, enterDemo, isDemo, leaveDemo, navigation, storageKey } from "@/demo/mode";
 import { clearTableViews, pageSearchKey, tableViewKey } from "@/lib/tableViewStorage";
 import { getLastAccountId, setLastAccountId } from "@/lib/accountStorage";
 
 afterEach(() => {
+  vi.restoreAllMocks();
   window.sessionStorage.clear();
   window.localStorage.clear();
 });
@@ -44,5 +47,39 @@ describe("storageKey", () => {
     window.sessionStorage.clear();
     expect(getLastAccountId()).toBe("demo");
     expect(window.localStorage.getItem("ib2:tableView:demo:history")).toBe("{}");
+  });
+});
+
+describe("enterDemo and leaveDemo", () => {
+  it("enters the demo on its dashboard", () => {
+    const assign = vi.spyOn(navigation, "assign").mockImplementation(() => {});
+    enterDemo();
+    expect(window.sessionStorage.getItem("ib2:demo")).toBe("1");
+    expect(assign).toHaveBeenCalledWith("/accounts/demo/dashboard");
+  });
+
+  it("leaves nothing behind, and touches neither the real base nor the real keys", async () => {
+    const real = new AppDatabase("ib-analyzer");
+    await real.accounts.put({ id: "alpha", label: "alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [] });
+    window.localStorage.setItem("ib2:lastAccountId", "alpha");
+    window.sessionStorage.setItem("ib2:demo", "1");
+    const demo = new AppDatabase(DEMO_DB_NAME);
+    await demo.accounts.put({ id: "demo", label: "Démo", ibAccountId: "U0000000", createdAt: "", warnedDroppedKinds: [] });
+    window.localStorage.setItem("ib2:demo:lastAccountId", "demo");
+    const assign = vi.spyOn(navigation, "assign").mockImplementation(() => {});
+    await leaveDemo(demo, "/accounts");
+    expect(await Dexie.exists(DEMO_DB_NAME)).toBe(false);
+    expect(window.localStorage.getItem("ib2:demo:lastAccountId")).toBeNull();
+    expect(window.sessionStorage.getItem("ib2:demo")).toBeNull();
+    expect(window.localStorage.getItem("ib2:lastAccountId")).toBe("alpha");
+    expect(await real.accounts.get("alpha")).toBeDefined();
+    expect(assign).toHaveBeenCalledWith("/accounts");
+    real.close();
+  });
+
+  it("clearDemo alone does not navigate", async () => {
+    const assign = vi.spyOn(navigation, "assign").mockImplementation(() => {});
+    await clearDemo(new AppDatabase(DEMO_DB_NAME));
+    expect(assign).not.toHaveBeenCalled();
   });
 });

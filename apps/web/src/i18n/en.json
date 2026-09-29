@@ -27,6 +27,14 @@
     "settings": "Settings",
     "help": "Help"
   },
+  "demo": {
+    "banner": "Demo mode — fictitious data",
+    "leave": "Leave the demo",
+    "continue": "Continue the demo",
+    "unavailable": "Unavailable in the demo",
+    "accountsTitle": "You are in the demo",
+    "accountsText": "Leave the demo to add your IB account."
+  },
   "common": {
     "loading": "Loading…",
     "cancel": "Cancel"

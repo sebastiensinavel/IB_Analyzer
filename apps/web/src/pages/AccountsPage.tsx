@@ -11,8 +11,33 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AccountError, createAccount } from "@/db/accounts";
 import { useDb } from "@/db/DbProvider";
 import { useAccounts } from "@/db/hooks";
+import { isDemo, leaveDemo } from "@/demo/mode";
+
+function DemoAccountsNotice() {
+  const { t } = useTranslation();
+  const db = useDb();
+  return (
+    <div className="mx-auto flex max-w-lg flex-col gap-4 p-4 md:p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("demo.accountsTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-start gap-3">
+          <p className="text-sm text-muted-foreground">{t("demo.accountsText")}</p>
+          <Button onClick={() => void leaveDemo(db, "/accounts")}>{t("demo.leave")}</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export function AccountsPage() {
+  // The demo has one account and no way to add another: the form would write into the demo base.
+  if (isDemo()) return <DemoAccountsNotice />;
+  return <RealAccountsPage />;
+}
+
+function RealAccountsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const db = useDb();

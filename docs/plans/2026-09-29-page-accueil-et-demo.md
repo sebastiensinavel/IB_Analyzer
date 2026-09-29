@@ -1434,7 +1434,7 @@ void start();
 **Interfaces:**
 - Produces (dans `mode.ts`) : `enterDemo(): void`, `clearDemo(db: Dexie): Promise<void>`, `leaveDemo(db: Dexie, destination?: string): Promise<void>` (défaut `/welcome`) ; `FlexRelayUnavailable` gagne `"demo"` ; clés i18n `demo.banner` (« Mode démonstration — données fictives » / « Demo mode — fictitious data »), `demo.leave` (« Quitter la démo » / « Leave the demo »), `demo.continue` (« Continuer la démo » / « Continue the demo »), `demo.unavailable` (« Indisponible en démonstration » / « Unavailable in the demo »), `demo.accountsTitle` (« Vous êtes en démonstration » / « You are in the demo »), `demo.accountsText` (« Quittez la démo pour ajouter votre compte IB. » / « Leave the demo to add your IB account. »).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `mode.test.ts` — add:
 
@@ -1501,9 +1501,9 @@ it("says it is the demo and leaves it to the welcome page", async () => {
 
 `relay.test.ts` — add: in the demo, `pickFlexRelay("agent", true, "authenticated")` → `{ relay: null, reason: "demo" }`.
 
-- [ ] **Step 2: Run** — `npx vitest run src/demo src/components src/pages src/flex` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/demo src/components src/pages src/flex` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `mode.ts` — add:
 
@@ -1579,9 +1579,9 @@ export function DemoBanner() {
 
 `relay.ts`: `FlexRelayUnavailable` gains `"demo"`; first line of `pickFlexRelay`: `if (isDemo()) return { relay: null, reason: "demo" };` with a comment « Le compte démo n'a aucun jeton, et aucune requête Flex ne part d'une démonstration (sous-projet 41). »
 
-- [ ] **Step 4: Run** — `npx vitest run src/demo src/components src/pages src/flex src/routes` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/demo src/components src/pages src/flex src/routes` → PASS.
 
-- [ ] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Démo : entrer, quitter, et ce que la démonstration désactive"`
+- [x] **Step 5: Commit** — `git add -A apps/web/src && git commit -m "Démo : entrer, quitter, et ce que la démonstration désactive"`
 
 ---
 

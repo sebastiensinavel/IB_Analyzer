@@ -1,3 +1,4 @@
+import { isDemo } from "@/demo/mode";
 import type { SessionState } from "@/api/session";
 import type { AccountRecord } from "@/db/schema";
 
@@ -5,7 +6,7 @@ import type { AccountRecord } from "@/db/schema";
 export type FlexRelayMode = "agent" | "agent-and-server";
 /** Who actually relayed one sync. */
 export type FlexRelay = "agent" | "server";
-export type FlexRelayUnavailable = "agent-absent" | "needs-agent-or-account" | "server-unreachable" | "session-loading";
+export type FlexRelayUnavailable = "agent-absent" | "needs-agent-or-account" | "server-unreachable" | "session-loading" | "demo";
 export type FlexRelayChoice = { relay: FlexRelay } | { relay: null; reason: FlexRelayUnavailable };
 
 /** The one place that reads the default: an account that never chose relays through the agent only. */
@@ -18,6 +19,8 @@ export function flexRelayMode(account: Pick<AccountRecord, "flexRelay">): FlexRe
  * server. The server is only ever a fallback for an absent agent, never for a failing one.
  */
 export function pickFlexRelay(mode: FlexRelayMode, agentPresent: boolean, session: SessionState["status"]): FlexRelayChoice {
+  // Le compte démo n'a aucun jeton, et aucune requête Flex ne part d'une démonstration (sous-projet 41).
+  if (isDemo()) return { relay: null, reason: "demo" };
   if (agentPresent) return { relay: "agent" };
   if (mode === "agent") return { relay: null, reason: "agent-absent" };
   switch (session) {

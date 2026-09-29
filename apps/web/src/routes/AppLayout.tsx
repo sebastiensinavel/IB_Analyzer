@@ -5,6 +5,7 @@ import { Separator } from "@ib/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@ib/ui/sidebar";
 import { useAgentPolling } from "@/agent/useAgentSync";
 import { AppSidebar } from "@/components/app-sidebar";
+import { DemoBanner } from "@/components/DemoBanner";
 import { ConsistencyIndicators } from "@/components/ConsistencyIndicators";
 import { SnapshotStatus } from "@/components/SnapshotStatus";
 import { AccountDataProvider } from "@/db/AccountDataProvider";
@@ -54,6 +55,7 @@ export function AppLayout() {
 
   const inset = (
     <>
+      <DemoBanner />
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-3">
         <SidebarTrigger />
         <Separator orientation="vertical" className="h-5" />

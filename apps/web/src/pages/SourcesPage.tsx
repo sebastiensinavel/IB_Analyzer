@@ -18,6 +18,7 @@ import { clearDerived, type ClearDerivedReport } from "@/db/clearDerived";
 import { useDb } from "@/db/DbProvider";
 import { useAccount, useContractIdentities, useImports, useNeverFed, useStatements } from "@/db/hooks";
 import { importFiles, type ImportReport } from "@/db/importFile";
+import { isDemo } from "@/demo/mode";
 import { withImportLock } from "@/db/importLock";
 import { countOrphanRows, deleteStatement, replayStatements, type ReplayReport } from "@/db/replayStatements";
 import type { AccountRecord, StatementRecord } from "@/db/schema";
@@ -64,6 +65,8 @@ export function SourcesPage() {
   }
 
   // One import, one replay, one deletion or one purge at a time: they all write the same rows.
+  // In the demo every write control is off, the strategies card and the simulated agent apart.
+  const demo = isDemo();
   const busy = importing || replaying || purging;
 
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -166,6 +169,7 @@ export function SourcesPage() {
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.sources")}</h1>
+      {demo && <p className="text-sm text-muted-foreground">{t("demo.unavailable")}</p>}
 
       {neverFed === true && <FirstStepCard accountId={account.id} showSourcesLink={false} />}
 
@@ -209,6 +213,7 @@ export function SourcesPage() {
                 <Input
                   type="password"
                   autoComplete="off"
+                  disabled={demo}
                   value={flexToken}
                   onChange={(e) => {
                     setFlexToken(e.target.value);
@@ -219,6 +224,7 @@ export function SourcesPage() {
               <label className="flex flex-col gap-1 text-sm">
                 {t("sources.flexQueryId")}
                 <Input
+                  disabled={demo}
                   value={flexQueryId}
                   onChange={(e) => {
                     setFlexQueryId(e.target.value);
@@ -229,11 +235,11 @@ export function SourcesPage() {
               <p className="-mt-1 text-xs text-muted-foreground">{t("sources.credentialsHint")}</p>
               <div className="flex flex-wrap items-center gap-3">
                 {/* Disabled on an empty form rather than saving nothing and claiming success. */}
-                <Button type="submit" disabled={flexToken.trim() === "" && flexQueryId.trim() === ""}>
+                <Button type="submit" disabled={demo || (flexToken.trim() === "" && flexQueryId.trim() === "")}>
                   {t("sources.saveCredentials")}
                 </Button>
                 {(account.flexToken || account.flexQueryId) && (
-                  <Button type="button" variant="outline" onClick={() => void handleClearCredentials()}>
+                  <Button type="button" variant="outline" disabled={demo} onClick={() => void handleClearCredentials()}>
                     {t("sources.clearCredentials")}
                   </Button>
                 )}
@@ -244,7 +250,7 @@ export function SourcesPage() {
                 )}
               </div>
             </form>
-            <FlexRelayRadio account={account} />
+            <FlexRelayRadio account={account} disabled={demo} />
           </div>
         </CardContent>
       </Card>
@@ -268,11 +274,11 @@ export function SourcesPage() {
             accept=".xml,.htm,.html,text/xml,application/xml,text/html"
             aria-label={t("sources.import.button")}
             className="sr-only"
-            disabled={busy}
+            disabled={busy || demo}
             onChange={handleFiles}
           />
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => fileInput.current?.click()} disabled={busy}>
+            <Button onClick={() => fileInput.current?.click()} disabled={busy || demo}>
               {t(importing ? "sources.import.importing" : "sources.import.button")}
             </Button>
             {/* Rebuilds the statement layer from the files kept below. Disabled with an
@@ -280,14 +286,14 @@ export function SourcesPage() {
             <Button
               variant="outline"
               onClick={() => void handleReplay()}
-              disabled={busy || !statements || statements.length === 0}
+              disabled={busy || demo || !statements || statements.length === 0}
             >
               {t(replaying ? "sources.statements.replaying" : "sources.statements.replay")}
             </Button>
             {/* Wipes what the imports derived, never the files or the settings. Always
                 offered: a ledger left half-built by an old parser is exactly what one
                 wants to throw away, whatever the statement store holds. */}
-            <Button variant="destructive" onClick={() => void handlePurge()} disabled={busy}>
+            <Button variant="destructive" onClick={() => void handlePurge()} disabled={busy || demo}>
               {t(purging ? "sources.purge.purging" : "sources.purge.button")}
             </Button>
           </div>
@@ -351,7 +357,7 @@ export function SourcesPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={busy}
+                        disabled={busy || demo}
                         aria-label={`${t("sources.statements.delete")} ${formatPeriod(statement.period)}`}
                         onClick={() => handleDeleteStatement(statement)}
                       >
@@ -417,7 +423,7 @@ export function SourcesPage() {
         <CardContent className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">{t("sources.delete.hint")}</p>
           <div>
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button variant="destructive" onClick={handleDelete} disabled={demo}>
               {t("sources.delete.button")}
             </Button>
           </div>
@@ -436,7 +442,7 @@ const FLEX_RELAY_OPTIONS: { value: FlexRelayMode; label: string; hint: string }[
  * Saved on change, on its own: it is not a credential, and the credentials form only ever
  * writes what is typed. Reads the stored account, so it follows the route's account by itself.
  */
-function FlexRelayRadio({ account }: { account: AccountRecord }) {
+function FlexRelayRadio({ account, disabled }: { account: AccountRecord; disabled: boolean }) {
   const { t } = useTranslation();
   const db = useDb();
   return (
@@ -444,6 +450,7 @@ function FlexRelayRadio({ account }: { account: AccountRecord }) {
       <legend className="mb-2 text-sm font-medium">{t("sources.flexRelay.legend")}</legend>
       <RadioGroup
         value={flexRelayMode(account)}
+        disabled={disabled}
         onValueChange={(value) => {
           if (value === "agent" || value === "agent-and-server") void setFlexRelay(db, account.id, value);
         }}
@@ -573,6 +580,8 @@ function SyncCard({ accountId, account }: { accountId: string; account: AccountR
   } else if (choice.relay === null && choice.reason === "agent-absent") {
     message = t("sync.needsAgent");
     showInstall = true;
+  } else if (choice.relay === null && choice.reason === "demo") {
+    message = t("demo.unavailable");
   } else if (choice.relay === null && choice.reason === "session-loading") {
     message = t("common.loading");
   } else if (choice.relay === null && choice.reason === "needs-agent-or-account") {
@@ -709,7 +718,7 @@ function AgentCard({ account }: { account: AccountRecord }) {
             />
           </label>
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit">{t("agent.savePort")}</Button>
+            <Button type="submit" disabled={isDemo()}>{t("agent.savePort")}</Button>
             {notice === "saved" && <p className="text-sm text-muted-foreground">{t("agent.portSaved")}</p>}
             {notice === "invalid" && <p className="text-sm text-destructive">{t("agent.portInvalid")}</p>}
           </div>
