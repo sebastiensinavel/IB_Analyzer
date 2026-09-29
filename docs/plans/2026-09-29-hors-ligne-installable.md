@@ -620,7 +620,7 @@ git commit -m "PWA : bandeau de mise à jour, tous les onglets rechargent ensemb
 - Consumes: `db` et `AppDatabase` de `apps/web/src/db/schema.ts`.
 - Produces: `export function reloadOnVersionChange(database: Dexie, reload: () => void): void`.
 
-- [ ] **Step 1: Test qui échoue**
+- [x] **Step 1: Test qui échoue**
 
 ```ts
 // apps/web/src/db/reloadOnVersionChange.test.ts
@@ -665,12 +665,12 @@ describe("reloadOnVersionChange", () => {
 
 Note : `newer.version(...).stores({})` n'efface aucune table dans Dexie 4 (une table absente d'une version postérieure n'est supprimée que si déclarée `null`). Si Dexie proteste, recopier les `stores` de la dernière version d'`AppDatabase`.
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run src/db/reloadOnVersionChange`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 ```ts
 // apps/web/src/db/reloadOnVersionChange.ts
@@ -700,12 +700,12 @@ import { reloadOnVersionChange } from "@/db/reloadOnVersionChange";
 reloadOnVersionChange(db, () => window.location.reload());
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `cd apps/web && npx vitest run src/db`
 Expected: PASS, y compris `schema.test.ts` (qui ouvre des bases en versions successives sur d'autres noms).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/db/reloadOnVersionChange.ts apps/web/src/db/reloadOnVersionChange.test.ts apps/web/src/main.tsx docs/plans/2026-09-29-hors-ligne-installable.md
