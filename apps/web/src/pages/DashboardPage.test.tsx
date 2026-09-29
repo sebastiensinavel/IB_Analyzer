@@ -217,14 +217,16 @@ describe("DashboardPage", () => {
     expect(screen.getByTestId("capital-chart")).toBeInTheDocument();
   });
 
-  it("adds the account's total value to the total P/L card", async () => {
+  it("shows the account's total value in its own card, above the day's unrealized P/L", async () => {
     await seedTotals();
     renderDashboard();
-    const card = await screen.findByLabelText("Profit/Perte total");
-    expect(card).toHaveTextContent("78.00 USD");
-    expect(card).toHaveTextContent("Valeur totale");
+    const card = await screen.findByLabelText("Valeur totale");
     // 1,000 − 200 of market value, and 5,000 of cash.
     await waitFor(() => expect(card).toHaveTextContent("5,800.00"));
+    expect(screen.getByLabelText("Profit/Perte total")).not.toHaveTextContent("Valeur totale");
+    const daily = screen.getByLabelText("P/L non réalisé du jour");
+    expect(card.parentElement).toBe(daily.parentElement);
+    expect(card.compareDocumentPosition(daily) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("shows the unrealized P/L with today's realized under it", async () => {
@@ -272,8 +274,8 @@ describe("DashboardPage", () => {
   it("shows — for the total value, the unrealized and the day without a snapshot", async () => {
     await db.transactions.bulkAdd(XOM_ROUND_TRIP);
     renderDashboard();
-    const total = await screen.findByLabelText("Profit/Perte total");
-    expect(total).toHaveTextContent("Valeur totale —");
+    await screen.findByLabelText("Profit/Perte total");
+    expect(screen.getByLabelText("Valeur totale")).toHaveTextContent("Valeur totale—");
     expect(screen.getByLabelText("P/L non réalisé")).toHaveTextContent("P/L non réalisé—");
   });
 

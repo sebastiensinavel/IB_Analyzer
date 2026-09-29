@@ -15,6 +15,7 @@ import { ExposureCard } from "@/components/stats/ExposureCard";
 import { MonthlyPnlCard } from "@/components/stats/MonthlyPnlCard";
 import { PnlTotalCard } from "@/components/stats/PnlTotalCard";
 import { ReturnCard } from "@/components/stats/ReturnCard";
+import { TotalValueCard } from "@/components/stats/TotalValueCard";
 import { UnrealizedPnlCard } from "@/components/stats/UnrealizedPnlCard";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
 import { useNeverFed } from "@/db/hooks";
@@ -91,11 +92,12 @@ export function DashboardPage() {
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-4">
-          {stats && <PnlTotalCard stats={stats} value={value} />}
+          {stats && <PnlTotalCard stats={stats} />}
           <UnrealizedPnlCard unrealized={unrealized} realizedToday={realizedToday} />
           {report === null ? noPositions : <CashCoverageCard report={report} isDark={isDark} />}
         </div>
         <div className="flex flex-col gap-4">
+          <TotalValueCard value={value} />
           <DailyPnlCard daily={daily} />
           {capital && <ExposureCard capital={capital} detailed={false} empty={t("stats.exposure.empty.portfolio")} sectorOf={sectorOf} isDark={isDark} shareOnly />}
         </div>
