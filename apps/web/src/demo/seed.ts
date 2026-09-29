@@ -4,16 +4,20 @@ import { mergeSectorsInto, type SectorCsvRow } from "@/db/sectors";
 import { DEMO_ACCOUNT_ID } from "@/demo/mode";
 import { DEMO_IB_ACCOUNT, generateDemo } from "@/demo/generate";
 
-/** The demo's sector table: every ticker of the scenario, with a category and a score (status left empty, "no status"). */
+/**
+ * The demo's sector table: every ticker of the scenario. Short English sectors, read alike in both
+ * languages and narrow enough for the Sector column; every row "on", so the dashboard's position
+ * suggestion has candidates (score ≥ MIN_SUGGESTION_SCORE, DIS below on purpose).
+ */
 export const DEMO_SECTORS: readonly SectorCsvRow[] = [
-  { ticker: "AAPL", name: "Apple", category: "Technologie", score: 8, status: "" },
-  { ticker: "AMD", name: "Advanced Micro Devices", category: "Semi-conducteurs", score: 6, status: "" },
-  { ticker: "KO", name: "Coca-Cola", category: "Consommation de base", score: 7, status: "" },
-  { ticker: "MSFT", name: "Microsoft", category: "Technologie", score: 9, status: "" },
-  { ticker: "NVDA", name: "NVIDIA", category: "Semi-conducteurs", score: 8, status: "" },
-  { ticker: "JPM", name: "JPMorgan Chase", category: "Finance", score: 7, status: "" },
-  { ticker: "DIS", name: "Walt Disney", category: "Communication", score: 5, status: "" },
-  { ticker: "XSP", name: "Mini-SPX", category: "Indice", score: 7, status: "" },
+  { ticker: "AAPL", name: "Apple", category: "Tech", score: 8, status: "on" },
+  { ticker: "AMD", name: "Advanced Micro Devices", category: "Semis", score: 6, status: "on" },
+  { ticker: "KO", name: "Coca-Cola", category: "Staples", score: 7, status: "on" },
+  { ticker: "MSFT", name: "Microsoft", category: "Tech", score: 9, status: "on" },
+  { ticker: "NVDA", name: "NVIDIA", category: "Semis", score: 8, status: "on" },
+  { ticker: "JPM", name: "JPMorgan Chase", category: "Financials", score: 7, status: "on" },
+  { ticker: "DIS", name: "Walt Disney", category: "Media", score: 5, status: "on" },
+  { ticker: "XSP", name: "Mini-SPX", category: "Index", score: 7, status: "on" },
 ];
 
 /** Writes the demo account on an empty demo base, once, in one transaction (sub-project 41, spec §4.2). */

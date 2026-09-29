@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { db } from "@/db/schema";
+import { positionSuggestions } from "@ib/coverage";
 import { ensureDemoSeeded } from "@/demo/seed";
 import { syncAgent } from "@/agent/sync";
 import { fetchBars, fetchQuotes, fetchSnapshot, probeAgent } from "@/agent/client";
@@ -40,4 +41,20 @@ it("never calls the real agent in the demo, and a full pass goes through the rea
   expect((await fetchBars(7496, "AAPL")).ok).toBe(true);
   expect((await fetchQuotes(7496, ["AAPL"])).ok).toBe(true);
   expect(spy).not.toHaveBeenCalled();
+});
+
+it("gives the demo sector table short English sectors, every row on, so the dashboard has suggestions", async () => {
+  await ensureDemoSeeded(db, NOW);
+  const rows = await db.sectors.toArray();
+  expect(rows.map((r) => [r.ticker, r.category, r.status]).sort()).toEqual([
+    ["AAPL", "Tech", "on"],
+    ["AMD", "Semis", "on"],
+    ["DIS", "Media", "on"],
+    ["JPM", "Financials", "on"],
+    ["KO", "Staples", "on"],
+    ["MSFT", "Tech", "on"],
+    ["NVDA", "Semis", "on"],
+    ["XSP", "Index", "on"],
+  ]);
+  expect(positionSuggestions(rows, null).map((s) => s.ticker)).toEqual(expect.arrayContaining(["AAPL", "MSFT", "XSP", "JPM"]));
 });

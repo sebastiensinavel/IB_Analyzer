@@ -51,6 +51,13 @@ const PREPARE = {
     await page.locator("main table tbody tr.cursor-pointer").first().click();
     await page.locator("[data-testid=position-chart-row] canvas").first().waitFor({ timeout: WAIT_MS });
   },
+  // The sidebar trigger of AppLayout's header; the sidebar reopens at the next navigation (its cookie
+  // is written, never read).
+  "collapse-sidebar": async (page) => {
+    await page.locator("[data-sidebar=trigger]").first().click();
+    await page.locator("[data-slot=sidebar][data-state=collapsed]").first().waitFor({ timeout: WAIT_MS });
+    await page.waitForTimeout(400);
+  },
 };
 
 const server = await ensureVite();
@@ -101,7 +108,10 @@ try {
         await page.getByText(/En direct, |Live, /).first().waitFor({ timeout: WAIT_MS });
         await page.locator(shot.waitFor).first().waitFor({ timeout: WAIT_MS });
         if (shot.prepare) await PREPARE[shot.prepare](page);
+        if (shot.scrollTo) await page.locator(shot.scrollTo).first().evaluate((el) => el.scrollIntoView({ block: "start" }));
         await page.evaluate(() => document.fonts.ready);
+        // Away from any chart: lightweight-charts draws its crosshair under the pointer of the last click.
+        await page.mouse.move(0, 0);
         if ((await page.locator("[_echarts_instance_]").count()) > 0) await page.waitForTimeout(CHART_SETTLE_MS);
         const png = await page.screenshot();
         const file = join(OUT, `${shot.id}.${theme}.${lang}.webp`);
