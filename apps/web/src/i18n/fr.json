@@ -106,27 +106,13 @@
     "faq": {
       "title": "Questions fréquentes",
       "items": [
-        {
-          "q": "Est-ce gratuit ?",
-          "a": "Aucun frais d'utilisation."
-        },
-        {
-          "q": "Faut-il un compte serveur ?",
-          "a": "Non. Il ne sert qu'au relais Flex quand l'agent local manque et à la sauvegarde chiffrée, tous deux facultatifs."
-        },
-        {
-          "q": "Mes identifiants IB sont-ils demandés ?",
-          "a": "Jamais. L'application lit des relevés que vous exportez, une Flex Query en lecture seule et, si vous l'installez, TWS sur votre propre ordinateur."
-        },
-        {
-          "q": "Fonctionne-t-elle hors ligne ?",
-          "a": "Oui, une fois ouverte : elle s'installe et garde vos données dans le navigateur. Seule la synchronisation demande le réseau."
-        },
-        {
-          "q": "Quelles stratégies ?",
-          "a": "La Wheel, les LEAPS et les Iron Condors ; le reste est suivi dans Autres."
-        }
-      ]
+      { "q": "Est-ce gratuit ?", "a": "Aucun frais d'utilisation." },
+      { "q": "Quelles stratégies l'application suit-elle ?", "a": "Trois stratégies d'options : la Wheel (vendre des puts, puis des calls sur les actions reçues), les LEAPS (options d'achat à longue échéance) et les Iron Condors. Toutes les autres opérations restent visibles, regroupées dans « Autres »." },
+      { "q": "Que faire si une seule stratégie m'intéresse ?", "a": "Vous choisissez les stratégies actives de chaque compte, dans la page Sources de données. Un nouveau compte commence avec la seule Wheel : vous n'ajoutez les LEAPS ou les Iron Condors que si vous les pratiquez. Une stratégie inactive n'apparaît plus dans le menu, et ses opérations sont rangées dans « Autres »." },
+      { "q": "Dois-je donner mon identifiant et mon mot de passe Interactive Brokers ?", "a": "Jamais. Vous importez vous-même un relevé téléchargé depuis votre espace client Interactive Brokers, ou vous autorisez une récupération automatique en lecture seule, qu'Interactive Brokers appelle « Flex Query ». L'application ne passe jamais d'ordre." },
+      { "q": "Dois-je créer un compte sur ce site ?", "a": "Non. L'application fonctionne sans inscription et vos données restent sur votre ordinateur. Un compte, sur invitation, ajoute seulement deux options : récupérer automatiquement vos relevés même sans le petit programme facultatif à installer sur votre ordinateur, et garder une copie chiffrée de vos données pour les retrouver sur un autre appareil." },
+      { "q": "Fonctionne-t-elle sans connexion internet ?", "a": "Oui, une fois ouverte une première fois : elle s'installe comme une application et garde vos données sur votre ordinateur. Seule la mise à jour de vos données depuis Interactive Brokers demande une connexion." }
+    ]
     },
     "footer": {
       "shots": "Les captures montrent des données fictives."

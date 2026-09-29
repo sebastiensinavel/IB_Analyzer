@@ -106,27 +106,13 @@
     "faq": {
       "title": "Frequently asked questions",
       "items": [
-        {
-          "q": "Is it free?",
-          "a": "There are no usage fees."
-        },
-        {
-          "q": "Do I need a server account?",
-          "a": "No. It is only used for the Flex relay when the local agent is missing and for the encrypted backup, both optional."
-        },
-        {
-          "q": "Are my IB credentials requested?",
-          "a": "Never. The app reads statements you export, a read-only Flex Query and, if you install it, TWS on your own computer."
-        },
-        {
-          "q": "Does it work offline?",
-          "a": "Yes, once opened: it installs and keeps your data in the browser. Only synchronization needs the network."
-        },
-        {
-          "q": "Which strategies?",
-          "a": "The Wheel, LEAPS and Iron Condors; everything else is tracked in Others."
-        }
-      ]
+      { "q": "Is it free?", "a": "There are no usage fees." },
+      { "q": "Which strategies does the app follow?", "a": "Three option strategies: the Wheel (selling puts, then calls on the shares you receive), LEAPS (long-dated call options) and Iron Condors. Every other trade stays visible, grouped under “Others”." },
+      { "q": "What if only one strategy interests me?", "a": "You choose the active strategies of each account, on the Data sources page. A new account starts with the Wheel alone: add LEAPS or Iron Condors only if you trade them. An inactive strategy no longer shows in the menu, and its trades are filed under “Others”." },
+      { "q": "Do I have to give my Interactive Brokers username and password?", "a": "Never. You import a statement you downloaded yourself from your Interactive Brokers client portal, or you allow a read-only automatic download, which Interactive Brokers calls a “Flex Query”. The app never places an order." },
+      { "q": "Do I need to create an account on this site?", "a": "No. The app works without signing up and your data stays on your computer. An account, by invitation, only adds two options: downloading your statements automatically even without the small optional program installed on your computer, and keeping an encrypted copy of your data to find it on another device." },
+      { "q": "Does it work without an internet connection?", "a": "Yes, once it has been opened: it installs like an app and keeps your data on your computer. Only updating your data from Interactive Brokers needs a connection." }
+    ]
     },
     "footer": {
       "shots": "The screenshots show fictitious data."

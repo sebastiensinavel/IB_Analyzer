@@ -56,6 +56,7 @@ it("walks through the features, privacy, how it works and the FAQ", () => {
   expect(screen.getByRole("link", { name: /sécurité/i })).toHaveAttribute("href", "/help#security");
   expect(screen.getByText("Est-ce gratuit ?")).toBeInTheDocument();
   expect(screen.getByText("Aucun frais d'utilisation.")).toBeInTheDocument();
+  expect(screen.getByText("Que faire si une seule stratégie m'intéresse ?")).toBeInTheDocument();
 });
 
 it("enters the demo from the welcome page", async () => {
