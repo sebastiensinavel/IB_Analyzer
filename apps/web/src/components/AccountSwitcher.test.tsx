@@ -15,10 +15,10 @@ const accounts = [
   { id: "beta", label: "beta", ibAccountId: "U0000002", createdAt: "", warnedDroppedKinds: [] },
 ];
 
-function renderSwitcher() {
+function renderSwitcher(path = "/accounts/alpha/dashboard") {
   return render(
     <I18nextProvider i18n={i18n}>
-      <MemoryRouter initialEntries={["/accounts/alpha/dashboard"]}>
+      <MemoryRouter initialEntries={[path]}>
         <LocationProbe />
         <Routes>
           <Route path="*" element={<AccountSwitcher accountId="alpha" accounts={accounts} />} />
@@ -35,6 +35,22 @@ describe("AccountSwitcher", () => {
     await user.click(screen.getByRole("combobox"));
     await user.click(await screen.findByText("beta"));
     expect(screen.getByTestId("location")).toHaveTextContent("/accounts/beta/dashboard");
+  });
+
+  it("stays on the same page of the other account", async () => {
+    const user = userEvent.setup();
+    renderSwitcher("/accounts/alpha/positions/leaps");
+    await user.click(screen.getByRole("combobox"));
+    await user.click(await screen.findByText("beta"));
+    expect(screen.getByTestId("location")).toHaveTextContent(/^\/accounts\/beta\/positions\/leaps$/);
+  });
+
+  it("opens the other account's dashboard from a page outside the account scope", async () => {
+    const user = userEvent.setup();
+    renderSwitcher("/settings");
+    await user.click(screen.getByRole("combobox"));
+    await user.click(await screen.findByText("beta"));
+    expect(screen.getByTestId("location")).toHaveTextContent(/^\/accounts\/beta\/dashboard$/);
   });
 
   it("offers to add an account", async () => {
