@@ -13,6 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  useSidebar,
 } from "@ib/ui/sidebar";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { SessionMenuItem } from "@/components/SessionMenuItem";
@@ -30,6 +31,9 @@ interface AppSidebarProps {
 export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
   const { t } = useTranslation();
   const location = useLocation();
+  // On a phone the sidebar is a drawer over the page: picking an entry closes it, or the new
+  // page would load behind its backdrop. A no-op on a desktop, where openMobile stays false.
+  const { setOpenMobile } = useSidebar();
 
   // The sidebar lives outside AccountDataProvider (CLAUDE.md), so it reads the account's chosen
   // strategies straight from the record it already has, through the same reader as everywhere
@@ -74,7 +78,7 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
                     return (
                       <SidebarMenuItem key={item.labelKey}>
                         <SidebarMenuButton
-                          render={<Link to={to} />}
+                          render={<Link to={to} onClick={() => setOpenMobile(false)} />}
                           isActive={location.pathname === to}
                         >
                           <Icon />

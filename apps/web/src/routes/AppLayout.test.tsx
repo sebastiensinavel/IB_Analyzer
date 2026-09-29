@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { ACTIVABLE_STRATEGIES } from "@ib/ledger";
@@ -268,5 +269,29 @@ describe("AppLayout: snapshot status", () => {
     renderAt("/settings");
     expect(await screen.findByText("settings content")).toBeInTheDocument();
     expect(screen.queryByText(/^Données du/)).not.toBeInTheDocument();
+  });
+});
+
+describe("AppLayout on a phone", () => {
+  const desktopWidth = window.innerWidth;
+  beforeEach(() => {
+    window.innerWidth = 400;
+  });
+  afterEach(() => {
+    window.innerWidth = desktopWidth;
+  });
+
+  it("closes the menu drawer once a page is picked in it", async () => {
+    const user = userEvent.setup();
+    renderAt("/accounts/alpha/dashboard");
+    expect(await screen.findByText("dashboard content")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Toggle Sidebar" }));
+    const drawer = await screen.findByRole("dialog");
+    const positions = within(drawer)
+      .getAllByRole("link")
+      .find((link) => link.getAttribute("href") === "/accounts/alpha/positions");
+    await user.click(positions as HTMLElement);
+    expect(await screen.findByText("account data ready")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 });
