@@ -106,9 +106,9 @@ export function DashboardPage() {
       </div>
       {stats && capital && (
         <>
-          <MonthlyPnlCard stats={stats} series={series} isDark={isDark} />
+          <MonthlyPnlCard stats={stats} isDark={isDark} />
           <CapitalCard capital={capital} series={series} title={t("stats.capital.titlePortfolio")} isDark={isDark} />
-          <ReturnCard capital={capital} series={series} isDark={isDark} />
+          <ReturnCard capital={capital} isDark={isDark} />
         </>
       )}
       <PositionSuggestionsCard accountId={accountId} report={report} />

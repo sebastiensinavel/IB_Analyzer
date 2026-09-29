@@ -48,7 +48,7 @@ export function StatsPage({ strategy }: StatsPageProps) {
       ) : (
         <>
           <PnlTotalCard stats={stats} />
-          <MonthlyPnlCard stats={stats} series={series} isDark={isDark} />
+          <MonthlyPnlCard stats={stats} isDark={isDark} />
           {/* No exposure by sector for the condors: not asked for (spec of sub-project 14, §1). */}
           {capital && strategy !== "condors" && (
             <ExposureCard
@@ -60,7 +60,7 @@ export function StatsPage({ strategy }: StatsPageProps) {
             />
           )}
           {capital && <CapitalCard capital={capital} series={series} title={t("stats.capital.title")} isDark={isDark} />}
-          {capital && <ReturnCard capital={capital} series={series} isDark={isDark} />}
+          {capital && <ReturnCard capital={capital} isDark={isDark} />}
         </>
       )}
     </div>

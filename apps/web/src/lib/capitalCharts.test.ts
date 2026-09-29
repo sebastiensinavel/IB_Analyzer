@@ -7,7 +7,7 @@ import {
   capitalOption,
   DONUT_RADIUS,
   exposureOption,
-  monthGrid,
+  MONTH_GRID,
   returnOption,
   SCOPE_SERIES,
   sectorSlices,
@@ -46,7 +46,6 @@ const SERIES: CapitalSeries[] = [
   { key: "invested", name: "Investi" },
 ];
 /** The French names: the first is the longest, 24 characters. */
-const LONG_SERIES = SERIES.map((s) => (s.key === "cumulativePnl" ? { ...s, name: "Cumul des profits/pertes" } : s));
 /** A strategy other than the Wheel: nothing assigned. */
 const THREE = SERIES.filter((s) => s.key !== "assigned");
 
@@ -131,7 +130,7 @@ describe("exposureOption", () => {
 
   it("keeps the axis tooltips of the capital and return charts inside the chart", () => {
     expect((capitalOption(CAPITAL, SERIES, colors).tooltip as { confine: boolean }).confine).toBe(true);
-    expect((returnOption(CAPITAL, SERIES, colors).tooltip as { confine: boolean }).confine).toBe(true);
+    expect((returnOption(CAPITAL, colors).tooltip as { confine: boolean }).confine).toBe(true);
   });
 
   /** A month at +37.5 %, one at −12.5 %, one without capital: 0 sits three quarters of the way down. */
@@ -146,7 +145,7 @@ describe("exposureOption", () => {
 
   it.each(["light", "dark"] as const)("draws the %s return line and its points teal above 0 and red below", (theme) => {
     const c = CHART_COLORS[theme];
-    const [line] = returnOption(SWING, SERIES, c).series as LineSeriesOption[];
+    const [line] = returnOption(SWING, c).series as LineSeriesOption[];
     expect(line.lineStyle?.color).toEqual({
       type: "linear",
       x: 0,
@@ -166,7 +165,7 @@ describe("exposureOption", () => {
   it("draws the return line in one plain hue when every month has the same sign", () => {
     const line = (rates: number[]) => {
       const capital = { ...CAPITAL, months: rates.map((returnRate, i) => ({ ...CAPITAL.months[0], month: `2026-0${i + 1}`, returnRate })) };
-      return (returnOption(capital, SERIES, colors).series as LineSeriesOption[])[0];
+      return (returnOption(capital, colors).series as LineSeriesOption[])[0];
     };
     expect(line([0, 0.2]).lineStyle?.color).toBe(colors.success);
     expect(line([-0.1, -0.2]).lineStyle?.color).toBe(colors.destructive);
@@ -175,7 +174,7 @@ describe("exposureOption", () => {
   it.each(["light", "dark"] as const)("fades the %s area to nothing at 0, the mockup's teal above and red below", (theme) => {
     const c = CHART_COLORS[theme];
     const alpha = theme === "dark" ? "52" : "33";
-    const [line] = returnOption(SWING, SERIES, c).series as LineSeriesOption[];
+    const [line] = returnOption(SWING, c).series as LineSeriesOption[];
     expect(line.areaStyle?.color).toEqual({
       type: "linear",
       x: 0,
@@ -194,7 +193,7 @@ describe("exposureOption", () => {
   it("keeps the area all teal when no month is negative, all red when none is positive", () => {
     const stops = (rates: number[]) => {
       const capital = { ...CAPITAL, months: rates.map((returnRate, i) => ({ ...CAPITAL.months[0], month: `2026-0${i + 1}`, returnRate })) };
-      const [line] = returnOption(capital, SERIES, colors).series as LineSeriesOption[];
+      const [line] = returnOption(capital, colors).series as LineSeriesOption[];
       return (line.areaStyle?.color as { colorStops: unknown } | undefined)?.colorStops;
     };
     expect(stops([0.1, 0.2])).toEqual([
@@ -228,22 +227,8 @@ describe("SCOPE_SERIES and seriesColor", () => {
   });
 });
 
-describe("monthGrid", () => {
-  it("makes room on the right for the longest end label, wrapped past fourteen characters", () => {
-    // "Assigné" and "Investi", seven characters: ceil(7 × 7.5) = 53, plus the label's distance of 8 and 4 to spare.
-    expect(monthGrid(SERIES)).toEqual({ left: 64, right: 65 });
-    // "Cumul des profits/pertes" wraps to "Cumul des" / "profits/pertes": fourteen characters wide, 105 + 12.
-    expect(monthGrid(LONG_SERIES)).toEqual({ left: 64, right: 117 });
-  });
-
-  it("measures only the lines it is given", () => {
-    // "Cumul", five characters: ceil(5 × 7.5) = 38, plus 12.
-    expect(monthGrid([{ key: "cumulativePnl", name: "Cumul" }])).toEqual({ left: 64, right: 50 });
-  });
-});
-
 describe("capitalOption", () => {
-  it("draws four straight lines on one axis, in fixed order and colors, each named at its end", () => {
+  it("draws four straight lines on one axis, in fixed order and colors, named in the legend only, never at their end", () => {
     const option = capitalOption(CAPITAL, SERIES, colors);
     expect(Array.isArray(option.yAxis)).toBe(false);
     expect(option.xAxis).toMatchObject({ type: "category", data: ["2026-08", "2026-09"] });
@@ -254,7 +239,7 @@ describe("capitalOption", () => {
       ["line", "Alloué", false, colors.series[2], [3400, 0]],
       ["line", "Investi", false, colors.series[3], [3359, -41]],
     ]);
-    expect(series.every((s) => s.endLabel?.show === true)).toBe(true);
+    expect(series.every((s) => s.endLabel === undefined)).toBe(true);
   });
 
   it("draws a strategy with nothing assigned as three lines, each keeping the hue of its key", () => {
@@ -266,25 +251,15 @@ describe("capitalOption", () => {
     ]);
   });
 
-  it("keeps its end labels readable: pushed apart where lines meet, wrapped, inside a margin made for the longest", () => {
-    const option = capitalOption(CAPITAL, LONG_SERIES, colors);
-    const series = option.series as LineSeriesOption[];
-    expect(series.map((s) => s.labelLayout)).toEqual(Array(4).fill({ moveOverlap: "shiftY" }));
-    expect(series.map((s) => s.endLabel)).toEqual(Array(4).fill(expect.objectContaining({ width: 105, overflow: "break", distance: 8 })));
-    // Pushed down a pile at 0, a label covers the month under it instead of mixing its letters with it.
-    expect(series.map((s) => s.endLabel)).toEqual(Array(4).fill(expect.objectContaining({ backgroundColor: colors.surface, padding: [0, 2] })));
-    expect(option.grid).toMatchObject(monthGrid(LONG_SERIES));
-    // One row of legend, paged when it runs out of width, above a plot that starts below it.
+  it("gives the plot the chart's whole width: no margin kept for end labels, the legend on one paged row above", () => {
+    const option = capitalOption(CAPITAL, SERIES, colors);
+    expect(option.grid).toMatchObject({ ...MONTH_GRID, top: 40 });
     expect(option.legend).toMatchObject({ type: "scroll", top: 0 });
-    expect(option.grid).toMatchObject({ top: 40 });
-    // The cumulative P/L ends near 0: its two-line label reaches below the axis, the months sit lower.
-    expect(option.xAxis).toMatchObject({ axisLabel: { margin: 14 } });
-    expect(option.grid).toMatchObject({ bottom: 40 });
   });
 
   it("lines its months up with the bars: the same frame, each point at the center of its month", () => {
     const option = capitalOption(CAPITAL, SERIES, colors);
-    expect(option.grid).toMatchObject(monthGrid(SERIES));
+    expect(option.grid).toMatchObject(MONTH_GRID);
     expect(option.xAxis).toMatchObject({ boundaryGap: true });
   });
 
@@ -302,7 +277,7 @@ describe("capitalOption", () => {
 
 describe("returnOption", () => {
   it("draws the monthly return as one straight line, a gap where nothing was tied up all month, over a zero baseline", () => {
-    const option = returnOption(CAPITAL, SERIES, colors);
+    const option = returnOption(CAPITAL, colors);
     expect(option.legend).toBeUndefined();
     const [line] = option.series as LineSeriesOption[];
     expect(line).toMatchObject({ type: "line", smooth: false, connectNulls: false });
@@ -313,7 +288,7 @@ describe("returnOption", () => {
   it("shows a month whose return stands between two gaps, which draws no segment, and only that one", () => {
     const rates = [null, 0.02, null, 0.01, 0.03];
     const months = rates.map((returnRate, i) => ({ ...CAPITAL.months[0], month: `2026-0${i + 1}`, returnRate }));
-    const [line] = returnOption({ ...CAPITAL, months }, SERIES, colors).series as LineSeriesOption[];
+    const [line] = returnOption({ ...CAPITAL, months }, colors).series as LineSeriesOption[];
     expect(valuesOf(line.data)).toEqual(rates);
     expect(symbolsOf(line.data)).toEqual([false, true, false, false, false]);
     // Every symbol drawn, never sampled away on a long axis: the isolated one would go with them.
@@ -321,17 +296,17 @@ describe("returnOption", () => {
   });
 
   it("lines its months up with the capital chart's", () => {
-    const option = returnOption(CAPITAL, LONG_SERIES, colors);
-    expect(option.grid).toMatchObject(monthGrid(LONG_SERIES));
+    const option = returnOption(CAPITAL, colors);
+    expect(option.grid).toMatchObject(MONTH_GRID);
     expect(option.xAxis).toMatchObject({ boundaryGap: true });
   });
 
   it("never prints the same axis label twice on a flat return: a step of at least 0.1%", () => {
-    expect(returnOption(CAPITAL, SERIES, colors).yAxis).toMatchObject({ minInterval: 0.001 });
+    expect(returnOption(CAPITAL, colors).yAxis).toMatchObject({ minInterval: 0.001 });
   });
 
   it("formats the tooltip as a rate, a dash for a month without one", () => {
-    const { valueFormatter } = returnOption(CAPITAL, SERIES, colors).tooltip as { valueFormatter: (value: unknown) => string };
+    const { valueFormatter } = returnOption(CAPITAL, colors).tooltip as { valueFormatter: (value: unknown) => string };
     expect(valueFormatter(0.01206)).toBe("1.2%");
     expect(valueFormatter(null)).toBe("—");
   });

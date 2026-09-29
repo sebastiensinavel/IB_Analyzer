@@ -38,16 +38,13 @@ export const SCOPE_SERIES: Record<CapitalScope, readonly CapitalSeriesKey[]> = {
   portfolio: ["cumulativePnl", "allocated", "invested"],
 };
 
-/** Room for the widest amount on a month chart's Y axis, "140,000" and its gap. */
-const MONTH_GRID_LEFT = 64;
-/** One character of CHART_FONT at ECharts' 12 px: a monospace advance of 0.6 em, rounded up. */
-const CHAR_WIDTH = 7.5;
-/** An end label wraps past this many characters: "Cumul des profits/pertes" takes two lines, not 180 px of a phone's plot. */
-const END_LABEL_MAX_CHARS = 14;
-/** ECharts' own default, written out because the margin counts it. */
-const END_LABEL_DISTANCE = 8;
-/** Left and right, around the text on its card-colored background. */
-const END_LABEL_PADDING = 2;
+/**
+ * The horizontal frame of every month chart, so a month sits at the same x on each card: room on
+ * the left for the widest amount on the Y axis, "140,000" and its gap, and on the right for half
+ * of the last month's label. The capital chart names its lines in its legend only, never at their
+ * end: a label there would take a phone's plot width for a name the legend already gives.
+ */
+export const MONTH_GRID = { left: 64, right: 16 } as const;
 /** A point with no neighbour draws no segment: this symbol is all that shows it. */
 const ISOLATED_SYMBOL_SIZE = 6;
 
@@ -85,20 +82,6 @@ export function swatchColor(slice: SectorSlice, index: number, colors: ChartColo
 /** A capital line's hue: its key's rank among every line, so "Allocated" is the same color on every page. */
 export function seriesColor(key: CapitalSeriesKey, colors: ChartColors): string {
   return colors.series[SERIES_HUES.indexOf(key)];
-}
-
-function endLabelWidth(series: readonly CapitalSeries[]): number {
-  const longest = Math.max(...series.map((s) => s.name.length));
-  return Math.ceil(Math.min(longest, END_LABEL_MAX_CHARS) * CHAR_WIDTH);
-}
-
-/**
- * The horizontal frame of a month chart: the capital chart's, whose right margin holds the end
- * labels of `series`. Every month chart of a page takes the same `series`, so a month sits at the
- * same x on each card.
- */
-export function monthGrid(series: readonly CapitalSeries[]): { left: number; right: number } {
-  return { left: MONTH_GRID_LEFT, right: endLabelWidth(series) + END_LABEL_DISTANCE + 2 * END_LABEL_PADDING };
 }
 
 /** A month's value, with a visible symbol only where no neighbour draws a segment to it. */
@@ -165,10 +148,9 @@ export function exposureOption(slices: readonly SectorSlice[], other: string, co
 }
 
 export function capitalOption(capital: StrategyCapital, series: readonly CapitalSeries[], colors: ChartColors): EChartsOption {
-  const labelWidth = endLabelWidth(series);
   return {
     textStyle: { fontFamily: CHART_FONT, color: colors.foreground },
-    grid: { ...monthGrid(series), top: 40, bottom: 40 },
+    grid: { ...MONTH_GRID, top: 40, bottom: 32 },
     // One row, paged past its width: a wrapped legend would run into the top of the plot.
     legend: { type: "scroll", top: 0, textStyle: { color: colors.foreground } },
     tooltip: {
@@ -176,15 +158,7 @@ export function capitalOption(capital: StrategyCapital, series: readonly Capital
       confine: true,
       valueFormatter: (value: unknown) => `${typeof value === "number" ? formatAmount(value) : "—"} ${capital.currency}`,
     },
-    // The cumulative P/L usually ends near 0, and its wrapped end label reaches half its height
-    // below the line: the months sit lower than ECharts' 8 px so the two never touch.
-    xAxis: {
-      type: "category",
-      boundaryGap: true,
-      data: capital.months.map((m) => m.month),
-      axisLabel: { margin: 14 },
-      axisLine: { lineStyle: { color: colors.track } },
-    },
+    xAxis: { type: "category", boundaryGap: true, data: capital.months.map((m) => m.month), axisLine: { lineStyle: { color: colors.track } } },
     yAxis: { type: "value", splitLine: { lineStyle: { color: colors.track } } },
     // The key is the line's id: `CapitalCard` replaces the series by id, so a line the next scope
     // does not draw — the Wheel's "Assigned" once the page shows the condors — leaves the chart.
@@ -196,21 +170,6 @@ export function capitalOption(capital: StrategyCapital, series: readonly Capital
       ...LINE_SYMBOLS,
       color: seriesColor(key, colors),
       lineStyle: { width: 2 },
-      // Allocated and cash invested part by the cumulative P/L alone, assigned meets allocated
-      // whenever no put is open: their end labels would pile up without the shift. The shift is
-      // bounded by the chart, not the plot, so a pile at 0 can still reach the months: the card's
-      // own background lets a label cover a month label there rather than mix letters with it.
-      endLabel: {
-        show: true,
-        formatter: "{a}",
-        color: colors.foreground,
-        width: labelWidth,
-        overflow: "break" as const,
-        distance: END_LABEL_DISTANCE,
-        backgroundColor: colors.surface,
-        padding: [0, END_LABEL_PADDING],
-      },
-      labelLayout: { moveOverlap: "shiftY" as const },
       data: linePoints(capital.months.map((m) => m[key])),
     })),
   };
@@ -243,12 +202,12 @@ function returnStyles(rates: readonly (number | null)[], colors: ChartColors) {
   };
 }
 
-export function returnOption(capital: StrategyCapital, series: readonly CapitalSeries[], colors: ChartColors): EChartsOption {
+export function returnOption(capital: StrategyCapital, colors: ChartColors): EChartsOption {
   const rates = capital.months.map((m) => m.returnRate);
   const styles = returnStyles(rates, colors);
   return {
     textStyle: { fontFamily: CHART_FONT, color: colors.foreground },
-    grid: { ...monthGrid(series), top: 16, bottom: 32 },
+    grid: { ...MONTH_GRID, top: 16, bottom: 32 },
     tooltip: {
       trigger: "axis",
       confine: true,
