@@ -48,7 +48,7 @@
       },
       "wheel": {
         "title": "The Wheel, cycle by cycle",
-        "text": "Puts sold, assignments, covered calls and call-aways follow one another on the underlying's chart, at the price of each lot.",
+        "text": "Puts sold, assignments, covered calls and shares called away follow one another on the underlying's chart, at the price of each lot.",
         "alt": "Wheel positions and price chart"
       },
       "journal": {

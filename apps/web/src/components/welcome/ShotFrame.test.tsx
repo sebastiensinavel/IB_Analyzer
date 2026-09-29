@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { expect, it } from "vitest";
 import i18n from "@/i18n";
@@ -21,4 +21,19 @@ it("keeps its frame and its text when the image cannot load", () => {
   expect(screen.queryByRole("img")).toBeNull();
   expect(screen.getByText("Historique")).toBeInTheDocument();
   expect(screen.getByTestId("shot-frame")).toBeInTheDocument();
+});
+
+it("tries again with the new shot after a language switch", async () => {
+  await i18n.changeLanguage("fr");
+  render(<I18nextProvider i18n={i18n}><ShotFrame id="history" alt="Historique" /></I18nextProvider>);
+  fireEvent.error(screen.getByRole("img", { name: "Historique" }));
+  expect(screen.queryByRole("img")).toBeNull();
+  await act(() => i18n.changeLanguage("en"));
+  expect(screen.getByRole("img", { name: "Historique" })).toHaveAttribute("src", "/welcome/history.light.en.webp");
+  await i18n.changeLanguage("fr");
+});
+
+it("loads eagerly when asked to", () => {
+  render(<I18nextProvider i18n={i18n}><ShotFrame id="dashboard" alt="d" eager /></I18nextProvider>);
+  expect(screen.getByRole("img", { name: "d" })).toHaveAttribute("loading", "eager");
 });

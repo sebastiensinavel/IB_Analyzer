@@ -49,11 +49,13 @@ export function WelcomePage() {
         </div>
       </div>
 
-      <header className="flex flex-col gap-6">
-        <h1 className="font-heading text-3xl font-semibold tracking-tight md:text-4xl">{t("welcome.title")}</h1>
-        <p className="max-w-3xl text-muted-foreground">{t("welcome.subtitle")}</p>
-        <WelcomeActions />
-        <ShotFrame id="dashboard" alt={t("welcome.heroAlt")} />
+      <header className="flex flex-col gap-6 md:flex-row md:items-center md:gap-10">
+        <div className="flex flex-col gap-6 md:w-1/2">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight md:text-4xl">{t("welcome.title")}</h1>
+          <p className="text-muted-foreground">{t("welcome.subtitle")}</p>
+          <WelcomeActions />
+        </div>
+        <ShotFrame id="dashboard" alt={t("welcome.heroAlt")} eager className="w-full md:w-1/2" />
       </header>
 
       {FEATURES.map((f, i) => (
