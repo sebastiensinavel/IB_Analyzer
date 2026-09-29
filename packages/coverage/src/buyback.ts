@@ -1,10 +1,10 @@
 import { contractId, type JournalRow } from "@ib/ledger";
-import { BUYBACK_RATIO } from "./constants.ts";
+import { BUYBACK_FEE, BUYBACK_MAX_SHARE, BUYBACK_YIELD_MARGIN } from "./constants.ts";
 
-/** What the Décision column says of a sold option, and why (spec of sub-project 38, §3). */
+/** What the Décision column says of a sold option, and why (spec of sub-project 38, §3 and addendum). */
 export interface BuybackAdvice {
   decision: "buy back" | "keep";
-  /** Per-unit buyback price at or under which buying back pays: S × min(½, r/T), or S / 2 without the time. */
+  /** Per-unit buyback price at or under which buying back pays: min(0.4 S, S r / (1.2 T) − fees), or 0.4 S without the time; never negative. */
   threshold: number;
   /** Days left and total life, fractional; `null` when the time rule could not apply. */
   remainingDays: number | null;
@@ -45,21 +45,25 @@ function lifeOf({ soldAt, expiry, asOf }: BuybackTiming): { remaining: number; t
 }
 
 /**
- * "buy back" when C <= S × min(½, r/T) (spec of sub-project 38, §1): the premium captured runs
- * ahead of the time elapsed — equivalently, what is left earns less per day than the sale did.
- * Without the time, the 50% rule alone. An option expired at the price's instant is kept: there
- * is nothing left to buy back.
+ * "buy back" when C <= min(0.4 × S, S × r / (1.2 × T) − fees) (sub-project 38, addendum): keeping
+ * still earns C in r days, buying back costs C plus a commission per leg and frees the margin
+ * for a new sale, assumed to earn at the pace of this one, S in T days, which must beat the rest
+ * by 20%. Never above 40% of the premium, to spare the fees of a buyback for a small gain early
+ * in the life. Without the time, the 40% rule alone. An option expired at the price's instant,
+ * or whose rest could not pay the commission, is kept.
  */
-export function evaluateBuyback(salePrice: number, currentPrice: number, timing: BuybackTiming | null): BuybackAdvice {
+export function evaluateBuyback(salePrice: number, currentPrice: number, timing: BuybackTiming | null, legs = 1): BuybackAdvice {
   const sale = Math.abs(salePrice);
   const current = Math.abs(currentPrice);
   if (sale <= 0) return { decision: "keep", threshold: 0, remainingDays: null, totalDays: null };
-  const half = sale / BUYBACK_RATIO;
+  const cap = sale * BUYBACK_MAX_SHARE;
   const life = timing ? lifeOf(timing) : null;
-  if (!life) return { decision: current <= half ? "buy back" : "keep", threshold: half, remainingDays: null, totalDays: null };
+  if (!life) return { decision: current <= cap ? "buy back" : "keep", threshold: cap, remainingDays: null, totalDays: null };
   if (life.remaining <= 0) return { decision: "keep", threshold: 0, remainingDays: 0, totalDays: life.total };
-  const threshold = Math.min(half, (sale * life.remaining) / life.total);
-  return { decision: current <= threshold ? "buy back" : "keep", threshold, remainingDays: life.remaining, totalDays: life.total };
+  const paced = (sale * life.remaining) / (BUYBACK_YIELD_MARGIN * life.total) - BUYBACK_FEE * legs;
+  const threshold = Math.max(0, Math.min(cap, paced));
+  const decision = threshold > 0 && current <= threshold ? "buy back" : "keep";
+  return { decision, threshold, remainingDays: life.remaining, totalDays: life.total };
 }
 
 /** Σ instant × |quantity| ÷ Σ |quantity|, ISO; `null` when nothing weighs. */

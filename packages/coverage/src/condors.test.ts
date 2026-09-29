@@ -51,12 +51,12 @@ function priced(positions: Position[]): PricedSnapshot {
   return { positions, report: buildRiskReport(positions, null) };
 }
 
-/** Cost to close 0.15 against a 0.5 credit: under half, so buy back. */
+/** Cost to close 0.15 against a 0.5 credit: under 40%, so buy back. */
 const CHEAP = () => priced([leg("P", 620, 1, 0.05), leg("P", 625, -1, 0.15), leg("C", 660, -1, 0.1), leg("C", 665, 1, 0.05)]);
 
 /**
  * A credit to close (−0.4): IB would pay to shut this condor down. Its absolute value (0.4) is
- * *above* half the 0.5 credit, so `evaluateBuyback(0.5, −0.4)` alone — which takes Math.abs of
+ * *above* 40% of the 0.5 credit, so `evaluateBuyback(0.5, −0.4)` alone — which takes Math.abs of
  * both prices — would say "keep"; only the `closingCost <= 0` guard in `condorPositions` catches
  * this and forces "buy back".
  */
@@ -77,7 +77,17 @@ describe("condorPositions", () => {
     expect(line.legs.map((l) => l.pnl)).toEqual([expect.closeTo(-25), expect.closeTo(45), expect.closeTo(40), expect.closeTo(-25)]);
   });
 
-  it("keeps a condor whose closing cost is above half its credit", () => {
+  it("pays the commission of its four legs to buy a condor back", () => {
+    // Sold 2026-08-03 14:30, expiry 2026-08-29 16:00, priced 3 days before: 0.5 × 3 / (1.2 × T) ≈ 0.048,
+    // under which 0.02 passes with one commission (0.01) and fails with four (0.04).
+    const snapshot = { ...priced([leg("P", 620, 1, 0.01), leg("P", 625, -1, 0.02), leg("C", 660, -1, 0.02), leg("C", 665, 1, 0.01)]), asOf: "2026-08-26T16:00:00.000Z" };
+    const [line] = condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z")], snapshot);
+    expect(line.closingCost).toBeCloseTo(0.02);
+    expect(line.buyback?.threshold).toBeCloseTo((0.5 * 3) / (1.2 * 26.0625) - 0.04, 10);
+    expect(line.decision).toBe("keep");
+  });
+
+  it("keeps a condor whose closing cost is above 40% of its credit", () => {
     const snapshot = priced([leg("P", 620, 1, 0.1), leg("P", 625, -1, 0.4), leg("C", 660, -1, 0.3), leg("C", 665, 1, 0.1)]);
     expect(condorPositions([condor("ic#1", "2026-08-03T14:30:00.000Z")], snapshot)[0].decision).toBe("keep");
   });

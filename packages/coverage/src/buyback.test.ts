@@ -6,30 +6,52 @@ import { averageSaleInstant, evaluateBuyback, saleInstants } from "./buyback.ts"
 const timing = (asOf: string) => ({ soldAt: "2026-09-01T16:00:00.000Z", expiry: "2026-10-01", asOf });
 
 describe("evaluateBuyback", () => {
-  it("with 10 days left of 30, a 30 sale buys back at 10 and no higher", () => {
-    const at = "2026-09-21T16:00:00.000Z";
-    expect(evaluateBuyback(30, 10, timing(at))).toEqual({ decision: "buy back", threshold: 10, remainingDays: 10, totalDays: 30 });
-    expect(evaluateBuyback(30, 10.01, timing(at)).decision).toBe("keep");
+  // Threshold: min(0.4 × S, S × r / (1.2 × T) − 0.01 × legs).
+  it("with 10 days left of 30, a 30 sale buys back at 30 × 10 / 36 − 0.01 and no higher", () => {
+    const advice = evaluateBuyback(30, 8.32, timing("2026-09-21T16:00:00.000Z"));
+    expect(advice).toMatchObject({ decision: "buy back", remainingDays: 10, totalDays: 30 });
+    expect(advice.threshold).toBeCloseTo(30 * 10 / 36 - 0.01, 10);
+    expect(evaluateBuyback(30, 8.33, timing("2026-09-21T16:00:00.000Z")).decision).toBe("keep");
   });
 
   it("keeps 40% of the premium at 3 days from expiry", () => {
     const advice = evaluateBuyback(30, 12, timing("2026-09-28T16:00:00.000Z"));
     expect(advice.decision).toBe("keep");
-    expect(advice.threshold).toBeCloseTo(3, 10);
+    expect(advice.threshold).toBeCloseTo(30 * 3 / 36 - 0.01, 10);
   });
 
-  it("caps the threshold at half the sale in the first half of the life", () => {
-    const advice = evaluateBuyback(30, 15, timing("2026-09-06T16:00:00.000Z")); // 25 days left
-    expect(advice).toEqual({ decision: "buy back", threshold: 15, remainingDays: 25, totalDays: 30 });
+  it("caps the threshold at 40% of the sale early in the life", () => {
+    const advice = evaluateBuyback(30, 12, timing("2026-09-06T16:00:00.000Z")); // 25 days left
+    expect(advice).toEqual({ decision: "buy back", threshold: 12, remainingDays: 25, totalDays: 30 });
+    expect(evaluateBuyback(30, 12.01, timing("2026-09-06T16:00:00.000Z")).decision).toBe("keep");
   });
 
-  it("switches to the time rule at mid-life", () => {
-    expect(evaluateBuyback(30, 15, timing("2026-09-16T16:00:00.000Z")).threshold).toBe(15);
-    expect(evaluateBuyback(30, 15, timing("2026-09-17T16:00:00.000Z")).decision).toBe("keep");
+  it("switches to the time rule once the rest earns less than the sale's pace over 1.2", () => {
+    expect(evaluateBuyback(30, 12, timing("2026-09-16T16:00:00.000Z")).threshold).toBe(12); // 15 days left
+    expect(evaluateBuyback(30, 12, timing("2026-09-17T16:00:00.000Z")).decision).toBe("keep"); // 14 days left
+  });
+
+  it("still buys back a cheap remainder the day before expiry", () => {
+    const advice = evaluateBuyback(30, 0.8, timing("2026-09-30T16:00:00.000Z"));
+    expect(advice.decision).toBe("buy back");
+    expect(advice.threshold).toBeCloseTo(30 / 36 - 0.01, 10);
+  });
+
+  it("counts the commission against a penny premium, and never buys back when it eats the gain", () => {
+    expect(evaluateBuyback(0.05, 0.02, timing("2026-09-21T16:00:00.000Z")).decision).toBe("keep");
+    expect(evaluateBuyback(0.05, 0.003, timing("2026-09-21T16:00:00.000Z")).decision).toBe("buy back");
+    // 6 days left: 0.05 × 6 / 36 < 0.01, nothing to gain even at 0.
+    expect(evaluateBuyback(0.05, 0, timing("2026-09-25T16:00:00.000Z"))).toMatchObject({ decision: "keep", threshold: 0 });
+  });
+
+  it("pays one commission per leg", () => {
+    const at = timing("2026-09-21T16:00:00.000Z");
+    expect(evaluateBuyback(30, 8.3, at, 4).threshold).toBeCloseTo(30 * 10 / 36 - 0.04, 10);
+    expect(evaluateBuyback(30, 8.3, at, 4).decision).toBe("keep");
   });
 
   it("reads a day-only asOf as that day's 16:00 close", () => {
-    expect(evaluateBuyback(30, 10, timing("2026-09-21"))).toEqual({ decision: "buy back", threshold: 10, remainingDays: 10, totalDays: 30 });
+    expect(evaluateBuyback(30, 8, timing("2026-09-21"))).toMatchObject({ decision: "buy back", remainingDays: 10, totalDays: 30 });
   });
 
   it("keeps an option expired at the price's instant, even at 0", () => {
@@ -37,16 +59,17 @@ describe("evaluateBuyback", () => {
     expect(evaluateBuyback(30, 0, timing("2026-10-02")).decision).toBe("keep");
   });
 
-  it("falls back to the 50% rule without timing, or with incoherent dates", () => {
-    const half = { decision: "buy back", threshold: 15, remainingDays: null, totalDays: null };
-    expect(evaluateBuyback(30, 15, null)).toEqual(half);
-    expect(evaluateBuyback(30, 15, { soldAt: "2026-10-02T10:00:00.000Z", expiry: "2026-10-01", asOf: "2026-10-01" })).toEqual(half); // T <= 0
-    expect(evaluateBuyback(30, 15, timing("2026-08-30T10:00:00.000Z"))).toEqual(half); // asOf before the sale
-    expect(evaluateBuyback(30, 15, { soldAt: "nonsense", expiry: "2026-10-01", asOf: "2026-09-21" })).toEqual(half);
+  it("falls back to the 40% rule without timing, or with incoherent dates", () => {
+    const share = { decision: "buy back", threshold: 12, remainingDays: null, totalDays: null };
+    expect(evaluateBuyback(30, 12, null)).toEqual(share);
+    expect(evaluateBuyback(30, 12, { soldAt: "2026-10-02T10:00:00.000Z", expiry: "2026-10-01", asOf: "2026-10-01" })).toEqual(share); // T <= 0
+    expect(evaluateBuyback(30, 12, timing("2026-08-30T10:00:00.000Z"))).toEqual(share); // asOf before the sale
+    expect(evaluateBuyback(30, 12, { soldAt: "nonsense", expiry: "2026-10-01", asOf: "2026-09-21" })).toEqual(share);
+    expect(evaluateBuyback(30, 12.01, null).decision).toBe("keep");
   });
 
   it("uses absolute prices and keeps a zero sale", () => {
-    expect(evaluateBuyback(-30, -10, timing("2026-09-21T16:00:00.000Z")).decision).toBe("buy back");
+    expect(evaluateBuyback(-30, -8, timing("2026-09-21T16:00:00.000Z")).decision).toBe("buy back");
     expect(evaluateBuyback(0, 0, null)).toEqual({ decision: "keep", threshold: 0, remainingDays: null, totalDays: null });
   });
 });

@@ -184,7 +184,7 @@ describe("groupedPositions", () => {
 });
 
 describe("buildRiskReport sale timing", () => {
-  it("dates a short option from the sale table, and keeps the 50% rule without it", () => {
+  it("dates a short option from the sale table, and keeps the 40% rule without it", () => {
     const put = option({ symbol: "SPY", right: "P", strike: 600, expiry: "2026-10-01", quantity: -1, avgPrice: 30, marketPrice: 12 });
     const id = contractId(contractOf(put));
     const dated = buildRiskReport([put], 0, { asOf: "2026-09-28T16:00:00.000Z", soldAt: new Map([[id, "2026-09-01T16:00:00.000Z"]]) });
@@ -193,8 +193,8 @@ describe("buildRiskReport sale timing", () => {
     const other = option({ symbol: "QQQ", right: "P", strike: 400, expiry: "2026-10-01", quantity: -1, avgPrice: 20, marketPrice: 8 });
     const plain = buildRiskReport([put, other], 0);
     expect(plain.positions.map((p) => p.buyback)).toEqual([
-      { decision: "buy back", threshold: 15, remainingDays: null, totalDays: null },
-      { decision: "buy back", threshold: 10, remainingDays: null, totalDays: null },
+      { decision: "buy back", threshold: 12, remainingDays: null, totalDays: null },
+      { decision: "buy back", threshold: 8, remainingDays: null, totalDays: null },
     ]);
   });
 });

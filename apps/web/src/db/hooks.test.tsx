@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { ACTIVABLE_STRATEGIES, contractId, contractOf, type JournalsReport, type Transaction } from "@ib/ledger";
+import { BUYBACK_MAX_SHARE } from "@ib/coverage";
 import { db, type AccountRecord } from "@/db/schema";
 import { useAccount, useImports, useJournals, useLedger, useNeverFed, useRiskReport, useSectors, useSnapshot, useStatements } from "@/db/hooks";
 import { SAMPLE_TRANSACTIONS } from "@/mocks/ledger";
@@ -148,7 +149,7 @@ describe("useRiskReport", () => {
     expect(result.current.sectorOf("XYZ")).toBeNull();
   });
 
-  it("times a sold option on the sale table, and falls back to the 50% rule without it", async () => {
+  it("times a sold option on the sale table, and falls back to the 40% rule without it", async () => {
     const snapshot = { ...SAMPLE_SNAPSHOT, asOf: "2026-01-02" };
     await db.snapshots.put(snapshot);
     const put = snapshot.positions.find((p) => p.symbol === "XOM")!;
@@ -164,7 +165,7 @@ describe("useRiskReport", () => {
     await waitFor(() => expect(bare.result.current.report).toBeTruthy());
     const advice = find(bare.result.current.report!).buyback;
     expect(advice?.remainingDays).toBeNull();
-    expect(advice?.threshold).toBe(put.avgPrice! / 2);
+    expect(advice?.threshold).toBeCloseTo(put.avgPrice! * BUYBACK_MAX_SHARE, 12);
   });
 });
 
