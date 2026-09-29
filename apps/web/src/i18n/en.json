@@ -1,4 +1,8 @@
 {
+  "pwa": {
+    "updateAvailable": "New version available",
+    "reload": "Reload"
+  },
   "nav": {
     "sections": {
       "overview": "Overview",

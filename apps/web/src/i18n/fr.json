@@ -1,4 +1,8 @@
 {
+  "pwa": {
+    "updateAvailable": "Nouvelle version disponible",
+    "reload": "Recharger"
+  },
   "nav": {
     "sections": {
       "overview": "Vue d'ensemble",

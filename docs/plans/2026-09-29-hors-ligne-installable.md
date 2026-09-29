@@ -324,7 +324,7 @@ git commit -m "PWA : Service Worker pré-caché, manifeste, routes du serveur ex
   - `export function UpdateBanner(): JSX.Element | null`
   - clés i18n `pwa.updateAvailable`, `pwa.reload`.
 
-- [ ] **Step 1: Tests qui échouent — `updates.test.ts`**
+- [x] **Step 1: Tests qui échouent — `updates.test.ts`**
 
 ```ts
 // apps/web/src/pwa/updates.test.ts
@@ -406,12 +406,12 @@ describe("scheduleUpdateChecks", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run src/pwa/updates`
 Expected: FAIL, module introuvable.
 
-- [ ] **Step 3: Écrire `updates.ts`**
+- [x] **Step 3: Écrire `updates.ts`**
 
 ```ts
 // apps/web/src/pwa/updates.ts
@@ -457,12 +457,12 @@ export function scheduleUpdateChecks(
 }
 ```
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `cd apps/web && npx vitest run src/pwa/updates`
 Expected: PASS.
 
-- [ ] **Step 5: Tests qui échouent — `UpdateBanner.test.tsx`**
+- [x] **Step 5: Tests qui échouent — `UpdateBanner.test.tsx`**
 
 Le Service Worker n'existe pas dans jsdom : `virtual:pwa-register/react` est la seule doublure du sous-projet (spec §8). `vi.mock` du module virtuel ; si Vitest ne résout pas le module virtuel pour le moquer, ajouter dans `vite.config.ts`, bloc `test`, `alias: { "virtual:pwa-register/react": "<chemin>/src/pwa/testing/registerStub.ts" }` avec un stub qui exporte `useRegisterSW` — et le mock du test le remplace de la même façon.
 
@@ -529,12 +529,12 @@ describe("UpdateBanner", () => {
 });
 ```
 
-- [ ] **Step 6: Vérifier l'échec**
+- [x] **Step 6: Vérifier l'échec**
 
 Run: `cd apps/web && npx vitest run src/pwa/UpdateBanner`
 Expected: FAIL, module `./UpdateBanner` introuvable.
 
-- [ ] **Step 7: Écrire le bandeau et les textes**
+- [x] **Step 7: Écrire le bandeau et les textes**
 
 `fr.json`, nouvelle clé de premier niveau `"pwa": { "updateAvailable": "Nouvelle version disponible", "reload": "Recharger" }` ; `en.json` : `"pwa": { "updateAvailable": "New version available", "reload": "Reload" }`.
 
@@ -580,7 +580,7 @@ Vérifier le chemin réel de `Button` (`grep -rn "export.*Button" apps/web/src/c
 
 **Double rechargement (Review Focus 5)** : lire `node_modules/vite-plugin-pwa/dist/client/build/register.js` (ou l'équivalent sous `dist/`). Si `updateServiceWorker(false)` recharge malgré tout l'onglet sur l'événement `controlling` de workbox-window, notre `reloadOnControllerChange` recharge aussi ; les deux appellent `location.reload()` dans la même tâche, ce qui ne produit qu'une navigation. Consigner ce qui a été constaté en un commentaire d'une ligne au-dessus de l'appel `updateServiceWorker`.
 
-- [ ] **Step 8: Brancher**
+- [x] **Step 8: Brancher**
 
 `apps/web/src/main.tsx`, avant `createRoot` :
 
@@ -596,12 +596,12 @@ reloadOnControllerChange(navigator.serviceWorker, () => window.location.reload()
 
 Vérifier que `App.test.tsx` passe toujours : s'il échoue sur le module virtuel, y ajouter le même `vi.mock` que ci-dessus avec `needRefresh: false`.
 
-- [ ] **Step 9: Vérifier**
+- [x] **Step 9: Vérifier**
 
 Run: `cd apps/web && npx vitest run src/pwa src/App`
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add apps/web/src/pwa apps/web/src/main.tsx apps/web/src/App.tsx apps/web/src/App.test.tsx apps/web/src/i18n/fr.json apps/web/src/i18n/en.json apps/web/vite.config.ts docs/plans/2026-09-29-hors-ligne-installable.md
