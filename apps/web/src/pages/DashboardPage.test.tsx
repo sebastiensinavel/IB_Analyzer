@@ -170,6 +170,8 @@ describe("DashboardPage", () => {
     expect(total.compareDocumentPosition(cash) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const exposure = screen.getByText("Exposition par secteur").closest("[data-slot=card]") as HTMLElement;
     expect(total.parentElement).not.toContainElement(exposure);
+    // Both columns share the rows of one grid, so the cash card and the exposure are as tall as each other.
+    for (const column of [total.parentElement, exposure.parentElement]) expect(column).toHaveClass("md:grid-rows-subgrid", "md:row-span-3");
     // The total lives in its card only, never repeated at the top right.
     expect(screen.getAllByText("235.00 USD")).toHaveLength(1);
     expect(screen.queryByLabelText("Devise")).not.toBeInTheDocument();

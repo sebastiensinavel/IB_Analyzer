@@ -90,13 +90,15 @@ export function DashboardPage() {
         {title}
         {stats && <CurrencySelect currencies={all.map((s) => s.currency)} value={stats.currency} onChange={setChosen} />}
       </div>
+      {/* Two columns on one grid's rows, so the cards side by side are as tall as each other; a
+          missing total keeps its row, or the cash card would face the unrealized P/L. */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-4">
-          {stats && <PnlTotalCard stats={stats} />}
+        <div className="flex flex-col gap-4 md:row-span-3 md:grid md:grid-rows-subgrid">
+          {stats ? <PnlTotalCard stats={stats} /> : <div aria-hidden className="hidden md:block" />}
           <DailyPnlCard daily={daily} realizedToday={realizedToday} />
           {report === null ? noPositions : <CashCoverageCard report={report} isDark={isDark} />}
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 md:row-span-3 md:grid md:grid-rows-subgrid">
           <TotalValueCard value={value} />
           <UnrealizedPnlCard unrealized={unrealized} />
           {capital && <ExposureCard capital={capital} detailed={false} empty={t("stats.exposure.empty.portfolio")} sectorOf={sectorOf} isDark={isDark} shareOnly />}
