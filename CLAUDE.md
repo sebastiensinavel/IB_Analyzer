@@ -96,11 +96,11 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   schéma Dexie plus récent recharge (`db/reloadOnVersionChange.ts`). Seul `src/pwa/` importe
   `virtual:pwa-register`. Désactivé en `pnpm dev` ; `pnpm --filter web e2e:offline` le teste
   contre un vrai build. `sw.js` n'est jamais mis en cache par nginx : un correctif se récupère à
-  la visite, mais **le nouveau worker attend** (`registerType: "prompt"`) : il ne prend la main
-  qu'au clic du bandeau ou à la fermeture de tous les onglets, jamais à un simple rechargement, et
-  une version qui plante au chargement des modules ou au premier rendu ne monte jamais le bandeau.
-  Les vraies issues : une version avec `selfDestroying: true` (le worker disparaît à la visite
-  suivante) ou une version construite en `autoUpdate` (le correctif s'active sans clic).
+  la visite, et le nouveau worker attend le clic du bandeau (`registerType: "prompt"`), **sauf à
+  un rechargement** : un script inline d'`index.html`, hors du bundle pour tourner même quand
+  l'application plante, lui envoie `SKIP_WAITING`. Une version cassée se corrige donc en publiant
+  un correctif, puis **un F5** ; une simple navigation garde la règle du bandeau. Dernier recours
+  si `sw.js` lui-même est cassé : une version avec `selfDestroying: true`.
 - **Propriété de plage, jamais comparaison de contenu** (spec §6.2) : Flex est propriétaire
   de ses jours réels, le relevé HTML n'écrit qu'avant, l'agent n'écrit qu'après. Deux
   transactions jumelles le même jour sont légitimes. **Cette plage ne descend jamais sous la

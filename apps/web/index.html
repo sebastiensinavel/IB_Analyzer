@@ -18,6 +18,50 @@
         if (localStorage.getItem("ib2:theme") === "dark") document.documentElement.classList.add("dark");
       } catch {}
     </script>
+    <script>
+      // Un rechargement applique une nouvelle version publiée (sous-projet 40, spec §3) : une
+      // version qui plante au chargement n'affiche jamais le bandeau « Recharger », donc un
+      // correctif publié doit s'appliquer par un seul F5. Inline, hors du bundle, pour tourner
+      // même quand celui-ci plante. Seulement sur un rechargement et quand une version est déjà
+      // active : une première installation ou une simple navigation gardent la règle du bandeau.
+      // `update()` tout de suite, sans attendre la vérification propre à la navigation, qui ne
+      // finirait qu'après le chargement ; seul le worker qu'il trouve compte. Le SKIP_WAITING est
+      // celui du bandeau (`src/pwa/UpdateBanner.tsx`), puis la prise de contrôle recharge une
+      // fois. Tout échec, serveur coupé compris, est silencieux.
+      try {
+        const sw = navigator.serviceWorker;
+        if (sw && performance.getEntriesByType("navigation")[0]?.type === "reload") {
+          sw.getRegistration()
+            .then((reg) => {
+              if (!reg?.active) return;
+              let applied = false;
+              const apply = (worker) => {
+                if (!worker || applied) return;
+                const onState = () => {
+                  if (applied || worker.state !== "installed") return;
+                  applied = true;
+                  worker.removeEventListener("statechange", onState);
+                  sw.addEventListener("controllerchange", () => location.reload(), { once: true });
+                  worker.postMessage({ type: "SKIP_WAITING" });
+                };
+                worker.addEventListener("statechange", onState);
+                onState();
+              };
+              const onFound = () => apply(reg.installing);
+              reg.addEventListener("updatefound", onFound);
+              apply(reg.waiting || reg.installing);
+              reg
+                .update()
+                .catch(() => {})
+                .then(() => {
+                  reg.removeEventListener("updatefound", onFound);
+                  apply(reg.installing || reg.waiting);
+                });
+            })
+            .catch(() => {});
+        }
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

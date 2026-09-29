@@ -6,7 +6,8 @@ import { startServer, type StaticServer } from "./server.js";
 /**
  * Serveur coupé (sous-projet 40, spec §8) : l'application s'ouvre depuis le Service Worker
  * serveur arrêté ou en 502, `/api` n'est jamais servi depuis un cache, une mise à jour attend
- * le clic du bandeau puis recharge tous les onglets, et la première installation ne recharge
+ * le clic du bandeau puis recharge tous les onglets — ou un rechargement de l'onglet, un seul,
+ * même quand la version installée ne démarre plus —, et la première installation ne recharge
  * rien. Chaque test a son serveur sur un port libre, donc une origine et un Service Worker neufs.
  */
 
@@ -107,4 +108,50 @@ test("première installation : l'onglet passe sous contrôle sans recharger", as
   // Un rechargement déclenché par `controllerchange` partirait juste après : lui laisser le temps.
   await page.waitForTimeout(1_000);
   expect(await page.evaluate(() => window.__e2eMark)).toBe(1);
+});
+
+const banner = (page: Page) => page.getByRole("status").filter({ hasText: "Nouvelle version disponible" });
+
+test("version cassée : un correctif publié s'applique en un seul rechargement", async ({ page }) => {
+  await page.goto(`${server.url}/accounts`);
+  await waitForControl(page);
+
+  // Publier la version cassée et l'appliquer par le bandeau : l'application ne démarre plus.
+  server.setRoot(join(DIST, "broken"));
+  await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r!.update()));
+  await banner(page).getByRole("button", { name: "Recharger" }).click();
+  await page.waitForSelector('meta[name="e2e-version"][content="broken"]', { state: "attached" });
+  await page.waitForTimeout(1_000);
+  expect(await page.evaluate(() => document.getElementById("root")!.childElementCount)).toBe(0);
+  expect(await page.evaluate(() => navigator.serviceWorker.controller !== null)).toBe(true);
+
+  // Publier le correctif : un seul F5, jamais un second.
+  server.setRoot(join(DIST, "fixed"));
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Ajouter ce compte" })).toBeVisible({ timeout: 20_000 });
+  expect(await page.locator('meta[name="e2e-version"]').count()).toBe(0);
+});
+
+test("un simple chargement n'applique pas la version en attente", async ({ context }) => {
+  const first = await context.newPage();
+  await first.goto(`${server.url}/accounts`);
+  await waitForControl(first);
+  await first.evaluate(() => (window.__e2eMark = 1));
+
+  server.setRoot(join(DIST, "b"));
+  await first.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r!.update()));
+  await expect(banner(first)).toBeVisible();
+
+  // Un nouvel onglet est une navigation, pas un rechargement : le bandeau reste la règle.
+  const second = await context.newPage();
+  await second.goto(`${server.url}/accounts`);
+  await waitForControl(second);
+  await second.evaluate(() => (window.__e2eMark = 1));
+  await expect(banner(second)).toBeVisible();
+  await second.waitForTimeout(1_500);
+
+  for (const page of [first, second]) {
+    expect(await page.evaluate(() => window.__e2eMark)).toBe(1);
+    expect(await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r!.waiting !== null))).toBe(true);
+  }
 });

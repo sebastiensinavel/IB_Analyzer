@@ -11,7 +11,8 @@ export const SERVER_PREFIXES = ["/api", "/_allauth", "/static", "/admin", "/agen
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const pwaOptions: Partial<VitePWAOptions> = {
-  // Une nouvelle version attend le clic du bandeau (`src/pwa/UpdateBanner.tsx`).
+  // Une nouvelle version attend le clic du bandeau (`src/pwa/UpdateBanner.tsx`) ou un
+  // rechargement de l'onglet (script inline d'`index.html`).
   registerType: "prompt",
   // L'enregistrement passe par `useRegisterSW` (src/pwa/), jamais par un script injecté.
   injectRegister: false,
@@ -41,7 +42,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     navigateFallback: "index.html",
     navigateFallbackDenylist: SERVER_PREFIXES.map((p) => new RegExp(`^${escape(p)}(/|$)`)),
     // Première installation : l'onglet passe sous contrôle sans rechargement. Une mise à jour,
-    // elle, n'est activée que par le SKIP_WAITING du bandeau.
+    // elle, n'est activée que par le SKIP_WAITING du bandeau ou d'un rechargement (`index.html`).
     clientsClaim: true,
     cleanupOutdatedCaches: true,
   },

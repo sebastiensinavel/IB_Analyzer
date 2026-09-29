@@ -287,12 +287,12 @@ Une maintenance n'empêche pas les navigateurs déjà venus d'ouvrir l'applicati
 Worker leur sert l'enveloppe depuis son cache, et leurs données sont dans IndexedDB. Seules la
 synchro Flex relayée par le serveur et la sauvegarde attendent son retour.
 
-Un Service Worker cassé se remplace en déployant une version corrigée : `sw.js` est servi en
-`no-cache`, donc chaque navigateur relit le fichier à sa visite. Mais avec `registerType:
-"prompt"` le nouveau worker **attend** : il ne prend la main qu'au clic du bandeau ou quand tous
-les onglets et l'application installée sont fermés, jamais à un simple rechargement. Une version
-qui plante au chargement des modules ou au premier rendu ne monte pas le bandeau : ses
-utilisateurs restent sur la version cassée jusqu'à la fermeture de tout. Deux issues : publier
-une version avec `selfDestroying: true` dans `apps/web/pwa.config.ts` (le Service Worker
-disparaît à la visite suivante), ou une version construite en `registerType: "autoUpdate"` (le
-correctif s'active sans clic).
+Une version cassée se corrige en déployant un correctif : `sw.js` est servi en `no-cache`, donc
+chaque navigateur relit le fichier à sa visite. Avec `registerType: "prompt"` le nouveau worker
+attend le clic du bandeau, mais **un rechargement (F5) l'applique d'office** : un script inline
+d'`index.html`, hors du bundle, tourne même quand l'application plante au chargement de ses
+modules ou au premier rendu et ne monte pas le bandeau. Un correctif publié, puis un F5, suffit
+donc. Une simple navigation (nouvel onglet, application installée rouverte) ne l'applique pas.
+Dernier recours, si c'est `sw.js` lui-même qui est cassé : publier une version avec
+`selfDestroying: true` dans `apps/web/pwa.config.ts` (le Service Worker disparaît à la visite
+suivante).
