@@ -9,7 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { DemoBanner } from "@/components/DemoBanner";
 import { ShotFrame } from "@/components/welcome/ShotFrame";
 import { useDb } from "@/db/DbProvider";
-import { enterDemo, isDemo, leaveDemo } from "@/demo/mode";
+import { DEMO_ACCOUNT_ID, enterDemo, isDemo, leaveDemo } from "@/demo/mode";
 import type { ShotId } from "@/welcome/shots";
 
 interface Step { title: string; text: string }
@@ -137,7 +137,7 @@ export function WelcomeActions() {
         {demo ? (
           <>
             <Button onClick={() => void leaveDemo(db, "/accounts")}>{t("welcome.addAccount")}</Button>
-            <Link to="/accounts/demo/dashboard" className={cn(buttonVariants({ variant: "outline" }))}>{t("demo.continue")}</Link>
+            <Link to={`/accounts/${DEMO_ACCOUNT_ID}/dashboard`} className={cn(buttonVariants({ variant: "outline" }))}>{t("demo.continue")}</Link>
           </>
         ) : (
           <>

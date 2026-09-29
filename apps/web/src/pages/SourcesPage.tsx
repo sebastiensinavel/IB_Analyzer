@@ -710,6 +710,7 @@ function AgentCard({ account }: { account: AccountRecord }) {
               type="text"
               inputMode="numeric"
               value={port}
+              disabled={isDemo()}
               onChange={(e) => {
                 setPort(e.target.value);
                 setNotice(null);

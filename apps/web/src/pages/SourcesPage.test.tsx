@@ -1045,6 +1045,7 @@ describe("SourcesPage in the demo", () => {
     }
     for (const radio of screen.getAllByRole("radio")) expect(radio).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByLabelText(i18n.t("sources.flexToken"))).toBeDisabled();
+    expect(screen.getByLabelText(i18n.t("agent.port"))).toBeDisabled();
     for (const box of screen.getAllByRole("checkbox")) expect(box).toBeEnabled();
   });
 });
