@@ -229,26 +229,30 @@ describe("DashboardPage", () => {
     expect(card.compareDocumentPosition(unrealized) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("shows the unrealized P/L with today's realized under it", async () => {
+  it("shows today's realized in the day's unrealized P/L card, no longer in the unrealized one", async () => {
     await seedTotals();
     renderDashboard();
-    const card = await screen.findByLabelText("P/L non réalisé");
-    expect(card).toHaveTextContent("70.00");
-    expect(card).toHaveTextContent("Réalisé du jour");
-    expect(card).toHaveTextContent("78.00");
+    const unrealized = await screen.findByLabelText("P/L non réalisé");
+    expect(unrealized).toHaveTextContent("70.00");
+    expect(unrealized).not.toHaveTextContent("Réalisé du jour");
+    const daily = screen.getByLabelText("P/L non réalisé du jour");
+    expect(daily).toHaveTextContent("6.00");
+    expect(daily).toHaveTextContent("Réalisé du jour 78.00");
+    // On the amount's own line, so it never makes the card taller than the unrealized one.
+    expect(within(daily).getByText("Réalisé du jour").closest("p")).toHaveTextContent("6.00");
   });
 
   it("shows today's realized at 0 on an agent day that closed nothing", async () => {
     await seedTotals({ ...AGENT_SNAPSHOT, asOf: "2026-09-28T15:00:00.000Z" });
     renderDashboard();
-    const card = await screen.findByLabelText("P/L non réalisé");
+    const card = await screen.findByLabelText("P/L non réalisé du jour");
     expect(card).toHaveTextContent("Réalisé du jour 0.00");
   });
 
   it("starts a new day at midnight New York, like TWS's daily P&L, never at the 04:00 market day", async () => {
     await seedTotals({ ...AGENT_SNAPSHOT, asOf: "2026-09-26T03:29:00.000Z" });
     renderDashboard();
-    const card = await screen.findByLabelText("P/L non réalisé");
+    const card = await screen.findByLabelText("P/L non réalisé du jour");
     expect(card).toHaveTextContent("Réalisé du jour 0.00");
   });
 
@@ -271,8 +275,7 @@ describe("DashboardPage", () => {
     renderDashboard();
     const unrealized = await screen.findByLabelText("P/L non réalisé");
     expect(unrealized).toHaveTextContent("70.00");
-    expect(unrealized).toHaveTextContent("Réalisé du jour —");
-    expect(screen.getByLabelText("P/L non réalisé du jour")).toHaveTextContent("—");
+    expect(screen.getByLabelText("P/L non réalisé du jour")).toHaveTextContent("P/L non réalisé du jour—Réalisé du jour —");
   });
 
   it("shows — for the total value, the unrealized and the day without a snapshot", async () => {
