@@ -69,7 +69,9 @@ export function AppLayout() {
           </div>
         )}
       </header>
-      {accountId !== undefined && scoped === null ? <UnknownAccountPage id={accountId} /> : <Outlet />}
+      {/* Keyed by account: the switcher keeps the page (/accounts/alpha/positions/leaps →
+          /accounts/beta/positions/leaps), and no page state may follow it to the other account. */}
+      {accountId !== undefined && scoped === null ? <UnknownAccountPage id={accountId} /> : <Outlet key={scoped ?? ""} />}
     </>
   );
 

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ib/ui/select";
 import type { AccountRecord } from "@/db/schema";
 
@@ -13,10 +13,18 @@ interface AccountSwitcherProps {
 export function AccountSwitcher({ accountId, accounts }: AccountSwitcherProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
+  // Switching keeps the page: /accounts/alpha/positions/leaps becomes
+  // /accounts/beta/positions/leaps. Settings and Help carry no account, so they open the
+  // other account's dashboard; a strategy page inactive there falls back to it by StrategyRoute.
   function handleChange(next: string | null) {
     if (next === ADD_ACCOUNT) navigate("/accounts");
-    else if (next) navigate(`/accounts/${next}/dashboard`);
+    else if (next) {
+      const prefix = `/accounts/${accountId}/`;
+      const page = pathname.startsWith(prefix) ? pathname.slice(prefix.length) : "dashboard";
+      navigate(`/accounts/${next}/${page}`);
+    }
   }
 
   return (

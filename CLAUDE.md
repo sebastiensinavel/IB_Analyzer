@@ -82,6 +82,11 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `/accounts` que pour une route scopée à un compte, jamais pour ces deux-là. C'est le seul
   chemin de restauration d'une sauvegarde sur un navigateur neuf, qui n'a par définition aucun
   compte — resserrer la garde le referme.
+- **Changer de compte garde la page** : `AccountSwitcher` remplace seulement le compte dans le
+  chemin (`/accounts/alpha/positions/leaps` → `/accounts/beta/positions/leaps`), le tableau de
+  bord depuis Paramètres ou Aide ; une stratégie inactive sur l'autre compte retombe sur son
+  tableau de bord par `StrategyRoute`. `AppLayout` remonte la page par compte (`<Outlet
+  key>`) : aucun état local d'une page ne suit le changement de compte.
 - **Le Service Worker ne met en cache que l'enveloppe de l'application** (sous-projet 40) :
   `vite-plugin-pwa`, `generateSW`, options dans `apps/web/pwa.config.ts` seul. Tout le build est
   pré-caché sauf `agent/**` (plafond `maximumFileSizeToCacheInBytes` à 5 Mio : le bundle principal
