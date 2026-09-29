@@ -584,7 +584,7 @@ i18n — add under `welcome` in both files (FR shown; write the EN equivalents w
   - `optionMark(spot: number, strike: number, right: "C" | "P", days: number, vol: number): number`
   - `VOLATILITY: Record<string, number>`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `calendar.test.ts`:
 
@@ -654,9 +654,9 @@ it("prices an option at intrinsic plus time value", () => {
 
 (Import `vi` from vitest in `prices.test.ts`.)
 
-- [ ] **Step 2: Run** — `npx vitest run src/demo/calendar src/demo/prices` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/demo/calendar src/demo/prices` → FAIL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `calendar.ts`:
 
@@ -813,9 +813,9 @@ export function optionMark(spot: number, strike: number, right: "C" | "P", days:
 
 (Check the `date` format `lightweight-charts` expects from `PriceBar` in `PositionChartRow`/`PriceChart`: if the agent sends `YYYYMMDD` or another form, `barsFor` produces that form — read one bar of `apps/web/src/mocks/` or the agent's `/bars` handler in `apps/tws-agent` first.)
 
-- [ ] **Step 4: Run** — `npx vitest run src/demo/calendar src/demo/prices` → PASS.
+- [x] **Step 4: Run** — `npx vitest run src/demo/calendar src/demo/prices` → PASS.
 
-- [ ] **Step 5: Commit** — `git add apps/web/src/demo && git commit -m "Démo : calendrier et prix synthétiques"`
+- [x] **Step 5: Commit** — `git add apps/web/src/demo && git commit -m "Démo : calendrier et prix synthétiques"`
 
 ---
 
