@@ -36,7 +36,8 @@ interface OpenOption extends OptionLeg {
 
 type TradeFields = Omit<Transaction, "accountId" | "source" | "externalId" | "description"> & { description?: string };
 
-const round2 = (x: number) => Math.round(x * 100) / 100;
+/** Rounded to the cent; `+ 0` turns -0 into 0, which the History would print "-$0.00". */
+const round2 = (x: number) => Math.round(x * 100) / 100 + 0;
 
 /**
  * The demo account's whole world on the visit of `now` (sub-project 41, spec §5): the scenario
@@ -165,7 +166,8 @@ export function generateDemo(now: Date): DemoWorld {
   const rows = runningBalances(transactions, DEMO_CURRENCIES);
   const first = dayOf(rows[0].transaction.when);
   const last = rows[rows.length - 1];
-  const importedAt = now.toISOString();
+  // From the reference day, never the instant: the same visit day gives the same world.
+  const importedAt = `${reference}T21:00:00.000Z`;
   const cashPoints = DEMO_CURRENCIES.flatMap((currency): CashPointRecord[] => [
     { accountId: DEMO_ACCOUNT_ID, currency, kind: "start", asOf: first, amount: 0, source: "flex", importedAt },
     { accountId: DEMO_ACCOUNT_ID, currency, kind: "end", asOf: dayOf(last.transaction.when), amount: round2(last.balances[currency]), source: "flex", importedAt },
