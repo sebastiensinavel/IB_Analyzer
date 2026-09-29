@@ -832,7 +832,7 @@ export function optionMark(spot: number, strike: number, right: "C" | "P", days:
   - `generateDemo(now: Date): DemoWorld`
   - `DEMO_IB_ACCOUNT = "U0000000"`, `DEMO_CURRENCIES = ["USD", "EUR"] as const`
 
-- [ ] **Step 1: Write the failing oracle** — `generate.test.ts`
+- [x] **Step 1: Write the failing oracle** — `generate.test.ts`
 
 ```ts
 import { describe, expect, it } from "vitest";
@@ -894,9 +894,9 @@ it("generates the same world twice for the same visit", () => {
 
 (Check the field names against `packages/ledger/src/journals/types.ts` before running: `JournalRow.strategy` and its values, `endWhen`. Adapt the test to the real names, never the reverse.)
 
-- [ ] **Step 2: Run** — `npx vitest run src/demo/generate` → FAIL.
+- [x] **Step 2: Run** — `npx vitest run src/demo/generate` → FAIL.
 
-- [ ] **Step 3: Implement the scenario** — `scenario.ts`
+- [x] **Step 3: Implement the scenario** — `scenario.ts`
 
 ```ts
 /**
@@ -956,7 +956,7 @@ export const DEMO_SCENARIO: readonly DemoEvent[] = [
 
 (`buyBack` closes the position opened under `id`, whatever its side: it buys back a sale and sells a purchase.)
 
-- [ ] **Step 4: Implement the generator** — `generate.ts`
+- [x] **Step 4: Implement the generator** — `generate.ts`
 
 ```ts
 import { DEFAULT_MULTIPLIER, dayOf, packedOptionSymbol, runningBalances, type Position, type Transaction } from "@ib/ledger";
@@ -1162,9 +1162,9 @@ export function conidOf(key: string): number {
 
 (The positions carry `dailyPnl`/`dayChange` `null`, as a Flex snapshot does; the simulated agent of task 6 gives the day's P&L.)
 
-- [ ] **Step 5: Run and tune** — `npx vitest run src/demo/generate`. If an assertion fails, **tune the scenario or the anchors of `prices.ts`** (a strike, a `dte`, an anchor level), never the assertion: each assertion is a promise of the spec. Common adjustments: the MSFT put must be deep enough out of the money for `buy back` (spec of sub-project 39: `C ≤ min(0,4 S, S r / (1,2 T) − 0,01)`); an XSP condor must stay out of the money at its expiry on every visit day; the NVDA/JPM LEAPS expiry must stay after the reference day. Re-run until PASS.
+- [x] **Step 5: Run and tune** — `npx vitest run src/demo/generate`. If an assertion fails, **tune the scenario or the anchors of `prices.ts`** (a strike, a `dte`, an anchor level), never the assertion: each assertion is a promise of the spec. Common adjustments: the MSFT put must be deep enough out of the money for `buy back` (spec of sub-project 39: `C ≤ min(0,4 S, S r / (1,2 T) − 0,01)`); an XSP condor must stay out of the money at its expiry on every visit day; the NVDA/JPM LEAPS expiry must stay after the reference day. Re-run until PASS.
 
-- [ ] **Step 6: Commit** — `git add apps/web/src/demo && git commit -m "Démo : le scénario, son générateur et l'oracle de cohérence"`
+- [x] **Step 6: Commit** — `git add apps/web/src/demo && git commit -m "Démo : le scénario, son générateur et l'oracle de cohérence"`
 
 ---
 
