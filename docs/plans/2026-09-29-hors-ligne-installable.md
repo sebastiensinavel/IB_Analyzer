@@ -726,7 +726,7 @@ git commit -m "PWA : un onglet dépassé par un schéma plus récent recharge"
 
 Pourquoi un serveur maison plutôt que `vite preview` : le test doit pouvoir le faire répondre 502, l'arrêter, et publier une seconde version, ce que `vite preview` ne sait pas faire. Il reproduit `nginx.conf` : `assets/` immuables, tout le reste `no-cache`, un fichier absent donne `index.html`, `/api/*` répond du JSON et compte ses appels. Il écoute sur le port 0 : aucun port en dur, aucune collision avec les instances de dev.
 
-- [ ] **Step 1: Le serveur**
+- [x] **Step 1: Le serveur**
 
 ```ts
 // apps/web/e2e-offline/server.ts
@@ -799,7 +799,7 @@ export async function startServer(root: string): Promise<StaticServer> {
 }
 ```
 
-- [ ] **Step 2: Le build de la suite**
+- [x] **Step 2: Le build de la suite**
 
 `global-setup.ts` construit une fois l'application (`vite build --outDir e2e-offline/.dist/a`, sans `tsc -b`, depuis `apps/web`) puis dérive la version « b » : copie de `a` où `sw.js` reçoit une ligne `// e2e: version b` en fin de fichier. Un Service Worker qui diffère d'un octet est une mise à jour pour le navigateur ; c'est tout ce que le test du bandeau vérifie.
 
@@ -845,7 +845,7 @@ export default defineConfig({
 
 `apps/web/package.json` : `"e2e:offline": "playwright test -c playwright.offline.config.ts"`. `tsconfig.node.json` : ajouter `"playwright.offline.config.ts"` et `"e2e-offline/**/*.ts"` à `include` (vérifier comment `e2e/` est typé aujourd'hui et faire de même si c'est ailleurs).
 
-- [ ] **Step 3: Les tests**
+- [x] **Step 3: Les tests**
 
 ```ts
 // apps/web/e2e-offline/offline.spec.ts
@@ -891,7 +891,7 @@ Cas à écrire, chacun un `test(...)` :
 Run: `pnpm --filter web e2e:offline`
 Expected: 5 tests PASS. Un échec du cas 4 sur l'apparition du bandeau dans la seconde page : vérifier que `useRegisterSW` écoute bien l'état `waiting` d'une mise à jour trouvée par un autre onglet (workbox-window `waiting` avec `isExternal`) ; sinon, déclencher `update()` aussi dans la seconde page — le test doit prouver que les **deux** onglets rechargent après **un** clic, pas que les deux trouvent la mise à jour seuls.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/e2e-offline apps/web/playwright.offline.config.ts apps/web/package.json apps/web/tsconfig.node.json .gitignore docs/plans/2026-09-29-hors-ligne-installable.md

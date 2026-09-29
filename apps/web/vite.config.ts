@@ -40,9 +40,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
-    // Playwright owns everything under e2e/ (see playwright.config.ts); `pnpm check` never
-    // runs Playwright, and vitest's own default include glob would otherwise happily pick up
-    // `*.spec.ts` files there and try to run them as unit tests.
-    exclude: [...configDefaults.exclude, "e2e/**"],
+    // Playwright owns everything under e2e/ and e2e-offline/ (see playwright.config.ts and
+    // playwright.offline.config.ts); `pnpm check` never runs Playwright, and vitest's own
+    // default include glob would otherwise happily pick up `*.spec.ts` files there and try to
+    // run them as unit tests.
+    exclude: [...configDefaults.exclude, "e2e/**", "e2e-offline/**"],
   },
 });
