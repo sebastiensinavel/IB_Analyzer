@@ -37,7 +37,17 @@ test("les captures ne sont pas pré-cachées", async ({ page }) => {
   const cached = await page.evaluate(async () => {
     const keys = await caches.keys();
     const urls = (await Promise.all(keys.map(async (k) => (await (await caches.open(k)).keys()).map((r) => r.url)))).flat();
-    return urls.filter((u) => u.includes("/welcome/"));
+    return { all: urls, welcome: urls.filter((u) => u.includes("/welcome/")) };
   });
-  expect(cached).toEqual([]);
+  // Positive checks first: the precache is populated, so an empty welcome list is meaningful.
+  expect(cached.all.length).toBeGreaterThan(0);
+  expect(cached.all.some((u) => /\.js$/.test(u) || u.endsWith("index.html"))).toBe(true);
+  expect(cached.welcome).toEqual([]);
+  // The shots exist in the build and are served: they are just not precached.
+  const shot = await page.evaluate(async () => {
+    const r = await fetch("/welcome/dashboard.light.fr.webp");
+    return { status: r.status, type: r.headers.get("content-type") };
+  });
+  expect(shot.status).toBe(200);
+  expect(shot.type).toMatch(/^image\//);
 });
