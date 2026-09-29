@@ -602,6 +602,8 @@
     "backupDeleteConfirm": "Delete the backup deposited on the server? There is no version history and no trash."
   },
   "help": {
+    "copy": "Copy",
+    "copied": "Copied",
     "title": "Help",
     "app": {
       "title": "The application",
@@ -722,28 +724,45 @@
     },
     "what": {
       "title": "3. The local agent, optional",
-      "tws": "TWS, short for Trader Workstation, is the Interactive Brokers desktop application, the one where you place your orders. The local agent is a small program you install on your machine: it reads TWS and hands what it reads to the application running in your browser, directly, on your machine. The six points below follow one another in order.",
+      "tws": "TWS, short for Trader Workstation, is the Interactive Brokers desktop application, the one where you place your orders. The local agent is a small program you install on your machine: it reads TWS and hands what it reads to the application running in your browser, directly, on your machine. The steps below follow one another in order; allow about ten minutes the first time.",
       "text": "The agent talks only to the application open in your browser and to Interactive Brokers, never to the server. It stores nothing: positions, cash and today's fills never leave your computer. It also relays the application's Flex Query calls to Interactive Brokers, keeping nothing: in \"local agent only\" mode, the Flex token never goes through the server. Without it, the app works with statements, and with Flex Query if you let the server relay (section 4).",
       "dayValues": "Day chg and Daily P&L come from the local agent: a portfolio rebuilt from a statement or a Flex response leaves them at \"—\", as does a contract bought or sold today."
     },
+    "terminal": {
+      "title": "Before you start: the terminal",
+      "text": "Installing takes a few commands typed in a terminal: a window where you write instructions to the computer instead of clicking. No programming needed: copy each grey command on this page with its Copy button, paste it into the terminal and press Enter.",
+      "open": [
+        "macOS: open Spotlight (⌘ + Space), type \"Terminal\" and press Enter.",
+        "Windows: open the Start menu, type \"PowerShell\" and click Windows PowerShell. No need to run it as administrator.",
+        "Linux: Ctrl + Alt + T on most distributions, otherwise look for \"Terminal\" among your applications."
+      ],
+      "paste": "To paste: ⌘ + V on macOS, Ctrl + V or a right click on Windows, Ctrl + Shift + V on Linux. One command at a time: paste it, press Enter, then wait for the terminal to hand back control — a new line with a blinking cursor — before the next one. The messages that matter are explained below."
+    },
     "uv": {
       "title": "A. Install uv",
-      "text": "uv installs the agent and the Python it needs.",
+      "text": "uv is a free tool, published by the company Astral, that installs programs written in Python. The agent is written in Python: uv downloads the right Python version for it and everything it needs, in a folder of its own, without changing anything else on your computer. You install it once.",
       "macLinux": "macOS and Linux",
-      "windows": "Windows"
+      "windows": "Windows",
+      "reopen": "Once it is installed, close the terminal and open a new one: that is how it finds the uv command. To check, this command must print a version number:",
+      "notFound": "If the terminal says uv cannot be found (\"command not found\", \"is not recognized\"), it almost always means it was not reopened."
     },
     "install": {
       "title": "B. Install the agent",
-      "text": "The command installs the version this site serves. Run it again after the site is updated.",
+      "text": "This command downloads the agent from this site and installs it. It ends with \"Installed 1 executable: ib-tws-agent\".",
+      "path": "If it adds an \"is not on your PATH\" warning, run the following command, then close and reopen the terminal:",
+      "update": "To update the agent, run the same command again after the site is updated: it installs the version this site serves. If it answers \"is already installed\", you already have that version. To uninstall the agent:",
       "unavailable": "This server does not serve the agent package: in development, run pnpm build:agent."
     },
     "configure": {
       "title": "C. Configure and start it",
-      "text": "The first command adds this site's address to those the agent answers; for another site, add its address too, then restart the agent. ib-tws-agent origin list shows them, ib-tws-agent origin remove drops one. The second command starts the agent; leave it running while you use the site."
+      "origin": "For safety, the agent only answers the sites you told it about. This command, run once, gives it this site's address; it answers \"Added …\".",
+      "run": "This command starts the agent. It prints nothing and the terminal does not hand back control: that is expected, the agent is running. Leave this window open while you use the site; you may minimize it.",
+      "stop": "To stop the agent, press Ctrl + C in that window, or close it. Next time, open a terminal and run ib-tws-agent alone: installing and configuring are done.",
+      "others": "For another site, add its address too, then restart the agent. ib-tws-agent origin list shows the saved addresses, ib-tws-agent origin remove followed by an address drops one."
     },
     "tws": {
       "title": "D. Set up the TWS API",
-      "text": "In TWS: Configuration › API › Settings.",
+      "text": "In TWS: Configuration › API › Settings. TWS must be open and logged in for live data; relaying Flex Query does not need it.",
       "items": [
         "Tick \"Enable ActiveX and Socket Clients\".",
         "Note the \"Socket port\": one port per account, each TWS has its own. If you run several TWS instances, give them distinct ports, for example 7501 for the first, 7502 for the second, and so on.",
@@ -757,7 +776,7 @@
     },
     "port": {
       "title": "F. Fill in the port",
-      "text": "In Data sources, Local agent section, enter the account's TWS port. It is only needed for live data, not to relay Flex Query.",
+      "text": "In Data sources, Local agent section, enter the account's TWS port. It is only needed for live data, not to relay Flex Query. When everything is in place, the section shows \"Agent detected\" with its version; otherwise, check that the window from step C is still open.",
       "link": "Open Data sources"
     },
     "server": {

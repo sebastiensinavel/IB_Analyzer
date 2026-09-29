@@ -602,6 +602,8 @@
     "backupDeleteConfirm": "Supprimer la sauvegarde déposée sur le serveur ? Il n'y a ni version ni corbeille."
   },
   "help": {
+    "copy": "Copier",
+    "copied": "Copié",
     "title": "Aide",
     "app": {
       "title": "L'application",
@@ -722,28 +724,45 @@
     },
     "what": {
       "title": "3. L'agent local, facultatif",
-      "tws": "TWS, pour Trader Workstation, est l'application de bureau d'Interactive Brokers, celle où vous passez vos ordres. L'agent local est un petit programme à installer sur votre machine : il lit TWS et transmet ce qu'il lit à l'application qui tourne dans votre navigateur, directement, sur votre machine. Les six points ci-dessous s'enchaînent dans l'ordre.",
+      "tws": "TWS, pour Trader Workstation, est l'application de bureau d'Interactive Brokers, celle où vous passez vos ordres. L'agent local est un petit programme à installer sur votre machine : il lit TWS et transmet ce qu'il lit à l'application qui tourne dans votre navigateur, directement, sur votre machine. Les étapes ci-dessous s'enchaînent dans l'ordre ; comptez une dizaine de minutes la première fois.",
       "text": "L'agent ne parle qu'à l'application ouverte dans votre navigateur et à Interactive Brokers, jamais au serveur. Il ne stocke rien : positions, cash et exécutions du jour ne quittent jamais votre ordinateur. Il relaie aussi les appels Flex Query de l'application vers Interactive Brokers, sans rien conserver : en mode « agent local seulement », le jeton Flex ne passe jamais par le serveur. Sans lui, l'application fonctionne avec les relevés, et avec Flex Query si vous autorisez le serveur à relayer (section 4).",
       "dayValues": "Var. jour et P&L jour viennent de l'agent local : un portefeuille reconstruit depuis un relevé ou une réponse Flex les laisse à « — », comme un contrat acheté ou vendu le jour même."
     },
+    "terminal": {
+      "title": "Avant de commencer : le terminal",
+      "text": "L'installation se fait en tapant quelques commandes dans un terminal : une fenêtre où l'on écrit des instructions à l'ordinateur au lieu de cliquer. Inutile de savoir programmer : il suffit de copier chaque commande grise de cette page avec son bouton Copier, de la coller dans le terminal et d'appuyer sur Entrée.",
+      "open": [
+        "macOS : ouvrez Spotlight (⌘ + Espace), tapez « Terminal » et appuyez sur Entrée.",
+        "Windows : ouvrez le menu Démarrer, tapez « PowerShell » et cliquez sur Windows PowerShell. Inutile de l'ouvrir en administrateur.",
+        "Linux : Ctrl + Alt + T sur la plupart des distributions, sinon cherchez « Terminal » parmi vos applications."
+      ],
+      "paste": "Pour coller : ⌘ + V sur macOS, Ctrl + V ou un clic droit sur Windows, Ctrl + Maj + V sur Linux. Une commande à la fois : collez-la, appuyez sur Entrée, puis attendez que le terminal vous rende la main — une nouvelle ligne où le curseur clignote — avant de passer à la suivante. Ses messages sont en anglais ; ceux qui comptent sont expliqués ci-dessous."
+    },
     "uv": {
       "title": "A. Installer uv",
-      "text": "uv installe l'agent et l'interpréteur Python qu'il lui faut.",
+      "text": "uv est un outil gratuit, publié par la société Astral, qui installe les programmes écrits en Python. L'agent est écrit en Python : uv télécharge pour lui la bonne version de Python et tout ce dont il a besoin, dans un dossier à part, sans rien modifier au reste de votre ordinateur. Il s'installe une fois pour toutes.",
       "macLinux": "macOS et Linux",
-      "windows": "Windows"
+      "windows": "Windows",
+      "reopen": "Une fois l'installation terminée, fermez le terminal et ouvrez-en un nouveau : c'est ainsi qu'il découvre la commande uv. Pour vérifier, cette commande doit afficher un numéro de version :",
+      "notFound": "Si le terminal répond que uv est introuvable (« command not found », « n'est pas reconnu »), c'est presque toujours qu'il n'a pas été rouvert."
     },
     "install": {
       "title": "B. Installer l'agent",
-      "text": "La commande installe la version que ce site sert. Relancez-la après une mise à jour du site.",
+      "text": "Cette commande télécharge l'agent depuis ce site et l'installe. Elle se termine par « Installed 1 executable: ib-tws-agent ».",
+      "path": "Si elle ajoute un avertissement « is not on your PATH », lancez la commande suivante, puis fermez et rouvrez le terminal :",
+      "update": "Pour mettre l'agent à jour, relancez la même commande après une mise à jour du site : elle installe la version que ce site sert. Si elle répond « is already installed », vous avez déjà cette version. Pour désinstaller l'agent :",
       "unavailable": "Ce serveur ne sert pas le paquet de l'agent : en développement, lancez pnpm build:agent."
     },
     "configure": {
       "title": "C. Le configurer et le lancer",
-      "text": "La première commande ajoute l'adresse de ce site à celles auxquelles l'agent répond ; pour un autre site, ajoutez aussi la sienne, puis relancez l'agent. ib-tws-agent origin list les affiche, ib-tws-agent origin remove en retire une. La seconde commande lance l'agent ; laissez-la tourner pendant que vous utilisez le site."
+      "origin": "Par sécurité, l'agent ne répond qu'aux sites que vous lui avez indiqués. Cette commande, à lancer une seule fois, lui donne l'adresse de ce site ; elle répond « Added … ».",
+      "run": "Cette commande lance l'agent. Il n'affiche rien et le terminal ne vous rend pas la main : c'est normal, l'agent tourne. Laissez cette fenêtre ouverte pendant que vous utilisez le site ; vous pouvez la réduire.",
+      "stop": "Pour arrêter l'agent, appuyez sur Ctrl + C dans cette fenêtre, ou fermez-la. Les fois suivantes, ouvrez un terminal et relancez seulement ib-tws-agent : l'installation et la configuration sont faites.",
+      "others": "Pour un autre site, ajoutez aussi son adresse, puis relancez l'agent. ib-tws-agent origin list affiche les adresses enregistrées, ib-tws-agent origin remove suivie d'une adresse en retire une."
     },
     "tws": {
       "title": "D. Régler l'API de TWS",
-      "text": "Dans TWS : Configuration › API › Settings.",
+      "text": "Dans TWS : Configuration › API › Settings. TWS doit être ouvert et connecté pour les données en direct ; le relais des Flex Query, lui, n'en a pas besoin.",
       "items": [
         "Cocher « Enable ActiveX and Socket Clients ».",
         "Noter le « Socket port » : un port par compte, chaque TWS a le sien. Si vous lancez plusieurs TWS, donnez-leur des ports distincts, par exemple 7501 pour le premier, 7502 pour le second, et ainsi de suite.",
@@ -757,7 +776,7 @@
     },
     "port": {
       "title": "F. Renseigner le port",
-      "text": "Dans Sources de données, section Agent local, saisissez le port TWS du compte. Il ne sert qu'aux données en direct, pas pour relayer Flex Query.",
+      "text": "Dans Sources de données, section Agent local, saisissez le port TWS du compte. Il ne sert qu'aux données en direct, pas pour relayer Flex Query. Si tout est en place, la section affiche « Agent détecté » avec sa version ; sinon, vérifiez que la fenêtre de l'étape C est toujours ouverte.",
       "link": "Ouvrir Sources de données"
     },
     "server": {

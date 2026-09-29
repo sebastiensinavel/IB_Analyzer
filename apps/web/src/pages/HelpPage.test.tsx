@@ -57,13 +57,14 @@ describe("HelpPage", () => {
     ]);
   });
 
-  it("keeps the agent's six steps, lettered and in order, inside that one section", async () => {
+  it("keeps the agent's steps, the terminal first and then six lettered, in order, inside that one section", async () => {
     mockIndex(new Response("", { status: 404 }));
     const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
     const agentCard = (await screen.findByText("3. L'agent local, facultatif")).closest("[data-slot=card]");
     expect(agentCard).toBeInstanceOf(HTMLElement);
     const steps = [...(agentCard as HTMLElement).querySelectorAll("p.font-heading")].map((el) => el.textContent);
     expect(steps).toEqual([
+      "Avant de commencer : le terminal",
       "A. Installer uv",
       "B. Installer l'agent",
       "C. Le configurer et le lancer",
@@ -71,7 +72,7 @@ describe("HelpPage", () => {
       "E. La permission du navigateur",
       "F. Renseigner le port",
     ]);
-    // The six are inside the agent card, so they are not cards of their own.
+    // The steps are inside the agent card, so they are not cards of their own.
     expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(5);
   });
 
@@ -239,11 +240,73 @@ describe("HelpPage", () => {
     expect(screen.getByText("ib-tws-agent", { selector: "code" })).toBeInTheDocument();
   });
 
+  // For someone who has never opened a terminal: where it is, how to paste, when to go on.
+  it("says what a terminal is and how to open one on each platform", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/une fenêtre où l'on écrit des instructions à l'ordinateur au lieu de cliquer/)).toBeInTheDocument();
+    expect(screen.getByText(/^macOS : ouvrez Spotlight/)).toBeInTheDocument();
+    expect(screen.getByText(/^Windows : ouvrez le menu Démarrer, tapez « PowerShell »/)).toBeInTheDocument();
+    expect(screen.getByText(/^Linux : Ctrl \+ Alt \+ T/)).toBeInTheDocument();
+    expect(screen.getByText(/attendez que le terminal vous rende la main/)).toBeInTheDocument();
+  });
+
+  it("says what uv is, to reopen the terminal after installing it, and how to check", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/uv est un outil gratuit, publié par la société Astral/)).toBeInTheDocument();
+    expect(screen.getByText(/fermez le terminal et ouvrez-en un nouveau/)).toBeInTheDocument();
+    expect(screen.getByText("uv --version", { selector: "code" })).toBeInTheDocument();
+  });
+
+  it("says how to fix the PATH, update and uninstall, next to the install command", async () => {
+    mockIndex(new Response(JSON.stringify({ version: "0.1.0", filename: "ib_tws_agent-0.1.0-py3-none-any.whl" }), { status: 200 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText("uv tool update-shell", { selector: "code" })).toBeInTheDocument();
+    expect(screen.getByText(/Si elle répond « is already installed », vous avez déjà cette version/)).toBeInTheDocument();
+    expect(screen.getByText("uv tool uninstall ib-tws-agent", { selector: "code" })).toBeInTheDocument();
+  });
+
+  it("says the running agent prints nothing, must stay open, and stops on Ctrl + C", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    expect(await screen.findByText(/Il n'affiche rien et le terminal ne vous rend pas la main : c'est normal/)).toBeInTheDocument();
+    expect(screen.getByText(/appuyez sur Ctrl \+ C dans cette fenêtre/)).toBeInTheDocument();
+    expect(screen.getByText(/la section affiche « Agent détecté »/)).toBeInTheDocument();
+  });
+
+  it("copies a command to the clipboard from its button, and says so", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    try {
+      render(<MemoryRouter><HelpPage /></MemoryRouter>);
+      const block = (await screen.findByText("uv --version", { selector: "code" })).closest("pre")?.parentElement as HTMLElement;
+      fireEvent.click(within(block).getByRole("button", { name: "Copier" }));
+      expect(writeText).toHaveBeenCalledWith("uv --version");
+      expect(await within(block).findByRole("button", { name: "Copié" })).toBeInTheDocument();
+      // Every grey command has its button.
+      expect(screen.getAllByRole("button", { name: "Copier" }).length).toBe(document.querySelectorAll("pre code").length - 1);
+    } finally {
+      Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+
+  // A page served over plain http off localhost has no clipboard API: no button that would do nothing.
+  it("shows no copy button where the browser offers no clipboard", async () => {
+    mockIndex(new Response("", { status: 404 }));
+    render(<MemoryRouter><HelpPage /></MemoryRouter>);
+    await screen.findByText("uv --version", { selector: "code" });
+    expect(screen.queryByRole("button", { name: "Copier" })).not.toBeInTheDocument();
+  });
+
   it("says when this server does not serve the package", async () => {
     mockIndex(new Response("", { status: 404 }));
     render(<MemoryRouter><HelpPage /></MemoryRouter>);
     expect(await screen.findByText("Ce serveur ne sert pas le paquet de l'agent : en développement, lancez pnpm build:agent.")).toBeInTheDocument();
     expect(screen.queryByText(/uv tool install/)).not.toBeInTheDocument();
+    // Fixing the PATH and updating belong to the install command: without it, they have nothing to act on.
+    expect(screen.queryByText("uv tool update-shell")).not.toBeInTheDocument();
   });
 
   it("lists the four TWS settings and the uv commands for both platforms", async () => {

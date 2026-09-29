@@ -1,7 +1,8 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Check, Copy } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import { buttonVariants } from "@ib/ui/button";
+import { Button, buttonVariants } from "@ib/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
 import { cn } from "@ib/ui/lib/utils";
 import { useAgentIndex } from "@/agent/agentIndex";
@@ -12,16 +13,45 @@ import { getLastAccountId } from "@/lib/accountStorage";
 const UV_INSTALL_UNIX = "curl -LsSf https://astral.sh/uv/install.sh | sh";
 const UV_INSTALL_WINDOWS = 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"';
 
+const COPIED_FEEDBACK_MS = 2000;
+
+/**
+ * A command to paste into a terminal, with a button that copies it whole: the page is written for
+ * people who have never used one, and a mouse selection easily drops a character. No button where
+ * the browser has no clipboard API — plain http off localhost — rather than one that does nothing.
+ */
 function Command({ children }: { children: string }) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS);
+    return () => clearTimeout(timer);
+  }, [copied]);
+  const canCopy = typeof navigator !== "undefined" && navigator.clipboard !== undefined;
+  const copy = () => {
+    navigator.clipboard.writeText(children).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    );
+  };
   return (
-    <pre className="overflow-x-auto rounded-md bg-muted px-3 py-2 font-mono text-xs">
-      <code>{children}</code>
-    </pre>
+    <div className="flex items-center gap-2 rounded-md bg-muted py-1 pr-1 pl-3">
+      <pre className="min-w-0 flex-1 overflow-x-auto py-1 font-mono text-xs">
+        <code>{children}</code>
+      </pre>
+      {canCopy && (
+        <Button type="button" variant="ghost" size="xs" className="shrink-0" onClick={copy}>
+          {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
+          {copied ? t("help.copied") : t("help.copy")}
+        </Button>
+      )}
+    </div>
   );
 }
 
 /**
- * One numbered point inside a section. The agent needs six of them and they are one story, so
+ * One point inside a section. The agent needs seven of them and they are one story, so
  * they share a card rather than each claiming the weight of a top-level section — a newcomer
  * counting nine cards read eight of them as required before the application would work.
  */
@@ -72,6 +102,7 @@ export function HelpPage() {
   const index = useAgentIndex(origin);
   const lastAccountId = getLastAccountId();
   const twsItems = t("help.tws.items", { returnObjects: true }) as string[];
+  const terminalItems = t("help.terminal.open", { returnObjects: true }) as string[];
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
@@ -125,24 +156,50 @@ export function HelpPage() {
         <p className="text-muted-foreground">{t("help.what.text")}</p>
         <p className="text-muted-foreground">{t("help.what.dayValues")}</p>
 
+        {/* Written for someone who has never opened a terminal: every step says what to expect
+            back, and the messages that matter are quoted as the terminal prints them. */}
+        <Step title={t("help.terminal.title")}>
+          <p className="text-muted-foreground">{t("help.terminal.text")}</p>
+          <ul className="list-disc space-y-1 pl-5">
+            {terminalItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <p className="text-muted-foreground">{t("help.terminal.paste")}</p>
+        </Step>
+
         <Step title={t("help.uv.title")}>
           <p className="text-muted-foreground">{t("help.uv.text")}</p>
           <p>{t("help.uv.macLinux")}</p>
           <Command>{UV_INSTALL_UNIX}</Command>
           <p>{t("help.uv.windows")}</p>
           <Command>{UV_INSTALL_WINDOWS}</Command>
+          <p className="text-muted-foreground">{t("help.uv.reopen")}</p>
+          <Command>uv --version</Command>
+          <p className="text-muted-foreground">{t("help.uv.notFound")}</p>
         </Step>
 
         <Step title={t("help.install.title")}>
-          <p className="text-muted-foreground">{t("help.install.text")}</p>
-          {index.status === "ok" && <Command>{`uv tool install ${origin}/agent/${index.index.filename}`}</Command>}
+          {index.status === "ok" && (
+            <>
+              <p className="text-muted-foreground">{t("help.install.text")}</p>
+              <Command>{`uv tool install ${origin}/agent/${index.index.filename}`}</Command>
+              <p className="text-muted-foreground">{t("help.install.path")}</p>
+              <Command>uv tool update-shell</Command>
+              <p className="text-muted-foreground">{t("help.install.update")}</p>
+              <Command>uv tool uninstall ib-tws-agent</Command>
+            </>
+          )}
           {index.status === "unavailable" && <p className="text-muted-foreground">{t("help.install.unavailable")}</p>}
         </Step>
 
         <Step title={t("help.configure.title")}>
-          <p className="text-muted-foreground">{t("help.configure.text")}</p>
+          <p className="text-muted-foreground">{t("help.configure.origin")}</p>
           <Command>{`ib-tws-agent origin add ${origin}`}</Command>
+          <p className="text-muted-foreground">{t("help.configure.run")}</p>
           <Command>ib-tws-agent</Command>
+          <p className="text-muted-foreground">{t("help.configure.stop")}</p>
+          <p className="text-muted-foreground">{t("help.configure.others")}</p>
         </Step>
 
         <Step title={t("help.tws.title")}>
