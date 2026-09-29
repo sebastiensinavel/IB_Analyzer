@@ -109,7 +109,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   garder. La page Positions date ses positions par `saleInstants` des journaux, passé par
   `AccountDataProvider` à `useRiskReport` ; sans journaux, la seule règle des 40 %. Les lignes de
   stratégie et de Condors se datent de leurs propres contributions au journal, et du `startWhen`
-  du composite pour un condor, jamais par `saleInstants`, qui paie une commission par jambe ouverte.
+  du composite pour un condor, jamais par `saleInstants` ; un condor paie une commission par jambe ouverte.
   Toute sortie qui porte `decision` porte aussi `buyback`, non nul exactement quand `decision`
   l'est. L'infobulle du badge (`DecisionBadge`) dit le seuil.
 - **Le moteur de couverture n'a plus d'oracle Python** : `packages/coverage` a été validé au
