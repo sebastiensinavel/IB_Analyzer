@@ -95,7 +95,12 @@ export function allocationOption(
   };
 }
 
-/** `tickers` in the order of `StrategyStats.tickers`: the largest gain at the top. */
+/**
+ * `tickers` in the order of `StrategyStats.tickers`: the largest gain at the top, the largest loss
+ * at the bottom. A loss is drawn as long as it is, to the right like a gain, and told apart by its
+ * hue alone: one or two losing tickers never open a negative half on the axis. The tooltip keeps
+ * the sign.
+ */
 export function tickerPnlOption(tickers: readonly TickerPnl[], colors: ChartColors, currency: string): EChartsOption {
   return {
     textStyle: { fontFamily: CHART_FONT, color: colors.foreground },
@@ -104,7 +109,10 @@ export function tickerPnlOption(tickers: readonly TickerPnl[], colors: ChartColo
       trigger: "axis",
       confine: true,
       axisPointer: { type: "shadow" },
-      valueFormatter: (value: unknown) => (typeof value === "number" ? amount(value, currency) : "—"),
+      formatter: (params: unknown) => {
+        const [{ name, marker, dataIndex }] = params as { name: string; marker: string; dataIndex: number }[];
+        return `<b>${format.encodeHTML(name)}</b><br/>${marker} <b>${amount(tickers[dataIndex].pnl, currency)}</b>`;
+      },
     },
     xAxis: amountAxis(colors),
     yAxis: tickerAxis(tickers.map((t) => t.ticker), colors),
@@ -112,7 +120,7 @@ export function tickerPnlOption(tickers: readonly TickerPnl[], colors: ChartColo
       {
         type: "bar",
         barWidth: BAR_WIDTH,
-        data: tickers.map((t) => ({ value: t.pnl, itemStyle: { color: t.pnl >= 0 ? colors.success : colors.destructive } })),
+        data: tickers.map((t) => ({ value: Math.abs(t.pnl), itemStyle: { color: t.pnl >= 0 ? colors.success : colors.destructive } })),
       },
     ],
   };

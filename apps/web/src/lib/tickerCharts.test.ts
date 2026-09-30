@@ -56,20 +56,21 @@ describe("allocationOption", () => {
 describe("tickerPnlOption", () => {
   const option = tickerPnlOption([{ ticker: "XOM", pnl: 120 }, { ticker: "AAA", pnl: 0 }, { ticker: "MQZA", pnl: -27 }], colors, "USD");
 
-  it("draws one horizontal bar per ticker in the order given, teal for a gain and red for a loss", () => {
+  it("draws one horizontal bar per ticker in the order given, a loss as long as it is, to the right, told apart by its red alone", () => {
     expect(option.yAxis).toMatchObject({ type: "category", inverse: true, data: ["XOM", "AAA", "MQZA"] });
     const [bars] = option.series as BarSeriesOption[];
     expect(bars.data).toEqual([
       { value: 120, itemStyle: { color: colors.success } },
       { value: 0, itemStyle: { color: colors.success } },
-      { value: -27, itemStyle: { color: colors.destructive } },
+      { value: 27, itemStyle: { color: colors.destructive } },
     ]);
   });
 
-  it("formats its tooltip as an amount in the currency, inside the chart", () => {
-    const tooltip = option.tooltip as { confine: boolean; valueFormatter: (value: unknown) => string };
+  it("keeps the sign of a loss in its tooltip, the ticker escaped, in the currency, inside the chart", () => {
+    const tooltip = option.tooltip as { confine: boolean; formatter: (params: unknown) => string };
     expect(tooltip.confine).toBe(true);
-    expect(tooltip.valueFormatter(-27)).toBe("-27.00 USD");
+    expect(tooltip.formatter([{ name: "MQZA", marker: "(m)", dataIndex: 2 }])).toBe("<b>MQZA</b><br/>(m) <b>-27.00 USD</b>");
+    expect(tooltip.formatter([{ name: "<b>X", marker: "(m)", dataIndex: 0 }])).toBe("<b>&lt;b&gt;X</b><br/>(m) <b>120.00 USD</b>");
   });
 });
 
