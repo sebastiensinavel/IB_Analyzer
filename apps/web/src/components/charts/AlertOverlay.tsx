@@ -159,6 +159,14 @@ export function AlertOverlay(props: AlertOverlayProps) {
       cancelPress();
       endDrag(false);
     };
+    /**
+     * Seule la capture de l'élément compte : au doigt, la toile intérieure tient une capture
+     * implicite que `setPointerCapture(element)` lui retire, et sa perte remonte jusqu'ici.
+     */
+    const onLostCapture = (event: PointerEvent) => {
+      if (event.target !== element) return;
+      onPointerCancel();
+    };
     const onLeave = (event: PointerEvent) => {
       const to = event.relatedTarget;
       if (to instanceof Node && root.current?.contains(to)) return;
@@ -181,7 +189,7 @@ export function AlertOverlay(props: AlertOverlayProps) {
     element.addEventListener("pointermove", onPointerMove);
     element.addEventListener("pointerup", onPointerUp);
     element.addEventListener("pointercancel", onPointerCancel);
-    element.addEventListener("lostpointercapture", onPointerCancel);
+    element.addEventListener("lostpointercapture", onLostCapture);
     element.addEventListener("pointerleave", onLeave);
     element.addEventListener("click", onLabelClick);
     return () => {
@@ -191,7 +199,7 @@ export function AlertOverlay(props: AlertOverlayProps) {
       element.removeEventListener("pointermove", onPointerMove);
       element.removeEventListener("pointerup", onPointerUp);
       element.removeEventListener("pointercancel", onPointerCancel);
-      element.removeEventListener("lostpointercapture", onPointerCancel);
+      element.removeEventListener("lostpointercapture", onLostCapture);
       element.removeEventListener("pointerleave", onLeave);
       element.removeEventListener("click", onLabelClick);
       cancelPress();

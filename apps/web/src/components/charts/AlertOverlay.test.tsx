@@ -179,6 +179,21 @@ describe("AlertOverlay : glisser", () => {
     expect(fake.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
   });
 
+  it("ignore la capture implicite qu'un enfant perd au doigt : le glisser continue", () => {
+    const fake = setup([MANUAL]);
+    const canvas = document.createElement("canvas");
+    fake.element.appendChild(canvas);
+    fireEvent.pointerDown(canvas, { pointerId: 1, pointerType: "touch", button: 0, clientX: 100, clientY: 62 });
+    // La toile relâche sa capture implicite quand l'élément prend la sienne : l'événement remonte.
+    fireEvent(canvas, new Event("lostpointercapture", { bubbles: true }));
+    expect(fake.applyOptions).toHaveBeenLastCalledWith({ handleScroll: false, handleScale: false });
+
+    fireEvent.pointerMove(fake.element, { pointerId: 1, clientX: 100, clientY: 80 });
+    expect(screen.getByTestId("alert-ghost").style.top).toBe("80px");
+    fireEvent.pointerUp(fake.element, { pointerId: 1, clientX: 100, clientY: 80 });
+    expect(fake.h.onMoveAlert).toHaveBeenCalledWith("manual:a", 220);
+  });
+
   it("ne glisse ni une automatique, ni une manuelle à plus de 4 px", () => {
     const wheel = setup([WHEEL]);
     fireEvent.pointerDown(wheel.element, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 100, clientY: 60 });
