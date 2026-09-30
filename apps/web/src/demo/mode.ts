@@ -27,6 +27,26 @@ export function storageKey(key: string): string {
   return isDemo() && key.startsWith("ib2:") ? `ib2:demo:${key.slice(4)}` : key;
 }
 
+/**
+ * Whether the real base holds an account, asked from the demo, whose own base says nothing of
+ * it. Read through a connection of its own, closed at once; an absent base is never created.
+ */
+export async function hasRealAccounts(): Promise<boolean> {
+  try {
+    if (!(await Dexie.exists(REAL_DB_NAME))) return false;
+    const real = new Dexie(REAL_DB_NAME);
+    try {
+      await real.open();
+      if (!real.tables.some((table) => table.name === "accounts")) return false;
+      return (await real.table("accounts").count()) > 0;
+    } finally {
+      real.close();
+    }
+  } catch {
+    return false;
+  }
+}
+
 /** Full-page navigation, behind an object so tests can replace it (jsdom does not navigate). */
 export const navigation = {
   assign(url: string): void {

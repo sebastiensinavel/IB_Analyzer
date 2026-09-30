@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@ib/ui/button";
@@ -10,7 +11,7 @@ import { DemoBanner } from "@/components/DemoBanner";
 import { ShotFrame } from "@/components/welcome/ShotFrame";
 import { useDb } from "@/db/DbProvider";
 import { useAccounts } from "@/db/hooks";
-import { DEMO_ACCOUNT_ID, enterDemo, isDemo, leaveDemo } from "@/demo/mode";
+import { DEMO_ACCOUNT_ID, enterDemo, hasRealAccounts, isDemo, leaveDemo } from "@/demo/mode";
 import type { ShotId } from "@/welcome/shots";
 
 interface Step { title: string; text: string }
@@ -134,12 +135,29 @@ export function WelcomeActions() {
   const demo = isDemo();
   const accounts = useAccounts();
   const hasAccounts = (accounts?.length ?? 0) > 0;
+  // In the demo, `accounts` is the demo base: the real one is asked apart.
+  const [hasReal, setHasReal] = useState(false);
+  useEffect(() => {
+    if (!demo) return;
+    let cancelled = false;
+    void hasRealAccounts().then((has) => {
+      if (!cancelled) setHasReal(has);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [demo]);
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
         {demo ? (
           <>
-            <Button onClick={() => void leaveDemo(db, "/accounts")}>{t("welcome.addAccount")}</Button>
+            {/* The same choice as outside the demo, which this button leaves without saying so. */}
+            {hasReal ? (
+              <Button onClick={() => void leaveDemo(db, "/")}>{t("welcome.openAccounts")}</Button>
+            ) : (
+              <Button onClick={() => void leaveDemo(db, "/accounts")}>{t("welcome.addAccount")}</Button>
+            )}
             <Link to={`/accounts/${DEMO_ACCOUNT_ID}/dashboard`} className={cn(buttonVariants({ variant: "outline" }))}>{t("demo.continue")}</Link>
           </>
         ) : (

@@ -77,3 +77,16 @@ it("in the demo, shows the banner, continues the demo and leaves it to add an ac
   await userEvent.setup().click(screen.getByRole("button", { name: "Ajouter un compte IB" }));
   await waitFor(() => expect(assign).toHaveBeenCalledWith("/accounts"));
 });
+
+it("in the demo, leaves it for the real accounts when the browser holds one", async () => {
+  await db.accounts.put({ id: "alpha", label: "alpha", ibAccountId: "U0000001", createdAt: "", warnedDroppedKinds: [] });
+  window.sessionStorage.setItem("ib2:demo", "1");
+  vi.spyOn(db, "close").mockImplementation(() => {});
+  const assign = vi.spyOn(navigation, "assign").mockImplementation(() => {});
+  renderPage();
+  await userEvent.setup().click(await screen.findByRole("button", { name: "Explorer vos comptes IB" }));
+  await waitFor(() => expect(assign).toHaveBeenCalledWith("/"));
+  expect(screen.queryByRole("button", { name: "Ajouter un compte IB" })).toBeNull();
+  expect(screen.getByRole("link", { name: "Continuer la démo" })).toBeInTheDocument();
+  expect(window.sessionStorage.getItem("ib2:demo")).toBeNull();
+});
