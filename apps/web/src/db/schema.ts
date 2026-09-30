@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
 import { databaseName } from "@/demo/mode";
+import type { AlertState, ManualAlertDef } from "@ib/alerts";
 import type { ActivableStrategy, DroppedCount, Position, Transaction, TransactionKind, TransactionSource } from "@ib/ledger";
 import { toReportTime, type ParseIssue } from "@ib/ib-parsers";
 import type { BackupFailure } from "@/api/backup";
@@ -35,6 +36,18 @@ export interface AccountRecord {
   lastAgentSyncStatus?: { at: string; ok: boolean; code?: AgentSyncCode };
   /** The strategies this account follows (sub-project 30). Absent: the Wheel alone — read it through `activeStrategies`. */
   strategies?: ActivableStrategy[];
+  /** Marges des alertes automatiques (sous-projet 42). Une clé absente vaut le défaut du paquet — à lire par `alertMargins` seul. */
+  alertMargins?: { wheel?: number; condor?: number };
+}
+
+/** Une alerte de cours posée à la main ; les automatiques se calculent, elles ne se stockent pas. */
+export interface ManualAlertRecord extends ManualAlertDef {
+  accountId: string;
+}
+
+/** L'état d'une alerte, manuelle ou automatique, clé par `[accountId+alertId]`. */
+export interface AlertStateRecord extends AlertState {
+  accountId: string;
 }
 
 export interface ImportRecord {
@@ -165,6 +178,8 @@ export class AppDatabase extends Dexie {
   contracts!: Table<ContractRecord, [string, string]>;
   cashPoints!: Table<CashPointRecord, [string, string, string]>;
   backup!: EntityTable<BackupStateRecord, "id">;
+  alerts!: EntityTable<ManualAlertRecord, "id">;
+  alertStates!: Table<AlertStateRecord, [string, string]>;
 
   constructor(name = "ib-analyzer") {
     super(name);
@@ -264,6 +279,11 @@ export class AppDatabase extends Dexie {
     // re-enables it by choosing a passphrase, and the first deposit replaces the server's
     // only blob. Dexie inherits the schema of the previous version, so no `.stores()` here.
     this.version(11).upgrade((tx) => tx.table("backup").clear());
+    // Additive (sous-projet 42): les alertes manuelles et l'état de toutes les alertes.
+    this.version(12).stores({
+      alerts: "id, accountId",
+      alertStates: "[accountId+alertId], accountId",
+    });
   }
 }
 

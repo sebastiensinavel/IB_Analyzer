@@ -117,6 +117,28 @@ export async function toggleActiveStrategy(
   });
 }
 
+/**
+ * Écrit les marges des alertes automatiques (sous-projet 42). Lecture-modification-écriture
+ * dans une transaction, comme `toggleActiveStrategy` : `wheel` puis `condor` coup sur coup
+ * composent. Une valeur `undefined` retire la clé, donc rend le défaut.
+ */
+export async function setAlertMargins(
+  db: AppDatabase,
+  accountId: string,
+  margins: { wheel?: number; condor?: number },
+): Promise<void> {
+  await db.transaction("rw", db.accounts, async () => {
+    const current = (await db.accounts.get(accountId))?.alertMargins ?? {};
+    const next = { ...current };
+    for (const key of ["wheel", "condor"] as const) {
+      if (!(key in margins)) continue;
+      if (margins[key] === undefined) delete next[key];
+      else next[key] = margins[key];
+    }
+    await db.accounts.update(accountId, { alertMargins: next });
+  });
+}
+
 /** `null` clears the port, which is the one way to stop calling the agent for this account. */
 export async function setTwsPort(db: AppDatabase, accountId: string, port: number | null): Promise<void> {
   if (port !== null && (!Number.isInteger(port) || port < TWS_PORT_MIN || port > TWS_PORT_MAX)) {
@@ -129,10 +151,10 @@ export async function setTwsPort(db: AppDatabase, accountId: string, port: numbe
 }
 
 export async function deleteAccount(db: AppDatabase, id: string): Promise<void> {
-  // Seven tables: Dexie's varargs overloads stop at five, so the list goes in as an array.
+  // Nine tables: Dexie's varargs overloads stop at five, so the list goes in as an array.
   await db.transaction(
     "rw",
-    [db.accounts, db.transactions, db.imports, db.snapshots, db.statements, db.contracts, db.cashPoints],
+    [db.accounts, db.transactions, db.imports, db.snapshots, db.statements, db.contracts, db.cashPoints, db.alerts, db.alertStates],
     async () => {
       await db.transactions.where("accountId").equals(id).delete();
       await db.imports.where("accountId").equals(id).delete();
@@ -140,6 +162,8 @@ export async function deleteAccount(db: AppDatabase, id: string): Promise<void> 
       await db.statements.where("accountId").equals(id).delete();
       await db.contracts.where("accountId").equals(id).delete();
       await db.cashPoints.where("accountId").equals(id).delete();
+      await db.alerts.where("accountId").equals(id).delete();
+      await db.alertStates.where("accountId").equals(id).delete();
       await db.accounts.delete(id);
     },
   );

@@ -45,6 +45,23 @@ describe("buildPayload", () => {
 });
 
 describe("restorePayload", () => {
+  it("garde une alerte manuelle et son état dans l'aller-retour", async () => {
+    await db.alerts.put({
+      id: "manual:1", accountId: "beta", ticker: "AAPL", price: 200, direction: "above", note: null, createdAt: "2026-09-30T00:00:00.000Z",
+    });
+    await db.alertStates.put({
+      accountId: "beta", alertId: "manual:1", triggeredAt: null, acknowledgedAt: null, disabled: false, armed: true, anchor: null, override: null,
+    });
+    const payload = await buildPayload(db);
+    await db.alerts.clear();
+    await db.alertStates.clear();
+
+    await restorePayload(db, payload);
+
+    expect(await db.alerts.get("manual:1")).toMatchObject({ ticker: "AAPL", price: 200 });
+    expect(await db.alertStates.get(["beta", "manual:1"])).toMatchObject({ armed: true });
+  });
+
   it("remplace la base, il ne fusionne pas", async () => {
     const payload = await buildPayload(db);
     await createAccount(db, { label: "Gamma", ibAccountId: "U7654321" });
