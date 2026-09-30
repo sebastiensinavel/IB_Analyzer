@@ -4,7 +4,7 @@
  * `LevelsPrimitive` (`lib/levelsPrimitive.ts`); this file only assembles a `DrawnLevel` per
  * level (`drawnLevels`) and wires the primitive into the chart's lifecycle.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CandlestickSeries,
   createChart,
@@ -17,6 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { ChartLevel, ChartLevelKind } from "@ib/ledger";
 import type { PriceBar } from "@/agent/client";
+import { AlertOverlay, type AlertEditHandlers } from "@/components/charts/AlertOverlay";
 import { AlertsPrimitive, drawnAlerts, type DrawnAlertInput } from "@/lib/alertsPrimitive";
 import { chartColors, CHART_FONT } from "@/lib/chartColors";
 import { levelColor, levelFill, levelLabel, levelPrice } from "@/lib/chartLevels";
@@ -29,6 +30,8 @@ export interface PriceChartProps {
   alerts?: readonly DrawnAlertInput[];
   isDark: boolean;
   height?: number;
+  /** Absents, le graphe ne pose ni ne règle aucune alerte : il les dessine seulement. */
+  alertHandlers?: AlertEditHandlers;
 }
 
 /** Several table rows tall: the chart is what the injected row is for. */
@@ -67,7 +70,14 @@ export function visibleRange(candleCount: number, emptyCount: number): { from: n
   return { from: -CHART_MARGIN_DAYS, to: candleCount + emptyCount - 1 };
 }
 
-export function PriceChart({ bars, levels, alerts = NO_ALERTS, isDark, height = CHART_HEIGHT }: PriceChartProps) {
+export function PriceChart({
+  bars,
+  levels,
+  alerts = NO_ALERTS,
+  isDark,
+  height = CHART_HEIGHT,
+  alertHandlers,
+}: PriceChartProps) {
   const { t, i18n } = useTranslation();
   const holder = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -76,6 +86,8 @@ export function PriceChart({ bars, levels, alerts = NO_ALERTS, isDark, height = 
   // pas, de nouvelles barres — la clôture du jour qui suit le prix temps réel — laissent le
   // zoom et le défilement de l'utilisateur en place.
   const framedRef = useRef<{ chart: IChartApi; extent: string } | null>(null);
+  // Le calque des gestes d'alerte a besoin du graphe vivant : il se monte une fois celui-ci créé.
+  const [ready, setReady] = useState<{ chart: IChartApi; series: ISeriesApi<"Candlestick"> } | null>(null);
 
   // One chart for the life of the row; its data and annotations are set in the effect below.
   useEffect(() => {
@@ -103,7 +115,9 @@ export function PriceChart({ bars, levels, alerts = NO_ALERTS, isDark, height = 
     });
     chartRef.current = chart;
     seriesRef.current = series;
+    setReady({ chart, series });
     return () => {
+      setReady(null);
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
@@ -153,5 +167,12 @@ export function PriceChart({ bars, levels, alerts = NO_ALERTS, isDark, height = 
     };
   }, [bars, levels, alerts, isDark, t, i18n.language]);
 
-  return <div ref={holder} className="w-full" style={{ height }} data-testid="price-chart" />;
+  return (
+    <div className="relative w-full" style={{ height }}>
+      <div ref={holder} className="w-full" style={{ height }} data-testid="price-chart" />
+      {ready !== null && alertHandlers && (
+        <AlertOverlay chart={ready.chart} series={ready.series} alerts={alerts} {...alertHandlers} />
+      )}
+    </div>
+  );
 }

@@ -926,7 +926,15 @@
     "twsDown": "TWS is not answering on port {{port}}",
     "noBars": "Interactive Brokers returns no history for {{ticker}}",
     "proxy": "Showing {{proxy}}: Interactive Brokers does not quote {{ticker}}. The levels stay at {{ticker}} prices.",
-    "loading": "Loading the chart…"
+    "loading": "Loading the chart…",
+    "alert": {
+      "create": "Set an alert at {{price}}",
+      "createHint": "Set an alert at this price (Alt+click in the chart, long press on touch)",
+      "price": "Threshold",
+      "note": "Note",
+      "save": "Save",
+      "delete": "Delete"
+    }
   },
   "quotes": {
     "delayed": "Quote delayed 15 min."

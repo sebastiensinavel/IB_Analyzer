@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { createChart } from "lightweight-charts";
@@ -19,15 +19,26 @@ vi.mock("lightweight-charts", () => {
     attachPrimitive: vi.fn(),
     detachPrimitive: vi.fn(),
     priceToCoordinate: vi.fn(() => 10),
+    coordinateToPrice: vi.fn(() => 14.126),
   };
   return {
     CandlestickSeries: {},
     LineStyle: { Dotted: 1 },
-    createChart: vi.fn(() => ({
-      addSeries: vi.fn(() => series),
-      timeScale: vi.fn(() => ({ setVisibleLogicalRange: vi.fn(), timeToCoordinate: vi.fn(() => 10) })),
-      remove: vi.fn(),
-    })),
+    createChart: vi.fn(() => {
+      const element = document.createElement("div");
+      return {
+        addSeries: vi.fn(() => series),
+        timeScale: vi.fn(() => ({ setVisibleLogicalRange: vi.fn(), timeToCoordinate: vi.fn(() => 10), width: () => 500 })),
+        priceScale: vi.fn(() => ({ width: () => 60 })),
+        chartElement: () => element,
+        subscribeCrosshairMove: vi.fn(),
+        unsubscribeCrosshairMove: vi.fn(),
+        subscribeClick: vi.fn(),
+        unsubscribeClick: vi.fn(),
+        applyOptions: vi.fn(),
+        remove: vi.fn(),
+      };
+    }),
   };
 });
 
@@ -80,6 +91,14 @@ async function lastCandle(): Promise<{ time: string; close?: number }> {
   const series = chart.addSeries.mock.results.at(-1)!.value;
   const data = series.setData.mock.calls.at(-1)![0] as { time: string; close?: number }[];
   return data.filter((point) => point.close !== undefined).at(-1)!;
+}
+
+/** Le dernier graphe créé, une fois son calque d'alertes branché. */
+async function lastChart() {
+  await screen.findByTestId("price-chart");
+  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+  await waitFor(() => expect(chart.subscribeClick).toHaveBeenCalled());
+  return chart;
 }
 
 /** Combien de fois l'axe du temps du dernier graphe a été posé. */
@@ -384,5 +403,71 @@ describe("PositionChartRow", () => {
       const last = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { price?: number }[] };
       expect(last.drawn.map((d) => d.price)).toEqual([15.5]);
     });
+  });
+
+  it("pose sur le graphe SPY d'une ligne XSP une alerte XSP, au cent, orientée contre la dernière clôture", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "SPY", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow({ ticker: "XSP" });
+
+    const chart = await lastChart();
+    const click = chart.subscribeClick.mock.calls.at(-1)![0];
+    act(() => click({ point: { x: 10, y: 40 }, sourceEvent: { altKey: true } }));
+
+    await waitFor(async () => expect(await db.alerts.toArray()).toHaveLength(1));
+    // 14,126 arrondi au cent, au-dessus de la dernière clôture (13,5) : on attend la hausse.
+    expect(await db.alerts.toArray()).toMatchObject([{ accountId: "alpha", ticker: "XSP", price: 14.13, direction: "above" }]);
+  });
+
+  it("demande la permission de notifier à la création d'une alerte", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    const requestPermission = vi.fn(async () => "granted" as NotificationPermission);
+    vi.stubGlobal("Notification", Object.assign(function Notification() {}, { permission: "default", requestPermission }));
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    try {
+      renderRow();
+      const chart = await lastChart();
+      const click = chart.subscribeClick.mock.calls.at(-1)![0];
+      act(() => click({ point: { x: 10, y: 40 }, sourceEvent: { altKey: true } }));
+
+      expect(requestPermission).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("écrit le seuil d'une manuelle glissée et recalcule sa direction", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    const id = await createManualAlert(db, "alpha", { ticker: "BTDR", price: 15.5, direction: "above" });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    const chart = await lastChart();
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    // La ligne est dessinée à y = 10 (`priceToCoordinate`) ; relâchée plus bas, à 12,00.
+    await waitFor(() => expect(series.attachPrimitive.mock.calls.length).toBeGreaterThan(1));
+    const element: HTMLElement = chart.chartElement();
+    fireEvent.pointerDown(element, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 100, clientY: 10 });
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: false, handleScale: false });
+    series.coordinateToPrice.mockReturnValueOnce(12);
+    fireEvent.pointerUp(element, { pointerId: 1, clientX: 100, clientY: 60 });
+
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
+    await waitFor(async () => expect(await db.alerts.get(id)).toMatchObject({ price: 12, direction: "below" }));
   });
 });

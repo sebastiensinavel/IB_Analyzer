@@ -926,7 +926,15 @@
     "twsDown": "TWS ne répond pas sur le port {{port}}",
     "noBars": "Interactive Brokers ne rend aucun historique pour {{ticker}}",
     "proxy": "Cours de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}. Les niveaux restent aux prix de {{ticker}}.",
-    "loading": "Chargement du graphe…"
+    "loading": "Chargement du graphe…",
+    "alert": {
+      "create": "Poser une alerte à {{price}}",
+      "createHint": "Poser une alerte à ce prix (Alt+clic dans le graphe, appui long au doigt)",
+      "price": "Seuil",
+      "note": "Note",
+      "save": "Enregistrer",
+      "delete": "Supprimer"
+    }
   },
   "quotes": {
     "delayed": "Cotation différée de 15 min."
