@@ -963,7 +963,7 @@
     "partial_one": "{{count}} line without a value",
     "partial_other": "{{count}} lines without a value",
     "cashExcluded": "Cash left out: a filter is active."
-    },
+  },
   "alerts": {
     "notify": {
       "title_above": "{{ticker}} ↑ {{price}}",

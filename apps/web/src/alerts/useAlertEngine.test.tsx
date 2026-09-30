@@ -65,16 +65,44 @@ class FakeNotification {
   }
 }
 
-/** Routes /health; counts /bars; every other call is a 200 `{}`. */
-function mockAgent() {
+/** Routes /health (absent when `present` is false); counts /bars and answers `bars`; every other call is a 200 `{}`. */
+function mockAgent({ present = true, bars = [] as object[] } = {}) {
   const calls = { bars: 0 };
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const url = String(input instanceof Request ? input.url : input);
-    if (url.endsWith("/health")) return new Response(JSON.stringify({ version: "0.1.0" }), { status: 200 });
-    if (url.includes("/bars")) calls.bars += 1;
+    if (url.endsWith("/health")) {
+      if (!present) throw new TypeError("Failed to fetch");
+      return new Response(JSON.stringify({ version: "0.1.0" }), { status: 200 });
+    }
+    if (url.includes("/bars")) {
+      calls.bars += 1;
+      return new Response(JSON.stringify({ symbol: "MQZA", fetchedAt: "x", bars }), { status: 200 });
+    }
     return new Response("{}", { status: 200 });
   });
   return calls;
+}
+
+/** The sale day's bar (2026-09-29) and the day after, which must never be read. */
+const bar = (date: string, average: number | null, close: number) => ({ date, open: close, high: close, low: close, close, volume: 1000, average });
+
+const WHEEL_ID = "wheel:MQZA|OPT|C|15|2026-10-16|USD";
+
+/** The Wheel ledger, an agent snapshot of `asOf`, the true UTC clock at `now`, a TWS port unless `null`; renders beta's provider. */
+async function seedWheel({ now, asOf, port = 7502 }: { now: string; asOf: string | null; port?: number | null }) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(now));
+  await refreshPresence();
+  await db.accounts.add(account("beta", { twsPort: port ?? undefined, lastAgentSyncAt: "2026-09-29T18:35:00.000Z" }));
+  await db.transactions.bulkAdd(WHEEL_TRANSACTIONS);
+  if (asOf !== null) {
+    await db.snapshots.put({
+      accountId: "beta", source: "agent", asOf, importedAt: now, cashAvailable: null,
+      positions: [position({ symbol: "MQZA", secType: "STK", multiplier: 1, quantity: 200, marketPrice: 14 })],
+    });
+  }
+  renderProvider("beta");
+  await screen.findByText("alerts 1 / triggered 0");
 }
 
 let view: AlertsView = { status: "loading" };
@@ -118,6 +146,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   db.alertStates.hook("creating").unsubscribe(onCreate);
   db.alertStates.hook("updating").unsubscribe(onUpdate);
   vi.unstubAllGlobals();
@@ -238,5 +267,43 @@ describe("useAlertEngine", () => {
     if (view.status !== "ready" || view.alerts[0].alert.kind !== "wheel") throw new Error("no wheel alert");
     // 14 + (15 − 14) × 0.7
     expect(view.alerts[0].alert.thresholds).toEqual([{ price: 14.7, direction: "above" }]);
+  });
+
+  // The call was sold at 14:30 New York (IB time); 18:40 true UTC is 14:40 there.
+  it("never asks for bars while the live window is open, even with no usable live price yet", async () => {
+    const calls = mockAgent({ bars: [bar("2026-09-29", 14.2, 14.5)] });
+    await seedWheel({ now: "2026-09-29T18:40:00.000Z", asOf: "2026-09-29T14:20:00.000Z" });
+    await settle();
+    expect(calls.bars).toBe(0);
+    expect(await stateOf("beta", WHEEL_ID)).toBeUndefined();
+  });
+
+  it("anchors S₀ on the sale day's VWAP once the window has passed", async () => {
+    const calls = mockAgent({ bars: [bar("2026-09-29", 14.2, 14.5), bar("2026-09-30", 13, 13.5)] });
+    await seedWheel({ now: "2026-09-30T15:00:00.000Z", asOf: null });
+    await waitFor(async () => expect((await stateOf("beta", WHEEL_ID))?.anchor).toMatchObject({ price: 14.2, source: "vwap" }));
+    expect(calls.bars).toBe(1);
+  });
+
+  it("anchors S₀ on the sale day's close when the agent gives no VWAP", async () => {
+    mockAgent({ bars: [bar("2026-09-29", null, 14.5)] });
+    await seedWheel({ now: "2026-09-30T15:00:00.000Z", asOf: null });
+    await waitFor(async () => expect((await stateOf("beta", WHEEL_ID))?.anchor).toMatchObject({ price: 14.5, source: "close" }));
+  });
+
+  it("asks for no bars and writes no S₀ without an agent", async () => {
+    const calls = mockAgent({ present: false, bars: [bar("2026-09-29", 14.2, 14.5)] });
+    await seedWheel({ now: "2026-09-30T15:00:00.000Z", asOf: null });
+    await settle();
+    expect(calls.bars).toBe(0);
+    expect(await stateOf("beta", WHEEL_ID)).toBeUndefined();
+  });
+
+  it("asks for no bars and writes no S₀ without a TWS port", async () => {
+    const calls = mockAgent({ bars: [bar("2026-09-29", 14.2, 14.5)] });
+    await seedWheel({ now: "2026-09-30T15:00:00.000Z", asOf: null, port: null });
+    await settle();
+    expect(calls.bars).toBe(0);
+    expect(await stateOf("beta", WHEEL_ID)).toBeUndefined();
   });
 });

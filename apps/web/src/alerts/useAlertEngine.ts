@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
+  ANCHOR_LIVE_WINDOW_MS,
   alertBadgeCounts,
   alertStatus,
   autoAlerts,
@@ -18,6 +19,7 @@ import {
   type PriceQuote,
   type WheelAlert,
 } from "@ib/alerts";
+import { toReportTime } from "@ib/ib-parsers";
 import type { JournalRow } from "@ib/ledger";
 import { fetchBars } from "@/agent/client";
 import { useUnderlyingQuotesMap } from "@/agent/quotes";
@@ -81,7 +83,10 @@ async function runPass({ db, accountId, rows, margins, priceOf }: PassInputs): P
     const byId = new Map(alerts.map((a) => [a.id, a]));
     return patches
       .filter((p) => p.patch.triggeredAt != null)
-      .map((p) => ({ alert: byId.get(p.alertId) as Alert, price: priceOf((byId.get(p.alertId) as Alert).ticker)?.price }));
+      .map((p) => {
+        const alert = byId.get(p.alertId) as Alert;
+        return { alert, price: priceOf(alert.ticker)?.price };
+      });
   });
 }
 
@@ -175,10 +180,15 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
       return quote?.realtime ? { price: quote.price, at: ownSnapshot.asOf } : null;
     };
     const needBars = new Map<string, WheelAlert[]>();
+    const observedAt = new Date().toISOString();
+    // `saleWhen` est une heure IB : l'instant présent s'y compare une fois passé par `toReportTime`.
+    const nowReport = Date.parse(toReportTime(observedAt));
     for (const alert of pending) {
-      const anchor = chooseAnchor({ saleWhen: alert.saleWhen, observedAt: new Date().toISOString(), live: live(alert.ticker), dayBar: null });
+      const anchor = chooseAnchor({ saleWhen: alert.saleWhen, observedAt, live: live(alert.ticker), dayBar: null });
       if (anchor !== null) void setAlertAnchor(db, accountId, alert.id, anchor).catch(() => {});
-      else needBars.set(`${alert.ticker}|${alert.currency}`, [...(needBars.get(`${alert.ticker}|${alert.currency}`) ?? []), alert]);
+      // Tant que la fenêtre est ouverte, seul le prix du moment vaut S₀ : un VWAP de journée
+      // entamée serait figé à sa place. On attend un snapshot `agent` pris dans la fenêtre.
+      else if (nowReport - Date.parse(alert.saleWhen) > ANCHOR_LIVE_WINDOW_MS) needBars.set(`${alert.ticker}|${alert.currency}`, [...(needBars.get(`${alert.ticker}|${alert.currency}`) ?? []), alert]);
     }
     if (presence !== "present" || port === undefined) return;
     for (const [key, group] of needBars) {
@@ -192,7 +202,7 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
           const bar = result.payload.bars.find((b) => b.date === alert.saleWhen.slice(0, 10));
           const anchor = chooseAnchor({
             saleWhen: alert.saleWhen,
-            observedAt: new Date().toISOString(),
+            observedAt,
             live: null,
             dayBar: bar ? { average: bar.average, close: bar.close } : null,
           });
