@@ -2,6 +2,7 @@ import { Navigate, createBrowserRouter } from "react-router";
 import { AppLayout } from "@/routes/AppLayout";
 import { RootRedirect } from "@/routes/RootRedirect";
 import { AccountsPage } from "@/pages/AccountsPage";
+import { AlertsPage } from "@/pages/AlertsPage";
 import { ConsistencyPage } from "@/pages/ConsistencyPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { HelpPage } from "@/pages/HelpPage";
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <DashboardPage /> },
       { path: "positions", element: <PositionsPage /> },
       { path: "history", element: <HistoryPage /> },
+      { path: "alerts", element: <AlertsPage /> },
       {
         path: "journal/wheel",
         element: (

@@ -16,6 +16,7 @@
     "dashboard": "Tableau de bord",
     "positions": "Positions",
     "history": "Historique",
+    "alerts": "Alertes",
     "journal": "Journal",
     "stats": "Statistiques",
     "wheel": "Journal Wheel",
@@ -965,6 +966,59 @@
     "cashExcluded": "Hors cash : un filtre est actif."
   },
   "alerts": {
+    "badge_one": "{{count}} alerte déclenchée",
+    "badge_other": "{{count}} alertes déclenchées",
+    "margins": {
+      "wheel": "Wheel",
+      "condor": "Condors",
+      "unit": "%"
+    },
+    "enableNotifications": "Activer les notifications",
+    "noAgent": "L'agent local est absent : les alertes ne s'évaluent pas, les cours et les distances restent inconnus.",
+    "empty": "Aucune alerte. Les alertes Wheel et Condors se créent d'elles-mêmes ; les manuelles se posent depuis un graphique.",
+    "groups": {
+      "triggered": "Déclenchées",
+      "active": "Actives",
+      "disabled": "Désactivées"
+    },
+    "columns": {
+      "type": "Type",
+      "ticker": "Ticker",
+      "thresholds": "Seuils",
+      "price": "Cours",
+      "distance": "Distance",
+      "detail": "Détail",
+      "actions": "Actions"
+    },
+    "types": {
+      "manual": "Manuelle",
+      "wheel": "Wheel",
+      "condor": "Condors"
+    },
+    "price": {
+      "realtime": "Cours temps réel",
+      "delayed": "Cours différé"
+    },
+    "above": "Au-dessus de {{price}}",
+    "below": "En dessous de {{price}}",
+    "points": "{{value}} pts",
+    "detail": {
+      "anchor": "S₀ {{price}} · {{source}}",
+      "anchorPending": "S₀ en attente",
+      "condor": "{{put}}/{{call}} · marge {{offset}} pts"
+    },
+    "source": {
+      "live": "direct",
+      "vwap": "VWAP",
+      "close": "clôture"
+    },
+    "actions": {
+      "acknowledge": "Vu",
+      "reactivate": "Réactiver",
+      "delete": "Supprimer l'alerte {{ticker}}",
+      "overrideWheel": "Fraction de S₀ pour {{ticker}} (vide : réglage du compte)",
+      "overrideCondor": "Marge pour {{ticker}} (vide : réglage du compte)"
+    },
     "notify": {
       "title_above": "{{ticker}} ↑ {{price}}",
       "title_below": "{{ticker}} ↓ {{price}}",

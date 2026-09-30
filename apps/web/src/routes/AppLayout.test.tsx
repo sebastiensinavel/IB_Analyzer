@@ -9,6 +9,7 @@ import i18n from "@/i18n";
 import { db } from "@/db/schema";
 import { useAccountJournals, useAccountRiskReport, useOptionalAccountAlerts } from "@/db/AccountDataProvider";
 import { AppLayout } from "@/routes/AppLayout";
+import { createManualAlert } from "@/db/alerts";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
 
@@ -84,6 +85,8 @@ beforeEach(async () => {
     db.snapshots.clear(),
     db.contracts.clear(),
     db.cashPoints.clear(),
+    db.alerts.clear(),
+    db.alertStates.clear(),
   ]);
   await db.accounts.bulkAdd([account("beta", "U0000002"), account("alpha", "U0000001")]);
 });
@@ -132,8 +135,9 @@ describe("AppLayout", () => {
       "/accounts/beta/consistency",
       "/settings",
       "/help",
-      // The footer's discreet link back to the welcome page.
+      // The footer: the welcome page, then the alerts page.
       "/welcome",
+      "/accounts/beta/alerts",
     ]);
   });
 
@@ -173,6 +177,66 @@ describe("AppLayout", () => {
     cleanup();
     renderAt("/settings/alerts-probe");
     expect(await screen.findByText("no account alerts")).toBeInTheDocument();
+  });
+
+  describe("alerts in the menu", () => {
+    const menuItem = (name: string, index = 0) => screen.getAllByRole("link", { name })[index].closest("li") as HTMLElement;
+    const pill = (within_: HTMLElement) => within(within_).queryByLabelText(/alertes? déclenchée/);
+    const footer = () => screen.getByRole("link", { name: "Alertes" }).parentElement as HTMLElement;
+
+    async function seedTriggered() {
+      await db.accounts.update("beta", { strategies: [...ACTIVABLE_STRATEGIES] });
+      await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
+      await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);
+      const id = await createManualAlert(db, "beta", { ticker: "MQZA", price: 20, direction: "above" });
+      await db.alertStates.put({
+        accountId: "beta", alertId: id, triggeredAt: "2026-09-30T14:00:00.000Z", acknowledgedAt: null,
+        disabled: false, armed: true, anchor: null, override: null,
+      });
+    }
+
+    it("badges the overview Positions and the Positions of the strategy holding the ticker, and no other", async () => {
+      await seedTriggered();
+      renderAt("/accounts/beta/dashboard");
+      await screen.findByText("dashboard content");
+      await waitFor(() => expect(pill(menuItem("Positions", 0))).toHaveTextContent("1"));
+      // Positions entries in menu order: overview, Wheel, LEAPS, Condors, Others.
+      expect(pill(menuItem("Positions", 1))).toHaveTextContent("1");
+      expect(pill(menuItem("Positions", 2))).toBeNull();
+      expect(pill(menuItem("Positions", 3))).toBeNull();
+      expect(pill(menuItem("Positions", 4))).toBeNull();
+      expect(pill(menuItem("Historique"))).toBeNull();
+    });
+
+    it("always links to the alerts page from the footer, with no pill while nothing is triggered", async () => {
+      renderAt("/accounts/alpha/dashboard");
+      await screen.findByText("dashboard content");
+      expect(screen.getByRole("link", { name: "Alertes" })).toHaveAttribute("href", "/accounts/alpha/alerts");
+      expect(pill(footer())).toBeNull();
+    });
+
+    it("adds the pill to the footer link when an alert is triggered", async () => {
+      await seedTriggered();
+      renderAt("/accounts/beta/dashboard");
+      await screen.findByText("dashboard content");
+      await waitFor(() => expect(pill(footer())).toHaveTextContent("1"));
+    });
+
+    it("keeps the footer link on Settings, where no alert is computed, without a pill", async () => {
+      await seedTriggered();
+      window.localStorage.setItem("ib2:lastAccountId", "beta");
+      renderAt("/settings");
+      await screen.findByText("settings content");
+      expect(screen.getByRole("link", { name: "Alertes" })).toHaveAttribute("href", "/accounts/beta/alerts");
+      expect(pill(footer())).toBeNull();
+    });
+
+    it("shows no alerts link with no account at all", async () => {
+      await db.accounts.clear();
+      renderAt("/help");
+      await screen.findByText("help");
+      expect(screen.queryByRole("link", { name: "Alertes" })).toBeNull();
+    });
   });
 
   it("offers adding an account and the welcome page when there is no account at all", async () => {

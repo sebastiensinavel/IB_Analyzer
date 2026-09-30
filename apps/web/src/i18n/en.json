@@ -16,6 +16,7 @@
     "dashboard": "Dashboard",
     "positions": "Positions",
     "history": "History",
+    "alerts": "Alerts",
     "journal": "Journal",
     "stats": "Statistics",
     "wheel": "Wheel Journal",
@@ -965,6 +966,59 @@
     "cashExcluded": "Cash left out: a filter is active."
   },
   "alerts": {
+    "badge_one": "{{count}} alert triggered",
+    "badge_other": "{{count}} alerts triggered",
+    "margins": {
+      "wheel": "Wheel",
+      "condor": "Condors",
+      "unit": "%"
+    },
+    "enableNotifications": "Enable notifications",
+    "noAgent": "The local agent is absent: alerts are not evaluated, prices and distances stay unknown.",
+    "empty": "No alerts. Wheel and Condor alerts create themselves; manual ones are set from a chart.",
+    "groups": {
+      "triggered": "Triggered",
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "columns": {
+      "type": "Type",
+      "ticker": "Ticker",
+      "thresholds": "Thresholds",
+      "price": "Price",
+      "distance": "Distance",
+      "detail": "Detail",
+      "actions": "Actions"
+    },
+    "types": {
+      "manual": "Manual",
+      "wheel": "Wheel",
+      "condor": "Condors"
+    },
+    "price": {
+      "realtime": "Real-time price",
+      "delayed": "Delayed price"
+    },
+    "above": "Above {{price}}",
+    "below": "Below {{price}}",
+    "points": "{{value}} pts",
+    "detail": {
+      "anchor": "S₀ {{price}} · {{source}}",
+      "anchorPending": "S₀ pending",
+      "condor": "{{put}}/{{call}} · margin {{offset}} pts"
+    },
+    "source": {
+      "live": "live",
+      "vwap": "VWAP",
+      "close": "close"
+    },
+    "actions": {
+      "acknowledge": "Seen",
+      "reactivate": "Re-enable",
+      "delete": "Delete the {{ticker}} alert",
+      "overrideWheel": "S₀ fraction for {{ticker}} (empty: account setting)",
+      "overrideCondor": "Margin for {{ticker}} (empty: account setting)"
+    },
     "notify": {
       "title_above": "{{ticker}} ↑ {{price}}",
       "title_below": "{{ticker}} ↓ {{price}}",
