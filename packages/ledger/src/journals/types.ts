@@ -153,11 +153,18 @@ export interface MonthPnl {
   pnl: number;
 }
 
+export interface TickerPnl {
+  ticker: string;
+  pnl: number;
+}
+
 export interface StrategyStats {
   currency: string;
   total: number;
   /** Consecutive months from the first flow to the later of the last flow and the ledger's last transaction, zeros included. */
   months: MonthPnl[];
+  /** The same flows by ticker, over the whole history: they sum to `total`. The largest gain first, then by name. */
+  tickers: TickerPnl[];
   /** Contributions skipped for want of an amount. */
   incomplete: number;
 }

@@ -52,10 +52,10 @@ function contributions(row: JournalRow): Contribution[] {
  */
 export function computeStats(rows: readonly JournalRow[], strategies: readonly StatsStrategy[], lastWhen: string | null): StrategyStats[] {
   const scope = new Set<Strategy>(strategies);
-  const byCurrency = new Map<string, { total: number; months: Map<string, number>; incomplete: number }>();
+  const byCurrency = new Map<string, { total: number; months: Map<string, number>; tickers: Map<string, number>; incomplete: number }>();
   for (const row of rows) {
     if (!scope.has(row.strategy)) continue;
-    const bucket = byCurrency.get(row.currency) ?? { total: 0, months: new Map(), incomplete: 0 };
+    const bucket = byCurrency.get(row.currency) ?? { total: 0, months: new Map(), tickers: new Map(), incomplete: 0 };
     byCurrency.set(row.currency, bucket);
     for (const { month, amount } of contributions(row)) {
       if (amount === null) {
@@ -64,6 +64,7 @@ export function computeStats(rows: readonly JournalRow[], strategies: readonly S
       }
       bucket.total += amount;
       bucket.months.set(month, (bucket.months.get(month) ?? 0) + amount);
+      bucket.tickers.set(row.ticker, (bucket.tickers.get(row.ticker) ?? 0) + amount);
     }
   }
   const lastMonth = lastWhen === null ? null : monthOf(lastWhen);
@@ -71,10 +72,14 @@ export function computeStats(rows: readonly JournalRow[], strategies: readonly S
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([currency, bucket]) => {
       const keys = [...bucket.months.keys()].sort();
-      if (keys.length === 0) return { currency, total: bucket.total, months: [], incomplete: bucket.incomplete };
+      // The same flows as the months, filed by ticker: they sum to the total, the largest gain first.
+      const tickers = [...bucket.tickers.entries()]
+        .map(([ticker, pnl]) => ({ ticker, pnl }))
+        .sort((a, b) => b.pnl - a.pnl || (a.ticker < b.ticker ? -1 : a.ticker > b.ticker ? 1 : 0));
+      if (keys.length === 0) return { currency, total: bucket.total, months: [], tickers, incomplete: bucket.incomplete };
       const lastFlow = keys[keys.length - 1];
       const last = lastMonth !== null && lastMonth > lastFlow ? lastMonth : lastFlow;
       const months = monthsBetween(keys[0], last).map((month) => ({ month, pnl: bucket.months.get(month) ?? 0 }));
-      return { currency, total: bucket.total, months, incomplete: bucket.incomplete };
+      return { currency, total: bucket.total, months, tickers, incomplete: bucket.incomplete };
     });
 }

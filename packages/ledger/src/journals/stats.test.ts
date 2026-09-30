@@ -24,18 +24,18 @@ describe("monthsBetween", () => {
 describe("computeStats", () => {
   it("counts a premium the month it is received and a buyback the month it is paid, months in between at zero", () => {
     const stats = computeStats([row({ endWhen: "2026-10-10T15:00:00.000Z", closeTotal: -5, closeCommission: -1, closeNet: -6, pnl: 13, ongoing: false, event: "buyback" })], ["wheel"], null);
-    expect(stats).toEqual([{ currency: "USD", total: 13, months: [{ month: "2026-08", pnl: 19 }, { month: "2026-09", pnl: 0 }, { month: "2026-10", pnl: -6 }], incomplete: 0 }]);
+    expect(stats).toEqual([{ currency: "USD", total: 13, months: [{ month: "2026-08", pnl: 19 }, { month: "2026-09", pnl: 0 }, { month: "2026-10", pnl: -6 }], tickers: [{ ticker: "MQZA", pnl: 13 }], incomplete: 0 }]);
   });
 
   it("counts an open position's premium already", () => {
-    expect(computeStats([row({})], ["wheel"], null)).toEqual([{ currency: "USD", total: 19, months: [{ month: "2026-08", pnl: 19 }], incomplete: 0 }]);
+    expect(computeStats([row({})], ["wheel"], null)).toEqual([{ currency: "USD", total: 19, months: [{ month: "2026-08", pnl: 19 }], tickers: [{ ticker: "MQZA", pnl: 19 }], incomplete: 0 }]);
   });
 
   it("counts delivered shares at their sale only, never at the delivery", () => {
     const held = row({ kind: "shares", assigned: true, quantity: 100, startWhen: "2026-09-01T20:00:00.000Z", openTotal: -1700, openCommission: 0, openNet: -1700 });
-    expect(computeStats([held], ["wheel"], null)).toEqual([{ currency: "USD", total: 0, months: [], incomplete: 0 }]);
+    expect(computeStats([held], ["wheel"], null)).toEqual([{ currency: "USD", total: 0, months: [], tickers: [], incomplete: 0 }]);
     const sold = row({ ...held, endWhen: "2026-11-15T15:00:00.000Z", closeTotal: 1800, closeCommission: -1, closeNet: 1799, pnl: 99, ongoing: false, event: "sold" });
-    expect(computeStats([sold], ["wheel"], null)).toEqual([{ currency: "USD", total: 99, months: [{ month: "2026-11", pnl: 99 }], incomplete: 0 }]);
+    expect(computeStats([sold], ["wheel"], null)).toEqual([{ currency: "USD", total: 99, months: [{ month: "2026-11", pnl: 99 }], tickers: [{ ticker: "MQZA", pnl: 99 }], incomplete: 0 }]);
   });
 
   it("counts shares the Wheel took over at their sale, though nothing was assigned", () => {
@@ -44,16 +44,16 @@ describe("computeStats", () => {
       openTotal: -2000, openCommission: 0, openNet: -2000,
       note: { code: "takenOverAtStrike", contract: "MQZA Sep18'26 20 Call" },
     });
-    expect(computeStats([taken], ["wheel"], null)).toEqual([{ currency: "USD", total: 0, months: [], incomplete: 0 }]);
+    expect(computeStats([taken], ["wheel"], null)).toEqual([{ currency: "USD", total: 0, months: [], tickers: [], incomplete: 0 }]);
     const sold = row({ ...taken, endWhen: "2026-09-01T14:30:00.000Z", closeTotal: 2500, closeCommission: -1, closeNet: 2499, pnl: 499, ongoing: false, event: "sold" });
-    expect(computeStats([sold], ["wheel"], null)).toEqual([{ currency: "USD", total: 499, months: [{ month: "2026-09", pnl: 499 }], incomplete: 0 }]);
+    expect(computeStats([sold], ["wheel"], null)).toEqual([{ currency: "USD", total: 499, months: [{ month: "2026-09", pnl: 499 }], tickers: [{ ticker: "MQZA", pnl: 499 }], incomplete: 0 }]);
   });
 
   it("counts a condor like an option and a LEAPS purchase like delivered shares: nothing until the sale", () => {
     const condor = row({ strategy: "condors", kind: "condor", openNet: 46, endWhen: "2026-08-29T20:00:00.000Z", closeNet: 0, pnl: 46, ongoing: false, event: "expired" });
     expect(computeStats([condor], ["condors"], null)[0]).toMatchObject({ total: 46, months: [{ month: "2026-08", pnl: 46 }] });
     const leaps = row({ strategy: "leaps", kind: "long_call", quantity: 1, openTotal: -300, openCommission: -1, openNet: -301 });
-    expect(computeStats([leaps], ["leaps"], null)).toEqual([{ currency: "USD", total: 0, months: [], incomplete: 0 }]);
+    expect(computeStats([leaps], ["leaps"], null)).toEqual([{ currency: "USD", total: 0, months: [], tickers: [], incomplete: 0 }]);
     const soldLeaps = row({ ...leaps, endWhen: "2026-12-01T15:00:00.000Z", closeNet: 399, pnl: 98, ongoing: false, event: "sold" });
     expect(computeStats([soldLeaps], ["leaps"], null)[0]).toMatchObject({ total: 98, months: [{ month: "2026-12", pnl: 98 }] });
   });
@@ -65,7 +65,7 @@ describe("computeStats", () => {
 
   it("skips and counts a contribution without an amount", () => {
     const stats = computeStats([row({ openTotal: null, openNet: null }), row({ id: "y#1" })], ["wheel"], null);
-    expect(stats).toEqual([{ currency: "USD", total: 19, months: [{ month: "2026-08", pnl: 19 }], incomplete: 1 }]);
+    expect(stats).toEqual([{ currency: "USD", total: 19, months: [{ month: "2026-08", pnl: 19 }], tickers: [{ ticker: "MQZA", pnl: 19 }], incomplete: 1 }]);
   });
 
   it("runs the months on to the month of the ledger's last transaction, at zero", () => {
@@ -82,7 +82,7 @@ describe("computeStats", () => {
 
   it("adds no month to a strategy that has no flow yet", () => {
     const held = row({ kind: "shares", strike: null, assigned: true, quantity: 100, openTotal: -1700, openCommission: 0, openNet: -1700 });
-    expect(computeStats([held], ["wheel"], "2026-10-15T15:00:00.000Z")).toEqual([{ currency: "USD", total: 0, months: [], incomplete: 0 }]);
+    expect(computeStats([held], ["wheel"], "2026-10-15T15:00:00.000Z")).toEqual([{ currency: "USD", total: 0, months: [], tickers: [], incomplete: 0 }]);
   });
 
   it("counts several strategies at once: months from the first flow of any, each total summed, never Others", () => {
@@ -102,9 +102,34 @@ describe("computeStats", () => {
         { month: "2026-08", pnl: 19 },
         { month: "2026-09", pnl: 46 },
       ],
+      tickers: [{ ticker: "MQZA", pnl: 114 }],
       incomplete: 0,
     });
     const each = (["wheel", "leaps", "condors"] as const).map((strategy) => computeStats(rows, [strategy], null)[0].total);
     expect(all.total).toBe(each.reduce((n, total) => n + total, 0));
+  });
+
+  it("totals each ticker over its whole history, the largest gain first, ties by name, and sums to the total", () => {
+    const rows = [
+      // MQZA: a put bought back, 19 - 6, and its shares sold at a loss of 40: -27.
+      row({ endWhen: "2026-10-10T15:00:00.000Z", closeNet: -6, pnl: 13, ongoing: false, event: "buyback" }),
+      row({ id: "s#1", kind: "shares", quantity: 100, openNet: -1700, endWhen: "2026-11-15T15:00:00.000Z", closeNet: 1660, pnl: -40, ongoing: false, event: "sold" }),
+      // XOM: an open put's premium, and shares still held, which count nothing.
+      row({ id: "x#1", ticker: "XOM", openNet: 120 }),
+      row({ id: "x#2", ticker: "XOM", kind: "shares", quantity: 100, openNet: -11000 }),
+      row({ id: "b#1", ticker: "BBB", openNet: 50 }),
+      row({ id: "a#1", ticker: "AAA", openNet: 50 }),
+      row({ id: "e#1", ticker: "EUR1", currency: "EUR", openNet: 7 }),
+      row({ id: "o#1", ticker: "OTH", strategy: "others", openNet: 500 }),
+    ];
+    const [eur, usd] = computeStats(rows, ["wheel"], null);
+    expect(eur.tickers).toEqual([{ ticker: "EUR1", pnl: 7 }]);
+    expect(usd.tickers).toEqual([
+      { ticker: "XOM", pnl: 120 },
+      { ticker: "AAA", pnl: 50 },
+      { ticker: "BBB", pnl: 50 },
+      { ticker: "MQZA", pnl: -27 },
+    ]);
+    expect(usd.tickers.reduce((n, t) => n + t.pnl, 0)).toBe(usd.total);
   });
 });

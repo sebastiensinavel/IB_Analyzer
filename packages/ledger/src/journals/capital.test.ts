@@ -38,7 +38,7 @@ function condor(overrides: Partial<JournalRow>): JournalRow {
 }
 
 function stats(months: MonthPnl[], currency = "USD"): StrategyStats {
-  return { currency, total: months.reduce((n, m) => n + m.pnl, 0), months, incomplete: 0 };
+  return { currency, total: months.reduce((n, m) => n + m.pnl, 0), months, tickers: [], incomplete: 0 };
 }
 
 const AUG_SEP: MonthPnl[] = [
