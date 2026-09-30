@@ -89,19 +89,10 @@
     "how": {
       "title": "How it works",
       "steps": [
-        {
-          "title": "An HTML statement",
-          "text": "Export an activity statement from the Client Portal and import it."
-        },
-        {
-          "title": "A Flex Query",
-          "text": "Connect a Flex Query for a daily update."
-        },
-        {
-          "title": "The local agent, optional",
-          "text": "It reads TWS on your computer for today's data."
-        }
-      ]
+      { "title": "Import a statement", "text": "Download an activity statement from your Interactive Brokers client portal and drop it into the app: that is enough to see everything." },
+      { "title": "Automate the update", "text": "Allow a read-only automatic download, which Interactive Brokers calls a “Flex Query”: your data updates every day, with no new file." },
+      { "title": "Follow the day live, if you wish", "text": "A small optional program, installed on your computer, reads Interactive Brokers' trading software (TWS) to show your positions and your result for the day." }
+    ]
     },
     "faq": {
       "title": "Frequently asked questions",

@@ -89,19 +89,10 @@
     "how": {
       "title": "Comment ça marche",
       "steps": [
-        {
-          "title": "Un relevé HTML",
-          "text": "Exportez un relevé d'activité du Client Portal et importez-le."
-        },
-        {
-          "title": "Une Flex Query",
-          "text": "Branchez une Flex Query pour une mise à jour quotidienne."
-        },
-        {
-          "title": "L'agent local, facultatif",
-          "text": "Il lit TWS sur votre ordinateur pour les données du jour."
-        }
-      ]
+      { "title": "Importez un relevé", "text": "Téléchargez un relevé d'activité depuis votre espace client Interactive Brokers et déposez-le dans l'application : cela suffit pour tout voir." },
+      { "title": "Automatisez la mise à jour", "text": "Autorisez une récupération automatique en lecture seule, qu'Interactive Brokers appelle « Flex Query » : vos données se mettent à jour chaque jour, sans nouveau fichier." },
+      { "title": "Suivez la journée en direct, si vous le souhaitez", "text": "Un petit programme facultatif, installé sur votre ordinateur, lit le logiciel de trading d'Interactive Brokers (TWS) pour afficher vos positions et votre résultat du jour." }
+    ]
     },
     "faq": {
       "title": "Questions fréquentes",
