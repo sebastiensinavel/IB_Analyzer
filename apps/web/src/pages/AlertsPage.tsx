@@ -68,7 +68,8 @@ function PercentField({ value, label, className, placeholder, clearable, onCommi
   const commit = () => {
     const trimmed = text.trim();
     if (trimmed === "") {
-      if (clearable) onCommit(null);
+      // Déjà vide : rien à écrire, ni une ligne d'état par défaut ni un dépôt de sauvegarde.
+      if (clearable && value !== null) onCommit(null);
       else setText(toPercentText(value));
       return;
     }

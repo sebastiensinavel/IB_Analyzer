@@ -186,6 +186,18 @@ describe("AlertsPage", () => {
     await waitFor(async () => expect((await db.alertStates.get(["beta", WHEEL_ID]))?.override).toBeNull());
   });
 
+  it("writes nothing when an empty override field is left empty", async () => {
+    await db.accounts.add(account());
+    await db.transactions.bulkAdd(WHEEL_TRANSACTIONS);
+    const user = userEvent.setup();
+    renderPage();
+    const field = await screen.findByRole("spinbutton", { name: /Fraction de S₀ pour MQZA/ });
+    await user.click(field);
+    await user.tab();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(await db.alertStates.get(["beta", WHEEL_ID])).toBeUndefined();
+  });
+
   it("links a ticker to the positions of its strategy, and a manual alert to Positions", async () => {
     await db.accounts.add(account());
     await db.transactions.bulkAdd(WHEEL_TRANSACTIONS);
