@@ -24,6 +24,7 @@ class FakeContract:
     symbol: str = "AAPL"
     localSymbol: str = "AAPL"
     secType: str = "STK"
+    exchange: str = ""
     right: str = ""
     strike: float = 0.0
     lastTradeDateOrContractMonth: str = ""
@@ -216,7 +217,10 @@ class FakeIB:
             if contract.symbol in self._quotes or contract.symbol in self._qualifiable:
                 contract.conId = self._next_con_id
                 self._next_con_id += 1
-                contract.primaryExchange = self._primary_exchanges.get(contract.symbol, "NASDAQ")
+                # An index keeps the exchange it was asked on and has no primary exchange; only a
+                # stock gets one (secType and exchange pass through untouched, as in the real one).
+                if contract.secType == "STK":
+                    contract.primaryExchange = self._primary_exchanges.get(contract.symbol, "NASDAQ")
                 result.append(contract)
             else:
                 result.append(None)

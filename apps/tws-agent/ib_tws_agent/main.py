@@ -27,7 +27,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Query
 from fastapi.responses import JSONResponse, Response
-from ib_async import IB, Stock
+from ib_async import IB, Index, Stock
 from pydantic import BaseModel, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -76,6 +76,7 @@ QUOTES_TIMEOUT_S = 8
 QUOTES_POLL_S = 0.05
 QUOTES_MAX_SYMBOLS = 90
 QUOTES_SYMBOL_MAX_LENGTH = 24
+QUOTES_EXCHANGE_MAX_LENGTH = 8
 MARKET_DATA_TYPE = 4
 
 
@@ -217,6 +218,8 @@ def serialize_bar(bar: Any) -> dict[str, Any]:
         "low": bar.low,
         "close": bar.close,
         "volume": float(bar.volume),
+        # The bar's VWAP, raw: nan (TWS sent none) becomes None, like a price it does not have.
+        "average": clean_quote(getattr(bar, "average", None)),
     }
 
 
@@ -273,15 +276,19 @@ def clean_quote(value: float | None) -> float | None:
     return value
 
 
-async def collect_quotes(ib: IB, symbols: list[str]) -> dict[str, Any]:
-    """Qualify each symbol into a real contract, then subscribe each on its own primary
-    exchange, wait for its last and close, cancel, and hand the tickers back.
+async def collect_quotes(ib: IB, symbols: list[str], indices: list[tuple[str, str]] = []) -> dict[str, Any]:  # noqa: B006
+    """Qualify each stock and index into a real contract, then subscribe each, wait for its
+    last and close, cancel, and hand the tickers back, stocks first then indices, keyed by symbol.
 
     ib_async's `reqMktData` needs a `conId`: an unqualified `Stock(symbol, "SMART", "USD")`
     raises `ValueError` before ever reaching TWS ("can't be hashed because no 'conId' value
-    exists"), so every symbol is qualified first (`qualifyContractsAsync`), bounded by the same
-    deadline as the rest of the call. An unknown or ambiguous symbol keeps `conId 0` and is
-    simply skipped - never subscribed, never raising.
+    exists"), so everything is qualified first, in one `qualifyContractsAsync` call, bounded by
+    the same deadline as the rest of the call. An unknown or ambiguous symbol keeps `conId 0`
+    and is simply skipped - never subscribed, never raising.
+
+    An index is `Index(symbol, exchange, "USD")` and is subscribed as qualified: its delayed
+    quote is served without an index subscription (verified on a real TWS, 2026-09-30: market
+    data type 3, error 10090 "Delayed market data is available").
 
     Never raises overall, like collect_pnl: a symbol TWS stays silent about (unknown, no data,
     or a failed qualification pass) is simply absent from the result, and the answer still
@@ -289,7 +296,8 @@ async def collect_quotes(ib: IB, symbols: list[str]) -> dict[str, Any]:
     """
     tickers: dict[str, Any] = {}
     deadline = monotonic() + QUOTES_TIMEOUT_S
-    contracts = {symbol: Stock(symbol, "SMART", "USD") for symbol in symbols}
+    contracts: dict[str, Any] = {symbol: Stock(symbol, "SMART", "USD") for symbol in symbols}
+    contracts.update({symbol: Index(symbol, exchange, "USD") for symbol, exchange in indices})
     try:
         ib.reqMarketDataType(MARKET_DATA_TYPE)
         remaining = max(0.0, deadline - monotonic())
@@ -299,6 +307,9 @@ async def collect_quotes(ib: IB, symbols: list[str]) -> dict[str, Any]:
     try:
         for symbol, contract in contracts.items():
             if not contract.conId:
+                continue
+            if contract.secType == "IND":
+                tickers[symbol] = ib.reqMktData(contract, "", False, False)
                 continue
             # Subscribing via SMART routes a NASDAQ listing through an entitlement the API
             # does not get: TWS answers error 10091 ("Part of requested market data requires
@@ -325,6 +336,20 @@ async def collect_quotes(ib: IB, symbols: list[str]) -> dict[str, Any]:
             with suppress(Exception):
                 ib.cancelMktData(ticker.contract)
     return tickers
+
+
+def parse_indices(raw: str) -> list[tuple[str, str]] | None:
+    """`XSP:CBOE,VIX:CBOE` -> [("XSP", "CBOE"), ("VIX", "CBOE")], deduplicated; `None` when an
+    element is not exactly `SYMBOL:EXCHANGE` within the length limits."""
+    parsed: list[tuple[str, str]] = []
+    for item in (part.strip().upper() for part in raw.split(",") if part.strip()):
+        symbol, sep, exchange = item.partition(":")
+        if not sep or ":" in exchange or not symbol or not exchange:
+            return None
+        if len(symbol) > QUOTES_SYMBOL_MAX_LENGTH or len(exchange) > QUOTES_EXCHANGE_MAX_LENGTH:
+            return None
+        parsed.append((symbol, exchange))
+    return list(dict.fromkeys(parsed))
 
 
 def create_app(config: Config) -> FastAPI:
@@ -409,12 +434,20 @@ def create_app(config: Config) -> FastAPI:
     @app.get("/quotes")
     async def quotes(
         port: Annotated[int, Query(ge=1, le=65535)],
-        symbols: Annotated[str, Query(min_length=1, max_length=4096)],
         ib_factory: Callable[[], IB] = Depends(get_ib_factory),
+        symbols: Annotated[str, Query(max_length=4096)] = "",
+        indices: Annotated[str, Query(max_length=4096)] = "",
     ):
-        """Last and close of each underlying, raw: the browser derives the day's move."""
+        """Last and close of each underlying, raw: the browser derives the day's move.
+        `symbols` are stocks; `indices` are `SYMBOL:EXCHANGE` pairs (`XSP:CBOE`), answered after them."""
         wanted = list(dict.fromkeys(s.strip().upper() for s in symbols.split(",") if s.strip()))
-        if not wanted or len(wanted) > QUOTES_MAX_SYMBOLS or any(len(s) > QUOTES_SYMBOL_MAX_LENGTH for s in wanted):
+        wanted_indices = parse_indices(indices)
+        if (
+            wanted_indices is None
+            or not (wanted or wanted_indices)
+            or len(wanted) + len(wanted_indices) > QUOTES_MAX_SYMBOLS
+            or any(len(s) > QUOTES_SYMBOL_MAX_LENGTH for s in wanted)
+        ):
             return JSONResponse(status_code=422, content={"code": "bad-symbols"})
         ib = ib_factory()
         try:
@@ -426,7 +459,7 @@ def create_app(config: Config) -> FastAPI:
                 content={"code": "tws-unreachable", "detail": f"{type(exc).__name__}: {exc}"},
             )
         try:
-            tickers = await collect_quotes(ib, wanted)
+            tickers = await collect_quotes(ib, wanted, wanted_indices)
             return {
                 "fetchedAt": utc_now_iso(),
                 "quotes": [
@@ -435,7 +468,7 @@ def create_app(config: Config) -> FastAPI:
                         "last": clean_quote(getattr(tickers.get(symbol), "last", None)),
                         "close": clean_quote(getattr(tickers.get(symbol), "close", None)),
                     }
-                    for symbol in wanted
+                    for symbol in [*wanted, *(symbol for symbol, _ in wanted_indices)]
                 ],
             }
         finally:
