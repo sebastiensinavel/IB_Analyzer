@@ -9,15 +9,17 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
-import { directionFor, reactivate } from "@ib/alerts";
+import { directionFor } from "@ib/alerts";
 import type { Strategy } from "@ib/ledger";
 import { strategyLevels } from "@ib/ledger";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { fetchBars, type PriceBar } from "@/agent/client";
+import { useUnderlyingQuotesMap } from "@/agent/quotes";
+import { alertPriceOf } from "@/alerts/prices";
 import { requestNotificationPermission } from "@/alerts/notify";
 import type { AlertEditHandlers } from "@/components/charts/AlertOverlay";
-import { createManualAlert, deleteManualAlert, patchAlertStates, updateManualAlert } from "@/db/alerts";
-import { useAccountAlerts, useAccountJournals } from "@/db/AccountDataProvider";
+import { createManualAlert, deleteManualAlert, reactivateManualAlert, updateManualAlert } from "@/db/alerts";
+import { useAccountAlerts, useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
 import { useDb } from "@/db/DbProvider";
 import { useAccount, useSnapshot } from "@/db/hooks";
 import { useTheme } from "@/hooks/useTheme";
@@ -112,9 +114,13 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
   );
 
   // Une alerte posée ici est une alerte du ticker de la ligne, jamais du substitut tracé : sur le
-  // graphe SPY d'une ligne XSP, c'est une alerte XSP, à un prix lu sur la même échelle que ses strikes.
-  // Sa direction se lit contre la dernière clôture du graphe, celle que l'utilisateur voit.
-  const lastClose = bars?.at(-1)?.close ?? null;
+  // graphe SPY d'une ligne XSP, c'est une alerte XSP. Sa direction se lit contre le cours sur
+  // lequel le moteur l'évaluera (spec §3.3, §3.5) — l'action détenue en direct, sinon la cotation,
+  // l'indice XSP compris — et contre la dernière clôture du graphe seulement quand aucun n'est connu.
+  const risk = useAccountRiskReport();
+  const quotes = useUnderlyingQuotesMap();
+  const known = useMemo(() => alertPriceOf(risk.snapshot ?? null, quotes)(ticker)?.price ?? null, [risk.snapshot, quotes, ticker]);
+  const current = known ?? bars?.at(-1)?.close ?? null;
   const noteOf = useCallback(
     (id: string) => {
       if (alertsView.status !== "ready") return null;
@@ -124,8 +130,10 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
     [alertsView],
   );
   const alertHandlers = useMemo<AlertEditHandlers | undefined>(() => {
-    if (lastClose === null) return undefined;
-    const direction = (price: number) => directionFor(price, lastClose);
+    if (current === null) return undefined;
+    const direction = (price: number) => directionFor(price, current);
+    const priceOfAlert = (id: string) =>
+      alertsView.status === "ready" ? alertsView.alerts.find((v) => v.alert.id === id)?.alert.thresholds?.[0]?.price : undefined;
     return {
       onCreateAlert: (price) => {
         // Demandée dans le geste même : un navigateur ignore une demande sortie de son clic.
@@ -133,21 +141,19 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
         void createManualAlert(db, accountId, { ticker, price, direction: direction(price) });
       },
       onMoveAlert: (id, price) => void updateManualAlert(db, accountId, id, { price, direction: direction(price) }),
-      onEditAlert: (id, { price, note }) => void updateManualAlert(db, accountId, id, { price, note, direction: direction(price) }),
+      // La direction ne se recalcule que si le seuil bouge : changer la note seule n'y touche pas.
+      onEditAlert: (id, { price, note }) =>
+        void updateManualAlert(
+          db,
+          accountId,
+          id,
+          price === priceOfAlert(id) ? { note } : { price, note, direction: direction(price) },
+        ),
       onDeleteAlert: (id) => void deleteManualAlert(db, accountId, id),
-      onReactivateAlert: (id) => {
-        // `reactivate` ne fait que remettre l'état à zéro : la manuelle se réarme du côté du cours
-        // où se trouve son seuil, sans quoi elle se déclencherait aussitôt (spec §3.5).
-        const view = alertsView.status === "ready" ? alertsView.alerts.find((v) => v.alert.id === id) : undefined;
-        const price = view?.alert.thresholds?.[0]?.price;
-        void (async () => {
-          await patchAlertStates(db, accountId, [reactivate(id)]);
-          if (price !== undefined) await updateManualAlert(db, accountId, id, { direction: direction(price) });
-        })();
-      },
+      onReactivateAlert: (id) => void reactivateManualAlert(db, accountId, id, current),
       noteOf,
     };
-  }, [db, accountId, ticker, lastClose, alertsView, noteOf]);
+  }, [db, accountId, ticker, current, alertsView, noteOf]);
 
   return (
     <TableRow data-testid="position-chart-row" className="hover:bg-transparent [&:hover>td:first-child]:shadow-none">

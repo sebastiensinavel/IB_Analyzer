@@ -2,7 +2,7 @@ import { Fragment, useState } from "react";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { acknowledge, directionFor, reactivate, type AlertStatus } from "@ib/alerts";
+import { acknowledge, reactivate, type AlertStatus } from "@ib/alerts";
 import { Badge } from "@ib/ui/badge";
 import { Button } from "@ib/ui/button";
 import { Card, CardContent } from "@ib/ui/card";
@@ -15,7 +15,7 @@ import type { AlertView } from "@/alerts/useAlertEngine";
 import { DataTable, DataTableHeader, type ColumnDef } from "@/components/table/DataTable";
 import { useAccountAlerts } from "@/db/AccountDataProvider";
 import { setAlertMargins } from "@/db/accounts";
-import { deleteManualAlert, patchAlertStates, setAlertOverride, updateManualAlert } from "@/db/alerts";
+import { deleteManualAlert, patchAlertStates, reactivateManualAlert, setAlertOverride } from "@/db/alerts";
 import { useDb } from "@/db/DbProvider";
 import { useAccount } from "@/db/hooks";
 import { alertMargins } from "@/lib/alertMargins";
@@ -124,14 +124,11 @@ export function AlertsPage() {
   const acknowledgeAlert = (row: AlertView) =>
     patchAlertStates(db, accountId, [acknowledge(row.alert, new Date().toISOString())]);
 
-  const reactivateAlert = async (row: AlertView) => {
-    await patchAlertStates(db, accountId, [reactivate(row.alert.id)]);
-    // `reactivate` only resets the state: a manual alert re-arms on the side of the current
-    // price its threshold lies, or it would trigger again at once (spec §3.5).
-    if (row.alert.kind === "manual" && row.price !== null && row.alert.thresholds !== null) {
-      await updateManualAlert(db, accountId, row.alert.id, { direction: directionFor(row.alert.thresholds[0].price, row.price.price) });
-    }
-  };
+  // Seule une manuelle se désactive : la réactiver réarme aussi sa direction (`reactivateManualAlert`).
+  const reactivateAlert = (row: AlertView) =>
+    row.alert.kind === "manual"
+      ? reactivateManualAlert(db, accountId, row.alert.id, row.price?.price ?? null)
+      : patchAlertStates(db, accountId, [reactivate(row.alert.id)]);
 
   const linkTo = (row: AlertView) => {
     const { alert } = row;

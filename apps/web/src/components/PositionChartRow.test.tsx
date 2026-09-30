@@ -7,6 +7,7 @@ import { ACTIVABLE_STRATEGIES, type ChartLevel, type Strategy } from "@ib/ledger
 import i18n from "@/i18n";
 import { db, type SnapshotRecord } from "@/db/schema";
 import * as agent from "@/agent/client";
+import { mergeQuotes, resetQuotes } from "@/agent/quotes";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { CHART_MARGIN_DAYS } from "@/lib/levelsPrimitive";
 import { createManualAlert } from "@/db/alerts";
@@ -140,6 +141,7 @@ async function lastDrawnLevels(): Promise<ChartLevel[]> {
 
 beforeEach(async () => {
   vi.restoreAllMocks();
+  resetQuotes();
   await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.contracts.clear()]);
   await db.accounts.put({
     id: "alpha",
@@ -469,5 +471,49 @@ describe("PositionChartRow", () => {
 
     expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
     await waitFor(async () => expect(await db.alerts.get(id)).toMatchObject({ price: 12, direction: "below" }));
+  });
+
+  it("oriente une alerte XSP contre la cotation de l'indice, jamais contre la clôture SPY du graphe", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    mergeQuotes(new Map([["XSP", { last: 600, change: null }]]));
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "SPY", fetchedAt: "2026-09-21T20:00:00Z", bars: [{ ...BARS[0], close: 590, high: 591 }] },
+    });
+
+    renderRow({ ticker: "XSP" });
+
+    const chart = await lastChart();
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    series.coordinateToPrice.mockReturnValueOnce(595);
+    const click = chart.subscribeClick.mock.calls.at(-1)![0];
+    act(() => click({ point: { x: 10, y: 40 }, sourceEvent: { altKey: true } }));
+
+    // 595 est sous la cotation XSP (600) : on attend la baisse, là où la clôture SPY (590) dirait la hausse.
+    await waitFor(async () => expect(await db.alerts.toArray()).toMatchObject([{ ticker: "XSP", price: 595, direction: "below" }]));
+  });
+
+  it("ne touche pas à la direction quand seule la note change", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    // Direction volontairement contraire à la clôture (13,5) : la recalculer la ferait basculer.
+    const id = await createManualAlert(db, "alpha", { ticker: "BTDR", price: 15.5, direction: "below" });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    const chart = await lastChart();
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    await waitFor(() => expect(series.attachPrimitive.mock.calls.length).toBeGreaterThan(1));
+    // L'étiquette est sur l'échelle des prix (x ≥ 500), à la hauteur de la ligne (y = 10).
+    fireEvent.click(chart.chartElement(), { clientX: 520, clientY: 10 });
+    fireEvent.change(await screen.findByLabelText("Note"), { target: { value: "support" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(async () => expect(await db.alerts.get(id)).toMatchObject({ price: 15.5, note: "support", direction: "below" }));
   });
 });

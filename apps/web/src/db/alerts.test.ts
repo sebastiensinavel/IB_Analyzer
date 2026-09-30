@@ -5,6 +5,7 @@ import {
   deleteAlertStates,
   deleteManualAlert,
   patchAlertStates,
+  reactivateManualAlert,
   setAlertAnchor,
   setAlertOverride,
   updateManualAlert,
@@ -41,6 +42,26 @@ describe("alertes manuelles", () => {
     expect(await db.alerts.get(id)).toBeUndefined();
     expect(await db.alertStates.get(["beta", id])).toBeUndefined();
     expect(await db.alertStates.get(["alpha", id])).toBeDefined();
+  });
+});
+
+describe("réactiver une manuelle", () => {
+  it("remet l'état à zéro et réarme la direction du côté du cours", async () => {
+    const id = await createManualAlert(db, "beta", { ticker: "AAPL", price: 200, direction: "above" });
+    await patchAlertStates(db, "beta", [
+      { alertId: id, patch: { triggeredAt: "2026-09-30T14:00:00.000Z", acknowledgedAt: "2026-09-30T14:05:00.000Z", disabled: true } },
+    ]);
+    await reactivateManualAlert(db, "beta", id, 210);
+    expect(await db.alertStates.get(["beta", id])).toMatchObject({ triggeredAt: null, acknowledgedAt: null, disabled: false, armed: true });
+    expect((await db.alerts.get(id))!.direction).toBe("below");
+  });
+
+  it("sans cours connu, garde la direction", async () => {
+    const id = await createManualAlert(db, "beta", { ticker: "AAPL", price: 200, direction: "above" });
+    await patchAlertStates(db, "beta", [{ alertId: id, patch: { disabled: true } }]);
+    await reactivateManualAlert(db, "beta", id, null);
+    expect(await db.alertStates.get(["beta", id])).toMatchObject({ disabled: false });
+    expect((await db.alerts.get(id))!.direction).toBe("above");
   });
 });
 

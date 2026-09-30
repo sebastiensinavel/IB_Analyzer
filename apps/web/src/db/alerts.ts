@@ -1,4 +1,4 @@
-import { INITIAL_STATE, type AlertAnchor, type AlertPatch, type AlertState, type ManualAlertDef } from "@ib/alerts";
+import { directionFor, INITIAL_STATE, reactivate, type AlertAnchor, type AlertPatch, type AlertState, type ManualAlertDef } from "@ib/alerts";
 import type { AlertStateRecord, AppDatabase } from "./schema";
 
 type StatePatch = Partial<Omit<AlertState, "alertId">>;
@@ -40,6 +40,26 @@ export async function deleteManualAlert(db: AppDatabase, accountId: string, id: 
     const row = await db.alerts.get(id);
     if (row?.accountId === accountId) await db.alerts.delete(id);
     await db.alertStates.delete([accountId, id]);
+  });
+}
+
+/**
+ * Réactive une manuelle : son état revient à zéro et, le cours connu, elle se réarme du côté où
+ * se trouve son seuil — sans quoi elle se déclencherait aussitôt (spec §3.5). Sans cours, la
+ * direction reste celle qu'elle avait. Une seule transaction pour les deux écritures.
+ */
+export async function reactivateManualAlert(
+  db: AppDatabase,
+  accountId: string,
+  id: string,
+  currentPrice: number | null,
+): Promise<void> {
+  await db.transaction("rw", [db.alerts, db.alertStates], async () => {
+    const { patch } = reactivate(id);
+    await mergeState(db, accountId, id, patch);
+    const row = await db.alerts.get(id);
+    if (currentPrice === null || row?.accountId !== accountId) return;
+    await db.alerts.update(id, { direction: directionFor(row.price, currentPrice) });
   });
 }
 
