@@ -2,6 +2,13 @@
 export const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
 /**
+ * Délai laissé au nouveau Service Worker pour prendre la main après le clic du bandeau. Passé
+ * ce délai, l'onglet recharge de lui-même : le script inline d'`index.html` envoie alors
+ * `SKIP_WAITING`, si bien que la nouvelle version est prise quand même.
+ */
+export const UPDATE_RELOAD_FALLBACK_MS = 10_000;
+
+/**
  * Recharge l'onglet quand une nouvelle version du Service Worker en prend le contrôle — dans
  * chaque onglet, pas seulement celui du clic sur « Recharger » : un vieil onglet chercherait
  * des fichiers `assets/*` qui n'existent plus et parlerait à une base au schéma plus récent.

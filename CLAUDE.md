@@ -124,7 +124,8 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `/_allauth`, `/static`, `/admin`, `/agent`, `/shots` : une capture ouverte dans un onglet reste
   une image), et **aucun `runtimeCaching`** : aucune réponse du
   serveur ni de l'agent ne passe par un cache. Une nouvelle version attend le clic du bandeau
-  (`src/pwa/UpdateBanner.tsx`), puis chaque onglet recharge (`reloadOnControllerChange`,
+  (`src/pwa/UpdateBanner.tsx`) — qui dit aussitôt « Mise à jour en cours… », bouton désactivé,
+  et recharge de lui-même après `UPDATE_RELOAD_FALLBACK_MS` (10 s) si rien n'a pris la main —, puis chaque onglet recharge (`reloadOnControllerChange`,
   `src/pwa/updates.ts`, branché dans `main.tsx`) : un onglet recharge au `controllerchange` s'il
   avait un contrôleur au chargement ou une inscription active (onglet ouvert par Maj + Recharger),
   au plus une fois ; seul un onglet de toute première installation saute son premier
