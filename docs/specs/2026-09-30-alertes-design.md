@@ -90,16 +90,20 @@ Définies par l'utilisateur (§4) : `ticker`, `price`, `direction`, `note`. La d
 à la création du cours connu du titre (seuil au-dessus du cours → `above`) ; sans cours connu, du
 dernier cours de clôture du graphe où elle est posée.
 
-### 3.4 S₀ : `chooseAnchor(saleWhen, observedAt, livePrice, dayBar)`
+### 3.4 S₀ : `chooseAnchor({ saleWhen, observedAt, live, dayBar })`
 
 Pure, appelée par la coquille (§6.2). Par ordre :
-1. `observedAt − saleWhen ≤ ANCHOR_LIVE_WINDOW_MS` et un prix du moment connu → `{price: livePrice, source: "live"}` ;
+1. un prix du moment connu, `live = { price, at }`, avec `0 ≤ live.at − saleWhen ≤ ANCHOR_LIVE_WINDOW_MS`
+   → `{price: live.price, source: "live"}` ;
 2. sinon la barre journalière du jour de la vente porte `average` (VWAP d'IB) → `{source: "vwap"}` ;
 3. sinon sa `close` → `{source: "close"}` ;
 4. sinon `null` (on retentera).
 
-`saleWhen` est une heure IB (heure murale New York stampée UTC, CLAUDE.md) ; `observedAt` est
-l'`asOf` du snapshot de l'agent, déjà une heure IB : comparé tel quel, sans `toReportTime`.
+`saleWhen` est une heure IB (heure murale New York stampée UTC, CLAUDE.md). `live.at` est l'`asOf`
+du snapshot `agent`, déjà une heure IB : il se compare tel quel à `saleWhen`, sans nouvelle
+conversion. `observedAt` est l'instant d'observation en vrai UTC, un instant de l'application :
+il n'est qu'écrit dans l'ancre, jamais comparé à `saleWhen`. Côté coquille, la fenêtre qui décide
+de demander les barres (§6.2) compare l'instant présent passé par `toReportTime(now)` à `saleWhen`.
 
 ### 3.5 Évaluation : `evaluateAlerts(alerts, states, priceOf, now)`
 
@@ -176,7 +180,9 @@ inaccessible : c'est vrai du temps réel et de l'historique `TRADES`, pas de la 
 ### 6.1 Où
 
 `AccountDataProvider` enveloppe désormais **la barre latérale et la page** : `AppLayout` le monte
-au-dessus de `SidebarProvider` quand un compte est affiché. Il expose `useAccountAlerts()` →
+juste sous `SidebarProvider` quand un compte est affiché. `SidebarProvider` reste la racine avec
+ou sans compte : son état ouvert/replié est local, et le changer de place le remonterait — un menu
+replié se rouvrirait à chaque passage d'une page de compte à Paramètres ou à l'Aide. Il expose `useAccountAlerts()` →
 `{ alerts: AlertView[], badges, status }`. La barre latérale lit `useOptionalAccountAlerts()`,
 `null` hors compte. Aucune page ne recalcule les alertes.
 
@@ -185,12 +191,18 @@ au-dessus de `SidebarProvider` quand un compte est affiché. Il expose `useAccou
 Un effet du fournisseur, quand les journaux sont prêts : pour chaque alerte Wheel sans `anchor`,
 `chooseAnchor` avec l'instant présent, le prix de §5 et, si la fenêtre des 15 min est passée, la
 barre du jour de la vente lue par `fetchBars` (au plus une requête par ticker et par passe). Un
-résultat non nul est écrit une fois. Pas d'agent : rien, on retentera à la passe suivante.
+résultat non nul est écrit une fois. Pas d'agent : rien, on retentera à la passe suivante. La
+fenêtre se juge sur `toReportTime(now)` comparé à `saleWhen` : tant qu'elle est ouverte, seul un
+snapshot `agent` pris dedans vaut S₀, et aucune barre n'est demandée.
 
 ### 6.3 Quand
 
 À chaque changement des prix (snapshot `agent`, magasin de cotations) et des alertes — jamais sur
-une horloge. Les transitions de `evaluateAlerts` s'écrivent en une transaction.
+une horloge. Les transitions de `evaluateAlerts` s'écrivent en une transaction. **Seulement
+quand l'agent est présent** (`useAgentPresence`) : sans lui, le snapshot `agent` stocké et les
+cotations en mémoire peuvent dater de la veille (un rechargement au matin, TWS pas encore lancé) ;
+la passe purge alors les états orphelins mais ne déclenche ni ne réarme rien. L'évaluation n'a
+donc lieu que sur une page de compte ouverte, agent présent.
 
 ### 6.4 Notification
 
@@ -288,7 +300,7 @@ pastilles apparaissent dans la barre latérale.
   `null`, deux lignes d'un même contrat, condor complet, aile vendue fermée, deux lignes
   composites), seuils de référence (750/790 à 15 % → 756/784 ; S₀ 34, K 40, 70 % → 38,20),
   surcharge > compte > défaut, `chooseAnchor` (14 min et 16 min, `average` présent/absent,
-  conversion `toReportTime`), `evaluateAlerts` (chaque transition de §3.5, pas de prix, seuil
+  `live.at` — l'`asOf` du snapshot, déjà heure IB — comparé tel quel à `saleWhen`), `evaluateAlerts` (chaque transition de §3.5, pas de prix, seuil
   `null`, réarmement, purge), `alertBadgeCounts`.
 - **`apps/web`** (fake-indexeddb, ledger semé) : migration 12, sauvegarde et restauration des deux
   tables, `deleteAccount`, `db/alerts.ts`, pastilles par entrée de menu et lien du pied

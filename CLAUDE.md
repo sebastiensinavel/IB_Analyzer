@@ -325,7 +325,10 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   symbole (`qualifyContractsAsync`, `Stock(symbole, 'SMART', 'USD')`) avant de l'abonner, et
   l'abonne toujours sur sa place principale, jamais sur `SMART` : sur `SMART`, une valeur NASDAQ
   passe par un abonnement que l'API n'a pas et TWS ne sert rien du tout, pas même en différé
-  (erreur 10091), vérifié contre un vrai TWS le 2026-09-28.
+  (erreur 10091), vérifié contre un vrai TWS le 2026-09-28. Un indice suit un autre chemin :
+  demandé par `indices=SYM:EXCH` (`XSP:CBOE`), il est qualifié en `Index(symbole, place, 'USD')`
+  dans le même `qualifyContractsAsync` et abonné **tel que qualifié**, sa cotation différée servie
+  sans abonnement d'indice (vérifié le 2026-09-30) ; ses tickers suivent ceux des actions.
 - **Les couleurs vivent dans les tokens de `apps/web/src/index.css`**, reprises des maquettes
   `docs/style/{dark,white}-finance-desktop.html` (sous-projet 31) : `primary` et `success` sont tous deux teal, si bien
   qu'aucune étiquette ne s'appuie sur leur différence (`journalTone.ts` prend les teintes des
@@ -528,7 +531,14 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   enveloppe aussi la barre latérale dès qu'un compte est scopé ; elle n'écrit la purge des
   états (`staleStateIds`) que journaux prêts, et `useScopedLiveQuery` (`db/hooks.ts`) rend « en
   chargement » après un changement de compte au lieu des données du précédent, ce qui protège S₀
-  d'une purge sur des journaux périmés. Aucun rattrapage entre deux passes de l'agent. La direction
+  d'une purge sur des journaux périmés. Aucun rattrapage entre deux passes de l'agent.
+  **L'évaluation n'a lieu que sur une page de compte ouverte, agent présent** : sans agent
+  (`useAgentPresence`), la passe purge toujours mais ne déclenche ni ne réarme rien — le snapshot
+  `agent` stocké et les cotations peuvent dater de la veille. L'identifiant d'une alerte de condor
+  est `condor:<row.id>` ; une clôture partielle renumérote les lignes composites, si bien que son
+  état peut passer à la ligne partielle (limite connue). Désactiver la Wheel ou « Supprimer les
+  transactions » fait disparaître les alertes automatiques et, par la purge, leur S₀ : revenues,
+  elles reprennent S₀ du VWAP ou de la clôture du jour de la vente. La direction
   d'une alerte manuelle vient du cours connu du titre (`alertPriceOf`), sinon de la dernière
   clôture du graphe. `alerts/notify.ts` est le seul lecteur de l'API `Notification`, jamais en
   démo. Les pastilles du menu passent par `NavItem.alertScope` (`AlertBadge`). Sur les graphes,
