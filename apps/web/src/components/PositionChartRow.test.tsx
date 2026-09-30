@@ -80,26 +80,36 @@ const BARS = [{ date: "2026-09-21", open: 13, high: 14, low: 12, close: 13.5, vo
 /** La plage logique posée sur le dernier graphe : ce que l'axe du temps montre vraiment. */
 async function lastVisibleRange(): Promise<{ from: number; to: number }> {
   await screen.findByTestId("price-chart");
-  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
-  const timeScale = chart.timeScale.mock.results.at(-1)!.value;
-  return timeScale.setVisibleLogicalRange.mock.calls.at(-1)![0];
+  return waitFor(() => {
+    const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+    const timeScale = chart.timeScale.mock.results.at(-1)!.value;
+    return timeScale.setVisibleLogicalRange.mock.calls.at(-1)![0];
+  });
 }
 
 /** La dernière bougie donnée à la série : ce que le graphe dessine pour le jour le plus récent. */
 async function lastCandle(): Promise<{ time: string; close?: number }> {
   await screen.findByTestId("price-chart");
-  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
-  const series = chart.addSeries.mock.results.at(-1)!.value;
-  const data = series.setData.mock.calls.at(-1)![0] as { time: string; close?: number }[];
-  return data.filter((point) => point.close !== undefined).at(-1)!;
+  return waitFor(() => {
+    const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    const data = series.setData.mock.calls.at(-1)![0] as { time: string; close?: number }[];
+    return data.filter((point) => point.close !== undefined).at(-1)!;
+  });
 }
 
-/** Le dernier graphe créé, une fois son calque d'alertes branché. */
+/**
+ * Le dernier graphe créé, une fois son calque d'alertes branché. Attendu, jamais lu tout de suite :
+ * `price-chart` est rendu avant que l'effet crée le graphe, et un graphe d'un test précédent, dont
+ * le calque écrit encore en base, ferait l'affaire à sa place (`createChart` est vidé à chaque test).
+ */
 async function lastChart() {
   await screen.findByTestId("price-chart");
-  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
-  await waitFor(() => expect(chart.subscribeClick).toHaveBeenCalled());
-  return chart;
+  return waitFor(() => {
+    const chart = vi.mocked(createChart).mock.results.at(-1)?.value;
+    expect(chart?.subscribeClick).toHaveBeenCalled();
+    return chart;
+  });
 }
 
 /** Combien de fois l'axe du temps du dernier graphe a été posé. */
@@ -133,14 +143,17 @@ function liveSnapshot(price: number): SnapshotRecord {
 /** Les niveaux passés à la dernière primitive attachée : ce que `PriceChart` a reçu à dessiner. */
 async function lastDrawnLevels(): Promise<ChartLevel[]> {
   await screen.findByTestId("price-chart");
-  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
-  const series = chart.addSeries.mock.results.at(-1)!.value;
-  const primitive = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { level: ChartLevel }[] };
-  return primitive.drawn.map((d) => d.level);
+  return waitFor(() => {
+    const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    const primitive = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { level: ChartLevel }[] };
+    return primitive.drawn.map((d) => d.level);
+  });
 }
 
 beforeEach(async () => {
   vi.restoreAllMocks();
+  vi.mocked(createChart).mockClear();
   resetQuotes();
   await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.contracts.clear()]);
   await db.accounts.put({
@@ -397,8 +410,7 @@ describe("PositionChartRow", () => {
 
     renderRow();
 
-    await screen.findByTestId("price-chart");
-    const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+    const chart = await lastChart();
     const series = chart.addSeries.mock.results.at(-1)!.value;
     // Les alertes arrivent après le premier rendu : la dernière primitive posée est la leur.
     await waitFor(() => {
