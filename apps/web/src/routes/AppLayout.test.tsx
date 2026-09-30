@@ -106,6 +106,19 @@ describe("AppLayout", () => {
     expect(await screen.findByText("clicks 0")).toBeInTheDocument();
   });
 
+  it("keeps a collapsed sidebar collapsed when leaving the account's pages for Settings", async () => {
+    const user = userEvent.setup();
+    renderAt("/accounts/alpha/dashboard");
+    await screen.findByText("dashboard content");
+    const sidebarState = () => document.querySelector("[data-slot=sidebar]")?.getAttribute("data-state");
+    expect(sidebarState()).toBe("expanded");
+    await user.click(screen.getByRole("button", { name: "Toggle Sidebar" }));
+    expect(sidebarState()).toBe("collapsed");
+    await user.click(screen.getByRole("link", { name: "Paramètres" }));
+    expect(await screen.findByText("settings content")).toBeInTheDocument();
+    expect(sidebarState()).toBe("collapsed");
+  });
+
   it("gives the account's pages its journals and risk report", async () => {
     renderAt("/accounts/alpha/positions");
     expect(await screen.findByText("account data ready")).toBeInTheDocument();

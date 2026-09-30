@@ -77,15 +77,22 @@ export function AppLayout() {
     </>
   );
 
-  const shell = (
-    <SidebarProvider>
+  const content = (
+    <>
       <AppSidebar accountId={navAccountId} accounts={accounts} />
       <SidebarInset>{inset}</SidebarInset>
-    </SidebarProvider>
+    </>
   );
 
   // The account on screen computes its journals, risk report and alerts once, for the sidebar's
   // badges, the title bar and every page (sub-project 11, §4; sub-project 42, §6.1). Not keyed:
-  // a switch must not remount the sidebar. Account-less pages never read them.
-  return scoped ? <AccountDataProvider accountId={scoped}>{shell}</AccountDataProvider> : shell;
+  // a switch must not remount the sidebar. Account-less pages never read them. SidebarProvider
+  // stays the root whether an account is scoped or not: its open state is local, and wrapping it
+  // in the provider on one side only would remount it — and reopen a collapsed sidebar — each
+  // time the user goes from an account's page to Settings or Help and back.
+  return (
+    <SidebarProvider>
+      {scoped ? <AccountDataProvider accountId={scoped}>{content}</AccountDataProvider> : content}
+    </SidebarProvider>
+  );
 }
