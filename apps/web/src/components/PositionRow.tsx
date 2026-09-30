@@ -17,18 +17,14 @@ export const toneOf = (value: number | null) => value !== null && (value >= 0 ? 
 /**
  * The underlying's day move (spec of sub-project 35, §5, held-first addendum): the account on
  * screen's own live `dayChange` when it holds the ticker as stock, no tooltip; the delayed
- * `/quotes` value otherwise, with a tooltip saying so — and naming SPY when the ticker is XSP.
+ * `/quotes` value otherwise, with a tooltip saying so.
  * Every row of one ticker shows the same value.
  */
 export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
   const { t } = useTranslation();
-  const { value, delayed, proxy } = useUnderlyingDayChange()(ticker);
+  const { value, delayed } = useUnderlyingDayChange()(ticker);
   const text = formatDayChange(value);
-  const tooltip = delayed
-    ? proxy
-      ? t("quotes.proxy", { proxy, ticker: ticker.toUpperCase() })
-      : t("quotes.delayed")
-    : null;
+  const tooltip = delayed ? t("quotes.delayed") : null;
   return (
     <TableCell className={cn(NUMERIC, toneOf(value))}>
       {tooltip ? (

@@ -12,7 +12,7 @@ import {
   type Scope,
 } from "@/lib/levelsPrimitive";
 
-const bar = (date: string) => ({ date, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+const bar = (date: string) => ({ date, open: 1, high: 1, low: 1, close: 1, volume: 1, average: null });
 
 /** Un `target` de primitive qui enregistre les appels au lieu de dessiner : jsdom n'a pas de canevas. */
 function fakeTarget() {

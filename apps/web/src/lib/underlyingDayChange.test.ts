@@ -30,28 +30,28 @@ describe("buildHeldDayChange", () => {
 describe("resolveUnderlyingDayChange", () => {
   it("prefers the account's live dayChange over the quotes store, with no tooltip", () => {
     const held = new Map([["AAPL", 0.0821]]);
-    const quotes = new Map<string, number | null>([["AAPL", -0.5]]); // a stale/different value: must be ignored
-    expect(resolveUnderlyingDayChange("AAPL", held, quotes)).toEqual({ value: 0.0821, delayed: false, proxy: null });
+    const quotes = new Map([["AAPL", { last: null, change: -0.5 }]]); // a stale/different value: must be ignored
+    expect(resolveUnderlyingDayChange("AAPL", held, quotes)).toEqual({ value: 0.0821, delayed: false });
   });
 
   it("falls back to the delayed quote for a ticker not held as stock", () => {
     // Also covers a held-but-null dayChange: buildHeldDayChange already drops it (see above),
     // so the caller only ever sees an empty/absent entry there, exactly like this case.
-    const quotes = new Map<string, number | null>([["XOM", -0.0312]]);
-    expect(resolveUnderlyingDayChange("XOM", new Map(), quotes)).toEqual({ value: -0.0312, delayed: true, proxy: null });
+    const quotes = new Map([["XOM", { last: null, change: -0.0312 }]]);
+    expect(resolveUnderlyingDayChange("XOM", new Map(), quotes)).toEqual({ value: -0.0312, delayed: true });
   });
 
-  it("reads XSP's delayed quote from SPY and names the substitute", () => {
-    const quotes = new Map<string, number | null>([["SPY", 0.004]]);
-    expect(resolveUnderlyingDayChange("XSP", new Map(), quotes)).toEqual({ value: 0.004, delayed: true, proxy: "SPY" });
+  it("reads XSP's delayed quote from XSP itself, SPY ignored", () => {
+    const quotes = new Map([["XSP", { last: null, change: 0.004 }], ["SPY", { last: null, change: 0.9 }]]);
+    expect(resolveUnderlyingDayChange("XSP", new Map(), quotes)).toEqual({ value: 0.004, delayed: true });
   });
 
-  it("is null, undelayed, unproxied without either source", () => {
-    expect(resolveUnderlyingDayChange("ZZZZ", new Map(), new Map())).toEqual({ value: null, delayed: false, proxy: null });
+  it("is null, undelayed without either source", () => {
+    expect(resolveUnderlyingDayChange("ZZZZ", new Map(), new Map())).toEqual({ value: null, delayed: false });
   });
 
   it("is case-insensitive on the ticker for both sources", () => {
     const held = new Map([["AAPL", 0.02]]);
-    expect(resolveUnderlyingDayChange("aapl", held, new Map())).toEqual({ value: 0.02, delayed: false, proxy: null });
+    expect(resolveUnderlyingDayChange("aapl", held, new Map())).toEqual({ value: 0.02, delayed: false });
   });
 });

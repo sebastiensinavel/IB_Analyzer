@@ -311,7 +311,7 @@ describe("PositionsPage", () => {
   });
 
   it("shows the underlying's day move first, once the agent has quoted it", async () => {
-    mergeQuotes(new Map([["XOM", -0.0312]]));
+    mergeQuotes(new Map([["XOM", { last: null, change: -0.0312 }]]));
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
     const cells = within(await rowFor("XOM Mar20'26 100 Put")).getAllByRole("cell");
@@ -319,7 +319,7 @@ describe("PositionsPage", () => {
   });
 
   it("shows a delayed-quote tooltip on a sold put not held", async () => {
-    mergeQuotes(new Map([["XOM", -0.0312]]));
+    mergeQuotes(new Map([["XOM", { last: null, change: -0.0312 }]]));
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
     const cells = within(await rowFor("XOM Mar20'26 100 Put")).getAllByRole("cell");
@@ -328,7 +328,7 @@ describe("PositionsPage", () => {
   });
 
   it("prefers the account's own live dayChange over a stale quote for a held stock, with no tooltip", async () => {
-    mergeQuotes(new Map([["AAPL", -0.5]])); // stale/wrong: the held dayChange below must win
+    mergeQuotes(new Map([["AAPL", { last: null, change: -0.5 }]])); // stale/wrong: the held dayChange below must win
     await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ dayChange: 0.05 }), ...SAMPLE_POSITIONS.slice(1)] });
     renderPositions();
     const cells = within(await rowFor("AAPL")).getAllByRole("cell");
@@ -342,7 +342,7 @@ describe("PositionsPage", () => {
   });
 
   it("falls back to the delayed quote when a held stock's own dayChange is null", async () => {
-    mergeQuotes(new Map([["AAPL", 0.02]]));
+    mergeQuotes(new Map([["AAPL", { last: null, change: 0.02 }]]));
     await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ dayChange: null }), ...SAMPLE_POSITIONS.slice(1)] });
     renderPositions();
     const cells = within(await rowFor("AAPL")).getAllByRole("cell");
@@ -358,8 +358,8 @@ describe("PositionsPage", () => {
     expect(within(sells).getByRole("columnheader", { name: /^Var\. jour action/ })).not.toHaveAttribute("aria-sort");
   });
 
-  it("reads XSP's day move from SPY, with a tooltip naming the substitute", async () => {
-    mergeQuotes(new Map([["SPY", 0.004]]));
+  it("reads XSP's day move from its own quote, with the delayed tooltip", async () => {
+    mergeQuotes(new Map([["XSP", { last: null, change: 0.004 }]]));
     await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ symbol: "XSP", description: "XSP TEST" })] });
     renderPositions();
     const row = await rowFor("XSP");
@@ -367,12 +367,12 @@ describe("PositionsPage", () => {
     expect(cells[0]).toHaveTextContent("+0.4%");
     await userEvent.setup().hover(within(cells[0]).getByText("+0.4%"));
     expect(
-      await screen.findByText("Variation de SPY, cotation différée de 15 min : Interactive Brokers ne cote pas XSP.", {}, { timeout: 2000 }),
+      await screen.findByText("Cotation différée de 15 min.", {}, { timeout: 2000 }),
     ).toBeInTheDocument();
   });
 
   it("sorts a card on the underlying's day move, unknown values last", async () => {
-    mergeQuotes(new Map([["AAPL", 0.02], ["XOM", -0.03]]));
+    mergeQuotes(new Map([["AAPL", { last: null, change: 0.02 }], ["XOM", { last: null, change: -0.03 }]]));
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
     const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
@@ -386,7 +386,7 @@ describe("PositionsPage", () => {
   it("sorts by the resolved value, a held stock's live move ahead of a stale quote for the same ticker", async () => {
     // AAPL's /quotes value (+2%) must lose to the account's own held dayChange (-50%): both AAPL
     // option rows below share it, sorting ahead of XOM's quoted -3%.
-    mergeQuotes(new Map([["AAPL", 0.02], ["XOM", -0.03]]));
+    mergeQuotes(new Map([["AAPL", { last: null, change: 0.02 }], ["XOM", { last: null, change: -0.03 }]]));
     await db.snapshots.put({
       ...SAMPLE_SNAPSHOT,
       positions: SAMPLE_POSITIONS.map((position) => (position.symbol === "AAPL" && position.secType === "STK" ? { ...position, dayChange: -0.5 } : position)),

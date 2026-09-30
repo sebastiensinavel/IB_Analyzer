@@ -152,7 +152,7 @@ describe("StrategyPositionsPage — Wheel", () => {
   });
 
   it("shows the underlying's day move first, on a put sold on a ticker not held", async () => {
-    mergeQuotes(new Map([["XOM", -0.0312]]));
+    mergeQuotes(new Map([["XOM", { last: null, change: -0.0312 }]]));
     await seed();
     renderPage("wheel");
     const put = await rowIn("Ventes de puts", "XOM Oct16'26 110 Put");
@@ -160,7 +160,7 @@ describe("StrategyPositionsPage — Wheel", () => {
   });
 
   it("prefers the assigned stock's own live dayChange over a stale quote, on its shares and on the call sold against it", async () => {
-    mergeQuotes(new Map([["MQZA", 0.5]])); // stale/wrong: the held dayChange below must win
+    mergeQuotes(new Map([["MQZA", { last: null, change: 0.5 }]])); // stale/wrong: the held dayChange below must win
     await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, XOM_PUT]);
     await db.snapshots.put({
       ...SNAPSHOT,
@@ -472,7 +472,7 @@ describe("StrategyPositionsPage — Condors", () => {
   });
 
   it("shows the underlying's day move first, on the condor line and its unfolded legs", async () => {
-    mergeQuotes(new Map([["QQQ", 0.015]]));
+    mergeQuotes(new Map([["QQQ", { last: null, change: 0.015 }]]));
     await seedCondor();
     renderPage("condors");
     const line = await rowIn("Condors en cours", TITLE);

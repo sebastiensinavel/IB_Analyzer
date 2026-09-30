@@ -928,8 +928,7 @@
     "loading": "Loading the chart…"
   },
   "quotes": {
-    "delayed": "Quote delayed 15 min.",
-    "proxy": "{{proxy}} change, quote delayed 15 min: Interactive Brokers does not quote {{ticker}}."
+    "delayed": "Quote delayed 15 min."
   },
   "tableFilter": {
     "panel": "Column {{column}} options",

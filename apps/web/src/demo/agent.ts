@@ -91,7 +91,10 @@ export function demoAgentJson(path: string, clock = new Date()): AgentFetchResul
       return { ok: true, payload };
     }
     case "/quotes": {
-      const symbols = (url.searchParams.get("symbols") ?? "").split(",").filter(Boolean);
+      // `indices` is `SYM:EXCH`, comma-separated; the demo's world has no exchange, only the symbol.
+      const stocks = (url.searchParams.get("symbols") ?? "").split(",").filter(Boolean);
+      const indices = (url.searchParams.get("indices") ?? "").split(",").filter(Boolean).map((entry) => entry.split(":")[0]);
+      const symbols = [...stocks, ...indices];
       const quotes = symbols.map((symbol) =>
         knownTicker(symbol) ? { symbol, last: closeAgo(symbol, 0), close: closeAgo(symbol, 1) } : { symbol, last: null, close: null },
       );

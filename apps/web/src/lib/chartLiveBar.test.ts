@@ -5,8 +5,8 @@ import type { SnapshotRecord } from "@/db/schema";
 import { withLiveClose } from "@/lib/chartLiveBar";
 
 const BARS: PriceBar[] = [
-  { date: "2026-09-29", open: 12, high: 13, low: 11, close: 12.5, volume: 1 },
-  { date: "2026-09-30", open: 13, high: 14, low: 12, close: 13.5, volume: 1 },
+  { date: "2026-09-29", open: 12, high: 13, low: 11, close: 12.5, volume: 1, average: null },
+  { date: "2026-09-30", open: 13, high: 14, low: 12, close: 13.5, volume: 1, average: null },
 ];
 
 function stock(overrides: Partial<Position> = {}): Position {

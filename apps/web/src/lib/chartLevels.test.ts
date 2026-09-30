@@ -18,7 +18,7 @@ function contrastRatio(a: string, b: string): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
-const bar = (date: string, high: number, low: number) => ({ date, open: low, high, low, close: high, volume: 1 });
+const bar = (date: string, high: number, low: number) => ({ date, open: low, high, low, close: high, volume: 1, average: null });
 
 describe("chartLevels", () => {
   it("donne à chaque nature la teinte du ton de journal correspondant", () => {

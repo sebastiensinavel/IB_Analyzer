@@ -62,7 +62,7 @@ function renderRow(
   );
 }
 
-const BARS = [{ date: "2026-09-21", open: 13, high: 14, low: 12, close: 13.5, volume: 1 }];
+const BARS = [{ date: "2026-09-21", open: 13, high: 14, low: 12, close: 13.5, volume: 1, average: null }];
 
 /** La plage logique posée sur le dernier graphe : ce que l'axe du temps montre vraiment. */
 async function lastVisibleRange(): Promise<{ from: number; to: number }> {

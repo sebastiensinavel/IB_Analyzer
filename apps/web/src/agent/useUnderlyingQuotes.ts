@@ -13,9 +13,9 @@ const QUOTABLE_SEC_TYPES = new Set(["STK", "OPT", "FOP"]);
  * The underlyings of the account's positions and of its suggestions, as the agent is asked for
  * them: a position counts only for `STK`/`OPT`/`FOP` in USD, and never a `.OLD` ticker (same
  * exclusion as `db/sectors.ts`), so a forex pair, a non-USD stock or a dead alias never stalls a
- * `/quotes` pass or gets quoted as a same-named US security; suggestion tickers are unfiltered.
+ * `/quotes` pass or gets quoted as a same-named US security; suggestion tickers are unfiltered, and `extra` (the manual alerts' tickers) joins as is.
  */
-export function quoteTickers(report: RiskReport | null, sectors: readonly SectorRecord[]): string[] {
+export function quoteTickers(report: RiskReport | null, sectors: readonly SectorRecord[], extra: readonly string[] = []): string[] {
   const tickers = new Set<string>();
   for (const position of report?.positions ?? []) {
     if (!QUOTABLE_SEC_TYPES.has(position.secType) || position.currency !== "USD") continue;
@@ -24,6 +24,7 @@ export function quoteTickers(report: RiskReport | null, sectors: readonly Sector
     tickers.add(quotedTicker(ticker));
   }
   for (const suggestion of positionSuggestions(sectors, report)) tickers.add(quotedTicker(suggestion.ticker));
+  for (const ticker of extra) tickers.add(quotedTicker(ticker));
   return [...tickers].sort();
 }
 
@@ -32,11 +33,15 @@ export function quoteTickers(report: RiskReport | null, sectors: readonly Sector
  * underlyings when the agent turns present, after every agent pass (`lastAgentSyncAt` only moves
  * on a success) and when the list of tickers changes. Nothing without an agent or a TWS port.
  */
-export function useUnderlyingQuotes(accountId: string, report: RiskReport | null): void {
+export function useUnderlyingQuotes(accountId: string, report: RiskReport | null, extra: readonly string[] = []): void {
   const account = useAccount(accountId);
   const presence = useAgentPresence().status;
   const sectors = useSectors();
-  const key = useMemo(() => quoteTickers(report, sectors ? [...sectors.values()] : []).join(","), [report, sectors]);
+  const extraKey = extra.join(",");
+  const key = useMemo(
+    () => quoteTickers(report, sectors ? [...sectors.values()] : [], extraKey === "" ? [] : extraKey.split(",")).join(","),
+    [report, sectors, extraKey],
+  );
   const port = account?.twsPort;
   const syncedAt = account?.lastAgentSyncAt;
 

@@ -99,7 +99,7 @@ export function barsFor(ticker: string, reference: string): PriceBar[] {
   const path = pathOf(ticker);
   const bars: PriceBar[] = [];
   for (let ago = MAX_AGO; ago >= 0; ago -= 1) {
-    bars.push({ date: marketDaysBefore(reference, ago), open: path.open[ago], high: path.high[ago], low: path.low[ago], close: path.close[ago], volume: path.volume[ago] });
+    bars.push({ date: marketDaysBefore(reference, ago), open: path.open[ago], high: path.high[ago], low: path.low[ago], close: path.close[ago], volume: path.volume[ago], average: round2((path.high[ago] + path.low[ago] + 2 * path.close[ago]) / 4) });
   }
   return bars;
 }
