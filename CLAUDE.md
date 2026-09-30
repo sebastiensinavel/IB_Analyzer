@@ -358,6 +358,11 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   la somme des totaux des stratégies actives et son rendement la somme de leurs profits/pertes
   sur la somme des montants alloués, sans qu'aucune fonction ne combine des résultats par
   stratégie.
+- **Les deux graphes par ticker des Statistiques Wheel sont des vues calculées, en bas de page** :
+  « Montant alloué par ticker » empile `assigned` et `putCash` de `capital.exposure`, du plus
+  alloué au moins alloué ; « Profit/Perte par ticker » lit `StrategyStats.tickers`, les mêmes flux
+  que les mois rangés par ticker, dont la somme est le profit/perte total. Une perte s'y dessine
+  en positif, en rouge, le signe gardé dans l'infobulle ; options dans `apps/web/src/lib/tickerCharts.ts`.
 - **Journaux et rapport de risque se calculent une fois, dans la coquille** :
   `AccountDataProvider` (`db/AccountDataProvider.tsx`), monté par `AppLayout` pour le compte
   affiché, appelle `useJournals` et `useRiskReport` ; la barre de titre et toutes les pages les
