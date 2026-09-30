@@ -509,6 +509,11 @@
   },
   "sectors": {
     "intro": "Le secteur et le score de chaque ticker, dans une table commune à tous les comptes. Un import Interactive Brokers y ajoute d'office les tickers qu'elle ne connaît pas encore.",
+    "help": {
+      "score": "Entre 0 et 10 : plus le score est élevé, plus c'est une société que vous êtes prêt à avoir en portefeuille.",
+      "category": "Le secteur de la société. Aucune source fiable ne met tout le monde d'accord, certaines entreprises relevant de plusieurs secteurs à la fois : ce n'est donc pas automatisé, vous êtes libre de choisir.",
+      "status": "« on » ou « off » : « off » retire la société des suggestions de prise de position, quand vous n'en voulez plus."
+    },
     "import": {
       "title": "Import CSV",
       "hint": "CSV séparé par des points-virgules, colonnes lues par leur nom : Ticker, Name, Category, Score et Status. Le fichier ajoute les nouveaux tickers et met à jour ceux qu'il nomme ; une colonne absente du fichier garde sa valeur, une cellule vide l'efface. Aucune ligne n'est supprimée.",

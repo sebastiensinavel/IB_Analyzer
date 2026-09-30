@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { Fragment, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@ib/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ib/ui/card";
@@ -14,6 +14,8 @@ import { importSectorCsv, type SectorImportReport } from "@/db/sectors";
 import { formatDateTime } from "@/lib/format";
 
 const COLUMNS = ["ticker", "name", "category", "score", "status", "ongoing"] as const;
+/** The columns the page explains under its intro, in reading order. */
+const HELP_COLUMNS = ["score", "category", "status"] as const;
 const RIGHT_ALIGNED = new Set<string>(["score", "ongoing"]);
 
 /** A row is shown when its ticker, name or sector contains the filter, case aside. */
@@ -66,6 +68,14 @@ export function SectorsPage() {
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <h1 className="font-heading text-lg font-semibold tracking-tight">{t("nav.sectors")}</h1>
       <p className="text-sm text-muted-foreground">{t("sectors.intro")}</p>
+      <dl className="grid gap-x-3 gap-y-1 text-sm text-muted-foreground sm:grid-cols-[max-content_1fr]" data-testid="sector-help">
+        {HELP_COLUMNS.map((column) => (
+          <Fragment key={column}>
+            <dt className="font-medium text-foreground">{t(`sectors.table.columns.${column}`)}</dt>
+            <dd>{t(`sectors.help.${column}`)}</dd>
+          </Fragment>
+        ))}
+      </dl>
 
       <Card data-testid="sector-import">
         <CardHeader>

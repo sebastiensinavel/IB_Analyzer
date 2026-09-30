@@ -72,6 +72,16 @@ function shownTickers() {
 }
 
 describe("SectorsPage", () => {
+  it("explains the score, the sector and the status under their column names", () => {
+    renderPage();
+    const help = screen.getByTestId("sector-help");
+    const terms = [...help.querySelectorAll("dt")].map((term) => term.textContent);
+    const texts = [...help.querySelectorAll("dd")].map((text) => text.textContent);
+    expect(terms).toEqual(["Score", "Secteur", "Statut"]);
+    expect(texts).toEqual([i18n.t("sectors.help.score"), i18n.t("sectors.help.category"), i18n.t("sectors.help.status")]);
+    expect(texts[0]).toContain("Entre 0 et 10");
+  });
+
   it("says the table is shared by every account, and that it is empty", async () => {
     renderPage();
     expect(await screen.findByText("Pas encore de table sectorielle.")).toBeInTheDocument();
