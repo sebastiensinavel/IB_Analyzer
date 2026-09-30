@@ -14,8 +14,9 @@ import { strategyLevels } from "@ib/ledger";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { fetchBars, type PriceBar } from "@/agent/client";
 import { useAccountJournals } from "@/db/AccountDataProvider";
-import { useAccount } from "@/db/hooks";
+import { useAccount, useSnapshot } from "@/db/hooks";
 import { useTheme } from "@/hooks/useTheme";
+import { withLiveClose } from "@/lib/chartLiveBar";
 import { chartProxyOf } from "@/lib/chartProxies";
 
 // Chargée seulement quand un graphe s'ouvre vraiment : `lightweight-charts` ne doit pas peser
@@ -82,6 +83,15 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
     };
   }, [accountLoaded, port, asked, currency]);
 
+  // La bougie du jour d'IB est différée ; le snapshot de l'agent, relu à chaque passe, ne l'est
+  // pas. Les barres ne sont pas redemandées pour autant : seule la dernière clôture suit.
+  const snapshot = useSnapshot(accountId);
+  const fetched = state.status === "bars" ? state.bars : null;
+  const bars = useMemo(
+    () => (fetched === null ? null : withLiveClose(fetched, snapshot, asked, currency ?? "USD")),
+    [fetched, snapshot, asked, currency],
+  );
+
   const levels = useMemo(
     () => (journals.status === "ready" ? strategyLevels(journals.report.rows, ticker, strategies) : []),
     [journals, ticker, strategies],
@@ -90,7 +100,7 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
   return (
     <TableRow data-testid="position-chart-row" className="hover:bg-transparent [&:hover>td:first-child]:shadow-none">
       <TableCell colSpan={columnCount} className="bg-muted/30 p-4">
-        {state.status === "bars" ? (
+        {bars !== null ? (
           <>
             {proxy !== null && (
               <p className="mb-2 text-xs text-muted-foreground">{t("charts.proxy", { proxy, ticker })}</p>
@@ -102,7 +112,7 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
                 </div>
               }
             >
-              <PriceChart bars={state.bars} levels={levels} isDark={isDark} />
+              <PriceChart bars={bars} levels={levels} isDark={isDark} />
             </Suspense>
           </>
         ) : (

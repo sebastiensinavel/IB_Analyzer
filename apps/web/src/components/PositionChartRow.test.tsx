@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { createChart } from "lightweight-charts";
 import { ACTIVABLE_STRATEGIES, type ChartLevel, type Strategy } from "@ib/ledger";
 import i18n from "@/i18n";
-import { db } from "@/db/schema";
+import { db, type SnapshotRecord } from "@/db/schema";
 import * as agent from "@/agent/client";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { CHART_MARGIN_DAYS } from "@/lib/levelsPrimitive";
@@ -70,6 +70,43 @@ async function lastVisibleRange(): Promise<{ from: number; to: number }> {
   const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
   const timeScale = chart.timeScale.mock.results.at(-1)!.value;
   return timeScale.setVisibleLogicalRange.mock.calls.at(-1)![0];
+}
+
+/** La dernière bougie donnée à la série : ce que le graphe dessine pour le jour le plus récent. */
+async function lastCandle(): Promise<{ time: string; close?: number }> {
+  await screen.findByTestId("price-chart");
+  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+  const series = chart.addSeries.mock.results.at(-1)!.value;
+  const data = series.setData.mock.calls.at(-1)![0] as { time: string; close?: number }[];
+  return data.filter((point) => point.close !== undefined).at(-1)!;
+}
+
+/** Combien de fois l'axe du temps du dernier graphe a été posé. */
+function visibleRangeCalls(): number {
+  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+  return chart.timeScale.mock.results.reduce(
+    (count: number, result: { value: { setVisibleLogicalRange: { mock: { calls: unknown[] } } } }) =>
+      count + result.value.setVisibleLogicalRange.mock.calls.length,
+    0,
+  );
+}
+
+/** Un snapshot de l'agent pris en séance le jour de la dernière barre, BTDR détenue à `price`. */
+function liveSnapshot(price: number): SnapshotRecord {
+  return {
+    accountId: "alpha",
+    source: "agent",
+    asOf: "2026-09-21T11:15:00.000Z",
+    importedAt: "2026-09-21T15:15:02.000Z",
+    cashAvailable: null,
+    positions: [
+      {
+        symbol: "BTDR", secType: "STK", right: "", strike: null, expiry: null, multiplier: 1, quantity: 100,
+        avgPrice: 10, marketPrice: price, marketValue: price * 100, unrealizedPnl: null, dailyPnl: null,
+        dayChange: null, currency: "USD", conid: "1", description: "BTDR",
+      },
+    ],
+  };
 }
 
 /** Les niveaux passés à la dernière primitive attachée : ce que `PriceChart` a reçu à dessiner. */
@@ -292,5 +329,37 @@ describe("PositionChartRow", () => {
     renderRow({ accountId: "beta", ticker: "XSP", strategies: ["wheel"] });
 
     await waitFor(async () => expect((await lastDrawnLevels()).map((level) => level.kind)).toEqual(["shortPut"]));
+  });
+
+  it("clôture la bougie du jour sur le prix temps réel de l'action détenue", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.snapshots.put(liveSnapshot(13.8));
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T15:15:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    await waitFor(async () => expect(await lastCandle()).toMatchObject({ time: "2026-09-21", close: 13.8 }));
+  });
+
+  it("suit une nouvelle passe de l'agent sans redemander les barres ni reposer l'axe du temps", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.snapshots.put(liveSnapshot(13.8));
+    const fetchBars = vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T15:15:00Z", bars: BARS },
+    });
+    renderRow();
+    await waitFor(async () => expect(await lastCandle()).toMatchObject({ close: 13.8 }));
+    const rangesBefore = visibleRangeCalls();
+
+    await db.snapshots.put(liveSnapshot(13.2));
+
+    await waitFor(async () => expect(await lastCandle()).toMatchObject({ close: 13.2 }));
+    expect(fetchBars).toHaveBeenCalledTimes(1);
+    // Un zoom ou un défilement de l'utilisateur survit à la passe suivante.
+    expect(visibleRangeCalls()).toBe(rangesBefore);
   });
 });

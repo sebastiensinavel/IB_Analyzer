@@ -528,7 +528,15 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   jours ouvrés au-delà du plus lointain des deux, dernière barre ou date dessinée, et la même
   marge est laissée à gauche. `fitContent` recollerait le bord droit sur la dernière bougie —
   son `applyDefaultOffset` écrase le décalage par `rightOffset`, 0 — et renverrait tous les
-  jours vides à gauche, échéances futures comprises.
+  jours vides à gauche, échéances futures comprises. **La bougie du jour d'une action détenue
+  clôture sur le prix du snapshot, jamais sur le dernier échange d'IB** : sans abonnement temps
+  réel, `/bars` sert la bougie en cours avec une quinzaine de minutes de retard, si bien que
+  `withLiveClose` (`apps/web/src/lib/chartLiveBar.ts`) pose le `marketPrice` du snapshot `agent`
+  sur la dernière bougie — haut et bas élargis — quand le compte détient le titre tracé en
+  `STK`, que cette bougie est celle du jour du snapshot et que celui-ci est pris en séance
+  (09:30–16:00 New York) ; aucune bougie n'est inventée, et une action non détenue garde la
+  bougie différée. La bougie suit ainsi chaque passe de l'agent sans redemander les barres, et
+  `PriceChart` ne repose l'axe du temps que si l'étendue change : le zoom survit à la passe.
 - **Un graphe peut montrer un autre titre que son ticker, et le dit** : `chartProxyOf`
   (`apps/web/src/lib/chartProxies.ts`) porte la seule table de substituts — `XSP` → `SPY`. Le
   Mini-SPX est un **indice** : aucune action ne porte ce nom chez IB en USD, si bien que

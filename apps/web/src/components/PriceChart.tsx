@@ -67,6 +67,10 @@ export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: Pric
   const holder = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  // Le graphe et l'étendue pour lesquels l'axe du temps a été posé : tant qu'ils ne changent
+  // pas, de nouvelles barres — la clôture du jour qui suit le prix temps réel — laissent le
+  // zoom et le défilement de l'utilisateur en place.
+  const framedRef = useRef<{ chart: IChartApi; extent: string } | null>(null);
 
   // One chart for the life of the row; its data and annotations are set in the effect below.
   useEffect(() => {
@@ -123,7 +127,12 @@ export function PriceChart({ bars, levels, isDark, height = CHART_HEIGHT }: Pric
     // en attend une de n'importe quel type de série, d'où le seul cast de tout ce fichier.
     const seriesPrimitive = primitive as unknown as ISeriesPrimitive<Time>;
     series.attachPrimitive(seriesPrimitive);
-    if (candles.length > 0) chart.timeScale().setVisibleLogicalRange(visibleRange(candles.length, empty.length));
+    const extent = `${bars[0]?.date}:${candles.length}:${empty.length}`;
+    const framed = framedRef.current;
+    if (candles.length > 0 && (framed?.chart !== chart || framed.extent !== extent)) {
+      chart.timeScale().setVisibleLogicalRange(visibleRange(candles.length, empty.length));
+      framedRef.current = { chart, extent };
+    }
     return () => {
       // Au changement de thème, l'effet de création démonte le graphe avant ce nettoyage-ci
       // (React nettoie dans l'ordre de déclaration) : détacher d'une série déjà détruite
