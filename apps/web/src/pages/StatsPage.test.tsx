@@ -127,7 +127,8 @@ describe("StatsPage", () => {
   it("says the Wheel holds nothing once its shares are sold, the capital still drawn", async () => {
     await db.transactions.add({ ...SAMPLE_JOURNAL_TRANSACTIONS[2], externalId: "flex:trade:302", quantity: -200, price: 18, amount: 3600, commission: -1, when: "2026-08-25T15:00:00.000Z" });
     renderStats("wheel");
-    expect(await screen.findByText("Aucune position Wheel ouverte.")).toBeInTheDocument();
+    const exposure = (await screen.findByText("Exposition par secteur")).closest("[data-slot=card]") as HTMLElement;
+    expect(within(exposure).getByText("Aucune position Wheel ouverte.")).toBeInTheDocument();
     expect(screen.queryByTestId("exposure-chart")).not.toBeInTheDocument();
     expect(screen.getByTestId("capital-chart")).toBeInTheDocument();
   });
@@ -200,5 +201,33 @@ describe("StatsPage", () => {
     expect(screen.getByTestId("capital-chart")).toBeInTheDocument();
     expect(screen.getByTestId("return-chart")).toBeInTheDocument();
     expect(screen.queryByText("Exposition par secteur")).not.toBeInTheDocument();
+  });
+
+  it("ends the Wheel's page on its two ticker charts, after the return: the allocated amount, then the profit/loss", async () => {
+    await db.transactions.add(XOM_PUT);
+    renderStats("wheel");
+    const allocation = (await screen.findByText("Montant alloué par ticker")).closest("[data-slot=card]") as HTMLElement;
+    expect(within(allocation).getByTestId("allocation-chart")).toBeInTheDocument();
+    const pnl = screen.getByText("Profit/Perte par ticker").closest("[data-slot=card]") as HTMLElement;
+    expect(within(pnl).getByTestId("ticker-pnl-chart")).toBeInTheDocument();
+    const cards = [...document.querySelectorAll("[data-slot=card]")];
+    const returns = screen.getByText("Rendement mensuel").closest("[data-slot=card]") as HTMLElement;
+    expect(cards.slice(-3)).toEqual([returns, allocation, pnl]);
+  });
+
+  it("says nothing is allocated once the Wheel's shares are sold, the profit/loss by ticker still drawn", async () => {
+    await db.transactions.add({ ...SAMPLE_JOURNAL_TRANSACTIONS[2], externalId: "flex:trade:302", quantity: -200, price: 18, amount: 3600, commission: -1, when: "2026-08-25T15:00:00.000Z" });
+    renderStats("wheel");
+    const allocation = (await screen.findByText("Montant alloué par ticker")).closest("[data-slot=card]") as HTMLElement;
+    expect(within(allocation).getByText("Aucune position Wheel ouverte.")).toBeInTheDocument();
+    expect(screen.queryByTestId("allocation-chart")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ticker-pnl-chart")).toBeInTheDocument();
+  });
+
+  it("keeps the ticker charts to the Wheel", async () => {
+    renderStats("leaps");
+    await screen.findByText("Rendement mensuel");
+    expect(screen.queryByText("Montant alloué par ticker")).not.toBeInTheDocument();
+    expect(screen.queryByText("Profit/Perte par ticker")).not.toBeInTheDocument();
   });
 });

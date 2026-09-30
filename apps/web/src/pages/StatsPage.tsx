@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { StatsStrategy, StrategyStats } from "@ib/ledger";
 import { Card, CardContent } from "@ib/ui/card";
+import { AllocationCard } from "@/components/stats/AllocationCard";
 import { CapitalCard } from "@/components/stats/CapitalCard";
 import { CurrencySelect } from "@/components/stats/CurrencySelect";
 import { ExposureCard } from "@/components/stats/ExposureCard";
 import { MonthlyPnlCard } from "@/components/stats/MonthlyPnlCard";
 import { PnlTotalCard } from "@/components/stats/PnlTotalCard";
 import { ReturnCard } from "@/components/stats/ReturnCard";
+import { TickerPnlCard } from "@/components/stats/TickerPnlCard";
 import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
 import { useCapitalSeries } from "@/hooks/useCapitalSeries";
 import { useTheme } from "@/hooks/useTheme";
@@ -61,6 +63,9 @@ export function StatsPage({ strategy }: StatsPageProps) {
           )}
           {capital && <CapitalCard capital={capital} series={series} title={t("stats.capital.title")} isDark={isDark} />}
           {capital && <ReturnCard capital={capital} isDark={isDark} />}
+          {/* Per ticker, asked for the Wheel alone: what it ties up now, then what each has brought since the start. */}
+          {capital && strategy === "wheel" && <AllocationCard capital={capital} isDark={isDark} />}
+          {strategy === "wheel" && stats.tickers.length > 0 && <TickerPnlCard stats={stats} isDark={isDark} />}
         </>
       )}
     </div>

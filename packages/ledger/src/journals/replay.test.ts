@@ -934,7 +934,7 @@ describe("buildJournals — statistics", () => {
     ]);
     // The MQZA put nets 24 in August, the call sold on the ZZZ LEAPS 49 in September; the naked AAPL call is Others.
     expect(report.stats.portfolio).toEqual([
-      { currency: "USD", total: 73, months: [{ month: "2026-08", pnl: 24 }, { month: "2026-09", pnl: 49 }], incomplete: 0 },
+      { currency: "USD", total: 73, months: [{ month: "2026-08", pnl: 24 }, { month: "2026-09", pnl: 49 }], tickers: [{ ticker: "ZZZ", pnl: 49 }, { ticker: "MQZA", pnl: 24 }], incomplete: 0 },
     ]);
     expect(report.stats.condors).toEqual([]);
     expect(report.stats.portfolio[0].total).toBe(report.stats.wheel[0].total + report.stats.leaps[0].total);

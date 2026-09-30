@@ -303,6 +303,12 @@
     },
     "return": {
       "title": "Rendement mensuel"
+    },
+    "allocation": {
+      "title": "Montant alloué par ticker"
+    },
+    "tickerPnl": {
+      "title": "Profit/Perte par ticker"
     }
   },
   "consistency": {
