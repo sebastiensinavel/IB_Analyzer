@@ -53,6 +53,8 @@ function distanceOf(alert: Alert, price: PriceQuote | null): number | null {
   );
 }
 
+const noPrice = (): PriceQuote | null => null;
+
 interface PassInputs {
   db: AppDatabase;
   accountId: string;
@@ -148,7 +150,10 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
       latest.current = null;
       return;
     }
-    latest.current = { db, accountId, rows, margins, priceOf };
+    // Sans agent, aucun cours n'est frais : le snapshot `agent` stocké et les cotations en mémoire
+    // peuvent dater de la veille (un rechargement au matin, TWS pas encore lancé). La passe purge
+    // alors toujours, mais ne déclenche ni ne réarme rien.
+    latest.current = { db, accountId, rows, margins, priceOf: presence === "present" ? priceOf : noPrice };
     const q = queue.current;
     if (q.scheduled) return;
     q.scheduled = true;
@@ -164,7 +169,7 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
       }
     });
     // `stored` n'est pas lu ici, mais une écriture d'état (le bouton « Vu ») doit relancer une passe.
-  }, [ready, db, accountId, rows, margins, priceOf, defs, stored]);
+  }, [ready, db, accountId, rows, margins, priceOf, presence, defs, stored]);
 
   // S₀ : le prix du moment si la vente est fraîche, sinon la barre du jour de la vente (spec §6.2).
   const port = account?.twsPort;

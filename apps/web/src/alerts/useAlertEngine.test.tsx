@@ -157,6 +157,8 @@ afterEach(() => {
 
 describe("useAlertEngine", () => {
   it("triggers a manual alert crossed by the quote, notifies once, and writes nothing on the next pass", async () => {
+    mockAgent();
+    await refreshPresence();
     await db.accounts.add(account("beta"));
     const aapl = await createManualAlert(db, "beta", { ticker: "AAPL", price: 245, direction: "below" });
     const msft = await createManualAlert(db, "beta", { ticker: "MSFT", price: 400, direction: "above" });
@@ -178,14 +180,42 @@ describe("useAlertEngine", () => {
     expect(FakeNotification.created).toEqual(["AAPL ↓ 245.00", "MSFT ↑ 400.00"]);
   });
 
+  it("evaluates nothing without the agent, even on a stored agent snapshot past the threshold", async () => {
+    mockAgent({ present: false });
+    await refreshPresence();
+    await db.accounts.add(account("beta"));
+    const id = await createManualAlert(db, "beta", { ticker: "MQZA", price: 15, direction: "below" });
+    // Yesterday's agent snapshot, read on a morning reload before TWS is up: 14 is under 15.
+    await db.snapshots.put({
+      accountId: "beta", source: "agent", asOf: "2026-09-29T15:55:00.000Z", importedAt: "2026-09-29T19:55:00.000Z", cashAvailable: null,
+      positions: [position({ symbol: "MQZA", secType: "STK", multiplier: 1, quantity: 200, marketPrice: 14 })],
+    });
+    renderProvider("beta");
+    await screen.findByText("alerts 1 / triggered 0");
+    await settle();
+    expect(writes).toEqual([]);
+    expect(FakeNotification.created).toEqual([]);
+
+    // The agent answers: the same price now counts.
+    vi.restoreAllMocks();
+    mockAgent();
+    await act(async () => {
+      await refreshPresence();
+    });
+    await screen.findByText("alerts 1 / triggered 1");
+    expect((await stateOf("beta", id))?.triggeredAt).not.toBeNull();
+  });
+
   it("triggers an open condor whose underlying enters the zone, counted in the Condors badge", async () => {
+    mockAgent();
+    await refreshPresence();
     await db.accounts.add(account("beta"));
     await setActiveStrategies(db, "beta", ["wheel", "condors"]);
     await db.transactions.bulkAdd(CONDOR_TRANSACTIONS);
     renderProvider("beta");
-    await screen.findByText("alerts 1 / triggered 0");
+    await screen.findByText("alerts 1 / triggered 0", undefined, { timeout: 3000 });
     act(() => mergeQuotes(new Map([["QQQ", { last: 612, change: null }]])));
-    await screen.findByText("alerts 1 / triggered 1");
+    await screen.findByText("alerts 1 / triggered 1", undefined, { timeout: 3000 });
     if (view.status !== "ready") throw new Error("not ready");
     expect(view.badges).toEqual({ all: 1, wheel: 0, leaps: 0, condors: 1, others: 0 });
     expect(view.alerts[0]).toMatchObject({ status: "triggered", price: { price: 612, realtime: false } });
