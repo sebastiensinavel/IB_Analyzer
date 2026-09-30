@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo, useRef, type ReactNode } from "reac
 import { saleInstants } from "@ib/coverage";
 import type { ActivableStrategy } from "@ib/ledger";
 import { useUnderlyingQuotes } from "@/agent/useUnderlyingQuotes";
+import { useAlertEngine, type AlertsView } from "@/alerts/useAlertEngine";
 import { buildHeldDayChange } from "@/lib/underlyingDayChange";
 import { useActiveStrategies, useJournals, useRiskReport, type JournalsView, type RiskReportView } from "./hooks";
 
@@ -13,13 +14,16 @@ interface AccountData {
    * sub-project 35) — every `UnderlyingDayChangeCell` and column spec reads this same map
    * instead of rebuilding it from `snapshot.positions` on every row. */
   heldDayChange: ReadonlyMap<string, number>;
+  /** The account's alerts, evaluated here at every price change (spec of sub-project 42, §6). */
+  alerts: AlertsView;
 }
 
 const AccountDataContext = createContext<AccountData | null>(null);
 
 /**
- * The journals and the risk report of the account on screen, computed once for the whole shell
- * (spec of sub-project 11, §4): the title bar's verdicts and every page read them here, so a
+ * The journals, the risk report and the alerts of the account on screen, computed once for the
+ * whole shell, sidebar included (spec of sub-project 11, §4; sub-project 42, §6.1): the sidebar's
+ * badges, the title bar's verdicts and every page read them here, so a
  * change of the ledger replays it once, whatever the page — and quotes the account's
  * underlyings for the Var. jour action column (spec of sub-project 35).
  */
@@ -37,11 +41,15 @@ export function AccountDataProvider({ accountId, children }: { accountId: string
     return stable.current.map;
   }, [built]);
   const { snapshot, report, sectorOf } = useRiskReport(accountId, soldAt);
-  useUnderlyingQuotes(accountId, report ?? null);
+  const alerts = useAlertEngine(accountId, journals, snapshot);
+  // The manual alerts' tickers are quoted too, held or not; the same array while unchanged.
+  const manualKey = alerts.status === "ready" ? alerts.manualTickers.join(",") : "";
+  const manualTickers = useMemo(() => (manualKey === "" ? [] : manualKey.split(",")), [manualKey]);
+  useUnderlyingQuotes(accountId, report ?? null, manualTickers);
   const heldDayChange = useMemo(() => buildHeldDayChange(snapshot?.positions ?? []), [snapshot]);
   const value = useMemo(
-    () => ({ journals, risk: { snapshot, report, sectorOf }, strategies, heldDayChange }),
-    [journals, snapshot, report, sectorOf, strategies, heldDayChange],
+    () => ({ journals, risk: { snapshot, report, sectorOf }, strategies, heldDayChange, alerts }),
+    [journals, snapshot, report, sectorOf, strategies, heldDayChange, alerts],
   );
   return <AccountDataContext.Provider value={value}>{children}</AccountDataContext.Provider>;
 }
@@ -70,4 +78,14 @@ export function useAccountStrategies(): readonly ActivableStrategy[] | undefined
  * per snapshot by the provider, read by `useUnderlyingDayChange`. */
 export function useAccountHeldDayChange(): ReadonlyMap<string, number> {
   return useAccountData("useAccountHeldDayChange").heldDayChange;
+}
+
+/** The account's alerts, their state and the badge counts (spec of sub-project 42, §6.1). */
+export function useAccountAlerts(): AlertsView {
+  return useAccountData("useAccountAlerts").alerts;
+}
+
+/** The same, or `null` outside an account: the sidebar is rendered with and without one. */
+export function useOptionalAccountAlerts(): AlertsView | null {
+  return useContext(AccountDataContext)?.alerts ?? null;
 }

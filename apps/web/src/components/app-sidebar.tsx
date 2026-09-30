@@ -37,8 +37,9 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
   // page would load behind its backdrop. A no-op on a desktop, where openMobile stays false.
   const { setOpenMobile } = useSidebar();
 
-  // The sidebar lives outside AccountDataProvider (CLAUDE.md), so it reads the account's chosen
-  // strategies straight from the record it already has, through the same reader as everywhere
+  // The sidebar is inside AccountDataProvider only on an account's pages, never on Settings or
+  // Help (sub-project 42), so it reads the account's chosen strategies straight from the record
+  // it already has, through the same reader as everywhere
   // else. A section with no `strategy` (Overview, Others, Configuration) always shows.
   const active = activeStrategies(accounts.find((account) => account.id === accountId));
 

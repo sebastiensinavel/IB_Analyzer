@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { useState } from "react";
@@ -7,7 +7,7 @@ import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
 import { ACTIVABLE_STRATEGIES } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
-import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
+import { useAccountJournals, useAccountRiskReport, useOptionalAccountAlerts } from "@/db/AccountDataProvider";
 import { AppLayout } from "@/routes/AppLayout";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
@@ -16,6 +16,12 @@ function AccountDataProbe() {
   const { report } = useAccountRiskReport();
   const journals = useAccountJournals();
   return <div>{report === undefined || journals.status === "loading" ? "account data loading" : "account data ready"}</div>;
+}
+
+/** What an account-agnostic component — the sidebar — reads of the alerts. */
+function AlertsProbe() {
+  const alerts = useOptionalAccountAlerts();
+  return <div>{alerts === null ? "no account alerts" : `account alerts ${alerts.status}`}</div>;
 }
 
 // Local state that survives only as long as the page stays mounted.
@@ -40,12 +46,14 @@ function renderAt(path: string) {
             <Route path="dashboard" element={<div>dashboard content</div>} />
             <Route path="positions" element={<AccountDataProbe />} />
             <Route path="stateful" element={<StatefulPage />} />
+            <Route path="alerts-probe" element={<AlertsProbe />} />
           </Route>
           <Route path="/help" element={<AppLayout />}>
             <Route index element={<div>help</div>} />
           </Route>
           <Route path="/settings" element={<AppLayout />}>
             <Route index element={<div>settings content</div>} />
+            <Route path="alerts-probe" element={<AlertsProbe />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -157,6 +165,14 @@ describe("AppLayout", () => {
     renderAt("/settings");
     expect(await screen.findByText("settings content")).toBeInTheDocument();
     expect(screen.queryByText("accounts page")).not.toBeInTheDocument();
+  });
+
+  it("gives an account's shell its alerts, and leaves Settings without any provider", async () => {
+    renderAt("/accounts/alpha/alerts-probe");
+    expect(await screen.findByText("account alerts ready")).toBeInTheDocument();
+    cleanup();
+    renderAt("/settings/alerts-probe");
+    expect(await screen.findByText("no account alerts")).toBeInTheDocument();
   });
 
   it("offers adding an account and the welcome page when there is no account at all", async () => {

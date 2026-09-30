@@ -77,14 +77,15 @@ export function AppLayout() {
     </>
   );
 
-  return (
+  const shell = (
     <SidebarProvider>
       <AppSidebar accountId={navAccountId} accounts={accounts} />
-      <SidebarInset>
-        {/* The account on screen computes its journals and risk report once, for the title bar
-            and every page (sub-project 11, §4). Account-less pages never read them. */}
-        {scoped ? <AccountDataProvider accountId={scoped}>{inset}</AccountDataProvider> : inset}
-      </SidebarInset>
+      <SidebarInset>{inset}</SidebarInset>
     </SidebarProvider>
   );
+
+  // The account on screen computes its journals, risk report and alerts once, for the sidebar's
+  // badges, the title bar and every page (sub-project 11, §4; sub-project 42, §6.1). Not keyed:
+  // a switch must not remount the sidebar. Account-less pages never read them.
+  return scoped ? <AccountDataProvider accountId={scoped}>{shell}</AccountDataProvider> : shell;
 }

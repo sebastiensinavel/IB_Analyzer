@@ -963,5 +963,13 @@
     "partial_one": "{{count}} line without a value",
     "partial_other": "{{count}} lines without a value",
     "cashExcluded": "Cash left out: a filter is active."
+    },
+  "alerts": {
+    "notify": {
+      "title_above": "{{ticker}} ↑ {{price}}",
+      "title_below": "{{ticker}} ↓ {{price}}",
+      "wheel": "Wheel — call {{strike}}",
+      "condor": "Condor {{put}}/{{call}}"
+    }
   }
 }
