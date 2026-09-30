@@ -47,12 +47,13 @@ describe("HelpPage", () => {
     const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>);
     await screen.findByText("L'application");
     const titles = [...container.querySelectorAll("[data-slot=card-title]")].map((el) => el.textContent);
-    // Seven sections, not thirteen: everything about the optional agent lives inside the third one,
+    // Eight sections, not fourteen: everything about the optional agent lives inside the third one,
     // so a newcomer does not read six installation cards as prerequisites. The server comes
     // after the agent: a fallback and an option, never a step on the way in. Security closes the page.
     expect(titles).toEqual([
       "L'application",
       "Installer l'application, travailler serveur coupé",
+      "Les alertes de prix",
       "1. Obtenir un relevé d'activité",
       "2. Configurer une Flex Query",
       "3. L'agent local, facultatif",
@@ -105,7 +106,7 @@ describe("HelpPage", () => {
       "F. Renseigner le port",
     ]);
     // The steps are inside the agent card, so they are not cards of their own.
-    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(7);
+    expect(container.querySelectorAll("[data-slot=card]")).toHaveLength(8);
   });
 
   // The three sources and what each can and cannot do: a newcomer choosing between them needs

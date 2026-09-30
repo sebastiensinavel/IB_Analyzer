@@ -137,6 +137,15 @@ export function HelpPage() {
         </ul>
       </Section>
 
+      <Section id="alerts" title={t("help.alerts.title")}>
+        <p className="text-muted-foreground">{t("help.alerts.intro")}</p>
+        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+          {(t("help.alerts.items", { returnObjects: true }) as string[]).map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </Section>
+
       <Section id="statement" title={t("help.statement.title")}>
         <p className="text-muted-foreground">{t("help.statement.portal")}</p>
         <p className="text-muted-foreground">{t("help.statement.text")}</p>

@@ -1,6 +1,6 @@
 # Sous-projet 42 — Les alertes de prix
 
-Statut : conçu (2026-09-30).
+Statut : implémenté (2026-09-30).
 
 Un système d'alertes à la manière de TradingView : des alertes **manuelles**, posées d'un clic sur
 un graphe de cours, et des alertes **automatiques**, que l'application déduit des journaux pour
@@ -46,7 +46,7 @@ alerte manuelle nomme un ticker, donc une donnée de portefeuille.
 
 ## 3. Le moteur : `packages/alerts`, pur
 
-Nouveau paquet `@ib/alerts` (dépend de `@ib/ledger` et `@ib/coverage`), sans texte ni couleur,
+Nouveau paquet `@ib/alerts` (dépend de `@ib/ledger` seul), sans texte ni couleur,
 comme `levels.ts`. Tests Vitest écrits à la main.
 
 ### 3.1 Constantes (`constants.ts`, une seule définition chacune)
@@ -87,8 +87,8 @@ au strike ou au-dessus (une assignation y réalise un gain), ni quand ce prix mo
 ### 3.3 Alertes manuelles
 
 Définies par l'utilisateur (§4) : `ticker`, `price`, `direction`, `note`. La direction est déduite
-à la création du cours connu (seuil au-dessus du cours → `above`) ; sans cours connu, du dernier
-prix du graphe où elle est posée.
+à la création du cours connu du titre (seuil au-dessus du cours → `above`) ; sans cours connu, du
+dernier cours de clôture du graphe où elle est posée.
 
 ### 3.4 S₀ : `chooseAnchor(saleWhen, observedAt, livePrice, dayBar)`
 
@@ -99,7 +99,7 @@ Pure, appelée par la coquille (§6.2). Par ordre :
 4. sinon `null` (on retentera).
 
 `saleWhen` est une heure IB (heure murale New York stampée UTC, CLAUDE.md) ; `observedAt` est
-converti par `toReportTime` avant la comparaison, jamais comparé tel quel à un instant vrai UTC.
+l'`asOf` du snapshot de l'agent, déjà une heure IB : comparé tel quel, sans `toReportTime`.
 
 ### 3.5 Évaluation : `evaluateAlerts(alerts, states, priceOf, now)`
 
@@ -259,7 +259,7 @@ Un second primitive, `AlertsPrimitive` (`apps/web/src/lib/alertsPrimitive.ts`), 
 - **Glisser** la ligne (tolérance de 4 px) déplace le seuil, défilement du graphe suspendu pendant
   le geste ; écrit au relâchement.
 - **Clic sur l'étiquette** : popover (`@ib/ui/popover`) — prix exact, note, Supprimer, Réactiver
-  si désactivée.
+  sur une alerte déclenchée (une désactivée n'est pas dessinée).
 - Une alerte posée sur le graphe d'une ligne XSP est une alerte **XSP**.
 - Les automatiques ne se glissent pas : leur seuil se règle par la marge (§7.3).
 
