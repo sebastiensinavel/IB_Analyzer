@@ -242,8 +242,8 @@ Un second primitive, `AlertsPrimitive` (`apps/web/src/lib/alertsPrimitive.ts`), 
 - Ligne : pointillé fin (1 px, points de 2 px espacés de 3 px), teinte `warning` à 55 %
   d'opacité, toute la largeur. **La forme la distingue** du trait des calls vendus, qui partagent
   la même teinte (`chart-2`).
-- Étiquette sur l'axe des prix (`priceAxisViews`) : petite pilule, cloche + seuil, contour
-  `warning`, fond de surface.
+- Étiquette sur l'axe des prix (`priceAxisViews`, qui n'accepte ni bord ni icône) : le seuil,
+  sur fond `warning` à 18 % d'opacité.
 - Déclenchée : ligne à 100 %, pilule pleine `warning`. Désactivée : non dessinée.
 - Condor : ses deux seuils, même style. XSP : dessinés à leurs valeurs XSP sur le graphe SPY,
   comme les strikes aujourd'hui.
