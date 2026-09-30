@@ -13,9 +13,10 @@ import type { Strategy } from "@ib/ledger";
 import { strategyLevels } from "@ib/ledger";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { fetchBars, type PriceBar } from "@/agent/client";
-import { useAccountJournals } from "@/db/AccountDataProvider";
+import { useAccountAlerts, useAccountJournals } from "@/db/AccountDataProvider";
 import { useAccount, useSnapshot } from "@/db/hooks";
 import { useTheme } from "@/hooks/useTheme";
+import { chartAlerts } from "@/lib/alertsPrimitive";
 import { withLiveClose } from "@/lib/chartLiveBar";
 import { chartProxyOf } from "@/lib/chartProxies";
 
@@ -46,6 +47,7 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
   // `useAccountJournals` rend une union discriminée : `{ status: "loading" }` ou
   // `{ status: "ready", report, identityIssues }` (apps/web/src/db/hooks.ts).
   const journals = useAccountJournals();
+  const alertsView = useAccountAlerts();
   const { isDark } = useTheme();
   const [state, setState] = useState<State>({ status: "loading" });
 
@@ -97,6 +99,12 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
     [journals, ticker, strategies],
   );
 
+  // Les alertes restent au ticker demandé, XSP compris : leurs prix sont ceux de l'option, pas du SPY.
+  const alerts = useMemo(
+    () => (alertsView.status === "ready" ? chartAlerts(alertsView.alerts, ticker, strategies) : []),
+    [alertsView, ticker, strategies],
+  );
+
   return (
     <TableRow data-testid="position-chart-row" className="hover:bg-transparent [&:hover>td:first-child]:shadow-none">
       <TableCell colSpan={columnCount} className="bg-muted/30 p-4">
@@ -112,7 +120,7 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
                 </div>
               }
             >
-              <PriceChart bars={bars} levels={levels} isDark={isDark} />
+              <PriceChart bars={bars} levels={levels} alerts={alerts} isDark={isDark} />
             </Suspense>
           </>
         ) : (

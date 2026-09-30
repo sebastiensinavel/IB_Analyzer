@@ -9,6 +9,7 @@ import { db, type SnapshotRecord } from "@/db/schema";
 import * as agent from "@/agent/client";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { CHART_MARGIN_DAYS } from "@/lib/levelsPrimitive";
+import { createManualAlert } from "@/db/alerts";
 import { WithAccountData } from "@/test/WithAccountData";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 
@@ -361,5 +362,27 @@ describe("PositionChartRow", () => {
     expect(fetchBars).toHaveBeenCalledTimes(1);
     // Un zoom ou un défilement de l'utilisateur survit à la passe suivante.
     expect(visibleRangeCalls()).toBe(rangesBefore);
+  });
+
+  it("dessine les alertes manuelles du ticker, sans celles d'un autre", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    await createManualAlert(db, "alpha", { ticker: "btdr", price: 15.5, direction: "above" });
+    await createManualAlert(db, "alpha", { ticker: "AAPL", price: 200, direction: "above" });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    await screen.findByTestId("price-chart");
+    const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    // Les alertes arrivent après le premier rendu : la dernière primitive posée est la leur.
+    await waitFor(() => {
+      const last = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { price?: number }[] };
+      expect(last.drawn.map((d) => d.price)).toEqual([15.5]);
+    });
   });
 });
