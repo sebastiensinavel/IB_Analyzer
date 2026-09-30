@@ -100,7 +100,7 @@ async function runPass({ db, accountId, rows, margins, priceOf }: PassInputs): P
 export function useAlertEngine(accountId: string, journals: JournalsView, snapshot: SnapshotRecord | null | undefined): AlertsView {
   const db = useDb();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const account = useAccount(accountId);
   const defs = useScopedLiveQuery(accountId, () => db.alerts.where("accountId").equals(accountId).toArray(), [db, accountId]);
   const stored = useScopedLiveQuery(accountId, () => db.alertStates.where("accountId").equals(accountId).toArray(), [db, accountId]);
@@ -139,11 +139,11 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
   const latest = useRef<PassInputs | null>(null);
   const queue = useRef<{ tail: Promise<void>; scheduled: boolean }>({ tail: Promise.resolve(), scheduled: false });
   const openAlerts = useRef<() => void>(() => {});
-  const tRef = useRef(t);
+  const tRef = useRef({ t, locale: i18n.language });
   useEffect(() => {
     openAlerts.current = () => void navigate(`/accounts/${accountId}/alerts`);
-    tRef.current = t;
-  }, [navigate, accountId, t]);
+    tRef.current = { t, locale: i18n.language };
+  }, [navigate, accountId, t, i18n.language]);
 
   useEffect(() => {
     if (!ready || rows === null || margins === null) {
@@ -163,7 +163,7 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
       if (inputs === null) return;
       try {
         const triggered = await runPass(inputs);
-        for (const { alert, price } of triggered) notifyTriggered(alert, () => openAlerts.current(), tRef.current, price);
+        for (const { alert, price } of triggered) notifyTriggered(alert, () => openAlerts.current(), tRef.current.t, tRef.current.locale, price);
       } catch {
         // Une base fermée (onglet dépassé par un schéma plus récent) : la passe suivante réessaie.
       }

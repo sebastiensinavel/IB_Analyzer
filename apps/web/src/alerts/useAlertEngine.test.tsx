@@ -177,7 +177,7 @@ describe("useAlertEngine", () => {
     await settle();
     expect(writes).toEqual([`beta|${aapl}`, `beta|${msft}`]);
     expect((await stateOf("beta", aapl))?.triggeredAt).toBe(first?.triggeredAt);
-    expect(FakeNotification.created).toEqual(["AAPL ↓ 245.00", "MSFT ↑ 400.00"]);
+    expect(FakeNotification.created).toEqual(["AAPL ↓ 245,00", "MSFT ↑ 400,00"]);
   });
 
   it("evaluates nothing without the agent, even on a stored agent snapshot past the threshold", async () => {

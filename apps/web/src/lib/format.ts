@@ -61,6 +61,12 @@ export function formatPrice(value: number | null): string {
   return value === null ? "—" : PRICE_FORMATTER.format(value);
 }
 
+/** A price to the cent in the given locale — « 38,20 » in fr, "38.20" in en — for a text read
+ * outside the tables (a notification), where the language's separators apply. */
+export function formatLocalePrice(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+}
+
 // Every timestamp in the application reads "2026-08-24 15:55:58": ISO day, a space, a 24-hour
 // clock with its seconds. No locale enters into it, so a row reads the same in fr and in en, and
 // it sorts as it displays. The zone stays UTC: every IB time — Flex, statements, and the
