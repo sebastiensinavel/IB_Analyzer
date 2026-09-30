@@ -124,12 +124,16 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter className="gap-2">
         {accountId !== null && (
-          <div className="flex items-center justify-between px-2 text-xs">
-            <Link to="/welcome" onClick={() => setOpenMobile(false)} className="text-muted-foreground underline-offset-2 hover:underline">
+          <div className="flex items-center justify-between gap-2 px-2 text-xs">
+            <Link
+              to="/welcome"
+              onClick={() => setOpenMobile(false)}
+              className="whitespace-nowrap text-muted-foreground underline-offset-2 hover:underline"
+            >
               {t("welcome.discover")}
             </Link>
             {/* Always there once an account is shown, even on Settings where no alert is computed. */}
-            <span className="flex items-center gap-1.5">
+            <span className="flex shrink-0 items-center gap-1.5">
               <Link
                 to={`/accounts/${accountId}/alerts`}
                 onClick={() => setOpenMobile(false)}
