@@ -44,7 +44,7 @@ export function UnderlyingDayChangeCell({ ticker, alert }: { ticker: string; ale
   return (
     <TableCell className={cn(NUMERIC, toneOf(value))}>
       {marks.length > 0 ? (
-        <span className="inline-flex items-center justify-end gap-0.5">
+        <span className="inline-flex items-center justify-end gap-0.5 whitespace-nowrap">
           <AlertBell alerts={marks} />
           {change}
         </span>

@@ -29,6 +29,8 @@ export function AlertBell({ alerts }: { alerts: readonly AlertView[] }) {
   const lines = alerts.flatMap(crossedThresholds).map((threshold) =>
     t("alerts.bell", { arrow: threshold.direction === "above" ? "↑" : "↓", price: formatLocalePrice(threshold.price, i18n.language) }),
   );
+  // Une alerte déclenchée a toujours un seuil ; sans aucun, le lien n'aurait pas de nom accessible.
+  if (lines.length === 0) return null;
   const label = lines.join(", ");
   return (
     <Tooltip>
