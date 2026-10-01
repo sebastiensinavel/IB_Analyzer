@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import { isCrossed, type Alert } from "@ib/alerts";
 import { isDemo } from "@/demo/mode";
+import { alertNoteText } from "./noteText";
 import { formatLocalePrice } from "@/lib/format";
 
 /**
@@ -32,7 +33,7 @@ function body(alert: Alert, t: TFunction): string | undefined {
     case "condor":
       return t("alerts.notify.condor", { put: String(alert.strikes[1]), call: String(alert.strikes[2]) });
     case "manual":
-      return alert.note ?? undefined;
+      return alertNoteText(alert.note, t) ?? undefined;
   }
 }
 

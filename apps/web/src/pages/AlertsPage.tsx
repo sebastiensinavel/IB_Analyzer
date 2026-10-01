@@ -10,6 +10,7 @@ import { Input } from "@ib/ui/input";
 import { TableBody, TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
 import { useAgentPresence } from "@/agent/useAgentSync";
+import { alertNoteText } from "@/alerts/noteText";
 import { notificationPermission, requestNotificationPermission } from "@/alerts/notify";
 import type { AlertView } from "@/alerts/useAlertEngine";
 import { DataTable, DataTableHeader, type ColumnDef } from "@/components/table/DataTable";
@@ -199,7 +200,7 @@ export function AlertsPage() {
         </TableCell>
         <TableCell className="text-xs text-muted-foreground">
           {alert.kind === "manual"
-            ? (alert.note ?? "—")
+            ? (alertNoteText(alert.note, t) ?? "—")
             : alert.kind === "wheel"
               ? state.anchor
                 ? t("alerts.detail.anchor", { price: formatPrice(state.anchor.price), source: t(`alerts.source.${state.anchor.source}`) })

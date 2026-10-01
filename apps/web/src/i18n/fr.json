@@ -35,7 +35,8 @@
     "continue": "Continuer la démo",
     "unavailable": "Indisponible en démonstration",
     "accountsTitle": "Vous êtes en démonstration",
-    "accountsText": "Quittez la démo pour ajouter votre compte IB."
+    "accountsText": "Quittez la démo pour ajouter votre compte IB.",
+    "alertNotes": { "support": "Support", "resistance": "Résistance" }
   },
   "common": {
     "loading": "Chargement…",

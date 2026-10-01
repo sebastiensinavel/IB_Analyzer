@@ -9,6 +9,7 @@ import { refreshPresence, resetAgentState } from "@/agent/useAgentSync";
 import { AccountDataProvider } from "@/db/AccountDataProvider";
 import { createManualAlert } from "@/db/alerts";
 import { db, type AccountRecord } from "@/db/schema";
+import { DEMO_FLAG } from "@/demo/mode";
 import i18n from "@/i18n";
 import { SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 import { AlertsPage } from "@/pages/AlertsPage";
@@ -85,6 +86,23 @@ describe("AlertsPage", () => {
     await db.accounts.add(account());
     renderPage();
     expect(await screen.findByText(/Aucune alerte/)).toBeInTheDocument();
+  });
+
+  it("shows a demo note code in the interface's language, and a real note as written", async () => {
+    window.sessionStorage.setItem(DEMO_FLAG, "1");
+    try {
+      await db.accounts.add(account());
+      await createManualAlert(db, "beta", { ticker: "DEMO", price: 50, direction: "above", note: "demo:resistance" });
+      await createManualAlert(db, "beta", { ticker: "REEL", price: 60, direction: "above", note: "à surveiller" });
+      await i18n.changeLanguage("en");
+      renderPage();
+      await screen.findByRole("link", { name: "DEMO" });
+      expect(within(rowOf("DEMO")).getByText("Resistance")).toBeInTheDocument();
+      expect(within(rowOf("REEL")).getByText("à surveiller")).toBeInTheDocument();
+    } finally {
+      window.sessionStorage.removeItem(DEMO_FLAG);
+      await i18n.changeLanguage("fr");
+    }
   });
 
   it("groups triggered, active and disabled alerts in that order, the triggered one edged in warning and the disabled one dimmed", async () => {

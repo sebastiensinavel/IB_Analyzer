@@ -15,6 +15,7 @@ import { strategyLevels } from "@ib/ledger";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { fetchBars, type PriceBar } from "@/agent/client";
 import { useUnderlyingQuotesMap } from "@/agent/quotes";
+import { alertNoteText } from "@/alerts/noteText";
 import { alertPriceOf } from "@/alerts/prices";
 import { requestNotificationPermission } from "@/alerts/notify";
 import type { AlertEditHandlers } from "@/components/charts/AlertOverlay";
@@ -125,9 +126,9 @@ export function PositionChartRow({ ticker, strategies, columnCount, currency }: 
     (id: string) => {
       if (alertsView.status !== "ready") return null;
       const alert = alertsView.alerts.find((view) => view.alert.id === id)?.alert;
-      return alert?.kind === "manual" ? alert.note : null;
+      return alert?.kind === "manual" ? alertNoteText(alert.note, t) : null;
     },
-    [alertsView],
+    [alertsView, t],
   );
   const alertHandlers = useMemo<AlertEditHandlers | undefined>(() => {
     if (current === null) return undefined;

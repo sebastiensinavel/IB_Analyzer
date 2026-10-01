@@ -35,7 +35,8 @@
     "continue": "Continue the demo",
     "unavailable": "Unavailable in the demo",
     "accountsTitle": "You are in the demo",
-    "accountsText": "Leave the demo to add your IB account."
+    "accountsText": "Leave the demo to add your IB account.",
+    "alertNotes": { "support": "Support", "resistance": "Resistance" }
   },
   "common": {
     "loading": "Loading…",

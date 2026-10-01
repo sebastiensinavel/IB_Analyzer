@@ -27,12 +27,13 @@ export const DEMO_SECTORS: readonly SectorCsvRow[] = [
 /**
  * The demo's two manual alerts, computed from the day's close the demo agent serves, never hard-coded:
  * NVDA is already below its level (triggered at the first evaluation), MSFT still has 6 % to climb
- * (active). Stable ids: a seed rewritten on a new day replaces them, never duplicates them.
+ * (active). Stable ids: a seed rewritten on a new day replaces them, never duplicates them. Their notes
+ * are codes (`demo:support`), shown in the interface's language by `alertNoteText`.
  */
 export function demoAlerts(at: string): (ManualAlertDef & { accountId: string })[] {
   return [
-    { id: "manual:demo-nvda", accountId: DEMO_ACCOUNT_ID, ticker: "NVDA", direction: "below", price: roundToCent(closeAgo("NVDA", 0) * 1.02), note: "Support", createdAt: at },
-    { id: "manual:demo-msft", accountId: DEMO_ACCOUNT_ID, ticker: "MSFT", direction: "above", price: roundToCent(closeAgo("MSFT", 0) * 1.06), note: "Résistance", createdAt: at },
+    { id: "manual:demo-nvda", accountId: DEMO_ACCOUNT_ID, ticker: "NVDA", direction: "below", price: roundToCent(closeAgo("NVDA", 0) * 1.02), note: "demo:support", createdAt: at },
+    { id: "manual:demo-msft", accountId: DEMO_ACCOUNT_ID, ticker: "MSFT", direction: "above", price: roundToCent(closeAgo("MSFT", 0) * 1.06), note: "demo:resistance", createdAt: at },
   ];
 }
 
