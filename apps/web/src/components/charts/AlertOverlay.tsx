@@ -108,11 +108,15 @@ export function AlertOverlay(props: AlertOverlayProps) {
 
     let drag: { drawnId: string; pointerId: number; y: number } | null = null;
     const onCrosshair = (param: MouseEventParams<Time>) => {
-      // Sans point, le pointeur a quitté le panneau — peut-être pour la cloche elle-même, sur
-      // l'axe : c'est la sortie de l'élément qui la cache, pas celle du réticule.
+      // Sans point, le pointeur a quitté le panneau — peut-être pour la cloche elle-même, posée
+      // dessus : c'est la sortie de l'élément qui la cache, pas celle du réticule.
       // Pendant un glisser, le réticule suit la ligne fantôme : la cloche n'a rien à y faire.
       if (!param.point || drag) return;
-      setBell(param.point.y);
+      // La cloche « + » partage la colonne des pastilles d'alerte : à leur hauteur, elle se cache
+      // pour ne pas les recouvrir.
+      const y = param.point.y;
+      const onAlert = lines(false).some((line) => line.y !== null && Math.abs(line.y - y) < ALERT_BELL_SIZE_PX);
+      setBell(onAlert ? null : y);
     };
     const onClick = (param: MouseEventParams<Time>) => {
       const source = param.sourceEvent as { altKey?: boolean } | undefined;
@@ -257,7 +261,7 @@ export function AlertOverlay(props: AlertOverlayProps) {
           aria-label={t("charts.alert.create", { price: formatPrice(bellPrice) })}
           title={t("charts.alert.createHint")}
           className="pointer-events-auto absolute flex size-5 items-center justify-center rounded-sm border border-warning bg-background text-warning"
-          style={{ left: paneWidth, top: bell - BELL_HALF_PX }}
+          style={{ left: paneWidth - ALERT_BELL_INSET_PX - BELL_HALF_PX, top: bell - BELL_HALF_PX }}
           onPointerLeave={(event) => {
             const to = event.relatedTarget;
             if (!(to instanceof Node && chart.chartElement().contains(to))) setBell(null);

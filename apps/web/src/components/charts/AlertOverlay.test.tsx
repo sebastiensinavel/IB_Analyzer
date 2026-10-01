@@ -85,17 +85,25 @@ afterEach(() => {
 });
 
 describe("AlertOverlay : poser", () => {
-  it("montre la cloche à la hauteur du réticule, sur l'axe des prix ; un clic pose l'alerte au cent", () => {
+  it("montre la cloche à la hauteur du réticule, juste à gauche de l'échelle des prix ; un clic pose l'alerte au cent", () => {
     const fake = setup();
     fake.seriesMock.coordinateToPrice.mockReturnValue(245.3049);
     expect(screen.queryByTestId("alert-create")).toBeNull();
 
     move(fake, { x: 100, y: 54.7 });
     const button = screen.getByTestId("alert-create");
-    expect(button.style.left).toBe(`${PANE_WIDTH}px`);
+    expect(button.style.left).toBe(`${PANE_WIDTH - 18 - 10}px`);
     fireEvent.click(button);
 
     expect(fake.h.onCreateAlert).toHaveBeenCalledWith(245.3);
+  });
+
+  it("cache la cloche « + » à la hauteur d'une pastille d'alerte, qu'elle recouvrirait", () => {
+    const fake = setup([MANUAL]);
+    move(fake, { x: 100, y: BELL_Y + 5 });
+    expect(screen.queryByTestId("alert-create")).toBeNull();
+    move(fake, { x: 100, y: BELL_Y + 40 });
+    expect(screen.getByTestId("alert-create")).toBeTruthy();
   });
 
   it("cache la cloche quand le pointeur quitte le graphe", () => {

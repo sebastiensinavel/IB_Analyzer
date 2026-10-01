@@ -269,8 +269,9 @@ Un second primitive, `AlertsPrimitive` (`apps/web/src/lib/alertsPrimitive.ts`), 
 
 ### 8.2 Poser, régler, supprimer (alertes manuelles seulement)
 
-- **Cloche « + »** : au survol, un petit bouton suit le réticule sur l'axe des prix, à la hauteur
-  du curseur. Un clic crée l'alerte au prix de cette hauteur, arrondi au cent. **Alt+clic** dans
+- **Cloche « + »** : au survol, un petit bouton suit le réticule à la hauteur du curseur, dans la
+  colonne des pastilles d'alerte (centre à 18 px du bord droit du panneau, juste à gauche de
+  l'échelle des prix) ; il se cache à moins d'une pastille d'une ligne d'alerte, qu'il recouvrirait. Un clic crée l'alerte au prix de cette hauteur, arrondi au cent. **Alt+clic** dans
   le graphe fait de même (`sourceEvent.altKey`). Sur écran tactile, un appui long.
 - **Glisser** la ligne (tolérance de 4 px) déplace le seuil, défilement du graphe suspendu pendant
   le geste ; écrit au relâchement.

@@ -545,7 +545,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `AlertsPrimitive` trace un pointillé fin de teinte `warning`, distingué des calls vendus
   (`chart-2`) par sa forme seule, et pose dans le panneau, à `ALERT_BELL_INSET_PX` du bord droit,
   une pastille-cloche — jamais d'étiquette sur l'axe des prix — dont l'infobulle donne le seuil ;
-  `AlertOverlay` pose (cloche « + » sur l'axe, Alt+clic, appui long), glisse — les manuelles
+  `AlertOverlay` pose (cloche « + » dans la colonne des pastilles, à gauche de l'échelle, cachée à leur hauteur, Alt+clic, appui long), glisse — les manuelles
   seulement — et règle par popover au clic sur la pastille (`hitBell`, testé avant le glisser). Sur les lignes de positions, une
   alerte **déclenchée** — jamais active ni désactivée — allume `AlertBell`, la pilule sans nombre
   liée à la page des alertes, à gauche de la variation dans « Var. jour action »
