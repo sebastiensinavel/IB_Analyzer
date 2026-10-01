@@ -44,8 +44,11 @@ export function UnderlyingDayChangeCell({ ticker, alert }: { ticker: string; ale
   return (
     <TableCell className={cn(NUMERIC, toneOf(value))}>
       {marks.length > 0 ? (
-        <span className="inline-flex items-center justify-end gap-0.5 whitespace-nowrap">
-          <AlertBell alerts={marks} />
+        // La cloche se centre dans l'espace laissé à gauche de la variation, qui reste calée à droite.
+        <span className="flex w-full items-center gap-0.5 whitespace-nowrap">
+          <span className="flex flex-1 justify-center">
+            <AlertBell alerts={marks} />
+          </span>
           {change}
         </span>
       ) : (
