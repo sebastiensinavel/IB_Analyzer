@@ -5,6 +5,7 @@ import {
   createAccount,
   deleteAccount,
   setActiveStrategies,
+  setAlertMargins,
   setFlexRelay,
   slugify,
   toggleActiveStrategy,
@@ -80,9 +81,21 @@ describe("deleteAccount", () => {
       { ...cashPoint, accountId: "a" },
       { ...cashPoint, accountId: "b" },
     ]);
+    const alert = { ticker: "AAPL", price: 1, direction: "above" as const, note: null, createdAt: "" };
+    await db.alerts.bulkPut([
+      { ...alert, id: "manual:a", accountId: "a" },
+      { ...alert, id: "manual:b", accountId: "b" },
+    ]);
+    const state = { triggeredAt: null, acknowledgedAt: null, disabled: false, armed: true, anchor: null, override: null };
+    await db.alertStates.bulkPut([
+      { ...state, alertId: "manual:a", accountId: "a" },
+      { ...state, alertId: "manual:b", accountId: "b" },
+    ]);
     setLastAccountId("a");
 
     await deleteAccount(db, "a");
+    expect((await db.alerts.toArray()).map((r) => r.accountId)).toEqual(["b"]);
+    expect((await db.alertStates.toArray()).map((r) => r.accountId)).toEqual(["b"]);
 
     expect(await db.accounts.toArray()).toHaveLength(1);
     expect(await db.transactions.toArray()).toEqual([{ accountId: "b", externalId: "y" }]);
@@ -151,5 +164,18 @@ describe("toggleActiveStrategy", () => {
     await createAccount(db, { label: "Beta", ibAccountId: "U1234567" });
     await toggleActiveStrategy(db, "beta", "wheel", false);
     expect((await db.accounts.get("beta"))?.strategies).toEqual([]);
+  });
+});
+
+describe("setAlertMargins", () => {
+  it("deux appels coup sur coup composent, et undefined retire la clé", async () => {
+    await createAccount(db, { label: "Beta", ibAccountId: "U1234567" });
+    await Promise.all([setAlertMargins(db, "beta", { wheel: 0.6 }), setAlertMargins(db, "beta", { condor: 0.2 })]);
+    expect((await db.accounts.get("beta"))?.alertMargins).toEqual({ wheel: 0.6, condor: 0.2 });
+
+    await setAlertMargins(db, "beta", { wheel: undefined });
+    const margins = (await db.accounts.get("beta"))?.alertMargins;
+    expect(margins).toEqual({ condor: 0.2 });
+    expect("wheel" in (margins ?? {})).toBe(false);
   });
 });

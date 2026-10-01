@@ -16,6 +16,7 @@
     "dashboard": "Tableau de bord",
     "positions": "Positions",
     "history": "Historique",
+    "alerts": "Alertes",
     "journal": "Journal",
     "stats": "Statistiques",
     "wheel": "Journal Wheel",
@@ -34,7 +35,8 @@
     "continue": "Continuer la démo",
     "unavailable": "Indisponible en démonstration",
     "accountsTitle": "Vous êtes en démonstration",
-    "accountsText": "Quittez la démo pour ajouter votre compte IB."
+    "accountsText": "Quittez la démo pour ajouter votre compte IB.",
+    "alertNotes": { "support": "Support", "resistance": "Résistance" }
   },
   "common": {
     "loading": "Chargement…",
@@ -703,6 +705,17 @@
         "Quand une nouvelle version est publiée, un bandeau propose de recharger ; tous les onglets passent ensemble à la nouvelle version."
       ]
     },
+    "alerts": {
+      "title": "Les alertes de prix",
+      "intro": "Une alerte vous prévient quand le cours d'un titre franchit un seuil. Deux sont calculées pour vous à partir de vos journaux, les autres se posent à la main.",
+      "items": [
+        "Wheel : un call couvert vendu sous votre prix d'assignation. L'alerte sonne quand le cours a parcouru 70 % du chemin entre son niveau au moment de la vente et le strike : il faut sans doute rouler la position. Aucune alerte au strike ou au-dessus.",
+        "Condors : l'alerte sonne quand le cours s'approche d'une aile vendue, à 15 % de l'écart entre les strikes vendus. Les deux pourcentages se règlent par compte, et par alerte, dans la page Alertes.",
+        "Poser une alerte : sur un graphe de cours, cliquez sur la cloche « + » qui suit le curseur à droite du graphe, juste avant l'échelle des prix, ou Alt+clic dans le graphe ; sur écran tactile, un appui long. Glissez la ligne pour la déplacer, cliquez sur sa cloche pour la régler, la supprimer ou la réactiver.",
+        "Une alerte se vérifie à chaque passe de l'agent (toutes les 5 minutes), seulement quand une page d'un compte est ouverte et l'agent présent : sans agent, onglet fermé ou sur Paramètres et l'Aide, rien n'est évalué, et aucun rattrapage n'a lieu entre deux passes. Le cours d'un titre que vous ne détenez pas est différé d'environ 15 minutes.",
+        "Une notification du navigateur accompagne chaque alerte déclenchée, si vous l'avez autorisée. Le menu affiche une pastille par stratégie ; la page Alertes les liste toutes."
+      ]
+    },
     "modes": {
       "title": "Trois façons de s'en servir",
       "choose": "Choisir un mode de fonctionnement",
@@ -925,11 +938,18 @@
     "twsDown": "TWS ne répond pas sur le port {{port}}",
     "noBars": "Interactive Brokers ne rend aucun historique pour {{ticker}}",
     "proxy": "Cours de {{proxy}} : Interactive Brokers ne cote pas {{ticker}}. Les niveaux restent aux prix de {{ticker}}.",
-    "loading": "Chargement du graphe…"
+    "loading": "Chargement du graphe…",
+    "alert": {
+      "create": "Poser une alerte à {{price}}",
+      "createHint": "Poser une alerte à ce prix (Alt+clic dans le graphe, appui long au doigt)",
+      "price": "Seuil",
+      "note": "Note",
+      "save": "Enregistrer",
+      "delete": "Supprimer"
+    }
   },
   "quotes": {
-    "delayed": "Cotation différée de 15 min.",
-    "proxy": "Variation de {{proxy}}, cotation différée de 15 min : Interactive Brokers ne cote pas {{ticker}}."
+    "delayed": "Cotation différée de 15 min."
   },
   "tableFilter": {
     "panel": "Options de la colonne {{column}}",
@@ -964,5 +984,67 @@
     "partial_one": "{{count}} ligne sans valeur",
     "partial_other": "{{count}} lignes sans valeur",
     "cashExcluded": "Hors cash : un filtre est actif."
+  },
+  "alerts": {
+    "badge_one": "{{count}} alerte déclenchée",
+    "badge_other": "{{count}} alertes déclenchées",
+    "bell": "Alerte {{arrow}} {{price}}",
+    "margins": {
+      "wheel": "Wheel",
+      "condor": "Condors",
+      "unit": "%"
+    },
+    "enableNotifications": "Activer les notifications",
+    "noAgent": "L'agent local est absent : les alertes ne s'évaluent pas, les cours et les distances restent inconnus.",
+    "empty": "Aucune alerte. Les alertes Wheel et Condors se créent d'elles-mêmes ; les manuelles se posent depuis un graphique.",
+    "groups": {
+      "triggered": "Déclenchées",
+      "active": "Actives",
+      "disabled": "Désactivées"
+    },
+    "columns": {
+      "type": "Type",
+      "ticker": "Ticker",
+      "thresholds": "Seuils",
+      "price": "Cours",
+      "distance": "Distance",
+      "detail": "Détail",
+      "actions": "Actions"
+    },
+    "types": {
+      "manual": "Manuelle",
+      "wheel": "Wheel",
+      "condor": "Condors"
+    },
+    "price": {
+      "realtime": "Cours temps réel",
+      "delayed": "Cours différé"
+    },
+    "above": "Au-dessus de {{price}}",
+    "below": "En dessous de {{price}}",
+    "points": "{{value}} pts",
+    "detail": {
+      "anchor": "S₀ {{price}} · {{source}}",
+      "anchorPending": "S₀ en attente",
+      "condor": "{{put}}/{{call}} · marge {{offset}} pts"
+    },
+    "source": {
+      "live": "direct",
+      "vwap": "VWAP",
+      "close": "clôture"
+    },
+    "actions": {
+      "acknowledge": "Vu",
+      "reactivate": "Réactiver",
+      "delete": "Supprimer l'alerte {{ticker}}",
+      "overrideWheel": "Fraction de S₀ pour {{ticker}} (vide : réglage du compte)",
+      "overrideCondor": "Marge pour {{ticker}} (vide : réglage du compte)"
+    },
+    "notify": {
+      "title_above": "{{ticker}} ↑ {{price}}",
+      "title_below": "{{ticker}} ↓ {{price}}",
+      "wheel": "Wheel — call {{strike}}",
+      "condor": "Condor {{put}}/{{call}}"
+    }
   }
 }

@@ -1,19 +1,16 @@
 import type { Position } from "@ib/ledger";
-import { chartProxyOf } from "@/lib/chartProxies";
 import { underlyingDayChangeOf, type QuoteMap } from "@/agent/quotes";
 
 /**
  * How "Var. jour action" resolved for one ticker (task addendum to sub-project 35): a live
  * `dayChange` from the account's own snapshot when it holds the underlying as stock, the
  * delayed `/quotes` value otherwise. `value` is what the cell and the sort both read; `delayed`
- * and `proxy` say what tooltip, if any, the cell shows.
+ * says whether the cell shows a tooltip.
  */
 export interface UnderlyingDayChangeResolution {
   value: number | null;
   /** True only for a value read from the quotes store: it lags the market by up to 15 minutes. */
   delayed: boolean;
-  /** Set only alongside `delayed`, when the ticker is quoted under a substitute (XSP -> SPY). */
-  proxy: string | null;
 }
 
 /**
@@ -34,7 +31,7 @@ export function buildHeldDayChange(positions: readonly Position[]): ReadonlyMap<
 /**
  * The value "Var. jour action" shows for `ticker`, and why: the account's own live `dayChange`
  * first (no tooltip — it is TWS's real-time `reqPnLSingle`, not a lagged quote), the `/quotes`
- * store otherwise (delayed 15 minutes, said in a tooltip; XSP's tooltip also names SPY). Neither
+ * store otherwise (delayed 15 minutes, said in a tooltip). Neither
  * source: `null`, no tooltip.
  */
 export function resolveUnderlyingDayChange(
@@ -44,8 +41,8 @@ export function resolveUnderlyingDayChange(
 ): UnderlyingDayChangeResolution {
   const upper = ticker.toUpperCase();
   const heldValue = held.get(upper);
-  if (heldValue !== undefined) return { value: heldValue, delayed: false, proxy: null };
+  if (heldValue !== undefined) return { value: heldValue, delayed: false };
   const value = underlyingDayChangeOf(quotes, upper);
-  if (value === null) return { value: null, delayed: false, proxy: null };
-  return { value, delayed: true, proxy: chartProxyOf(upper) };
+  if (value === null) return { value: null, delayed: false };
+  return { value, delayed: true };
 }

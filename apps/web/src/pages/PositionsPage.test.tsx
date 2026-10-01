@@ -311,7 +311,7 @@ describe("PositionsPage", () => {
   });
 
   it("shows the underlying's day move first, once the agent has quoted it", async () => {
-    mergeQuotes(new Map([["XOM", -0.0312]]));
+    mergeQuotes(new Map([["XOM", { last: null, change: -0.0312 }]]));
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
     const cells = within(await rowFor("XOM Mar20'26 100 Put")).getAllByRole("cell");
@@ -319,7 +319,7 @@ describe("PositionsPage", () => {
   });
 
   it("shows a delayed-quote tooltip on a sold put not held", async () => {
-    mergeQuotes(new Map([["XOM", -0.0312]]));
+    mergeQuotes(new Map([["XOM", { last: null, change: -0.0312 }]]));
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
     const cells = within(await rowFor("XOM Mar20'26 100 Put")).getAllByRole("cell");
@@ -328,7 +328,7 @@ describe("PositionsPage", () => {
   });
 
   it("prefers the account's own live dayChange over a stale quote for a held stock, with no tooltip", async () => {
-    mergeQuotes(new Map([["AAPL", -0.5]])); // stale/wrong: the held dayChange below must win
+    mergeQuotes(new Map([["AAPL", { last: null, change: -0.5 }]])); // stale/wrong: the held dayChange below must win
     await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ dayChange: 0.05 }), ...SAMPLE_POSITIONS.slice(1)] });
     renderPositions();
     const cells = within(await rowFor("AAPL")).getAllByRole("cell");
@@ -342,7 +342,7 @@ describe("PositionsPage", () => {
   });
 
   it("falls back to the delayed quote when a held stock's own dayChange is null", async () => {
-    mergeQuotes(new Map([["AAPL", 0.02]]));
+    mergeQuotes(new Map([["AAPL", { last: null, change: 0.02 }]]));
     await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ dayChange: null }), ...SAMPLE_POSITIONS.slice(1)] });
     renderPositions();
     const cells = within(await rowFor("AAPL")).getAllByRole("cell");
@@ -358,8 +358,8 @@ describe("PositionsPage", () => {
     expect(within(sells).getByRole("columnheader", { name: /^Var\. jour action/ })).not.toHaveAttribute("aria-sort");
   });
 
-  it("reads XSP's day move from SPY, with a tooltip naming the substitute", async () => {
-    mergeQuotes(new Map([["SPY", 0.004]]));
+  it("reads XSP's day move from its own quote, with the delayed tooltip", async () => {
+    mergeQuotes(new Map([["XSP", { last: null, change: 0.004 }]]));
     await db.snapshots.put({ ...SAMPLE_SNAPSHOT, positions: [stockPosition({ symbol: "XSP", description: "XSP TEST" })] });
     renderPositions();
     const row = await rowFor("XSP");
@@ -367,12 +367,12 @@ describe("PositionsPage", () => {
     expect(cells[0]).toHaveTextContent("+0.4%");
     await userEvent.setup().hover(within(cells[0]).getByText("+0.4%"));
     expect(
-      await screen.findByText("Variation de SPY, cotation différée de 15 min : Interactive Brokers ne cote pas XSP.", {}, { timeout: 2000 }),
+      await screen.findByText("Cotation différée de 15 min.", {}, { timeout: 2000 }),
     ).toBeInTheDocument();
   });
 
   it("sorts a card on the underlying's day move, unknown values last", async () => {
-    mergeQuotes(new Map([["AAPL", 0.02], ["XOM", -0.03]]));
+    mergeQuotes(new Map([["AAPL", { last: null, change: 0.02 }], ["XOM", { last: null, change: -0.03 }]]));
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     renderPositions();
     const sells = (await screen.findByText("Ventes d'options")).closest("[data-slot=card]") as HTMLElement;
@@ -386,7 +386,7 @@ describe("PositionsPage", () => {
   it("sorts by the resolved value, a held stock's live move ahead of a stale quote for the same ticker", async () => {
     // AAPL's /quotes value (+2%) must lose to the account's own held dayChange (-50%): both AAPL
     // option rows below share it, sorting ahead of XOM's quoted -3%.
-    mergeQuotes(new Map([["AAPL", 0.02], ["XOM", -0.03]]));
+    mergeQuotes(new Map([["AAPL", { last: null, change: 0.02 }], ["XOM", { last: null, change: -0.03 }]]));
     await db.snapshots.put({
       ...SAMPLE_SNAPSHOT,
       positions: SAMPLE_POSITIONS.map((position) => (position.symbol === "AAPL" && position.secType === "STK" ? { ...position, dayChange: -0.5 } : position)),
@@ -577,5 +577,25 @@ describe("PositionsPage expiry filters", () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=MSFT");
     await waitFor(() => expect(within(expiryBar()).getAllByRole("button").map((button) => button.textContent)).toEqual(["Mar20'26", "Jan21'28"]));
+  });
+
+});
+
+describe("PositionsPage alert bell", () => {
+  it("allume la cloche d'une alerte déclenchée à gauche de la variation de chaque ligne du ticker, et d'aucune autre", async () => {
+    await Promise.all([db.alerts.clear(), db.alertStates.clear()]);
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    await db.alerts.put({ accountId: "alpha", id: "m-aapl", ticker: "AAPL", price: 160, direction: "above", note: null, createdAt: "2026-09-29T10:00:00.000Z" });
+    await db.alertStates.put({ accountId: "alpha", alertId: "m-aapl", triggeredAt: "2026-09-30T14:00:00.000Z", acknowledgedAt: null, disabled: false, armed: true, anchor: null, override: null });
+    // Une alerte active sur XOM : rien.
+    await db.alerts.put({ accountId: "alpha", id: "m-xom", ticker: "XOM", price: 90, direction: "below", note: null, createdAt: "2026-09-29T10:00:00.000Z" });
+    renderPositions();
+    const stock = await rowFor("AAPL");
+    const bell = await within(stock).findByRole("link", { name: "Alerte ↑ 160,00" });
+    expect(bell).toHaveAttribute("href", "/accounts/alpha/alerts");
+    // Dans la première cellule, la Var. jour action, avant la variation.
+    expect(stock.cells[0]).toContainElement(bell);
+    expect(within(await rowFor("AAPL Jan16'26 150 Call")).getByRole("link", { name: "Alerte ↑ 160,00" })).toBeInTheDocument();
+    expect(within(await rowFor("XOM Mar20'26 100 Put")).queryByRole("link")).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
+import { AlertsPage } from "@/pages/AlertsPage";
 import { ConsistencyPage } from "@/pages/ConsistencyPage";
 import { StrategyPositionsPage } from "@/pages/StrategyPositionsPage";
 import { SectorsPage } from "@/pages/SectorsPage";
@@ -29,6 +30,14 @@ describe("router", () => {
     expect(route).toBeDefined();
     const element = route?.element as ReactElement;
     expect(element.type).toBe(ConsistencyPage);
+  });
+
+  it("routes the Alerts page under the account", () => {
+    const account = router.routes.find((r) => r.path === "/accounts/:accountId");
+    const route = (account?.children ?? []).find((c) => c.path === "alerts");
+    expect(route).toBeDefined();
+    const element = route?.element as ReactElement;
+    expect(element.type).toBe(AlertsPage);
   });
 
   it("routes the Sector and Score page under the account", () => {

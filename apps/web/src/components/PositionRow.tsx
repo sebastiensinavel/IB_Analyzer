@@ -3,10 +3,14 @@ import type { BuybackAdvice } from "@ib/coverage";
 import { Badge } from "@ib/ui/badge";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
+import type { ContractKey } from "@ib/ledger";
+import { AlertBell } from "@/components/alerts/AlertBell";
 import { DecisionBadge } from "@/components/DecisionBadge";
+import { useAccountAlerts } from "@/db/AccountDataProvider";
 import { useUnderlyingDayChange } from "@/hooks/useUnderlyingDayChange";
 import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
 import { type CoverageBadge } from "@/lib/riskReport";
+import { rowAlertMarks, type RowAlertTarget } from "@/lib/rowAlerts";
 import { cn } from "@/lib/utils";
 
 export const NUMERIC = "text-right font-mono tabular-nums";
@@ -17,27 +21,38 @@ export const toneOf = (value: number | null) => value !== null && (value >= 0 ? 
 /**
  * The underlying's day move (spec of sub-project 35, §5, held-first addendum): the account on
  * screen's own live `dayChange` when it holds the ticker as stock, no tooltip; the delayed
- * `/quotes` value otherwise, with a tooltip saying so — and naming SPY when the ticker is XSP.
- * Every row of one ticker shows the same value.
+ * `/quotes` value otherwise, with a tooltip saying so.
+ * Every row of one ticker shows the same value. On its left, the bell of the triggered alerts the
+ * line answers to (`rowAlertMarks`): its ticker's manual ones always, a Wheel or condor alert only
+ * on the line `alert` names — its contract, or its condor.
  */
-export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
+export function UnderlyingDayChangeCell({ ticker, alert }: { ticker: string; alert?: Omit<RowAlertTarget, "ticker"> }) {
   const { t } = useTranslation();
-  const { value, delayed, proxy } = useUnderlyingDayChange()(ticker);
+  const { value, delayed } = useUnderlyingDayChange()(ticker);
+  const alerts = useAccountAlerts();
+  const marks = alerts.status === "ready" ? rowAlertMarks(alerts.alerts, { ticker, ...alert }) : [];
   const text = formatDayChange(value);
-  const tooltip = delayed
-    ? proxy
-      ? t("quotes.proxy", { proxy, ticker: ticker.toUpperCase() })
-      : t("quotes.delayed")
-    : null;
+  const tooltip = delayed ? t("quotes.delayed") : null;
+  const change = tooltip ? (
+    <Tooltip>
+      <TooltipTrigger render={<span>{text}</span>} />
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  ) : (
+    text
+  );
   return (
     <TableCell className={cn(NUMERIC, toneOf(value))}>
-      {tooltip ? (
-        <Tooltip>
-          <TooltipTrigger render={<span>{text}</span>} />
-          <TooltipContent>{tooltip}</TooltipContent>
-        </Tooltip>
+      {marks.length > 0 ? (
+        // La cloche se centre dans l'espace laissé à gauche de la variation, qui reste calée à droite.
+        <span className="flex w-full items-center gap-0.5 whitespace-nowrap">
+          <span className="flex flex-1 justify-center">
+            <AlertBell alerts={marks} />
+          </span>
+          {change}
+        </span>
       ) : (
-        text
+        change
       )}
     </TableCell>
   );
@@ -47,6 +62,8 @@ export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
 export interface PositionRowValues {
   /** The underlying's ticker, which the first column is quoted on. */
   ticker: string;
+  /** The line's contract, which a Wheel or condor alert's bell is matched on; absent, only the ticker's manual alerts ring. */
+  contractKey?: ContractKey | null;
   contract: string;
   label: string;
   sector: string | null;
@@ -83,7 +100,7 @@ export function PositionRow({ values, onClick, expanded = false }: PositionRowPr
       data-state={expanded ? "selected" : undefined}
       className={cn(onClick && "cursor-pointer")}
     >
-      <UnderlyingDayChangeCell ticker={values.ticker} />
+      <UnderlyingDayChangeCell ticker={values.ticker} alert={{ contract: values.contractKey }} />
       <TableCell className="font-medium">{values.contract}</TableCell>
       <TableCell className="text-muted-foreground">{values.label}</TableCell>
       <TableCell>{values.sector && <Badge variant="outline">{values.sector}</Badge>}</TableCell>

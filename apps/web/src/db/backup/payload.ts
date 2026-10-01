@@ -32,6 +32,8 @@ export const BACKUP_TABLES = [
   "statements",
   "contracts",
   "cashPoints",
+  "alerts",
+  "alertStates",
 ] as const;
 
 export interface BackupPayload {

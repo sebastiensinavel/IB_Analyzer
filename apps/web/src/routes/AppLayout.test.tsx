@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { useState } from "react";
@@ -7,8 +7,9 @@ import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
 import { ACTIVABLE_STRATEGIES } from "@ib/ledger";
 import i18n from "@/i18n";
 import { db } from "@/db/schema";
-import { useAccountJournals, useAccountRiskReport } from "@/db/AccountDataProvider";
+import { useAccountJournals, useAccountRiskReport, useOptionalAccountAlerts } from "@/db/AccountDataProvider";
 import { AppLayout } from "@/routes/AppLayout";
+import { createManualAlert } from "@/db/alerts";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
 
@@ -16,6 +17,12 @@ function AccountDataProbe() {
   const { report } = useAccountRiskReport();
   const journals = useAccountJournals();
   return <div>{report === undefined || journals.status === "loading" ? "account data loading" : "account data ready"}</div>;
+}
+
+/** What an account-agnostic component — the sidebar — reads of the alerts. */
+function AlertsProbe() {
+  const alerts = useOptionalAccountAlerts();
+  return <div>{alerts === null ? "no account alerts" : `account alerts ${alerts.status}`}</div>;
 }
 
 // Local state that survives only as long as the page stays mounted.
@@ -40,12 +47,14 @@ function renderAt(path: string) {
             <Route path="dashboard" element={<div>dashboard content</div>} />
             <Route path="positions" element={<AccountDataProbe />} />
             <Route path="stateful" element={<StatefulPage />} />
+            <Route path="alerts-probe" element={<AlertsProbe />} />
           </Route>
           <Route path="/help" element={<AppLayout />}>
             <Route index element={<div>help</div>} />
           </Route>
           <Route path="/settings" element={<AppLayout />}>
             <Route index element={<div>settings content</div>} />
+            <Route path="alerts-probe" element={<AlertsProbe />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -76,6 +85,8 @@ beforeEach(async () => {
     db.snapshots.clear(),
     db.contracts.clear(),
     db.cashPoints.clear(),
+    db.alerts.clear(),
+    db.alertStates.clear(),
   ]);
   await db.accounts.bulkAdd([account("beta", "U0000002"), account("alpha", "U0000001")]);
 });
@@ -93,6 +104,19 @@ describe("AppLayout", () => {
     expect(screen.getByText("clicks 1")).toBeInTheDocument();
     await user.click(screen.getByText("to beta"));
     expect(await screen.findByText("clicks 0")).toBeInTheDocument();
+  });
+
+  it("keeps a collapsed sidebar collapsed when leaving the account's pages for Settings", async () => {
+    const user = userEvent.setup();
+    renderAt("/accounts/alpha/dashboard");
+    await screen.findByText("dashboard content");
+    const sidebarState = () => document.querySelector("[data-slot=sidebar]")?.getAttribute("data-state");
+    expect(sidebarState()).toBe("expanded");
+    await user.click(screen.getByRole("button", { name: "Toggle Sidebar" }));
+    expect(sidebarState()).toBe("collapsed");
+    await user.click(screen.getByRole("link", { name: "Paramètres" }));
+    expect(await screen.findByText("settings content")).toBeInTheDocument();
+    expect(sidebarState()).toBe("collapsed");
   });
 
   it("gives the account's pages its journals and risk report", async () => {
@@ -124,8 +148,9 @@ describe("AppLayout", () => {
       "/accounts/beta/consistency",
       "/settings",
       "/help",
-      // The footer's discreet link back to the welcome page.
+      // The footer: the welcome page, then the alerts page.
       "/welcome",
+      "/accounts/beta/alerts",
     ]);
   });
 
@@ -157,6 +182,74 @@ describe("AppLayout", () => {
     renderAt("/settings");
     expect(await screen.findByText("settings content")).toBeInTheDocument();
     expect(screen.queryByText("accounts page")).not.toBeInTheDocument();
+  });
+
+  it("gives an account's shell its alerts, and leaves Settings without any provider", async () => {
+    renderAt("/accounts/alpha/alerts-probe");
+    expect(await screen.findByText("account alerts ready")).toBeInTheDocument();
+    cleanup();
+    renderAt("/settings/alerts-probe");
+    expect(await screen.findByText("no account alerts")).toBeInTheDocument();
+  });
+
+  describe("alerts in the menu", () => {
+    const menuItem = (name: string, index = 0) => screen.getAllByRole("link", { name })[index].closest("li") as HTMLElement;
+    const pill = (within_: HTMLElement) => within(within_).queryByLabelText(/alertes? déclenchée/);
+    const footer = () => screen.getByRole("link", { name: "Alertes" }).parentElement as HTMLElement;
+
+    async function seedTriggered() {
+      await db.accounts.update("beta", { strategies: [...ACTIVABLE_STRATEGIES] });
+      await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
+      await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);
+      const id = await createManualAlert(db, "beta", { ticker: "MQZA", price: 20, direction: "above" });
+      await db.alertStates.put({
+        accountId: "beta", alertId: id, triggeredAt: "2026-09-30T14:00:00.000Z", acknowledgedAt: null,
+        disabled: false, armed: true, anchor: null, override: null,
+      });
+    }
+
+    it("badges the overview Positions and the Positions of the strategy holding the ticker, and no other", async () => {
+      await seedTriggered();
+      renderAt("/accounts/beta/dashboard");
+      await screen.findByText("dashboard content");
+      await waitFor(() => expect(pill(menuItem("Positions", 0))).toHaveTextContent("1"));
+      // Positions entries in menu order: overview, Wheel, LEAPS, Condors, Others.
+      expect(pill(menuItem("Positions", 1))).toHaveTextContent("1");
+      expect(pill(menuItem("Positions", 2))).toBeNull();
+      expect(pill(menuItem("Positions", 3))).toBeNull();
+      expect(pill(menuItem("Positions", 4))).toBeNull();
+      expect(pill(menuItem("Historique"))).toBeNull();
+    });
+
+    it("always links to the alerts page from the footer, with no pill while nothing is triggered", async () => {
+      renderAt("/accounts/alpha/dashboard");
+      await screen.findByText("dashboard content");
+      expect(screen.getByRole("link", { name: "Alertes" })).toHaveAttribute("href", "/accounts/alpha/alerts");
+      expect(pill(footer())).toBeNull();
+    });
+
+    it("adds the pill to the footer link when an alert is triggered", async () => {
+      await seedTriggered();
+      renderAt("/accounts/beta/dashboard");
+      await screen.findByText("dashboard content");
+      await waitFor(() => expect(pill(footer())).toHaveTextContent("1"));
+    });
+
+    it("keeps the footer link on Settings, where no alert is computed, without a pill", async () => {
+      await seedTriggered();
+      window.localStorage.setItem("ib2:lastAccountId", "beta");
+      renderAt("/settings");
+      await screen.findByText("settings content");
+      expect(screen.getByRole("link", { name: "Alertes" })).toHaveAttribute("href", "/accounts/beta/alerts");
+      expect(pill(footer())).toBeNull();
+    });
+
+    it("shows no alerts link with no account at all", async () => {
+      await db.accounts.clear();
+      renderAt("/help");
+      await screen.findByText("help");
+      expect(screen.queryByRole("link", { name: "Alertes" })).toBeNull();
+    });
   });
 
   it("offers adding an account and the welcome page when there is no account at all", async () => {

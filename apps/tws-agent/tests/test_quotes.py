@@ -182,3 +182,53 @@ def test_a_qualification_that_never_resolves_times_out_all_null(make_client):
     assert response.json()["quotes"] == [{"symbol": "AAPL", "last": None, "close": None}]
     assert ib.mkt_subscribed == []
     assert ib.disconnected
+
+
+def test_quotes_qualifies_an_index_on_its_exchange(make_client):
+    # Verified on a real TWS, 2026-09-30: Index('XSP', 'CBOE', 'USD') qualifies and is served
+    # delayed (type 3, error 10090) without an index subscription.
+    fake = FakeIB(quotes={"XSP": FakeTicker(last=769.27, close=767.08)})
+    response = get(make_client(fake), "indices=XSP:CBOE")
+    assert response.status_code == 200
+    assert response.json()["quotes"] == [{"symbol": "XSP", "last": 769.27, "close": 767.08}]
+    qualified = fake.qualify_calls[0][0]
+    assert (qualified.symbol, qualified.secType, qualified.exchange, qualified.currency) == (
+        "XSP",
+        "IND",
+        "CBOE",
+        "USD",
+    )
+    subscribed = fake.mkt_subscribed[0]
+    assert (subscribed.secType, subscribed.exchange) == ("IND", "CBOE")
+
+
+def test_quotes_mixes_stocks_and_indices_in_order(make_client):
+    fake = FakeIB(
+        quotes={"AAPL": FakeTicker(last=231.4, close=228.9), "XSP": FakeTicker(last=769.27, close=767.08)}
+    )
+    body = get(make_client(fake), "symbols=AAPL&indices=XSP:CBOE").json()
+    assert [q["symbol"] for q in body["quotes"]] == ["AAPL", "XSP"]
+    assert len(fake.qualify_calls) == 1
+    by_symbol = {c.symbol: c for c in fake.mkt_subscribed}
+    assert (by_symbol["AAPL"].secType, by_symbol["AAPL"].exchange) == ("STK", "NASDAQ")
+    assert (by_symbol["XSP"].secType, by_symbol["XSP"].exchange) == ("IND", "CBOE")
+
+
+@pytest.mark.parametrize("index", ["XSP", "XSP:", ":CBOE", "XSP:CBOE:X", "XSP:TOOLONGEXCH", "X" * 25 + ":CBOE"])
+def test_quotes_rejects_a_malformed_index(make_client, index):
+    response = get(make_client(FakeIB()), f"indices={index}")
+    assert response.status_code == 422
+    assert response.json() == {"code": "bad-symbols"}
+
+
+def test_quotes_needs_symbols_or_indices(make_client):
+    response = get(make_client(FakeIB()), "symbols=")
+    assert response.status_code == 422
+    assert get(make_client(FakeIB()), "indices=").status_code == 422
+
+
+def test_quotes_caps_symbols_plus_indices(make_client, monkeypatch):
+    monkeypatch.setattr("ib_tws_agent.main.QUOTES_MAX_SYMBOLS", 2)
+    response = get(make_client(FakeIB()), "symbols=AAPL,MSFT&indices=XSP:CBOE")
+    assert response.status_code == 422
+    assert response.json() == {"code": "bad-symbols"}

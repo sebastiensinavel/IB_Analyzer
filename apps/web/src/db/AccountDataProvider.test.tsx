@@ -1,14 +1,17 @@
 import { Component, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { uncovered } from "@ib/coverage";
 import { db } from "@/db/schema";
 import { setActiveStrategies } from "@/db/accounts";
 import {
   AccountDataProvider,
+  useAccountAlerts,
   useAccountJournals,
   useAccountRiskReport,
   useAccountStrategies,
+  useOptionalAccountAlerts,
 } from "@/db/AccountDataProvider";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 import { SAMPLE_SNAPSHOT } from "@/mocks/positions";
@@ -32,6 +35,15 @@ function JournalsOnly() {
 function RiskOnly() {
   useAccountRiskReport();
   return null;
+}
+
+function AlertsOnly() {
+  useAccountAlerts();
+  return null;
+}
+
+function OptionalAlerts() {
+  return <p>{useOptionalAccountAlerts() === null ? "no alerts outside" : "alerts outside"}</p>;
 }
 
 function StrategiesOnly() {
@@ -84,6 +96,10 @@ describe("AccountDataProvider", () => {
         <Catch>
           <StrategiesOnly />
         </Catch>
+        <Catch>
+          <AlertsOnly />
+        </Catch>
+        <OptionalAlerts />
       </>,
     );
     // Both `Catch` instances render a bare string, so their text nodes land as direct
@@ -93,6 +109,8 @@ describe("AccountDataProvider", () => {
     expect(screen.getByText("useAccountJournals must be used inside <AccountDataProvider>", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("useAccountRiskReport must be used inside <AccountDataProvider>", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("useAccountStrategies must be used inside <AccountDataProvider>", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("useAccountAlerts must be used inside <AccountDataProvider>", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("no alerts outside")).toBeInTheDocument();
     quiet.mockRestore();
   });
 
@@ -101,9 +119,11 @@ describe("AccountDataProvider", () => {
     // alpha's snapshot: beta's provider must not see it.
     await db.snapshots.put(SAMPLE_SNAPSHOT);
     render(
-      <AccountDataProvider accountId="beta">
-        <Probe />
-      </AccountDataProvider>,
+      <MemoryRouter>
+        <AccountDataProvider accountId="beta">
+          <Probe />
+        </AccountDataProvider>
+      </MemoryRouter>,
     );
     expect(await screen.findByText(/^no snapshot \/ [1-9]\d* rows \/ no report$/)).toBeInTheDocument();
     await db.snapshots.put(SAMPLE_JOURNAL_SNAPSHOT);
@@ -114,9 +134,11 @@ describe("AccountDataProvider", () => {
     await db.accounts.add({ id: "beta", label: "Beta", ibAccountId: "U1234567", createdAt: "2026-09-01T00:00:00.000Z", warnedDroppedKinds: [] });
     await db.transactions.bulkAdd(SAMPLE_JOURNAL_TRANSACTIONS);
     render(
-      <AccountDataProvider accountId="beta">
-        <StrategiesProbe />
-      </AccountDataProvider>,
+      <MemoryRouter>
+        <AccountDataProvider accountId="beta">
+          <StrategiesProbe />
+        </AccountDataProvider>
+      </MemoryRouter>,
     );
     // The LEAPS and the condor open nowhere else than in Others.
     expect(await screen.findByText("active: wheel / rows: others,wheel")).toBeInTheDocument();
@@ -135,9 +157,11 @@ describe("AccountDataProvider", () => {
       ),
     });
     render(
-      <AccountDataProvider accountId="beta">
-        <TimingProbe />
-      </AccountDataProvider>,
+      <MemoryRouter>
+        <AccountDataProvider accountId="beta">
+          <TimingProbe />
+        </AccountDataProvider>
+      </MemoryRouter>,
     );
     // Sold 2026-06-10 16:00-ish, expiring 2026-09-18 16:00, priced at 2026-09-02 16:00: 16 days left.
     expect(await screen.findByText(/^timed: ZZZ=1[5-6](\.\d+)?$/)).toBeInTheDocument();

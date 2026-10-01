@@ -34,6 +34,8 @@ describe.each([
     expect(c.destructive).toBe(t.destructive);
     expect(c.foreground).toBe(t.foreground);
     expect(c.surface).toBe(t.card);
+    expect(c.warning).toBe(t.warning);
+    expect(c.warningForeground).toBe(t["warning-foreground"]);
   });
 
   it("gives chart-1…5 the series, in order", () => {

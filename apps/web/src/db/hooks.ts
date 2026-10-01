@@ -18,6 +18,19 @@ import { useDb } from "./DbProvider";
 import { heldTickers } from "./sectors";
 import type { AccountRecord, CashPointRecord, ImportRecord, SectorRecord, SnapshotRecord, StatementRecord } from "./schema";
 
+/**
+ * A live query of one account's data that never answers for another: `useLiveQuery` keeps its
+ * last result until the new query answers, so right after a switch it would still hand out the
+ * previous account's rows. The provider is not remounted on a switch (the sidebar lives inside
+ * it), and its alerts engine purges states on the journals it is given: stale rows from another
+ * account would delete states — S₀ first — that nothing can rebuild. `undefined` until the answer
+ * is this account's.
+ */
+export function useScopedLiveQuery<T>(scope: string | undefined, querier: () => Promise<T>, deps: unknown[]): T | undefined {
+  const answer = useLiveQuery(async () => ({ scope, value: await querier() }), deps);
+  return answer !== undefined && answer.scope === scope ? answer.value : undefined;
+}
+
 /** `undefined` while the query has not answered yet. */
 export function useAccounts(): AccountRecord[] | undefined {
   const db = useDb();
@@ -27,13 +40,13 @@ export function useAccounts(): AccountRecord[] | undefined {
 /** `undefined` while loading, `null` when there is no such account. */
 export function useAccount(id: string | undefined): AccountRecord | null | undefined {
   const db = useDb();
-  return useLiveQuery(async () => (id ? ((await db.accounts.get(id)) ?? null) : null), [db, id]);
+  return useScopedLiveQuery(id, async () => (id ? ((await db.accounts.get(id)) ?? null) : null), [db, id]);
 }
 
 /** The whole ledger of one account, in reference order; `undefined` while loading. */
 export function useLedger(accountId: string): Transaction[] | undefined {
   const db = useDb();
-  const rows = useLiveQuery(() => db.transactions.where("accountId").equals(accountId).toArray(), [db, accountId]);
+  const rows = useScopedLiveQuery(accountId, () => db.transactions.where("accountId").equals(accountId).toArray(), [db, accountId]);
   return useMemo(() => (rows ? sortTransactions(rows) : undefined), [rows]);
 }
 
@@ -88,7 +101,7 @@ export function useStatements(accountId: string): StatementRecord[] | undefined 
 /** `undefined` while loading, `null` when the account has no positions yet. */
 export function useSnapshot(accountId: string): SnapshotRecord | null | undefined {
   const db = useDb();
-  return useLiveQuery(async () => (await db.snapshots.get(accountId)) ?? null, [db, accountId]);
+  return useScopedLiveQuery(accountId, async () => (await db.snapshots.get(accountId)) ?? null, [db, accountId]);
 }
 
 /** The cash points of one account; `undefined` while loading. */
@@ -141,7 +154,7 @@ export function useRiskReport(accountId: string, soldAt?: ReadonlyMap<string, st
 /** The identity table of one account, ready for the replay; `undefined` while loading. */
 export function useContractIdentities(accountId: string): IdentityInput[] | undefined {
   const db = useDb();
-  return useLiveQuery(() => readIdentityInputs(db, accountId), [db, accountId]);
+  return useScopedLiveQuery(accountId, () => readIdentityInputs(db, accountId), [db, accountId]);
 }
 
 export type JournalsView =

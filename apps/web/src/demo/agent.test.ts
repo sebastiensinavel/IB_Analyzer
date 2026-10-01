@@ -23,6 +23,16 @@ it("answers /bars with two years ending on the reference day", () => {
   expect(result.ok && (result.payload as { bars: unknown[] }).bars.length).toBe(521);
 });
 
+it("answers /quotes for the indices too", () => {
+  const result = demoAgentJson("/quotes?port=1&indices=XSP:CBOE", NOW);
+  expect(result.ok).toBe(true);
+  if (result.ok) {
+    const quotes = parseAgentQuotes(result.payload);
+    expect(quotes.get("XSP")?.last).not.toBeNull();
+    expect(quotes.get("XSP")?.change).not.toBeNull();
+  }
+});
+
 it("answers /quotes with last and close", () => {
   const result = demoAgentJson("/quotes?port=7496&symbols=AAPL%2CKO", NOW);
   expect(result.ok).toBe(true);

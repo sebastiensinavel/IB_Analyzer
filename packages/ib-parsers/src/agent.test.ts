@@ -271,8 +271,10 @@ describe("parseAgentQuotes", () => {
         { symbol: "MSFT", last: 95, close: 100 },
       ],
     });
-    expect(quotes.get("AAPL")).toBeCloseTo(0.1, 10);
-    expect(quotes.get("MSFT")).toBeCloseTo(-0.05, 10);
+    expect(quotes.get("AAPL")?.last).toBe(110);
+    expect(quotes.get("AAPL")?.change).toBeCloseTo(0.1, 10);
+    expect(quotes.get("MSFT")?.last).toBe(95);
+    expect(quotes.get("MSFT")?.change).toBeCloseTo(-0.05, 10);
   });
 
   it("keeps a symbol TWS said nothing about, as null", () => {
@@ -284,7 +286,11 @@ describe("parseAgentQuotes", () => {
         { symbol: "C", last: 100, close: 0 },
       ],
     });
-    expect([...quotes.entries()]).toEqual([["A", null], ["B", null], ["C", null]]);
+    expect([...quotes.entries()]).toEqual([
+      ["A", { last: null, change: null }],
+      ["B", { last: 100, change: null }],
+      ["C", { last: 100, change: null }],
+    ]);
   });
 
   it.each([

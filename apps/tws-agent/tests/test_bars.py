@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from math import nan
 
 import pytest
 
@@ -21,6 +22,7 @@ class FakeBar:
     low: float = 16.5
     close: float = 17.5
     volume: float = 1234.0
+    average: float = nan
 
 
 def test_bars_returns_one_row_per_bar(make_client):
@@ -33,8 +35,8 @@ def test_bars_returns_one_row_per_bar(make_client):
     body = response.json()
     assert body["symbol"] == "BTDR"
     assert body["bars"] == [
-        {"date": "2026-05-29", "open": 17.0, "high": 18.25, "low": 16.5, "close": 17.5, "volume": 1234.0},
-        {"date": "2026-06-01", "open": 17.0, "high": 18.25, "low": 16.5, "close": 18.0, "volume": 1234.0},
+        {"date": "2026-05-29", "open": 17.0, "high": 18.25, "low": 16.5, "close": 17.5, "volume": 1234.0, "average": None},
+        {"date": "2026-06-01", "open": 17.0, "high": 18.25, "low": 16.5, "close": 18.0, "volume": 1234.0, "average": None},
     ]
 
 
@@ -112,3 +114,15 @@ def test_bars_refuses_a_foreign_origin(make_client):
     response = client.get("/bars?port=7496&symbol=BTDR", headers={"Origin": "https://evil.example"})
 
     assert response.status_code == 403
+
+
+def test_bars_carry_the_vwap(make_client):
+    fake = FakeIB(
+        bars=[
+            FakeBar(date(2026, 9, 29), 10, 12, 9, 11, 1000, average=10.8),
+            FakeBar(date(2026, 9, 30), 11, 12, 10, 11.5, 900),
+        ]
+    )
+    bars = make_client(fake).get("/bars?port=7496&symbol=AAPL", headers={"Origin": ORIGIN}).json()["bars"]
+    # A VWAP TWS did not send (nan) is None, never 0.
+    assert [b["average"] for b in bars] == [10.8, None]

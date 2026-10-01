@@ -13,7 +13,7 @@ const WORDS: Record<ChartLevelKind, string> = {
   condor: "",
 };
 const word = (kind: ChartLevelKind) => WORDS[kind];
-const bar = (date: string, high: number, low: number) => ({ date, open: low, high, low, close: high, volume: 1 });
+const bar = (date: string, high: number, low: number) => ({ date, open: low, high, low, close: high, volume: 1, average: null });
 
 describe("drawnLevels", () => {
   it("assemble couleur, prix et étiquette d'une vente de puts", () => {

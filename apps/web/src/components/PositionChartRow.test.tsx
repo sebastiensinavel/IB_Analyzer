@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { createChart } from "lightweight-charts";
@@ -7,8 +7,10 @@ import { ACTIVABLE_STRATEGIES, type ChartLevel, type Strategy } from "@ib/ledger
 import i18n from "@/i18n";
 import { db, type SnapshotRecord } from "@/db/schema";
 import * as agent from "@/agent/client";
+import { mergeQuotes, resetQuotes } from "@/agent/quotes";
 import { PositionChartRow } from "@/components/PositionChartRow";
 import { CHART_MARGIN_DAYS } from "@/lib/levelsPrimitive";
+import { createManualAlert } from "@/db/alerts";
 import { WithAccountData } from "@/test/WithAccountData";
 import { SAMPLE_JOURNAL_SNAPSHOT, SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
 
@@ -18,15 +20,26 @@ vi.mock("lightweight-charts", () => {
     attachPrimitive: vi.fn(),
     detachPrimitive: vi.fn(),
     priceToCoordinate: vi.fn(() => 10),
+    coordinateToPrice: vi.fn(() => 14.126),
   };
   return {
     CandlestickSeries: {},
     LineStyle: { Dotted: 1 },
-    createChart: vi.fn(() => ({
-      addSeries: vi.fn(() => series),
-      timeScale: vi.fn(() => ({ setVisibleLogicalRange: vi.fn(), timeToCoordinate: vi.fn(() => 10) })),
-      remove: vi.fn(),
-    })),
+    createChart: vi.fn(() => {
+      const element = document.createElement("div");
+      return {
+        addSeries: vi.fn(() => series),
+        timeScale: vi.fn(() => ({ setVisibleLogicalRange: vi.fn(), timeToCoordinate: vi.fn(() => 10), width: () => 500 })),
+        priceScale: vi.fn(() => ({ width: () => 60 })),
+        chartElement: () => element,
+        subscribeCrosshairMove: vi.fn(),
+        unsubscribeCrosshairMove: vi.fn(),
+        subscribeClick: vi.fn(),
+        unsubscribeClick: vi.fn(),
+        applyOptions: vi.fn(),
+        remove: vi.fn(),
+      };
+    }),
   };
 });
 
@@ -62,23 +75,49 @@ function renderRow(
   );
 }
 
-const BARS = [{ date: "2026-09-21", open: 13, high: 14, low: 12, close: 13.5, volume: 1 }];
+/** Le graphe se monte en plusieurs effets : sous la charge de la suite entière, 1 s ne suffit pas. */
+const CHART_WAIT = { timeout: 3000 };
+
+const BARS = [{ date: "2026-09-21", open: 13, high: 14, low: 12, close: 13.5, volume: 1, average: null }];
 
 /** La plage logique posée sur le dernier graphe : ce que l'axe du temps montre vraiment. */
 async function lastVisibleRange(): Promise<{ from: number; to: number }> {
-  await screen.findByTestId("price-chart");
-  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
-  const timeScale = chart.timeScale.mock.results.at(-1)!.value;
-  return timeScale.setVisibleLogicalRange.mock.calls.at(-1)![0];
+  await screen.findByTestId("price-chart", {}, CHART_WAIT);
+  return waitFor(() => {
+    // Chaque `timeScale()` rend un objet neuf, et le calque d'alertes en appelle un à chaque rendu
+    // (`width()`) : la plage se cherche sur tous, jamais sur le dernier seul.
+    const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+    const calls = chart.timeScale.mock.results.flatMap(
+      (result: { value: { setVisibleLogicalRange: { mock: { calls: [{ from: number; to: number }][] } } } }) =>
+        result.value.setVisibleLogicalRange.mock.calls,
+    );
+    return calls.at(-1)![0];
+  }, CHART_WAIT);
 }
 
 /** La dernière bougie donnée à la série : ce que le graphe dessine pour le jour le plus récent. */
 async function lastCandle(): Promise<{ time: string; close?: number }> {
-  await screen.findByTestId("price-chart");
-  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
-  const series = chart.addSeries.mock.results.at(-1)!.value;
-  const data = series.setData.mock.calls.at(-1)![0] as { time: string; close?: number }[];
-  return data.filter((point) => point.close !== undefined).at(-1)!;
+  await screen.findByTestId("price-chart", {}, CHART_WAIT);
+  return waitFor(() => {
+    const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    const data = series.setData.mock.calls.at(-1)![0] as { time: string; close?: number }[];
+    return data.filter((point) => point.close !== undefined).at(-1)!;
+  }, CHART_WAIT);
+}
+
+/**
+ * Le dernier graphe créé, une fois son calque d'alertes branché. Attendu, jamais lu tout de suite :
+ * `price-chart` est rendu avant que l'effet crée le graphe, et un graphe d'un test précédent, dont
+ * le calque écrit encore en base, ferait l'affaire à sa place (`createChart` est vidé à chaque test).
+ */
+async function lastChart() {
+  await screen.findByTestId("price-chart", {}, CHART_WAIT);
+  return waitFor(() => {
+    const chart = vi.mocked(createChart).mock.results.at(-1)?.value;
+    expect(chart?.subscribeClick).toHaveBeenCalled();
+    return chart;
+  }, CHART_WAIT);
 }
 
 /** Combien de fois l'axe du temps du dernier graphe a été posé. */
@@ -111,15 +150,19 @@ function liveSnapshot(price: number): SnapshotRecord {
 
 /** Les niveaux passés à la dernière primitive attachée : ce que `PriceChart` a reçu à dessiner. */
 async function lastDrawnLevels(): Promise<ChartLevel[]> {
-  await screen.findByTestId("price-chart");
-  const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
-  const series = chart.addSeries.mock.results.at(-1)!.value;
-  const primitive = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { level: ChartLevel }[] };
-  return primitive.drawn.map((d) => d.level);
+  await screen.findByTestId("price-chart", {}, CHART_WAIT);
+  return waitFor(() => {
+    const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    const primitive = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { level: ChartLevel }[] };
+    return primitive.drawn.map((d) => d.level);
+  }, CHART_WAIT);
 }
 
 beforeEach(async () => {
   vi.restoreAllMocks();
+  vi.mocked(createChart).mockClear();
+  resetQuotes();
   await Promise.all([db.transactions.clear(), db.snapshots.clear(), db.contracts.clear()]);
   await db.accounts.put({
     id: "alpha",
@@ -168,7 +211,7 @@ describe("PositionChartRow", () => {
 
     renderRow();
 
-    expect(await screen.findByTestId("price-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("price-chart", {}, CHART_WAIT)).toBeInTheDocument();
     expect(screen.queryByText(/agent local/)).not.toBeInTheDocument();
   });
 
@@ -212,7 +255,7 @@ describe("PositionChartRow", () => {
 
     renderRow({ ticker: "SAP", currency: "EUR" });
 
-    await screen.findByTestId("price-chart");
+    await screen.findByTestId("price-chart", {}, CHART_WAIT);
     expect(fetchBars).toHaveBeenCalledWith(7501, "SAP", "EUR");
   });
 
@@ -272,7 +315,7 @@ describe("PositionChartRow", () => {
 
     renderRow({ ticker: "XSP" });
 
-    await screen.findByTestId("price-chart");
+    await screen.findByTestId("price-chart", {}, CHART_WAIT);
     expect(fetchBars).toHaveBeenCalledWith(7501, "SPY", undefined);
     expect(
       screen.getByText("Cours de SPY : Interactive Brokers ne cote pas XSP. Les niveaux restent aux prix de XSP."),
@@ -288,7 +331,7 @@ describe("PositionChartRow", () => {
 
     renderRow();
 
-    await screen.findByTestId("price-chart");
+    await screen.findByTestId("price-chart", {}, CHART_WAIT);
     expect(screen.queryByText(/Cours de/)).not.toBeInTheDocument();
   });
 
@@ -361,5 +404,136 @@ describe("PositionChartRow", () => {
     expect(fetchBars).toHaveBeenCalledTimes(1);
     // Un zoom ou un défilement de l'utilisateur survit à la passe suivante.
     expect(visibleRangeCalls()).toBe(rangesBefore);
+  });
+
+  it("dessine les alertes manuelles du ticker, sans celles d'un autre", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    await createManualAlert(db, "alpha", { ticker: "btdr", price: 15.5, direction: "above" });
+    await createManualAlert(db, "alpha", { ticker: "AAPL", price: 200, direction: "above" });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    const chart = await lastChart();
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    // Les alertes arrivent après le premier rendu : la dernière primitive posée est la leur.
+    await waitFor(() => {
+      const last = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { price?: number }[] };
+      expect(last.drawn.map((d) => d.price)).toEqual([15.5]);
+    });
+  });
+
+  it("pose sur le graphe SPY d'une ligne XSP une alerte XSP, au cent, orientée contre la dernière clôture", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "SPY", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow({ ticker: "XSP" });
+
+    const chart = await lastChart();
+    const click = chart.subscribeClick.mock.calls.at(-1)![0];
+    act(() => click({ point: { x: 10, y: 40 }, sourceEvent: { altKey: true } }));
+
+    await waitFor(async () => expect(await db.alerts.toArray()).toHaveLength(1));
+    // 14,126 arrondi au cent, au-dessus de la dernière clôture (13,5) : on attend la hausse.
+    expect(await db.alerts.toArray()).toMatchObject([{ accountId: "alpha", ticker: "XSP", price: 14.13, direction: "above" }]);
+  });
+
+  it("demande la permission de notifier à la création d'une alerte", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    const requestPermission = vi.fn(async () => "granted" as NotificationPermission);
+    vi.stubGlobal("Notification", Object.assign(function Notification() {}, { permission: "default", requestPermission }));
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    try {
+      renderRow();
+      const chart = await lastChart();
+      const click = chart.subscribeClick.mock.calls.at(-1)![0];
+      act(() => click({ point: { x: 10, y: 40 }, sourceEvent: { altKey: true } }));
+
+      expect(requestPermission).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("écrit le seuil d'une manuelle glissée et recalcule sa direction", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    const id = await createManualAlert(db, "alpha", { ticker: "BTDR", price: 15.5, direction: "above" });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    const chart = await lastChart();
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    // La ligne est dessinée à y = 10 (`priceToCoordinate`) ; relâchée plus bas, à 12,00.
+    await waitFor(() => expect(series.attachPrimitive.mock.calls.length).toBeGreaterThan(1));
+    const element: HTMLElement = chart.chartElement();
+    fireEvent.pointerDown(element, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 100, clientY: 10 });
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: false, handleScale: false });
+    series.coordinateToPrice.mockReturnValueOnce(12);
+    fireEvent.pointerUp(element, { pointerId: 1, clientX: 100, clientY: 60 });
+
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({ handleScroll: true, handleScale: true });
+    await waitFor(async () => expect(await db.alerts.get(id)).toMatchObject({ price: 12, direction: "below" }));
+  });
+
+  it("oriente une alerte XSP contre la cotation de l'indice, jamais contre la clôture SPY du graphe", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    mergeQuotes(new Map([["XSP", { last: 600, change: null }]]));
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "SPY", fetchedAt: "2026-09-21T20:00:00Z", bars: [{ ...BARS[0], close: 590, high: 591 }] },
+    });
+
+    renderRow({ ticker: "XSP" });
+
+    const chart = await lastChart();
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    series.coordinateToPrice.mockReturnValueOnce(595);
+    const click = chart.subscribeClick.mock.calls.at(-1)![0];
+    act(() => click({ point: { x: 10, y: 40 }, sourceEvent: { altKey: true } }));
+
+    // 595 est sous la cotation XSP (600) : on attend la baisse, là où la clôture SPY (590) dirait la hausse.
+    await waitFor(async () => expect(await db.alerts.toArray()).toMatchObject([{ ticker: "XSP", price: 595, direction: "below" }]));
+  });
+
+  it("ne touche pas à la direction quand seule la note change", async () => {
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await db.alerts.clear();
+    // Direction volontairement contraire à la clôture (13,5) : la recalculer la ferait basculer.
+    const id = await createManualAlert(db, "alpha", { ticker: "BTDR", price: 15.5, direction: "below" });
+    vi.spyOn(agent, "fetchBars").mockResolvedValue({
+      ok: true,
+      payload: { symbol: "BTDR", fetchedAt: "2026-09-21T20:00:00Z", bars: BARS },
+    });
+
+    renderRow();
+
+    const chart = await lastChart();
+    const series = chart.addSeries.mock.results.at(-1)!.value;
+    await waitFor(() => expect(series.attachPrimitive.mock.calls.length).toBeGreaterThan(1));
+    // La pastille : 18 px avant le bord droit du panneau (500), sur la ligne.
+    fireEvent.click(chart.chartElement(), { clientX: 482, clientY: 10 });
+    fireEvent.change(await screen.findByLabelText("Note"), { target: { value: "support" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(async () => expect(await db.alerts.get(id)).toMatchObject({ price: 15.5, note: "support", direction: "below" }));
   });
 });

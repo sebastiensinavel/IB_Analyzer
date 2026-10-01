@@ -58,4 +58,17 @@ describe("NAV_SECTIONS", () => {
     expect(keys.indexOf("nav.sectors")).toBe(keys.indexOf("nav.sources") + 1);
     expect(items.find((item) => item.labelKey === "nav.sectors")!.to("beta")).toBe("/accounts/beta/sectors");
   });
+
+  it("gives each Positions entry the alert count it carries, and no other entry one", () => {
+    const scopes = NAV_SECTIONS.flatMap((section) => section.items)
+      .filter((item) => item.alertScope !== undefined)
+      .map((item) => [item.to("beta"), item.alertScope]);
+    expect(scopes).toEqual([
+      ["/accounts/beta/positions", "all"],
+      ["/accounts/beta/positions/wheel", "wheel"],
+      ["/accounts/beta/positions/leaps", "leaps"],
+      ["/accounts/beta/positions/condors", "condors"],
+      ["/accounts/beta/positions/others", "others"],
+    ]);
+  });
 });

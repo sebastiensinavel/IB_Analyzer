@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { Bell } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,6 +11,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
@@ -17,8 +19,10 @@ import {
 } from "@ib/ui/sidebar";
 import { buttonVariants } from "@ib/ui/button";
 import { cn } from "@ib/ui/lib/utils";
+import { AlertBadge } from "@/components/alerts/AlertBadge";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { SessionMenuItem } from "@/components/SessionMenuItem";
+import { useOptionalAccountAlerts } from "@/db/AccountDataProvider";
 import { NAV_SECTIONS } from "@/lib/navigation";
 import { activeStrategies } from "@/lib/strategies";
 import type { AccountRecord } from "@/db/schema";
@@ -37,9 +41,12 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
   // page would load behind its backdrop. A no-op on a desktop, where openMobile stays false.
   const { setOpenMobile } = useSidebar();
 
-  // The sidebar lives outside AccountDataProvider (CLAUDE.md), so it reads the account's chosen
-  // strategies straight from the record it already has, through the same reader as everywhere
+  // The sidebar is inside AccountDataProvider only on an account's pages, never on Settings or
+  // Help (sub-project 42), so it reads the account's chosen strategies straight from the record
+  // it already has, through the same reader as everywhere
   // else. A section with no `strategy` (Overview, Others, Configuration) always shows.
+  const alerts = useOptionalAccountAlerts();
+  const badges = alerts?.status === "ready" ? alerts.badges : null;
   const active = activeStrategies(accounts.find((account) => account.id === accountId));
 
   // Every account-scoped entry needs a real accountId to link to; without one they are simply
@@ -101,6 +108,11 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
                           <Icon />
                           {t(item.labelKey)}
                         </SidebarMenuButton>
+                        {badges !== null && item.alertScope !== undefined && (
+                          <SidebarMenuBadge>
+                            <AlertBadge count={badges[item.alertScope]} />
+                          </SidebarMenuBadge>
+                        )}
                       </SidebarMenuItem>
                     );
                   })}
@@ -112,13 +124,27 @@ export function AppSidebar({ accountId, accounts }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter className="gap-2">
         {accountId !== null && (
-          <Link
-            to="/welcome"
-            onClick={() => setOpenMobile(false)}
-            className="px-2 text-xs text-muted-foreground underline-offset-2 hover:underline"
-          >
-            {t("welcome.discover")}
-          </Link>
+          <div className="flex items-center justify-between gap-2 px-2 text-xs">
+            <Link
+              to="/welcome"
+              onClick={() => setOpenMobile(false)}
+              className="whitespace-nowrap text-muted-foreground underline-offset-2 hover:underline"
+            >
+              {t("welcome.discover")}
+            </Link>
+            {/* Always there once an account is shown, even on Settings where no alert is computed. */}
+            <span className="flex shrink-0 items-center gap-1.5">
+              <Link
+                to={`/accounts/${accountId}/alerts`}
+                onClick={() => setOpenMobile(false)}
+                className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+              >
+                <Bell aria-hidden className="size-3.5" />
+                {t("nav.alerts")}
+              </Link>
+              {badges !== null && <AlertBadge count={badges.all} />}
+            </span>
+          </div>
         )}
         <SessionMenuItem />
       </SidebarFooter>

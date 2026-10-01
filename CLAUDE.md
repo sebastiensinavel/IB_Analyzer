@@ -149,7 +149,8 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   week-end le vendredi —, parce qu'IB passe les assignations d'une échéance dans la nuit qui
   la suit. `marketDayOf` et `MARKET_DAY_START_HOUR` vivent dans `packages/ledger/src/filter.ts`.
 - **Constantes métier** : `BUYBACK_MAX_SHARE`, `BUYBACK_YIELD_MARGIN`, `BUYBACK_FEE` et `MAX_STRUCTURE_LOSS` dans `packages/coverage`,
-  `DEFAULT_MULTIPLIER` dans `packages/ledger/src/constants.ts` — le moteur de journaux en a
+  `DEFAULT_WHEEL_ALERT_FRACTION`, `DEFAULT_CONDOR_ALERT_MARGIN` et `ANCHOR_LIVE_WINDOW_MS` dans
+  `packages/alerts/src/constants.ts`, `DEFAULT_MULTIPLIER` dans `packages/ledger/src/constants.ts` — le moteur de journaux en a
   besoin et `coverage` dépend de `ledger`, donc l'inverse serait un cycle ; `coverage` la
   ré-exporte seule. `CASH_CHECK_TOLERANCE` vit dans `packages/ledger/src/cash.ts`, que
   `coverage` ne touche pas. Une seule définition chacune, jamais recodées ailleurs.
@@ -317,13 +318,17 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   `AccountDataProvider`, le rafraîchit à chaque passe de l'agent. « Var. jour action » est
   **la première colonne** de `POSITION_COLUMNS`, de
   `WHEEL_SHARE_COLUMNS` et de la Suggestion de position, triable, jamais triée par défaut ; XSP
-  se cote par SPY (`chartProxyOf`). **Une connexion TWS à la fois** : `fetchSnapshot`,
+  se cote comme un **indice** CBOE, en différé (`indices=XSP:CBOE`, `INDEX_EXCHANGES` dans
+  `lib/marketIndices.ts`, `quotedTicker` ne le traduit plus). **Une connexion TWS à la fois** : `fetchSnapshot`,
   `fetchBars` et `fetchQuotes` passent par `exclusiveTws` (`agent/client.ts`), parce que TWS
   refuse deux connexions `clientId 0` simultanées. Côté agent, `collect_quotes` qualifie chaque
   symbole (`qualifyContractsAsync`, `Stock(symbole, 'SMART', 'USD')`) avant de l'abonner, et
   l'abonne toujours sur sa place principale, jamais sur `SMART` : sur `SMART`, une valeur NASDAQ
   passe par un abonnement que l'API n'a pas et TWS ne sert rien du tout, pas même en différé
-  (erreur 10091), vérifié contre un vrai TWS le 2026-09-28.
+  (erreur 10091), vérifié contre un vrai TWS le 2026-09-28. Un indice suit un autre chemin :
+  demandé par `indices=SYM:EXCH` (`XSP:CBOE`), il est qualifié en `Index(symbole, place, 'USD')`
+  dans le même `qualifyContractsAsync` et abonné **tel que qualifié**, sa cotation différée servie
+  sans abonnement d'indice (vérifié le 2026-09-30) ; ses tickers suivent ceux des actions.
 - **Les couleurs vivent dans les tokens de `apps/web/src/index.css`**, reprises des maquettes
   `docs/style/{dark,white}-finance-desktop.html` (sous-projet 31) : `primary` et `success` sont tous deux teal, si bien
   qu'aucune étiquette ne s'appuie sur leur différence (`journalTone.ts` prend les teintes des
@@ -513,6 +518,40 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   du compte affiché, par ticker et par secteur de la table sectorielle, et porte
   `select_put_sell_candidates` de l'outil Python d'origine. `MIN_SUGGESTION_SCORE`, `MAX_SUGGESTIONS` et
   `MAX_SUGGESTION_TICKER_SHARE` vivent une seule fois dans `packages/coverage/src/constants.ts`.
+- **Les alertes de prix** (sous-projet 42) : le moteur est `packages/alerts` (`@ib/alerts`, pur,
+  dépend de `@ib/ledger` seul). Les **automatiques sont calculées** (`autoAlerts`, Wheel : call
+  couvert sous le prix d'assignation ; Condors : aile vendue), jamais stockées ; Dexie 12 garde
+  les manuelles (`alerts`) et les états (`alertStates`), dont **S₀**, l'observation faite à la
+  vente, **jamais recalculée** : en direct si le snapshot `agent` (son `asOf` est déjà une heure IB,
+  sans `toReportTime`) tombe dans `ANCHOR_LIVE_WINDOW_MS` après la vente, sinon VWAP de la barre du
+  jour de la vente (`average` de `/bars`), puis sa clôture, barres demandées une fois la fenêtre
+  passée. `alertMargins(account)` est le seul lecteur de `AccountRecord.alertMargins` et
+  `db/alerts.ts` le seul écrivain (`reactivateManualAlert` : remise à zéro et direction en une
+  transaction). L'évaluation vit dans `useAlertEngine`, monté par `AccountDataProvider`, qui
+  enveloppe aussi la barre latérale dès qu'un compte est scopé ; elle n'écrit la purge des
+  états (`staleStateIds`) que journaux prêts, et `useScopedLiveQuery` (`db/hooks.ts`) rend « en
+  chargement » après un changement de compte au lieu des données du précédent, ce qui protège S₀
+  d'une purge sur des journaux périmés. Aucun rattrapage entre deux passes de l'agent.
+  **L'évaluation n'a lieu que sur une page de compte ouverte, agent présent** : sans agent
+  (`useAgentPresence`), la passe purge toujours mais ne déclenche ni ne réarme rien — le snapshot
+  `agent` stocké et les cotations peuvent dater de la veille. L'identifiant d'une alerte de condor
+  est `condor:<row.id>` ; une clôture partielle renumérote les lignes composites, si bien que son
+  état peut passer à la ligne partielle (limite connue). Désactiver la Wheel ou « Supprimer les
+  transactions » fait disparaître les alertes automatiques et, par la purge, leur S₀ : revenues,
+  elles reprennent S₀ du VWAP ou de la clôture du jour de la vente. La direction
+  d'une alerte manuelle vient du cours connu du titre (`alertPriceOf`), sinon de la dernière
+  clôture du graphe. `alerts/notify.ts` est le seul lecteur de l'API `Notification`, jamais en
+  démo. Les pastilles du menu passent par `NavItem.alertScope` (`AlertBadge`). Sur les graphes,
+  `AlertsPrimitive` trace un pointillé fin de teinte `warning`, distingué des calls vendus
+  (`chart-2`) par sa forme seule, et pose dans le panneau, à `ALERT_BELL_INSET_PX` du bord droit,
+  une pastille-cloche — jamais d'étiquette sur l'axe des prix — dont l'infobulle donne le seuil ;
+  `AlertOverlay` pose (cloche « + » dans la colonne des pastilles, à gauche de l'échelle, cachée à leur hauteur, Alt+clic, appui long), glisse — les manuelles
+  seulement — et règle par popover au clic sur la pastille (`hitBell`, testé avant le glisser). Sur les lignes de positions, une
+  alerte **déclenchée** — jamais active ni désactivée — allume `AlertBell`, la pilule sans nombre
+  liée à la page des alertes, à gauche de la variation dans « Var. jour action »
+  (`UnderlyingDayChangeCell`) : `rowAlertMarks` (`lib/rowAlerts.ts`) y apparie une manuelle à
+  toute ligne de son ticker, une Wheel à son call par `contractId`, un condor à sa ligne sur la page
+  Condors (`condor:<CondorLine.id>`) et ailleurs aux lignes de ses jambes (`CondorAlert.legs`).
 - **Les graphes de cours viennent de TWS par l'agent, jamais d'un fournisseur tiers ni du
   serveur** : `/bars` (`apps/tws-agent`), deux ans de journalier `TRADES`, sans cache. Les
   niveaux dessinés sont une vue calculée des journaux (`strategyLevels`,
@@ -540,15 +579,16 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
 - **Un graphe peut montrer un autre titre que son ticker, et le dit** : `chartProxyOf`
   (`apps/web/src/lib/chartProxies.ts`) porte la seule table de substituts — `XSP` → `SPY`. Le
   Mini-SPX est un **indice** : aucune action ne porte ce nom chez IB en USD, si bien que
-  `Stock('XSP','SMART','USD')` rend l'erreur 200, et l'indice lui-même demande l'abonnement
-  « CBOE Streaming Market Indexes », non souscrit (vérifié au 2026-09-22 : la recherche TWS
-  n'offre aucune ligne *Index* sous XSP ni sous SPX). Élargir la résolution au lieu de
-  substituer serait pire que l'erreur : `XSP` est aussi l'ETF iShares Core S&P 500 sur **TSE,
-  en CAD**, qu'un graphe rendrait sans rien dire. `PositionChartRow` demande donc le substitut,
-  l'écrit au-dessus du graphe (`charts.proxy`), nomme le ticker réellement demandé dans
-  « aucun historique », et garde `strategyLevels` sur le vrai ticker : les niveaux restent aux
-  strikes XSP. L'agent, lui, ne connaît aucun de ces tickers — la substitution est un choix
-  d'affichage, comme les teintes de `chartLevels.ts`.
+  `Stock('XSP','SMART','USD')` rend l'erreur 200. Sa **cotation différée** est pourtant servie
+  (vérifié au 2026-09-30, `Index('XSP','CBOE')`, donc `/quotes`) ; seuls l'historique de barres et
+  le temps réel demandent l'abonnement « CBOE Streaming Market Indexes », non souscrit : les
+  graphes gardent donc SPY. Élargir la résolution au lieu de substituer serait pire que l'erreur :
+  `XSP` est aussi l'ETF iShares Core S&P 500 sur **TSE, en CAD**, qu'un graphe rendrait sans rien
+  dire. `PositionChartRow` demande donc le substitut, l'écrit au-dessus du graphe
+  (`charts.proxy`), nomme le ticker réellement demandé dans « aucun historique », et garde
+  `strategyLevels` sur le vrai ticker : les niveaux — et les lignes d'alerte — restent aux strikes
+  et valeurs XSP, sur un graphe SPY. L'agent, lui, ne connaît aucun de ces substituts — la
+  substitution est un choix d'affichage, comme les teintes de `chartLevels.ts`.
 
 ## Workflow
 
@@ -625,6 +665,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 39 | Le rachat doit rapporter : 40 %, marge de 20 %, commission | fait (2026-09-29) |
 | 40 | L'application s'ouvre serveur coupé, et s'installe | fait (2026-09-29) |
 | 41 | La page d'accueil, la démonstration et ses captures | fait (2026-09-29) |
+| 42 | Les alertes de prix | fait (2026-09-30) |
 
 ## Outillage
 

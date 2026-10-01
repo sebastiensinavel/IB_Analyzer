@@ -6,6 +6,9 @@ export interface ChartColors {
   destructive: string;
   track: string;
   foreground: string;
+  /** Les alertes de prix (`--warning`, `--warning-foreground`). */
+  warning: string;
+  warningForeground: string;
   /** The card behind the chart (`--card`): the gap between two pie slices. */
   surface: string;
   /**
@@ -40,6 +43,8 @@ export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
     destructive: "#e0473f",
     track: "#e9eef1",
     foreground: "#0d1a22",
+    warning: "#d08a10",
+    warningForeground: "#ffffff",
     surface: "#ffffff",
     series: ["#3b78e7", "#d08a10", "#0e9f90", "#7b5ce5", "#e0473f"],
     other: "#7a8c93",
@@ -53,6 +58,8 @@ export const CHART_COLORS: { light: ChartColors; dark: ChartColors } = {
     destructive: "#f0716a",
     track: "#16212a",
     foreground: "#e7eef2",
+    warning: "#e6b04a",
+    warningForeground: "#1b1204",
     surface: "#0e151c",
     series: ["#6c9ef8", "#e6b04a", "#2bc4b4", "#a28bf5", "#f0716a"],
     other: "#7a8c93",

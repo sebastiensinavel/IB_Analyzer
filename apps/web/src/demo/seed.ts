@@ -1,3 +1,4 @@
+import { roundToCent, type ManualAlertDef } from "@ib/alerts";
 import { ACTIVABLE_STRATEGIES } from "@ib/ledger";
 import type { AppDatabase } from "@/db/schema";
 import { mergeSectorsInto, type SectorCsvRow } from "@/db/sectors";
@@ -5,6 +6,7 @@ import { DEMO_ACCOUNT_ID } from "@/demo/mode";
 import { DEMO_IB_ACCOUNT, generateDemo } from "@/demo/generate";
 import { setDemoSeedInstant } from "@/demo/agent";
 import { referenceDay } from "@/demo/calendar";
+import { closeAgo } from "@/demo/prices";
 
 /**
  * The demo's sector table: every ticker of the scenario. Short English sectors, read alike in both
@@ -21,6 +23,19 @@ export const DEMO_SECTORS: readonly SectorCsvRow[] = [
   { ticker: "DIS", name: "Walt Disney", category: "Media", score: 5, status: "on" },
   { ticker: "XSP", name: "Mini-SPX", category: "Index", score: 7, status: "on" },
 ];
+
+/**
+ * The demo's two manual alerts, computed from the day's close the demo agent serves, never hard-coded:
+ * NVDA is already below its level (triggered at the first evaluation), MSFT still has 6 % to climb
+ * (active). Stable ids: a seed rewritten on a new day replaces them, never duplicates them. Their notes
+ * are codes (`demo:support`), shown in the interface's language by `alertNoteText`.
+ */
+export function demoAlerts(at: string): (ManualAlertDef & { accountId: string })[] {
+  return [
+    { id: "manual:demo-nvda", accountId: DEMO_ACCOUNT_ID, ticker: "NVDA", direction: "below", price: roundToCent(closeAgo("NVDA", 0) * 1.02), note: "demo:support", createdAt: at },
+    { id: "manual:demo-msft", accountId: DEMO_ACCOUNT_ID, ticker: "MSFT", direction: "above", price: roundToCent(closeAgo("MSFT", 0) * 1.06), note: "demo:resistance", createdAt: at },
+  ];
+}
 
 /** A demo account seeded on the reference day of `now`: kept as is. */
 function seededFor(account: { createdAt: string } | undefined, now: Date): boolean {
@@ -41,14 +56,14 @@ export async function ensureDemoSeeded(db: AppDatabase, now = new Date()): Promi
   const world = generateDemo(now);
   const at = now.toISOString();
   let seededAt = at;
-  await db.transaction("rw", [db.accounts, db.transactions, db.snapshots, db.cashPoints, db.contracts, db.sectors], async () => {
+  await db.transaction("rw", [db.accounts, db.transactions, db.snapshots, db.cashPoints, db.contracts, db.sectors, db.alerts, db.alertStates], async () => {
     // Two tabs opening the demo at once: the second finds the first one's work and stops.
     const current = await db.accounts.get(DEMO_ACCOUNT_ID);
     if (current && seededFor(current, now)) {
       seededAt = current.createdAt;
       return;
     }
-    for (const table of [db.transactions, db.snapshots, db.cashPoints, db.contracts]) {
+    for (const table of [db.transactions, db.snapshots, db.cashPoints, db.contracts, db.alerts, db.alertStates]) {
       await table.where("accountId").equals(DEMO_ACCOUNT_ID).delete();
     }
     await db.accounts.put({
@@ -72,6 +87,7 @@ export async function ensureDemoSeeded(db: AppDatabase, now = new Date()): Promi
       cashAvailable: world.cashAvailable,
     });
     await db.cashPoints.bulkPut(world.cashPoints);
+    await db.alerts.bulkPut(demoAlerts(at));
     // Merged like a CSV import, never replaced: the sector table's one rule holds in the demo too.
     await mergeSectorsInto(db, DEMO_SECTORS, at);
   });

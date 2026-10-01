@@ -14,6 +14,7 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
+import type { AlertBadgeCounts } from "@ib/alerts";
 import type { ActivableStrategy } from "@ib/ledger";
 
 export interface NavItem {
@@ -23,6 +24,8 @@ export interface NavItem {
    *  and the sidebar keeps showing them even with no account at all, unlike every other entry. */
   accountScoped: boolean;
   to: (accountId: string) => string;
+  /** The badge count of triggered alerts the entry carries (sub-project 42): every alert, or one strategy's. */
+  alertScope?: keyof AlertBadgeCounts;
 }
 
 export interface NavSection {
@@ -41,7 +44,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     labelKey: "nav.sections.overview",
     items: [
       { labelKey: "nav.dashboard", icon: LayoutDashboard, accountScoped: true, to: accountPath("dashboard") },
-      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions") },
+      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions"), alertScope: "all" },
       { labelKey: "nav.history", icon: History, accountScoped: true, to: accountPath("history") },
     ],
   },
@@ -51,7 +54,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     strategy: "wheel",
     items: [
       { labelKey: "nav.journal", icon: Coins, accountScoped: true, to: accountPath("journal/wheel") },
-      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/wheel") },
+      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/wheel"), alertScope: "wheel" },
       { labelKey: "nav.stats", icon: BarChart3, accountScoped: true, to: accountPath("stats/wheel") },
     ],
   },
@@ -60,7 +63,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     strategy: "leaps",
     items: [
       { labelKey: "nav.journal", icon: CalendarRange, accountScoped: true, to: accountPath("journal/leaps") },
-      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/leaps") },
+      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/leaps"), alertScope: "leaps" },
       { labelKey: "nav.stats", icon: BarChart3, accountScoped: true, to: accountPath("stats/leaps") },
     ],
   },
@@ -69,7 +72,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     strategy: "condors",
     items: [
       { labelKey: "nav.journal", icon: Bird, accountScoped: true, to: accountPath("journal/condors") },
-      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/condors") },
+      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/condors"), alertScope: "condors" },
       { labelKey: "nav.stats", icon: BarChart3, accountScoped: true, to: accountPath("stats/condors") },
     ],
   },
@@ -77,7 +80,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     labelKey: "nav.sections.strategyOthers",
     items: [
       { labelKey: "nav.journal", icon: Layers, accountScoped: true, to: accountPath("journal/others") },
-      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/others") },
+      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions/others"), alertScope: "others" },
     ],
   },
   {

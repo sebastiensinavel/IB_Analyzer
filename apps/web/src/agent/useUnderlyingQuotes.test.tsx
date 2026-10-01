@@ -30,12 +30,16 @@ function position(fields: Partial<{ symbol: string; secType: string; currency: s
 }
 
 describe("quoteTickers", () => {
-  it("asks for every underlying of the report and every suggestion, XSP as SPY, once each", () => {
+  it("asks for every underlying of the report and every suggestion, XSP as itself, once each", () => {
     const report = {
       positions: [position({ symbol: "AAPL" }), position({ symbol: "AAPL" }), position({ symbol: "XSP" })],
     } as unknown as RiskReport;
     const sectors = [sectorRow({ ticker: "MSFT", category: "Tech", score: 8, status: "on" })];
-    expect(quoteTickers(report, sectors)).toEqual(["AAPL", "MSFT", "SPY"]);
+    expect(quoteTickers(report, sectors)).toEqual(["AAPL", "MSFT", "XSP"]);
+  });
+
+  it("adds the manual alerts' tickers, upper-cased", () => {
+    expect(quoteTickers(null, [], ["nvda"])).toEqual(["NVDA"]);
   });
 
   it("asks for nothing without a report nor a scored sector table", () => {
@@ -142,7 +146,7 @@ describe("useUnderlyingQuotes", () => {
     await refreshPresence();
     render(<Probe />);
     await waitFor(() => expect(calls.quotes).toBe(1));
-    await waitFor(() => expect(getQuotesSnapshot().get("AAPL")).toBeCloseTo(0.01));
+    await waitFor(() => expect(getQuotesSnapshot().get("AAPL")?.change).toBeCloseTo(0.01));
 
     await act(async () => {
       await db.accounts.update("beta", { lastAgentSyncAt: "2026-09-28T13:05:00.000Z" });

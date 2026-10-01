@@ -72,8 +72,10 @@ export function fetchSnapshot(port: number): Promise<AgentFetchResult> {
   return exclusiveTws(() => getAgentJson(`/snapshot?port=${port}`));
 }
 
-export function fetchQuotes(port: number, symbols: readonly string[]): Promise<AgentFetchResult> {
-  return exclusiveTws(() => getAgentJson(`/quotes?port=${port}&symbols=${encodeURIComponent(symbols.join(","))}`));
+/** `indices` are already `SYM:EXCH`; the parameter is left out when empty. */
+export function fetchQuotes(port: number, symbols: readonly string[], indices: readonly string[] = []): Promise<AgentFetchResult> {
+  const extra = indices.length > 0 ? `&indices=${encodeURIComponent(indices.join(","))}` : "";
+  return exclusiveTws(() => getAgentJson(`/quotes?port=${port}&symbols=${encodeURIComponent(symbols.join(","))}${extra}`));
 }
 
 /** Prototype (graphes) : daily bars of one underlying, straight from TWS. */
@@ -84,6 +86,8 @@ export interface PriceBar {
   low: number;
   close: number;
   volume: number;
+  /** The bar's VWAP as TWS gives it; `null` when absent. */
+  average: number | null;
 }
 
 export interface BarsResponse {
@@ -94,12 +98,19 @@ export interface BarsResponse {
 
 export type BarsResult = { ok: true; payload: BarsResponse } | { ok: false; code: AgentFetchCode };
 
+/** An `average` the agent did not send, or not as a number, is `null`. */
+function withAverage(bar: PriceBar): PriceBar {
+  return { ...bar, average: typeof bar.average === "number" && Number.isFinite(bar.average) ? bar.average : null };
+}
+
 export function fetchBars(port: number, symbol: string, currency = "USD"): Promise<BarsResult> {
   return exclusiveTws(async () => {
     if (isDemo()) {
       const path = `/bars?port=${port}&symbol=${encodeURIComponent(symbol)}&currency=${encodeURIComponent(currency)}`;
       const result = (await import("@/demo/agent")).demoAgentJson(path);
-      return result.ok ? { ok: true, payload: result.payload as BarsResponse } : result;
+      if (!result.ok) return result;
+      const payload = result.payload as BarsResponse;
+      return { ok: true, payload: { ...payload, bars: payload.bars.map(withAverage) } };
     }
     let response: Response;
     try {
@@ -115,7 +126,7 @@ export function fetchBars(port: number, symbol: string, currency = "USD"): Promi
     try {
       const payload = (await response.json()) as BarsResponse;
       if (!Array.isArray(payload?.bars)) return { ok: false, code: "agent-error" };
-      return { ok: true, payload };
+      return { ok: true, payload: { ...payload, bars: payload.bars.map(withAverage) } };
     } catch {
       return { ok: false, code: "agent-error" };
     }

@@ -25,6 +25,13 @@ it("ends the bars on the reference day with its close", () => {
   expect(bars.every((b) => b.low <= Math.min(b.open, b.close) && b.high >= Math.max(b.open, b.close))).toBe(true);
 });
 
+it("gives every bar a VWAP from its high, low and close, to the cent", () => {
+  for (const b of barsFor("MSFT", "2026-09-25")) {
+    expect(Math.abs((b.average ?? NaN) - (b.high + b.low + 2 * b.close) / 4)).toBeLessThanOrEqual(0.005 + 1e-9);
+    expect(Math.round((b.average ?? NaN) * 100) / 100).toBe(b.average);
+  }
+});
+
 it("prices an option at intrinsic plus time value", () => {
   expect(optionMark(100, 90, "C", 0, 0.25)).toBe(10);
   expect(optionMark(100, 110, "C", 0, 0.25)).toBe(0.01);

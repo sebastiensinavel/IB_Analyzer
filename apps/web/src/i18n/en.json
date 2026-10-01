@@ -16,6 +16,7 @@
     "dashboard": "Dashboard",
     "positions": "Positions",
     "history": "History",
+    "alerts": "Alerts",
     "journal": "Journal",
     "stats": "Statistics",
     "wheel": "Wheel Journal",
@@ -34,7 +35,8 @@
     "continue": "Continue the demo",
     "unavailable": "Unavailable in the demo",
     "accountsTitle": "You are in the demo",
-    "accountsText": "Leave the demo to add your IB account."
+    "accountsText": "Leave the demo to add your IB account.",
+    "alertNotes": { "support": "Support", "resistance": "Resistance" }
   },
   "common": {
     "loading": "Loading…",
@@ -703,6 +705,17 @@
         "When a new version is published, a banner offers to reload; every tab switches to the new version together."
       ]
     },
+    "alerts": {
+      "title": "Price alerts",
+      "intro": "An alert tells you when a stock's price crosses a level. Two are computed for you from your journals, the others are placed by hand.",
+      "items": [
+        "Wheel: a covered call sold below your assignment price. The alert fires once the price has covered 70% of the way between its level at the time of the sale and the strike: the position probably needs rolling. No alert at or above the strike.",
+        "Condors: the alert fires when the price nears a sold wing, within 15% of the gap between the sold strikes. Both percentages are set per account, and per alert, on the Alerts page.",
+        "Placing an alert: on a price chart, click the \"+\" bell that follows the cursor at the right of the chart, just before the price scale, or Alt+click in the chart; on a touch screen, a long press. Drag the line to move it, click its bell to adjust, delete or reactivate it.",
+        "An alert is checked on every agent pass (every 5 minutes), only while one of the account's pages is open and the agent present: without the agent, with the tab closed or on Settings and Help, nothing is evaluated, and there is no catch-up between two passes. The price of a stock you do not hold is delayed by about 15 minutes.",
+        "A browser notification accompanies each triggered alert, if you allowed it. The menu shows a badge per strategy; the Alerts page lists them all."
+      ]
+    },
     "modes": {
       "title": "Three ways to use it",
       "choose": "Choose a way of working",
@@ -925,11 +938,18 @@
     "twsDown": "TWS is not answering on port {{port}}",
     "noBars": "Interactive Brokers returns no history for {{ticker}}",
     "proxy": "Showing {{proxy}}: Interactive Brokers does not quote {{ticker}}. The levels stay at {{ticker}} prices.",
-    "loading": "Loading the chart…"
+    "loading": "Loading the chart…",
+    "alert": {
+      "create": "Set an alert at {{price}}",
+      "createHint": "Set an alert at this price (Alt+click in the chart, long press on touch)",
+      "price": "Threshold",
+      "note": "Note",
+      "save": "Save",
+      "delete": "Delete"
+    }
   },
   "quotes": {
-    "delayed": "Quote delayed 15 min.",
-    "proxy": "{{proxy}} change, quote delayed 15 min: Interactive Brokers does not quote {{ticker}}."
+    "delayed": "Quote delayed 15 min."
   },
   "tableFilter": {
     "panel": "Column {{column}} options",
@@ -964,5 +984,67 @@
     "partial_one": "{{count}} line without a value",
     "partial_other": "{{count}} lines without a value",
     "cashExcluded": "Cash left out: a filter is active."
+  },
+  "alerts": {
+    "badge_one": "{{count}} alert triggered",
+    "badge_other": "{{count}} alerts triggered",
+    "bell": "Alert {{arrow}} {{price}}",
+    "margins": {
+      "wheel": "Wheel",
+      "condor": "Condors",
+      "unit": "%"
+    },
+    "enableNotifications": "Enable notifications",
+    "noAgent": "The local agent is absent: alerts are not evaluated, prices and distances stay unknown.",
+    "empty": "No alerts. Wheel and Condor alerts create themselves; manual ones are set from a chart.",
+    "groups": {
+      "triggered": "Triggered",
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "columns": {
+      "type": "Type",
+      "ticker": "Ticker",
+      "thresholds": "Thresholds",
+      "price": "Price",
+      "distance": "Distance",
+      "detail": "Detail",
+      "actions": "Actions"
+    },
+    "types": {
+      "manual": "Manual",
+      "wheel": "Wheel",
+      "condor": "Condors"
+    },
+    "price": {
+      "realtime": "Real-time price",
+      "delayed": "Delayed price"
+    },
+    "above": "Above {{price}}",
+    "below": "Below {{price}}",
+    "points": "{{value}} pts",
+    "detail": {
+      "anchor": "S₀ {{price}} · {{source}}",
+      "anchorPending": "S₀ pending",
+      "condor": "{{put}}/{{call}} · margin {{offset}} pts"
+    },
+    "source": {
+      "live": "live",
+      "vwap": "VWAP",
+      "close": "close"
+    },
+    "actions": {
+      "acknowledge": "Seen",
+      "reactivate": "Re-enable",
+      "delete": "Delete the {{ticker}} alert",
+      "overrideWheel": "S₀ fraction for {{ticker}} (empty: account setting)",
+      "overrideCondor": "Margin for {{ticker}} (empty: account setting)"
+    },
+    "notify": {
+      "title_above": "{{ticker}} ↑ {{price}}",
+      "title_below": "{{ticker}} ↓ {{price}}",
+      "wheel": "Wheel — call {{strike}}",
+      "condor": "Condor {{put}}/{{call}}"
+    }
   }
 }

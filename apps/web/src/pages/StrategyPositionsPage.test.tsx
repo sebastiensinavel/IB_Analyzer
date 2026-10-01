@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { ACTIVABLE_STRATEGIES, type Position, type Transaction } from "@ib/ledger";
+import { ACTIVABLE_STRATEGIES, buildJournals, type Position, type Transaction } from "@ib/ledger";
 import i18n from "@/i18n";
 import { mergeQuotes, resetQuotes } from "@/agent/quotes";
 import { db, type SnapshotRecord } from "@/db/schema";
@@ -152,7 +152,7 @@ describe("StrategyPositionsPage — Wheel", () => {
   });
 
   it("shows the underlying's day move first, on a put sold on a ticker not held", async () => {
-    mergeQuotes(new Map([["XOM", -0.0312]]));
+    mergeQuotes(new Map([["XOM", { last: null, change: -0.0312 }]]));
     await seed();
     renderPage("wheel");
     const put = await rowIn("Ventes de puts", "XOM Oct16'26 110 Put");
@@ -160,7 +160,7 @@ describe("StrategyPositionsPage — Wheel", () => {
   });
 
   it("prefers the assigned stock's own live dayChange over a stale quote, on its shares and on the call sold against it", async () => {
-    mergeQuotes(new Map([["MQZA", 0.5]])); // stale/wrong: the held dayChange below must win
+    mergeQuotes(new Map([["MQZA", { last: null, change: 0.5 }]])); // stale/wrong: the held dayChange below must win
     await db.transactions.bulkAdd([...SAMPLE_JOURNAL_TRANSACTIONS, MARA_CALL, XOM_PUT]);
     await db.snapshots.put({
       ...SNAPSHOT,
@@ -471,8 +471,26 @@ describe("StrategyPositionsPage — Condors", () => {
     expect(screen.queryAllByTestId("condor-leg")).toHaveLength(0);
   });
 
+  it("rings the bell of a triggered condor alert on the condor's line, never on its legs", async () => {
+    await Promise.all([db.alerts.clear(), db.alertStates.clear()]);
+    await seedCondor();
+    const condor = buildJournals([...SAMPLE_JOURNAL_TRANSACTIONS, ...DEMO_TRANSACTIONS]).rows.find(
+      (row) => row.kind === "condor" && row.endWhen === null,
+    );
+    await db.alertStates.put({
+      accountId: "beta", alertId: `condor:${condor?.id}`, triggeredAt: "2026-09-30T14:00:00.000Z", acknowledgedAt: null,
+      disabled: false, armed: true, anchor: null, override: null,
+    });
+    renderPage("condors");
+    const line = await rowIn("Condors en cours", TITLE);
+    const bell = await within(cells(line)[0]).findByRole("link", { name: /^Alerte ↓ 490,25, Alerte ↑ 514,75$/ });
+    expect(bell).toHaveAttribute("href", "/accounts/beta/alerts");
+    await userEvent.setup().click(within(line).getByRole("button", { name: "Voir les jambes" }));
+    for (const leg of screen.getAllByTestId("condor-leg")) expect(within(leg).queryByRole("link")).toBeNull();
+  });
+
   it("shows the underlying's day move first, on the condor line and its unfolded legs", async () => {
-    mergeQuotes(new Map([["QQQ", 0.015]]));
+    mergeQuotes(new Map([["QQQ", { last: null, change: 0.015 }]]));
     await seedCondor();
     renderPage("condors");
     const line = await rowIn("Condors en cours", TITLE);

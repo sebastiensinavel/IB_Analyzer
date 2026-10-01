@@ -434,3 +434,25 @@ it("vide la table backup en montant de 10 à 11, sans toucher au reste", async (
   expect(await upgraded.accounts.count()).toBe(1);
   upgraded.close();
 });
+
+it("monte de 11 à 12 : tables alerts et alertStates vides, compte intact", async () => {
+  const name = `upgrade-alerts-${crypto.randomUUID()}`;
+  const old = new Dexie(name);
+  old.version(11).stores({ backup: "id", accounts: "id" });
+  await old.open();
+  await old.table("accounts").put({
+    id: "beta",
+    label: "Beta",
+    ibAccountId: "U1234567",
+    createdAt: "2026-09-01T00:00:00.000Z",
+    warnedDroppedKinds: [],
+  });
+  old.close();
+
+  const upgraded = new AppDatabase(name);
+  await upgraded.open();
+  expect(await upgraded.accounts.count()).toBe(1);
+  expect(await upgraded.alerts.count()).toBe(0);
+  expect(await upgraded.alertStates.count()).toBe(0);
+  upgraded.close();
+});

@@ -91,7 +91,7 @@ describe("the Var. jour action column of the suggestion card", () => {
     // BTDR (score 9) ranks first, MSFT (score 7) second: both sector and ticker exposures are
     // 0 with no report positions, so the tie breaks on score alone.
     await db.sectors.put({ ticker: "MSFT", name: "", category: "Tech", score: 7, status: "on", updatedAt: "2026-09-03T08:00:00.000Z" });
-    mergeQuotes(new Map([["BTDR", 0.01], ["MSFT", -0.05]]));
+    mergeQuotes(new Map([["BTDR", { last: null, change: 0.01 }], ["MSFT", { last: null, change: -0.05 }]]));
     renderSuggestions();
 
     const rows = (await screen.findAllByRole("row")).slice(1); // without the header row
@@ -102,7 +102,7 @@ describe("the Var. jour action column of the suggestion card", () => {
   });
 
   it("prefers the account's own live dayChange over a stale quote for a suggestion it already holds", async () => {
-    mergeQuotes(new Map([["BTDR", 0.01]])); // stale/wrong: the held dayChange below must win
+    mergeQuotes(new Map([["BTDR", { last: null, change: 0.01 }]])); // stale/wrong: the held dayChange below must win
     await db.snapshots.put({
       accountId: "alpha",
       source: "agent",
