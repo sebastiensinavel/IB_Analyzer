@@ -267,8 +267,8 @@ describe("AlertOverlay : survoler une pastille", () => {
     const bell = screen.getByTestId("alert-bell");
     expect(bell.title).toBe("Alerte ↑ 240,00");
     expect(bell.className).toContain("cursor-pointer");
-    expect(bell.style.left).toBe(`${BELL_X - 8}px`);
-    expect(bell.style.top).toBe(`${BELL_Y - 8}px`);
+    expect(bell.style.left).toBe(`${BELL_X - 10.5}px`);
+    expect(bell.style.top).toBe(`${BELL_Y - 10.5}px`);
 
     fireEvent.click(bell);
     expect(await screen.findByLabelText("Seuil")).toBeTruthy();

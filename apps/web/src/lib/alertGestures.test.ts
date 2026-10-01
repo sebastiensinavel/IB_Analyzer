@@ -30,11 +30,11 @@ describe("hitAlert", () => {
 describe("hitBell", () => {
   const bell = { id: "a", x: 482, y: 100 };
 
-  it("touche une pastille jusqu'à 8 px de son centre, en distance, pas au-delà", () => {
-    expect(ALERT_BELL_HIT_RADIUS_PX).toBe(8);
-    expect(hitBell({ x: 482, y: 108 }, [bell])).toBe("a");
-    expect(hitBell({ x: 476, y: 95 }, [bell])).toBe("a");
-    expect(hitBell({ x: 476, y: 94 }, [bell])).toBeNull();
+  it("touche une pastille jusqu'à 10,5 px de son centre, en distance, pas au-delà", () => {
+    expect(ALERT_BELL_HIT_RADIUS_PX).toBe(10.5);
+    expect(hitBell({ x: 482, y: 110.5 }, [bell])).toBe("a");
+    expect(hitBell({ x: 476, y: 92 }, [bell])).toBe("a");
+    expect(hitBell({ x: 476, y: 91 }, [bell])).toBeNull();
     expect(hitBell({ x: 300, y: 100 }, [bell])).toBeNull();
   });
 

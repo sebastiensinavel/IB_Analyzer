@@ -150,13 +150,13 @@ describe("AlertsPrimitive", () => {
   });
 
   it("pose la pastille sur la ligne, son centre à 18 px du bord droit, et y trace la cloche", () => {
-    expect([ALERT_BELL_SIZE_PX, ALERT_BELL_INSET_PX]).toEqual([16, 18]);
+    expect([ALERT_BELL_SIZE_PX, ALERT_BELL_INSET_PX]).toEqual([21, 18]);
     const { calls, ctx } = draw(attached());
 
     const arcs = calls.filter((c) => c[0] === "arc");
     expect(arcs).toEqual([
-      ["arc", 800 - 18 * 2, 70.5, 16],
-      ["arc", 800 - 18 * 2, 70.5, 16],
+      ["arc", 800 - 18 * 2, 70.5, 21],
+      ["arc", 800 - 18 * 2, 70.5, 21],
     ]);
     // Le fond du graphe d'abord, pour cacher le pointillé, puis le voile.
     expect(calls.filter((c) => c[0] === "fill")).toEqual([

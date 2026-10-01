@@ -12,11 +12,11 @@ import type { AlertView } from "@/alerts/useAlertEngine";
 import { chartColors } from "@/lib/chartColors";
 
 /** Le diamètre de la pastille d'une alerte, en pixels CSS. */
-export const ALERT_BELL_SIZE_PX = 16;
+export const ALERT_BELL_SIZE_PX = 21;
 /** La distance du centre de la pastille au bord droit du panneau, en pixels CSS. */
 export const ALERT_BELL_INSET_PX = 18;
 /** La cloche dans sa pastille, en pixels CSS. */
-const BELL_ICON_PX = 10;
+const BELL_ICON_PX = 13;
 /** Les deux tracés de l'icône lucide `Bell`, dans sa boîte de 24, et l'épaisseur de son trait. */
 const BELL_PATHS = [
   "M10.268 21a2 2 0 0 0 3.464 0",

@@ -8,7 +8,7 @@ import { roundToCent } from "@ib/alerts";
 export const ALERT_HIT_TOLERANCE_PX = 4;
 
 /** La distance, en pixels CSS, du centre de la pastille d'une alerte à laquelle un clic la touche. */
-export const ALERT_BELL_HIT_RADIUS_PX = 8;
+export const ALERT_BELL_HIT_RADIUS_PX = 10.5;
 
 /** La ligne la plus proche de `y`, à `tolerance` pixels au plus ; `null` sinon. */
 export function hitAlert(
