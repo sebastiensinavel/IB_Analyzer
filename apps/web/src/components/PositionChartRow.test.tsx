@@ -75,27 +75,35 @@ function renderRow(
   );
 }
 
+/** Le graphe se monte en plusieurs effets : sous la charge de la suite entière, 1 s ne suffit pas. */
+const CHART_WAIT = { timeout: 3000 };
+
 const BARS = [{ date: "2026-09-21", open: 13, high: 14, low: 12, close: 13.5, volume: 1, average: null }];
 
 /** La plage logique posée sur le dernier graphe : ce que l'axe du temps montre vraiment. */
 async function lastVisibleRange(): Promise<{ from: number; to: number }> {
-  await screen.findByTestId("price-chart");
+  await screen.findByTestId("price-chart", {}, CHART_WAIT);
   return waitFor(() => {
+    // Chaque `timeScale()` rend un objet neuf, et le calque d'alertes en appelle un à chaque rendu
+    // (`width()`) : la plage se cherche sur tous, jamais sur le dernier seul.
     const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
-    const timeScale = chart.timeScale.mock.results.at(-1)!.value;
-    return timeScale.setVisibleLogicalRange.mock.calls.at(-1)![0];
-  });
+    const calls = chart.timeScale.mock.results.flatMap(
+      (result: { value: { setVisibleLogicalRange: { mock: { calls: [{ from: number; to: number }][] } } } }) =>
+        result.value.setVisibleLogicalRange.mock.calls,
+    );
+    return calls.at(-1)![0];
+  }, CHART_WAIT);
 }
 
 /** La dernière bougie donnée à la série : ce que le graphe dessine pour le jour le plus récent. */
 async function lastCandle(): Promise<{ time: string; close?: number }> {
-  await screen.findByTestId("price-chart");
+  await screen.findByTestId("price-chart", {}, CHART_WAIT);
   return waitFor(() => {
     const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
     const series = chart.addSeries.mock.results.at(-1)!.value;
     const data = series.setData.mock.calls.at(-1)![0] as { time: string; close?: number }[];
     return data.filter((point) => point.close !== undefined).at(-1)!;
-  });
+  }, CHART_WAIT);
 }
 
 /**
@@ -104,12 +112,12 @@ async function lastCandle(): Promise<{ time: string; close?: number }> {
  * le calque écrit encore en base, ferait l'affaire à sa place (`createChart` est vidé à chaque test).
  */
 async function lastChart() {
-  await screen.findByTestId("price-chart");
+  await screen.findByTestId("price-chart", {}, CHART_WAIT);
   return waitFor(() => {
     const chart = vi.mocked(createChart).mock.results.at(-1)?.value;
     expect(chart?.subscribeClick).toHaveBeenCalled();
     return chart;
-  });
+  }, CHART_WAIT);
 }
 
 /** Combien de fois l'axe du temps du dernier graphe a été posé. */
@@ -142,13 +150,13 @@ function liveSnapshot(price: number): SnapshotRecord {
 
 /** Les niveaux passés à la dernière primitive attachée : ce que `PriceChart` a reçu à dessiner. */
 async function lastDrawnLevels(): Promise<ChartLevel[]> {
-  await screen.findByTestId("price-chart");
+  await screen.findByTestId("price-chart", {}, CHART_WAIT);
   return waitFor(() => {
     const chart = vi.mocked(createChart).mock.results.at(-1)!.value;
     const series = chart.addSeries.mock.results.at(-1)!.value;
     const primitive = series.attachPrimitive.mock.calls.at(-1)![0] as unknown as { drawn: { level: ChartLevel }[] };
     return primitive.drawn.map((d) => d.level);
-  });
+  }, CHART_WAIT);
 }
 
 beforeEach(async () => {
@@ -247,7 +255,7 @@ describe("PositionChartRow", () => {
 
     renderRow({ ticker: "SAP", currency: "EUR" });
 
-    await screen.findByTestId("price-chart");
+    await screen.findByTestId("price-chart", {}, CHART_WAIT);
     expect(fetchBars).toHaveBeenCalledWith(7501, "SAP", "EUR");
   });
 
@@ -307,7 +315,7 @@ describe("PositionChartRow", () => {
 
     renderRow({ ticker: "XSP" });
 
-    await screen.findByTestId("price-chart");
+    await screen.findByTestId("price-chart", {}, CHART_WAIT);
     expect(fetchBars).toHaveBeenCalledWith(7501, "SPY", undefined);
     expect(
       screen.getByText("Cours de SPY : Interactive Brokers ne cote pas XSP. Les niveaux restent aux prix de XSP."),
@@ -323,7 +331,7 @@ describe("PositionChartRow", () => {
 
     renderRow();
 
-    await screen.findByTestId("price-chart");
+    await screen.findByTestId("price-chart", {}, CHART_WAIT);
     expect(screen.queryByText(/Cours de/)).not.toBeInTheDocument();
   });
 
