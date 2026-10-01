@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import type { IChartApi, ISeriesApi, MouseEventParams, Time } from "lightweight-charts";
 import i18n from "@/i18n";
@@ -53,8 +53,11 @@ function handlers(): AlertEditHandlers & { [K in keyof AlertEditHandlers]: Retur
   } as never;
 }
 
-const MANUAL: DrawnAlertInput = { id: "manual:a#0", kind: "manual", price: 240, status: "active" };
-const WHEEL: DrawnAlertInput = { id: "wheel:c#0", kind: "wheel", price: 240, status: "active" };
+const MANUAL: DrawnAlertInput = { id: "manual:a#0", kind: "manual", price: 240, direction: "above", status: "active" };
+const WHEEL: DrawnAlertInput = { id: "wheel:c#0", kind: "wheel", price: 240, direction: "below", status: "active" };
+/** Le centre de la pastille d'une ligne à 240 : 18 px avant le bord droit du panneau, y = 60. */
+const BELL_X = PANE_WIDTH - 18;
+const BELL_Y = 60;
 
 function setup(alerts: readonly DrawnAlertInput[] = []) {
   const fake = fakeChart();
@@ -75,6 +78,8 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  // Démonter d'abord : vider le corps sous un popover ouvert ferait échouer son démontage.
+  cleanup();
   document.body.innerHTML = "";
   vi.useRealTimers();
 });
@@ -108,11 +113,6 @@ describe("AlertOverlay : poser", () => {
     expect(screen.getByTestId("alert-create")).toBeTruthy();
   });
 
-  it("cache la cloche sur l'étiquette d'une manuelle : le clic y ouvre le réglage", () => {
-    const fake = setup([MANUAL]);
-    move(fake, { x: 100, y: 62 });
-    expect(screen.queryByTestId("alert-create")).toBeNull();
-  });
 
   it("Alt+clic pose l'alerte au prix du point ; un clic simple ne pose rien", () => {
     const fake = setup();
@@ -194,6 +194,12 @@ describe("AlertOverlay : glisser", () => {
     expect(fake.h.onMoveAlert).toHaveBeenCalledWith("manual:a", 220);
   });
 
+  it("un appui sur la ligne loin de la pastille glisse toujours", () => {
+    const fake = setup([MANUAL]);
+    fireEvent.pointerDown(fake.element, { pointerId: 1, pointerType: "mouse", button: 0, clientX: BELL_X - 30, clientY: 61 });
+    expect(fake.applyOptions).toHaveBeenLastCalledWith({ handleScroll: false, handleScale: false });
+  });
+
   it("ne glisse ni une automatique, ni une manuelle à plus de 4 px", () => {
     const wheel = setup([WHEEL]);
     fireEvent.pointerDown(wheel.element, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 100, clientY: 60 });
@@ -208,13 +214,17 @@ describe("AlertOverlay : glisser", () => {
 describe("AlertOverlay : régler", () => {
   function openEditor(alerts: readonly DrawnAlertInput[] = [MANUAL]) {
     const fake = setup(alerts);
-    fireEvent.click(fake.element, { clientX: PANE_WIDTH + 20, clientY: 63 });
+    fireEvent.pointerDown(fake.element, { pointerId: 1, pointerType: "mouse", button: 0, clientX: BELL_X + 3, clientY: BELL_Y + 5 });
+    fireEvent.pointerUp(fake.element, { pointerId: 1, clientX: BELL_X + 3, clientY: BELL_Y + 5 });
+    fireEvent.click(fake.element, { clientX: BELL_X + 3, clientY: BELL_Y + 5 });
     return fake;
   }
 
-  it("un clic sur l'étiquette d'une manuelle ouvre le réglage : prix, note, supprimer", async () => {
+  it("un clic sur la pastille d'une manuelle ouvre le réglage sans glisser : prix, note, supprimer", async () => {
     const fake = openEditor();
     const price = await screen.findByLabelText("Seuil");
+    expect(fake.applyOptions).not.toHaveBeenCalled();
+    expect(fake.h.onMoveAlert).not.toHaveBeenCalled();
     expect((price as HTMLInputElement).value).toBe("240");
     expect((screen.getByLabelText("Note") as HTMLInputElement).value).toBe("support");
     expect(screen.queryByRole("button", { name: "Réactiver" })).toBeNull();
@@ -238,8 +248,47 @@ describe("AlertOverlay : régler", () => {
     expect(fake.h.onReactivateAlert).toHaveBeenCalledWith("manual:a");
   });
 
-  it("n'ouvre rien sur l'étiquette d'une automatique", () => {
+  it("n'ouvre rien sur la pastille d'une automatique", () => {
     openEditor([WHEEL]);
     expect(screen.queryByLabelText("Seuil")).toBeNull();
+  });
+
+  it("n'ouvre rien d'un clic sur la ligne loin de la pastille", () => {
+    const fake = setup([MANUAL]);
+    fireEvent.click(fake.element, { clientX: BELL_X - 20, clientY: BELL_Y });
+    expect(screen.queryByLabelText("Seuil")).toBeNull();
+  });
+});
+
+describe("AlertOverlay : survoler une pastille", () => {
+  it("donne le seuil d'une manuelle en infobulle, curseur main ; un clic ouvre le réglage", async () => {
+    const fake = setup([MANUAL]);
+    fireEvent.pointerMove(fake.element, { pointerId: 1, clientX: BELL_X, clientY: BELL_Y + 2 });
+    const bell = screen.getByTestId("alert-bell");
+    expect(bell.title).toBe("Alerte ↑ 240,00");
+    expect(bell.className).toContain("cursor-pointer");
+    expect(bell.style.left).toBe(`${BELL_X - 8}px`);
+    expect(bell.style.top).toBe(`${BELL_Y - 8}px`);
+
+    fireEvent.click(bell);
+    expect(await screen.findByLabelText("Seuil")).toBeTruthy();
+  });
+
+  it("donne aussi celui d'une automatique, sans curseur main ni réglage", () => {
+    const fake = setup([WHEEL]);
+    fireEvent.pointerMove(fake.element, { pointerId: 1, clientX: BELL_X, clientY: BELL_Y });
+    const bell = screen.getByTestId("alert-bell");
+    expect(bell.title).toBe("Alerte ↓ 240,00");
+    expect(bell.className).not.toContain("cursor-pointer");
+
+    fireEvent.click(bell);
+    expect(screen.queryByLabelText("Seuil")).toBeNull();
+  });
+
+  it("disparaît loin de la pastille", () => {
+    const fake = setup([MANUAL]);
+    fireEvent.pointerMove(fake.element, { pointerId: 1, clientX: BELL_X, clientY: BELL_Y });
+    fireEvent.pointerMove(fake.element, { pointerId: 1, clientX: BELL_X - 30, clientY: BELL_Y });
+    expect(screen.queryByTestId("alert-bell")).toBeNull();
   });
 });

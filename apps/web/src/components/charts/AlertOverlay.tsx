@@ -2,15 +2,16 @@
  * Poser, glisser et régler une alerte manuelle depuis un graphe (spec du sous-projet 42, §8.2),
  * à la manière de TradingView : une cloche « + » suit le réticule sur l'axe des prix, Alt+clic
  * ou un appui long au doigt posent une alerte, une ligne manuelle se saisit à 4 px et se glisse,
- * un clic sur son étiquette ouvre son réglage. Les automatiques ne se glissent ni ne se règlent
- * ici : leur seuil suit la marge de la page Alertes.
+ * un clic sur sa pastille-cloche ouvre son réglage. Les automatiques ne se glissent ni ne se
+ * règlent ici : leur seuil suit la marge de la page Alertes. Le survol d'une pastille, manuelle
+ * ou automatique, en donne le seuil dans une infobulle.
  *
  * Un calque absolu au-dessus du graphe, transparent au pointeur sauf sur ses propres boutons :
  * les gestes sur le graphe s'écoutent sur l'élément de Lightweight Charts lui-même, et chaque
  * hauteur se relit à l'instant du geste (`priceToCoordinate`), jamais d'une position gardée,
  * que le zoom aurait rendue fausse.
  */
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Bell, Plus } from "lucide-react";
 import type { IChartApi, ISeriesApi, MouseEventParams, Time } from "lightweight-charts";
@@ -18,9 +19,9 @@ import { roundToCent, type AlertStatus } from "@ib/alerts";
 import { Button } from "@ib/ui/button";
 import { Input } from "@ib/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@ib/ui/popover";
-import { ALERT_LABEL_HALF_HEIGHT_PX, baseAlertId, hitAlert, priceAtY } from "@/lib/alertGestures";
-import type { DrawnAlertInput } from "@/lib/alertsPrimitive";
-import { formatPrice } from "@/lib/format";
+import { baseAlertId, hitAlert, hitBell, priceAtY } from "@/lib/alertGestures";
+import { ALERT_BELL_INSET_PX, ALERT_BELL_SIZE_PX, type DrawnAlertInput } from "@/lib/alertsPrimitive";
+import { formatLocalePrice, formatPrice } from "@/lib/format";
 
 /** Ce que le graphe fait des gestes : écrire en base est l'affaire de celui qui le monte. */
 export interface AlertEditHandlers {
@@ -56,11 +57,18 @@ interface Editing {
   status: AlertStatus;
 }
 
+/** La pastille sous le pointeur : `drawnId` est celui de la ligne dessinée. */
+interface Hovered {
+  drawnId: string;
+  y: number;
+}
+
 export function AlertOverlay(props: AlertOverlayProps) {
   const { chart, series } = props;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const root = useRef<HTMLDivElement>(null);
   const [bell, setBell] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<Hovered | null>(null);
   const [ghost, setGhost] = useState<number | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
   // Les écouteurs sont posés une fois par graphe : ils relisent les alertes et les rappels ici.
@@ -68,6 +76,14 @@ export function AlertOverlay(props: AlertOverlayProps) {
   useLayoutEffect(() => {
     latest.current = props;
   });
+
+  /** Le réglage d'une manuelle, ouvert près de sa pastille. */
+  const openEditor = useCallback((drawnId: string, y: number) => {
+    const alert = latest.current.alerts.find((a) => a.id === drawnId);
+    if (!alert || alert.kind !== "manual") return;
+    setBell(null);
+    setEditing({ id: baseAlertId(alert.id), y, price: alert.price, status: alert.status });
+  }, []);
 
   useEffect(() => {
     const element = chart.chartElement();
@@ -77,11 +93,14 @@ export function AlertOverlay(props: AlertOverlayProps) {
       const rect = element.getBoundingClientRect();
       return { x: event.clientX - rect.left, y: event.clientY - rect.top };
     };
-    /** Les lignes manuelles, à leur hauteur de cet instant. */
-    const manualLines = () =>
+    /** Les lignes, manuelles seulement ou toutes, à leur hauteur de cet instant. */
+    const lines = (manualOnly: boolean) =>
       latest.current.alerts
-        .filter((alert) => alert.kind === "manual")
+        .filter((alert) => !manualOnly || alert.kind === "manual")
         .map((alert) => ({ id: alert.id, y: series.priceToCoordinate(alert.price) as number | null }));
+    const manualLines = () => lines(true);
+    /** Les pastilles, au centre où `AlertsPrimitive` les dessine. */
+    const bells = (manualOnly: boolean) => lines(manualOnly).map((line) => ({ ...line, x: paneWidth() - ALERT_BELL_INSET_PX }));
     const create = (y: number) => {
       const price = toPrice(y);
       if (price !== null) latest.current.onCreateAlert(price);
@@ -93,8 +112,7 @@ export function AlertOverlay(props: AlertOverlayProps) {
       // l'axe : c'est la sortie de l'élément qui la cache, pas celle du réticule.
       // Pendant un glisser, le réticule suit la ligne fantôme : la cloche n'a rien à y faire.
       if (!param.point || drag) return;
-      const y = param.point.y;
-      setBell(hitAlert(y, manualLines(), ALERT_LABEL_HALF_HEIGHT_PX) === null ? y : null);
+      setBell(param.point.y);
     };
     const onClick = (param: MouseEventParams<Time>) => {
       const source = param.sourceEvent as { altKey?: boolean } | undefined;
@@ -125,6 +143,8 @@ export function AlertOverlay(props: AlertOverlayProps) {
       if (event.button !== 0 || event.altKey) return;
       const { x, y } = local(event);
       if (x > paneWidth()) return;
+      // La pastille d'une manuelle s'ouvre au clic : l'appuyer n'entame ni glisser ni appui long.
+      if (hitBell({ x, y }, bells(true)) !== null) return;
       const hit = hitAlert(y, manualLines());
       if (hit !== null) {
         drag = { drawnId: hit, pointerId: event.pointerId, y };
@@ -148,6 +168,17 @@ export function AlertOverlay(props: AlertOverlayProps) {
       if (drag && event.pointerId === drag.pointerId) {
         drag.y = y;
         setGhost(y);
+      } else if (!drag) {
+        const all = bells(false);
+        const hit = hitBell({ x, y }, all);
+        const line = all.find((b) => b.id === hit);
+        setHovered((current) =>
+          !line || line.y === null
+            ? null
+            : current?.drawnId === line.id && current.y === line.y
+              ? current
+              : { drawnId: line.id, y: line.y },
+        );
       }
       if (press && Math.hypot(x - press.x, y - press.y) > LONG_PRESS_SLOP_PX) cancelPress();
     };
@@ -171,18 +202,16 @@ export function AlertOverlay(props: AlertOverlayProps) {
       const to = event.relatedTarget;
       if (to instanceof Node && root.current?.contains(to)) return;
       setBell(null);
+      setHovered(null);
     };
-    /** Un clic sur l'étiquette d'une manuelle, sur l'échelle des prix, ouvre son réglage. */
-    const onLabelClick = (event: MouseEvent) => {
+    /** Un clic sur la pastille d'une manuelle, dans le panneau, ouvre son réglage. */
+    const onBellClick = (event: MouseEvent) => {
       const { x, y } = local(event);
-      if (x < paneWidth()) return;
-      const lines = manualLines();
-      const hit = hitAlert(y, lines, ALERT_LABEL_HALF_HEIGHT_PX);
-      const alert = latest.current.alerts.find((a) => a.id === hit);
-      const line = lines.find((l) => l.id === hit);
-      if (!alert || !line || line.y === null) return;
-      setBell(null);
-      setEditing({ id: baseAlertId(alert.id), y: line.y, price: alert.price, status: alert.status });
+      const manual = bells(true);
+      const hit = hitBell({ x, y }, manual);
+      const line = manual.find((b) => b.id === hit);
+      if (!line || line.y === null) return;
+      openEditor(line.id, line.y);
     };
 
     element.addEventListener("pointerdown", onPointerDown);
@@ -191,7 +220,7 @@ export function AlertOverlay(props: AlertOverlayProps) {
     element.addEventListener("pointercancel", onPointerCancel);
     element.addEventListener("lostpointercapture", onLostCapture);
     element.addEventListener("pointerleave", onLeave);
-    element.addEventListener("click", onLabelClick);
+    element.addEventListener("click", onBellClick);
     return () => {
       chart.unsubscribeCrosshairMove(onCrosshair);
       chart.unsubscribeClick(onClick);
@@ -201,7 +230,7 @@ export function AlertOverlay(props: AlertOverlayProps) {
       element.removeEventListener("pointercancel", onPointerCancel);
       element.removeEventListener("lostpointercapture", onLostCapture);
       element.removeEventListener("pointerleave", onLeave);
-      element.removeEventListener("click", onLabelClick);
+      element.removeEventListener("click", onBellClick);
       cancelPress();
       // Un graphe démonté en plein geste : s'il vit encore (seul le calque part), il défile à nouveau.
       if (drag) {
@@ -212,10 +241,11 @@ export function AlertOverlay(props: AlertOverlayProps) {
         }
       }
     };
-  }, [chart, series]);
+  }, [chart, series, openEditor]);
 
   const paneWidth = chart.timeScale().width();
-  const scaleWidth = chart.priceScale("right").width();
+  const bellLeft = paneWidth - ALERT_BELL_INSET_PX - ALERT_BELL_SIZE_PX / 2;
+  const hoveredAlert = hovered === null ? undefined : props.alerts.find((a) => a.id === hovered.drawnId);
   const bellPrice = bell === null ? null : priceAtY(bell, (v) => series.coordinateToPrice(v) as number | null);
 
   return (
@@ -238,6 +268,22 @@ export function AlertOverlay(props: AlertOverlayProps) {
           <Plus aria-hidden className="-ml-0.5 size-2" />
         </button>
       )}
+      {hovered !== null && hoveredAlert && (
+        <span
+          data-testid="alert-bell"
+          title={t("alerts.bell", {
+            arrow: hoveredAlert.direction === "above" ? "↑" : "↓",
+            price: formatLocalePrice(hoveredAlert.price, i18n.language),
+          })}
+          className={`pointer-events-auto absolute rounded-full ${hoveredAlert.kind === "manual" ? "cursor-pointer" : ""}`}
+          style={{ left: bellLeft, top: hovered.y - ALERT_BELL_SIZE_PX / 2, width: ALERT_BELL_SIZE_PX, height: ALERT_BELL_SIZE_PX }}
+          onPointerLeave={(event) => {
+            const to = event.relatedTarget;
+            if (!(to instanceof Node && chart.chartElement().contains(to))) setHovered(null);
+          }}
+          onClick={() => openEditor(hovered.drawnId, hovered.y)}
+        />
+      )}
       {ghost !== null && (
         <div
           data-testid="alert-ghost"
@@ -253,7 +299,12 @@ export function AlertOverlay(props: AlertOverlayProps) {
             <span
               aria-hidden
               className="absolute"
-              style={{ left: paneWidth, top: (editing?.y ?? 0) - BELL_HALF_PX, width: scaleWidth, height: 2 * BELL_HALF_PX }}
+              style={{
+                left: bellLeft,
+                top: (editing?.y ?? 0) - ALERT_BELL_SIZE_PX / 2,
+                width: ALERT_BELL_SIZE_PX,
+                height: ALERT_BELL_SIZE_PX,
+              }}
             />
           }
         />

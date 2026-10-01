@@ -254,9 +254,13 @@ Un second primitive, `AlertsPrimitive` (`apps/web/src/lib/alertsPrimitive.ts`), 
 - Ligne : pointillé fin (1 px, points de 2 px espacés de 3 px), teinte `warning` à 55 %
   d'opacité, toute la largeur. **La forme la distingue** du trait des calls vendus, qui partagent
   la même teinte (`chart-2`).
-- Étiquette sur l'axe des prix (`priceAxisViews`, qui n'accepte ni bord ni icône) : le seuil,
-  sur fond `warning` à 18 % d'opacité.
-- Déclenchée : ligne à 100 %, pilule pleine `warning`. Désactivée : non dessinée.
+- Pastille-cloche dans le panneau (2026-10-01, au lieu de l'étiquette d'axe) : un disque de
+  16 px centré sur la ligne, à 18 px du bord droit du panneau, juste à gauche de l'échelle des
+  prix (`ALERT_BELL_SIZE_PX`, `ALERT_BELL_INSET_PX`), portant la cloche lucide en trait :
+  voile `warning` à 18 % sur le fond du graphe, cloche `warning`. Une pastille par hauteur ; le
+  seuil se lit dans son infobulle (« Alerte ↑ 38,20 »), automatiques comprises.
+- Déclenchée : ligne à 100 %, pastille pleine `warning`, cloche `warning-foreground`.
+  Désactivée : non dessinée.
 - Condor : ses deux seuils, même style. XSP : dessinés à leurs valeurs XSP sur le graphe SPY,
   comme les strikes aujourd'hui.
 - Quelles alertes : les manuelles du ticker toujours ; les automatiques dont la stratégie est dans
@@ -270,7 +274,8 @@ Un second primitive, `AlertsPrimitive` (`apps/web/src/lib/alertsPrimitive.ts`), 
   le graphe fait de même (`sourceEvent.altKey`). Sur écran tactile, un appui long.
 - **Glisser** la ligne (tolérance de 4 px) déplace le seuil, défilement du graphe suspendu pendant
   le geste ; écrit au relâchement.
-- **Clic sur l'étiquette** : popover (`@ib/ui/popover`) — prix exact, note, Supprimer, Réactiver
+- **Clic sur la pastille** (8 px autour de son centre, testé avant le glisser : l'appuyer n'entame
+  pas de glisser ; celle d'une automatique n'est pas cliquable) : popover (`@ib/ui/popover`) — prix exact, note, Supprimer, Réactiver
   sur une alerte déclenchée (une désactivée n'est pas dessinée).
 - Une alerte posée sur le graphe d'une ligne XSP est une alerte **XSP**.
 - Les automatiques ne se glissent pas : leur seuil se règle par la marge (§7.3).

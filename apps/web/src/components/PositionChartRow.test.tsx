@@ -529,8 +529,8 @@ describe("PositionChartRow", () => {
     const chart = await lastChart();
     const series = chart.addSeries.mock.results.at(-1)!.value;
     await waitFor(() => expect(series.attachPrimitive.mock.calls.length).toBeGreaterThan(1));
-    // L'étiquette est sur l'échelle des prix (x ≥ 500), à la hauteur de la ligne (y = 10).
-    fireEvent.click(chart.chartElement(), { clientX: 520, clientY: 10 });
+    // La pastille : 18 px avant le bord droit du panneau (500), sur la ligne.
+    fireEvent.click(chart.chartElement(), { clientX: 482, clientY: 10 });
     fireEvent.change(await screen.findByLabelText("Note"), { target: { value: "support" } });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
 

@@ -148,7 +148,7 @@ export function PriceChart({
     series.attachPrimitive(seriesPrimitive);
     // Les alertes ont leur propre primitive, posée seulement quand il y en a.
     const alertsPrimitive =
-      alerts.length === 0 ? null : (new AlertsPrimitive(drawnAlerts(alerts, isDark, i18n.language)) as unknown as ISeriesPrimitive<Time>);
+      alerts.length === 0 ? null : (new AlertsPrimitive(drawnAlerts(alerts, isDark)) as unknown as ISeriesPrimitive<Time>);
     if (alertsPrimitive) series.attachPrimitive(alertsPrimitive);
     const extent = `${bars[0]?.date}:${candles.length}:${empty.length}`;
     const framed = framedRef.current;

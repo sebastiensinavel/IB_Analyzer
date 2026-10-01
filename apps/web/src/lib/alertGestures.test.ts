@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALERT_HIT_TOLERANCE_PX, baseAlertId, hitAlert, priceAtY } from "@/lib/alertGestures";
+import { ALERT_BELL_HIT_RADIUS_PX, ALERT_HIT_TOLERANCE_PX, baseAlertId, hitAlert, hitBell, priceAtY } from "@/lib/alertGestures";
 
 describe("hitAlert", () => {
   it("touche une ligne jusqu'à 4 px, pas au-delà", () => {
@@ -22,8 +22,29 @@ describe("hitAlert", () => {
     expect(hitAlert(100, [])).toBeNull();
   });
 
-  it("accepte une autre tolérance, celle de l'étiquette", () => {
+  it("accepte une autre tolérance", () => {
     expect(hitAlert(109, [{ id: "a", y: 100 }], 10)).toBe("a");
+  });
+});
+
+describe("hitBell", () => {
+  const bell = { id: "a", x: 482, y: 100 };
+
+  it("touche une pastille jusqu'à 8 px de son centre, en distance, pas au-delà", () => {
+    expect(ALERT_BELL_HIT_RADIUS_PX).toBe(8);
+    expect(hitBell({ x: 482, y: 108 }, [bell])).toBe("a");
+    expect(hitBell({ x: 476, y: 95 }, [bell])).toBe("a");
+    expect(hitBell({ x: 476, y: 94 }, [bell])).toBeNull();
+    expect(hitBell({ x: 300, y: 100 }, [bell])).toBeNull();
+  });
+
+  it("rend la plus proche quand deux pastilles sont à portée", () => {
+    expect(hitBell({ x: 482, y: 107 }, [bell, { id: "b", x: 482, y: 110 }])).toBe("b");
+    expect(hitBell({ x: 482, y: 104 }, [bell, { id: "b", x: 482, y: 110 }])).toBe("a");
+  });
+
+  it("ignore une pastille hors de l'échelle visible (y null)", () => {
+    expect(hitBell({ x: 482, y: 100 }, [{ ...bell, y: null }])).toBeNull();
   });
 });
 
