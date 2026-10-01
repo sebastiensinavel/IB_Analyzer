@@ -211,7 +211,7 @@ describe("PositionChartRow", () => {
 
     renderRow();
 
-    expect(await screen.findByTestId("price-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("price-chart", {}, CHART_WAIT)).toBeInTheDocument();
     expect(screen.queryByText(/agent local/)).not.toBeInTheDocument();
   });
 
