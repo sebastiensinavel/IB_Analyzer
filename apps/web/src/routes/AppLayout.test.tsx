@@ -208,17 +208,31 @@ describe("AppLayout", () => {
       });
     }
 
-    it("badges the overview Positions and the Positions of the strategy holding the ticker, and no other", async () => {
+    it("badges only the Positions of the strategy holding the ticker, never the overview", async () => {
       await seedTriggered();
       renderAt("/accounts/beta/dashboard");
       await screen.findByText("dashboard content");
-      await waitFor(() => expect(pill(menuItem("Positions", 0))).toHaveTextContent("1"));
       // Positions entries in menu order: overview, Wheel, LEAPS, Condors, Others.
-      expect(pill(menuItem("Positions", 1))).toHaveTextContent("1");
+      await waitFor(() => expect(pill(menuItem("Positions", 1))).toHaveTextContent("1"));
+      expect(pill(menuItem("Positions", 0))).toBeNull();
       expect(pill(menuItem("Positions", 2))).toBeNull();
       expect(pill(menuItem("Positions", 3))).toBeNull();
       expect(pill(menuItem("Positions", 4))).toBeNull();
       expect(pill(menuItem("Historique"))).toBeNull();
+    });
+
+    it("badges the overview Positions for an alert no strategy holds", async () => {
+      await seedTriggered();
+      const id = await createManualAlert(db, "beta", { ticker: "NOPE", price: 20, direction: "above" });
+      await db.alertStates.put({
+        accountId: "beta", alertId: id, triggeredAt: "2026-09-30T14:00:00.000Z", acknowledgedAt: null,
+        disabled: false, armed: true, anchor: null, override: null,
+      });
+      renderAt("/accounts/beta/dashboard");
+      await screen.findByText("dashboard content");
+      await waitFor(() => expect(pill(menuItem("Positions", 0))).toHaveTextContent("1"));
+      expect(pill(menuItem("Positions", 1))).toHaveTextContent("1");
+      expect(pill(footer())).toHaveTextContent("2");
     });
 
     it("always links to the alerts page from the footer, with no pill while nothing is triggered", async () => {

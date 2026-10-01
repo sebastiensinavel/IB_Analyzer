@@ -123,8 +123,11 @@ Les transitions sont testées une à une ; la coquille les écrit en une transac
 
 ### 3.6 Pastilles : `alertBadgeCounts(alerts, states, rows)`
 
-Rend, pour les seules alertes déclenchées, `{ all, wheel, leaps, condors, others }` :
-- `all` : toutes ;
+Rend, pour les seules alertes déclenchées, `{ all, unattached, wheel, leaps, condors, others }` :
+- `all` : toutes (pied du menu) ;
+- `unattached` : celles qu'aucune stratégie ne porte — une manuelle sur un ticker qu'aucune ligne
+  ouverte ne tient (2026-10-01 : une alerte rattachée à une stratégie n'allume plus que la
+  pastille de cette stratégie, jamais aussi celle de la vue d'ensemble) ;
 - `wheel` / `condors` : leurs alertes automatiques, plus les manuelles sur un ticker que la
   stratégie détient (une ligne ouverte de la stratégie sur ce ticker) ;
 - `leaps`, `others` : les manuelles sur un ticker qu'elles détiennent.
@@ -217,8 +220,8 @@ démonstration.** Pas de toast dans l'application : la pastille suffit.
 
 ### 7.1 Pastilles
 
-`NavItem.alertScope?: "all" | Strategy` : Positions (vue d'ensemble) `all`, chaque Positions de
-stratégie la sienne. `SidebarMenuBadge` rend, s'il y a des alertes déclenchées, une pilule
+`NavItem.alertScope?: "unattached" | Strategy` : Positions (vue d'ensemble) `unattached`, chaque
+Positions de stratégie la sienne ; seul le pied du menu compte `all`. `SidebarMenuBadge` rend, s'il y a des alertes déclenchées, une pilule
 `bg-warning text-warning-foreground` (jaune sur texte presque noir en sombre, ambre sur blanc en
 clair — tokens existants), cloche lucide `Bell` de 12 px et nombre en chiffres tabulaires. Rien à
 zéro ; **jamais de clignotement** (réservé à la position non couverte de la barre de titre).

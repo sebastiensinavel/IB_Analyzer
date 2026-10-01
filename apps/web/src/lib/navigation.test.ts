@@ -64,7 +64,7 @@ describe("NAV_SECTIONS", () => {
       .filter((item) => item.alertScope !== undefined)
       .map((item) => [item.to("beta"), item.alertScope]);
     expect(scopes).toEqual([
-      ["/accounts/beta/positions", "all"],
+      ["/accounts/beta/positions", "unattached"],
       ["/accounts/beta/positions/wheel", "wheel"],
       ["/accounts/beta/positions/leaps", "leaps"],
       ["/accounts/beta/positions/condors", "condors"],

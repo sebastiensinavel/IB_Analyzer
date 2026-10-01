@@ -217,7 +217,7 @@ describe("useAlertEngine", () => {
     act(() => mergeQuotes(new Map([["QQQ", { last: 612, change: null }]])));
     await screen.findByText("alerts 1 / triggered 1", undefined, { timeout: 3000 });
     if (view.status !== "ready") throw new Error("not ready");
-    expect(view.badges).toEqual({ all: 1, wheel: 0, leaps: 0, condors: 1, others: 0 });
+    expect(view.badges).toEqual({ all: 1, unattached: 0, wheel: 0, leaps: 0, condors: 1, others: 0 });
     expect(view.alerts[0]).toMatchObject({ status: "triggered", price: { price: 612, realtime: false } });
     // 612 is past the 616 threshold by 4, as a fraction of the price: negative, since crossed.
     expect(view.alerts[0].distance).toBeCloseTo(-4 / 612, 6);

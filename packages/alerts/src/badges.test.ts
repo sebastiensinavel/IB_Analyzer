@@ -14,14 +14,14 @@ const rows = [shares("ABC", 40), row({ id: "o", strategy: "others", kind: "share
 
 describe("alertBadgeCounts", () => {
   it("compte une manuelle dans chaque stratégie qui tient son ticker", () => {
-    expect(alertBadgeCounts([manual], new Map([triggered("manual:1")]), rows)).toEqual({ all: 1, wheel: 1, leaps: 0, condors: 0, others: 1 });
+    expect(alertBadgeCounts([manual], new Map([triggered("manual:1")]), rows)).toEqual({ all: 1, unattached: 0, wheel: 1, leaps: 0, condors: 0, others: 1 });
   });
   it("compte une automatique selon son genre", () => {
-    expect(alertBadgeCounts([condor], new Map([triggered("condor:k")]), rows)).toEqual({ all: 1, wheel: 0, leaps: 0, condors: 1, others: 0 });
+    expect(alertBadgeCounts([condor], new Map([triggered("condor:k")]), rows)).toEqual({ all: 1, unattached: 0, wheel: 0, leaps: 0, condors: 1, others: 0 });
   });
   it("ne compte pas une alerte active ni, pour une manuelle, une ligne fermée", () => {
-    expect(alertBadgeCounts([manual, condor], new Map(), rows)).toEqual({ all: 0, wheel: 0, leaps: 0, condors: 0, others: 0 });
+    expect(alertBadgeCounts([manual, condor], new Map(), rows)).toEqual({ all: 0, unattached: 0, wheel: 0, leaps: 0, condors: 0, others: 0 });
     const closed = [{ ...shares("ABC", 40), endWhen: "2026-09-02T00:00:00.000Z" }];
-    expect(alertBadgeCounts([manual], new Map([triggered("manual:1")]), closed)).toEqual({ all: 1, wheel: 0, leaps: 0, condors: 0, others: 0 });
+    expect(alertBadgeCounts([manual], new Map([triggered("manual:1")]), closed)).toEqual({ all: 1, unattached: 1, wheel: 0, leaps: 0, condors: 0, others: 0 });
   });
 });

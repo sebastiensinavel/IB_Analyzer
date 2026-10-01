@@ -541,7 +541,10 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   elles reprennent S₀ du VWAP ou de la clôture du jour de la vente. La direction
   d'une alerte manuelle vient du cours connu du titre (`alertPriceOf`), sinon de la dernière
   clôture du graphe. `alerts/notify.ts` est le seul lecteur de l'API `Notification`, jamais en
-  démo. Les pastilles du menu passent par `NavItem.alertScope` (`AlertBadge`). Sur les graphes,
+  démo. Les pastilles du menu passent par `NavItem.alertScope` (`AlertBadge`) : **une alerte
+  rattachée à une stratégie n'allume que la pastille de cette stratégie** ; Positions (vue
+  d'ensemble) ne compte que celles qu'aucune stratégie ne porte (`unattached`), le pied du menu
+  toutes. Sur les graphes,
   `AlertsPrimitive` trace un pointillé fin de teinte `warning`, distingué des calls vendus
   (`chart-2`) par sa forme seule, et pose dans le panneau, à `ALERT_BELL_INSET_PX` du bord droit,
   une pastille-cloche — jamais d'étiquette sur l'axe des prix — dont l'infobulle donne le seuil ;

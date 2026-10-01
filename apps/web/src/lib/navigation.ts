@@ -24,7 +24,8 @@ export interface NavItem {
    *  and the sidebar keeps showing them even with no account at all, unlike every other entry. */
   accountScoped: boolean;
   to: (accountId: string) => string;
-  /** The badge count of triggered alerts the entry carries (sub-project 42): every alert, or one strategy's. */
+  /** The badge count of triggered alerts the entry carries (sub-project 42): one strategy's, or — on the
+   *  overview — those no strategy holds, so an alert tied to a strategy lights that strategy's entry only. */
   alertScope?: keyof AlertBadgeCounts;
 }
 
@@ -44,7 +45,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     labelKey: "nav.sections.overview",
     items: [
       { labelKey: "nav.dashboard", icon: LayoutDashboard, accountScoped: true, to: accountPath("dashboard") },
-      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions"), alertScope: "all" },
+      { labelKey: "nav.positions", icon: TrendingUp, accountScoped: true, to: accountPath("positions"), alertScope: "unattached" },
       { labelKey: "nav.history", icon: History, accountScoped: true, to: accountPath("history") },
     ],
   },
