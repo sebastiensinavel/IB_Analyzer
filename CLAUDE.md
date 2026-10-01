@@ -544,7 +544,12 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   démo. Les pastilles du menu passent par `NavItem.alertScope` (`AlertBadge`). Sur les graphes,
   `AlertsPrimitive` trace un pointillé fin de teinte `warning`, distingué des calls vendus
   (`chart-2`) par sa forme seule, et `AlertOverlay` pose (cloche « + », Alt+clic, appui long),
-  glisse — les manuelles seulement — et règle par popover.
+  glisse — les manuelles seulement — et règle par popover. Sur les lignes de positions, une
+  alerte **déclenchée** — jamais active ni désactivée — allume `AlertBell`, la pilule sans nombre
+  liée à la page des alertes, à gauche de la variation dans « Var. jour action »
+  (`UnderlyingDayChangeCell`) : `rowAlertMarks` (`lib/rowAlerts.ts`) y apparie une manuelle à
+  toute ligne de son ticker, une Wheel à son call par `contractId`, un condor à sa ligne sur la page
+  Condors (`condor:<CondorLine.id>`) et ailleurs aux lignes de ses jambes (`CondorAlert.legs`).
 - **Les graphes de cours viennent de TWS par l'agent, jamais d'un fournisseur tiers ni du
   serveur** : `/bars` (`apps/tws-agent`), deux ans de journalier `TRADES`, sans cache. Les
   niveaux dessinés sont une vue calculée des journaux (`strategyLevels`,

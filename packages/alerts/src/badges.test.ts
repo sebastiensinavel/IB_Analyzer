@@ -6,7 +6,7 @@ import { INITIAL_STATE, type AlertState, type CondorAlert } from "./types.ts";
 
 const manual = manualAlerts([{ id: "manual:1", ticker: "abc", price: 50, direction: "above", note: null, createdAt: "t" }])[0];
 const condor: CondorAlert = {
-  id: "condor:k", kind: "condor", ticker: "XSP", currency: "USD", strikes: [740, 750, 790, 800], expiry: null, quantity: -1, margin: 0.15, offset: 6,
+  id: "condor:k", kind: "condor", ticker: "XSP", currency: "USD", strikes: [740, 750, 790, 800], expiry: null, quantity: -1, margin: 0.15, offset: 6, legs: [],
   thresholds: [{ price: 784, direction: "above" }],
 };
 const triggered = (alertId: string): [string, AlertState] => [alertId, { alertId, ...INITIAL_STATE, triggeredAt: "t" }];

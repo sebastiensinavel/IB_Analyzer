@@ -39,7 +39,7 @@ export function CondorRows({
   return (
     <Fragment>
       <TableRow onClick={onChart} data-state={charted ? "selected" : undefined} className="cursor-pointer">
-        <UnderlyingDayChangeCell ticker={line.contract.ticker} />
+        <UnderlyingDayChangeCell ticker={line.contract.ticker} alert={{ condorId: line.id }} />
         <TableCell className="font-medium">
           <span className="flex items-center gap-1">
             <Button

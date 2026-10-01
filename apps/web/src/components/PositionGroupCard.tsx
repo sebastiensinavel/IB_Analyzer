@@ -11,6 +11,7 @@ import type { TableViewState } from "@/hooks/useTableView";
 import { formatContract } from "@/lib/format";
 import { POSITION_COLUMNS, POSITION_TABLE_MIN_WIDTH } from "@/lib/positionColumns";
 import { coverageBadges } from "@/lib/riskReport";
+import { analyzedContract } from "@/lib/rowAlerts";
 import type { ColumnSpec } from "@/lib/tableView";
 
 export interface PositionGroupCardProps {
@@ -68,6 +69,7 @@ export function PositionGroupCard({
               expanded={chart.isOpen(key)}
               values={{
                 ticker: position.symbol,
+                contractKey: analyzedContract(position),
                 contract: formatContract(position),
                 label: position.label,
                 sector: sectorOf(position.symbol),

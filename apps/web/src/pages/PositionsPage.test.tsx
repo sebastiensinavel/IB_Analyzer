@@ -578,4 +578,24 @@ describe("PositionsPage expiry filters", () => {
     await user.type(screen.getByRole("textbox", { name: "Rechercher un ticker" }), "=MSFT");
     await waitFor(() => expect(within(expiryBar()).getAllByRole("button").map((button) => button.textContent)).toEqual(["Mar20'26", "Jan21'28"]));
   });
+
+});
+
+describe("PositionsPage alert bell", () => {
+  it("allume la cloche d'une alerte déclenchée à gauche de la variation de chaque ligne du ticker, et d'aucune autre", async () => {
+    await Promise.all([db.alerts.clear(), db.alertStates.clear()]);
+    await db.snapshots.put(SAMPLE_SNAPSHOT);
+    await db.alerts.put({ accountId: "alpha", id: "m-aapl", ticker: "AAPL", price: 160, direction: "above", note: null, createdAt: "2026-09-29T10:00:00.000Z" });
+    await db.alertStates.put({ accountId: "alpha", alertId: "m-aapl", triggeredAt: "2026-09-30T14:00:00.000Z", acknowledgedAt: null, disabled: false, armed: true, anchor: null, override: null });
+    // Une alerte active sur XOM : rien.
+    await db.alerts.put({ accountId: "alpha", id: "m-xom", ticker: "XOM", price: 90, direction: "below", note: null, createdAt: "2026-09-29T10:00:00.000Z" });
+    renderPositions();
+    const stock = await rowFor("AAPL");
+    const bell = await within(stock).findByRole("link", { name: "Alerte ↑ 160,00" });
+    expect(bell).toHaveAttribute("href", "/accounts/alpha/alerts");
+    // Dans la première cellule, la Var. jour action, avant la variation.
+    expect(stock.cells[0]).toContainElement(bell);
+    expect(within(await rowFor("AAPL Jan16'26 150 Call")).getByRole("link", { name: "Alerte ↑ 160,00" })).toBeInTheDocument();
+    expect(within(await rowFor("XOM Mar20'26 100 Put")).queryByRole("link")).toBeNull();
+  });
 });

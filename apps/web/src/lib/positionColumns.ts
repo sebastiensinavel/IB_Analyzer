@@ -45,10 +45,16 @@ import type { ColumnSpec } from "@/lib/tableView";
  * its 105 px), all of `decision` and all of `coverage` — off-screen and reached by scrolling):
  * the honest consequence of columns sized for real data rather than a fixture, not a regression
  * to chase back down by under-sizing a column again.
+ *
+ * `underlyingDayChange` grew from 6.5 % to 7.5 % when the alert bell joined its cell, on the left
+ * of the move (follow-up to sub-project 42): measured live, the bell is 16 px (a 12 px icon in
+ * 2 px of padding), its gap 2 px and `-100.0%` 56 px, plus the cell's 16 px of padding — 90 px,
+ * exactly 7.5 % of 75rem. The point came out of `position`, the remainder: 11.25 % is 135 px,
+ * still above its 134 px two-line requirement.
  */
 export const POSITION_COLUMNS = [
-  { key: "underlyingDayChange", width: "6.5%", numeric: true },
-  { key: "position", width: "12.25%", numeric: false },
+  { key: "underlyingDayChange", width: "7.5%", numeric: true },
+  { key: "position", width: "11.25%", numeric: false },
   { key: "type", width: "5.25%", numeric: false },
   { key: "sector", width: "7.25%", numeric: false },
   { key: "marketValue", width: "8.75%", numeric: true },
@@ -133,20 +139,28 @@ export type PositionColumnKey = (typeof POSITION_COLUMNS)[number]["key"];
  * defect of this table's `coverage` column (`docs/points-reportes.md`, sub-project 23: its
  * "used x/y" badge is measured on its header word alone, never on its own content) is untouched
  * here — this re-measurement only accounts for the new leading column, not that debt.
+ *
+ * The alert bell (follow-up to sub-project 42) needs the same 90 px in `underlyingDayChange` as in
+ * POSITION_COLUMNS. `position` here has no slack (its `Position` header word and chevron measure
+ * 88 px against its 89.75 px), so the table went from 68rem to 70rem: 8.25 % of 1120 px is 92.4 px,
+ * and the five widest columns each gave back 0.25 % that the wider table repays in pixels — every
+ * one of them still at least its 68rem width (`assignedTotal` and `unrealizedPnl` 106.4 px against
+ * 106.08, `lastPrice`, `dailyPnl` and `coverage` 98 px against 97.92), every other column wider.
+ * The card's overflow at 1280 px grows by the same 32 px.
  */
 export const WHEEL_SHARE_COLUMNS = [
-  { key: "underlyingDayChange", width: "7%", numeric: true },
+  { key: "underlyingDayChange", width: "8.25%", numeric: true },
   { key: "position", width: "8.25%", numeric: false },
   { key: "sector", width: "8%", numeric: false },
   { key: "quantity", width: "8.5%", numeric: true },
   { key: "averageAssignmentPrice", width: "7.5%", numeric: true },
   { key: "averageCallStrike", width: "7.5%", numeric: true },
-  { key: "assignedTotal", width: "9.75%", numeric: true },
-  { key: "lastPrice", width: "9%", numeric: true },
+  { key: "assignedTotal", width: "9.5%", numeric: true },
+  { key: "lastPrice", width: "8.75%", numeric: true },
   { key: "dayChange", width: "6.75%", numeric: true },
-  { key: "dailyPnl", width: "9%", numeric: true },
-  { key: "unrealizedPnl", width: "9.75%", numeric: true },
-  { key: "coverage", width: "9%", numeric: false },
+  { key: "dailyPnl", width: "8.75%", numeric: true },
+  { key: "unrealizedPnl", width: "9.5%", numeric: true },
+  { key: "coverage", width: "8.75%", numeric: false },
 ] as const satisfies readonly { key: string; width: string; numeric: boolean }[];
 
 /**
@@ -154,4 +168,4 @@ export const WHEEL_SHARE_COLUMNS = [
  * share above still meets its own measured requirement (see that comment for the method and
  * the 1280 px consequence).
  */
-export const WHEEL_SHARE_TABLE_MIN_WIDTH = "68rem";
+export const WHEEL_SHARE_TABLE_MIN_WIDTH = "70rem";

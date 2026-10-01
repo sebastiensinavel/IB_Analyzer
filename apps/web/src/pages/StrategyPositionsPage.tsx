@@ -280,6 +280,7 @@ function LinesBox({
               expanded={chart.isOpen(key)}
               values={{
                 ticker: line.contract.ticker,
+                contractKey: line.contract,
                 contract: formatContractLabel(line.contract),
                 label: line.label,
                 sector: sectorOf(line.contract.ticker),

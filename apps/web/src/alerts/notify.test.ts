@@ -25,7 +25,7 @@ const WHEEL: Alert = {
   thresholds: [{ price: 38.2, direction: "above" }],
 };
 const CONDOR: Alert = {
-  id: "condor:1", kind: "condor", ticker: "SPY", currency: "USD", strikes: [740, 750, 790, 800], expiry: null, quantity: 1, margin: 0.15, offset: 6,
+  id: "condor:1", kind: "condor", ticker: "SPY", currency: "USD", strikes: [740, 750, 790, 800], expiry: null, quantity: 1, margin: 0.15, offset: 6, legs: [],
   thresholds: [{ price: 756, direction: "below" }, { price: 784, direction: "above" }],
 };
 

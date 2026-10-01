@@ -62,6 +62,11 @@ describe("alertes Condors", () => {
     expect(autoAlerts([condor("k", strikes, { put: true, call: true })], margins, new Map())).toEqual([]);
   });
 
+  it("porte les contrats de ses quatre jambes, dans l'ordre", () => {
+    const [alert] = autoAlerts([condor("k1", strikes)], margins, new Map());
+    expect(alert.kind === "condor" && alert.legs.map((l) => `${l.right}${l.strike}`)).toEqual(["P740", "P750", "C790", "C800"]);
+  });
+
   it("une alerte par composite ouvert", () => {
     expect(autoAlerts([condor("k1", strikes), condor("k2", strikes)], margins, new Map()).map((a) => a.id)).toEqual(["condor:k1", "condor:k2"]);
   });

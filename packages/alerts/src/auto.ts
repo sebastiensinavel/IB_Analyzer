@@ -54,6 +54,7 @@ function condorAlerts(rows: readonly JournalRow[], margins: AlertMargins, states
     alerts.push({
       id, kind: "condor", ticker: row.ticker, currency: row.currency, strikes: strikes as [number, number, number, number],
       expiry: row.contract.expiry, quantity: row.quantity ?? 0, margin, offset, thresholds,
+      legs: row.legs.map((leg) => leg.contract),
     });
   }
   return alerts;

@@ -5,7 +5,7 @@ import { INITIAL_STATE, type Alert, type AlertState, type CondorAlert } from "./
 
 const manual = manualAlerts([{ id: "manual:1", ticker: "AAPL", price: 250, direction: "above", note: null, createdAt: "t" }])[0];
 const condor: CondorAlert = {
-  id: "condor:k", kind: "condor", ticker: "XSP", currency: "USD", strikes: [740, 750, 790, 800], expiry: null, quantity: -1, margin: 0.15, offset: 6,
+  id: "condor:k", kind: "condor", ticker: "XSP", currency: "USD", strikes: [740, 750, 790, 800], expiry: null, quantity: -1, margin: 0.15, offset: 6, legs: [],
   thresholds: [{ price: 756, direction: "below" }, { price: 784, direction: "above" }],
 };
 const at = (price: number) => () => ({ price, realtime: true });

@@ -35,6 +35,8 @@ export interface WheelAlert extends AlertBase {
 }
 export interface CondorAlert extends AlertBase {
   kind: "condor"; strikes: [number, number, number, number]; expiry: string | null; quantity: number; margin: number; offset: number;
+  /** Les contrats des quatre jambes, dans l'ordre des strikes : la cloche des lignes de jambes s'y apparie. */
+  legs: ContractKey[];
 }
 export type AutoAlert = WheelAlert | CondorAlert;
 export type Alert = ManualAlert | AutoAlert;

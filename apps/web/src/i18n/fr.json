@@ -988,6 +988,7 @@
   "alerts": {
     "badge_one": "{{count}} alerte déclenchée",
     "badge_other": "{{count}} alertes déclenchées",
+    "bell": "Alerte {{arrow}} {{price}}",
     "margins": {
       "wheel": "Wheel",
       "condor": "Condors",

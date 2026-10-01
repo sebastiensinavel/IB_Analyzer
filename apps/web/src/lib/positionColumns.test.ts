@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildRiskReport, type AnalyzedPosition } from "@ib/coverage";
-import { POSITION_COLUMNS, positionColumnSpecs } from "@/lib/positionColumns";
+import { POSITION_COLUMNS, POSITION_TABLE_MIN_WIDTH, positionColumnSpecs, WHEEL_SHARE_COLUMNS, WHEEL_SHARE_TABLE_MIN_WIDTH } from "@/lib/positionColumns";
 import { SAMPLE_POSITIONS } from "@/mocks/positions";
 
 function positionWith(overrides: Partial<AnalyzedPosition>): AnalyzedPosition {
@@ -67,5 +67,20 @@ describe("POSITION_COLUMNS widths", () => {
     ]);
     const total = POSITION_COLUMNS.reduce((n, c) => n + Number.parseFloat(c.width), 0);
     expect(total).toBeCloseTo(100, 6);
+  });
+});
+
+describe("the Var. jour action column holds the alert bell", () => {
+  // Measured live on the dev instance (2026-10-01): bell 16 px (12 px icon, 2 px padding), 2 px
+  // gap, "-100.0%" 56 px in JetBrains Mono 14 px, plus the cell's 2 × 8 px padding.
+  const BELL_AND_CHANGE_PX = 16 + 2 + 56 + 16;
+  const px = (share: string, rem: string) => (Number.parseFloat(share) / 100) * Number.parseFloat(rem) * 16;
+
+  it.each([
+    ["POSITION_COLUMNS", POSITION_COLUMNS, POSITION_TABLE_MIN_WIDTH],
+    ["WHEEL_SHARE_COLUMNS", WHEEL_SHARE_COLUMNS, WHEEL_SHARE_TABLE_MIN_WIDTH],
+  ] as const)("%s, at its minimum width", (_, columns, minWidth) => {
+    expect(px(columns[0].width, minWidth)).toBeGreaterThanOrEqual(BELL_AND_CHANGE_PX);
+    expect(columns.reduce((n, c) => n + Number.parseFloat(c.width), 0)).toBeCloseTo(100, 6);
   });
 });

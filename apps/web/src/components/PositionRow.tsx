@@ -3,10 +3,14 @@ import type { BuybackAdvice } from "@ib/coverage";
 import { Badge } from "@ib/ui/badge";
 import { TableCell, TableRow } from "@ib/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ib/ui/tooltip";
+import type { ContractKey } from "@ib/ledger";
+import { AlertBell } from "@/components/alerts/AlertBell";
 import { DecisionBadge } from "@/components/DecisionBadge";
+import { useAccountAlerts } from "@/db/AccountDataProvider";
 import { useUnderlyingDayChange } from "@/hooks/useUnderlyingDayChange";
 import { formatDayChange, formatMoney, formatPrice } from "@/lib/format";
 import { type CoverageBadge } from "@/lib/riskReport";
+import { rowAlertMarks, type RowAlertTarget } from "@/lib/rowAlerts";
 import { cn } from "@/lib/utils";
 
 export const NUMERIC = "text-right font-mono tabular-nums";
@@ -18,22 +22,34 @@ export const toneOf = (value: number | null) => value !== null && (value >= 0 ? 
  * The underlying's day move (spec of sub-project 35, §5, held-first addendum): the account on
  * screen's own live `dayChange` when it holds the ticker as stock, no tooltip; the delayed
  * `/quotes` value otherwise, with a tooltip saying so.
- * Every row of one ticker shows the same value.
+ * Every row of one ticker shows the same value. On its left, the bell of the triggered alerts the
+ * line answers to (`rowAlertMarks`): its ticker's manual ones always, a Wheel or condor alert only
+ * on the line `alert` names — its contract, or its condor.
  */
-export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
+export function UnderlyingDayChangeCell({ ticker, alert }: { ticker: string; alert?: Omit<RowAlertTarget, "ticker"> }) {
   const { t } = useTranslation();
   const { value, delayed } = useUnderlyingDayChange()(ticker);
+  const alerts = useAccountAlerts();
+  const marks = alerts.status === "ready" ? rowAlertMarks(alerts.alerts, { ticker, ...alert }) : [];
   const text = formatDayChange(value);
   const tooltip = delayed ? t("quotes.delayed") : null;
+  const change = tooltip ? (
+    <Tooltip>
+      <TooltipTrigger render={<span>{text}</span>} />
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  ) : (
+    text
+  );
   return (
     <TableCell className={cn(NUMERIC, toneOf(value))}>
-      {tooltip ? (
-        <Tooltip>
-          <TooltipTrigger render={<span>{text}</span>} />
-          <TooltipContent>{tooltip}</TooltipContent>
-        </Tooltip>
+      {marks.length > 0 ? (
+        <span className="inline-flex items-center justify-end gap-0.5">
+          <AlertBell alerts={marks} />
+          {change}
+        </span>
       ) : (
-        text
+        change
       )}
     </TableCell>
   );
@@ -43,6 +59,8 @@ export function UnderlyingDayChangeCell({ ticker }: { ticker: string }) {
 export interface PositionRowValues {
   /** The underlying's ticker, which the first column is quoted on. */
   ticker: string;
+  /** The line's contract, which a Wheel or condor alert's bell is matched on; absent, only the ticker's manual alerts ring. */
+  contractKey?: ContractKey | null;
   contract: string;
   label: string;
   sector: string | null;
@@ -79,7 +97,7 @@ export function PositionRow({ values, onClick, expanded = false }: PositionRowPr
       data-state={expanded ? "selected" : undefined}
       className={cn(onClick && "cursor-pointer")}
     >
-      <UnderlyingDayChangeCell ticker={values.ticker} />
+      <UnderlyingDayChangeCell ticker={values.ticker} alert={{ contract: values.contractKey }} />
       <TableCell className="font-medium">{values.contract}</TableCell>
       <TableCell className="text-muted-foreground">{values.label}</TableCell>
       <TableCell>{values.sector && <Badge variant="outline">{values.sector}</Badge>}</TableCell>
