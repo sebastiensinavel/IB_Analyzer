@@ -1,21 +1,19 @@
-import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useCallback, useSyncExternalStore } from "react";
 import { useDb } from "@/db/DbProvider";
 import { fetchSnapshot, probeAgent } from "./client";
 import type { AppDatabase } from "@/db/schema";
 import { syncAgent, type AgentSyncOutcome } from "./sync";
 
-/** Five minutes: TWS reconnects on every pass, and a hidden tab never opens one for nothing. */
+/** Five minutes, the watcher's cadence (sub-project 43): TWS reconnects on every pass. */
 export const AGENT_POLL_MS = 5 * 60 * 1000;
 
 export type AgentPresence = { status: "unknown" } | { status: "absent" } | { status: "present"; version: string };
 
 // Module-level state, shared by every hook instance of the tab, for the same reasons as
-// `useFlexAutoSync`'s `runningAccounts`: AppLayout drives the cadence, pages read the presence
+// `useFlexAutoSync`'s `runningAccounts`: the watcher drives the cadence, pages read the presence
 // and press the button, and none of them may see a different "running" than the others.
 let presence: AgentPresence = { status: "unknown" };
 const runningAccounts = new Set<string>();
-const lastRunAt = new Map<string, number>();
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -38,8 +36,12 @@ export async function refreshPresence(): Promise<AgentPresence> {
 export function resetAgentState(): void {
   presence = { status: "unknown" };
   runningAccounts.clear();
-  lastRunAt.clear();
   notify();
+}
+
+/** The tab's agent presence, outside React (the watcher, its tests). */
+export function agentPresence(): AgentPresence {
+  return presence;
 }
 
 export function useAgentPresence(): AgentPresence {
@@ -69,73 +71,14 @@ export async function runAgentSync(db: AppDatabase, accountId: string): Promise<
 export function useAgentSync(accountId: string) {
   const db = useDb();
   const running = useSyncExternalStore(subscribe, () => runningAccounts.has(accountId));
-  const agentPresence = useAgentPresence();
+  const current = useAgentPresence();
 
   const run = useCallback(async () => {
-    const outcome = await runAgentSync(db, accountId);
-    // Only a pass that really ran restarts the polling countdown.
-    if (outcome) lastRunAt.set(accountId, Date.now());
+    // A manual pass never moves the watcher's cadence, which is per pass, not per account (§3.4).
+    await runAgentSync(db, accountId);
     // `db` is the module singleton `useDb()` always returns: listing it here is exhaustive-deps
     // correctness, not a real dependency — it never changes, so it never re-creates `run`.
   }, [accountId, db]);
 
-  return { presence: agentPresence, state: running ? ("running" as const) : ("idle" as const), run };
-}
-
-/**
- * Mounted once, by AppLayout, for the account currently open (spec §6.5): probe at open,
- * a pass at once when the agent is present and a port is set, then one every five minutes
- * while the tab is visible. A hidden tab skips its ticks; coming back after more than five
- * minutes passes at once. A manual `run` restarts the countdown. Without a port nothing is
- * even probed: the Sources page says so.
- */
-export function useAgentPolling(accountId: string): void {
-  const db = useDb();
-  const twsPort = useLiveQuery(
-    async () => (accountId ? (await db.accounts.get(accountId))?.twsPort : undefined),
-    [db, accountId],
-  );
-  const { run } = useAgentSync(accountId);
-
-  useEffect(() => {
-    if (!accountId || twsPort === undefined) return;
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const due = () => Date.now() - (lastRunAt.get(accountId) ?? 0) >= AGENT_POLL_MS;
-    const arm = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => void tick(), AGENT_POLL_MS);
-    };
-    const tick = async () => {
-      if (cancelled) return;
-      if (document.visibilityState === "visible") {
-        const found = await refreshPresence();
-        if (cancelled) return;
-        if (found.status === "present") await run();
-      }
-      if (!cancelled) arm();
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === "visible" && due()) void tick();
-    };
-    // A manual run (the button) moved `lastRunAt`: restart the countdown from it.
-    let seen = lastRunAt.get(accountId);
-    const unsubscribe = subscribe(() => {
-      const now = lastRunAt.get(accountId);
-      if (now !== seen) {
-        seen = now;
-        if (!cancelled) arm();
-      }
-    });
-
-    void tick();
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      unsubscribe();
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [accountId, twsPort, run]);
+  return { presence: current, state: running ? ("running" as const) : ("idle" as const), run };
 }

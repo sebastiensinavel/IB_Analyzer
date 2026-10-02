@@ -849,7 +849,7 @@ git commit -m "Alertes : la notification nomme le compte dès deux comptes"
   export function startAlertWatcher(deps: WatcherDeps): () => void; // returns stop
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // apps/web/src/alerts/watcher.test.ts
@@ -1052,12 +1052,12 @@ describe("startAlertWatcher", () => {
 Une correction à faire en écrivant le fichier, sans changer ce que les tests affirment :
 - adapter `PAYLOAD`, la forme de `/quotes` et la lecture du port aux réponses réelles de l'agent (voir `apps/web/src/mocks/agent-snapshot.json`, `agent-quotes.json` et `agent/client.ts` : si le port voyage dans un en-tête ou un autre paramètre, compter par ce moyen).
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/alerts/watcher.test.ts`
 Expected: FAIL — `Cannot find module './watcher'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```ts
 // apps/web/src/alerts/watcher.ts
@@ -1233,12 +1233,12 @@ import { router } from "@/routes/router";
 
 `useAgentSync.test.tsx` : retirer `describe("useAgentPolling")`, `setVisibility` s'il n'a plus d'usage, et `useAgentPolling(accountId)` du `Probe`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/alerts src/agent src/routes src/flex`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src docs/plans/2026-10-02-alertes-tous-comptes.md
