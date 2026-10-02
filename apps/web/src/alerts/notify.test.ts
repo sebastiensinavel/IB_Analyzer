@@ -44,6 +44,12 @@ afterEach(() => {
 });
 
 describe("notifyTriggered", () => {
+  it("names the account in the title when one is given", () => {
+    notifyTriggered(WHEEL, () => {}, t, "fr", undefined, "beta");
+    notifyTriggered(WHEEL, () => {}, i18n.getFixedT("en"), "en", undefined, "beta");
+    expect(FakeNotification.created.map((n) => n.title)).toEqual(["beta · ZXAB ↑ 38,20", "beta · ZXAB ↑ 38.20"]);
+  });
+
   it("sends one notification titled by the ticker, the direction and the threshold, the body by the kind", () => {
     notifyTriggered(WHEEL, () => {}, t, "fr");
     notifyTriggered(CONDOR, () => {}, t, "fr");

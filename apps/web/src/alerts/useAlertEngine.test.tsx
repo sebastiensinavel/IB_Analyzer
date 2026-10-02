@@ -11,6 +11,7 @@ import { createManualAlert } from "@/db/alerts";
 import { useActiveStrategies, useJournals } from "@/db/hooks";
 import { db, type AccountRecord, type AlertStateRecord, type SnapshotRecord } from "@/db/schema";
 import { SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
+import { resetAnchorGuards } from "./anchors";
 import { useAlertEngine, type AlertsView } from "./useAlertEngine";
 
 const account = (id: string, fields: Partial<AccountRecord> = {}): AccountRecord => ({
@@ -134,6 +135,7 @@ const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 60))
 const stateOf = (accountId: string, alertId: string) => db.alertStates.get([accountId, alertId]);
 
 beforeEach(async () => {
+  resetAnchorGuards();
   resetQuotes();
   resetAgentState();
   await db.open();
@@ -178,6 +180,23 @@ describe("useAlertEngine", () => {
     expect(writes).toEqual([`beta|${aapl}`, `beta|${msft}`]);
     expect((await stateOf("beta", aapl))?.triggeredAt).toBe(first?.triggeredAt);
     expect(FakeNotification.created).toEqual(["AAPL ↓ 245,00", "MSFT ↑ 400,00"]);
+  });
+
+  it.each([
+    ["two accounts", true, "beta · AAPL ↓ 245,00"],
+    ["one account", false, "AAPL ↓ 245,00"],
+  ])("names the account in the notification title with %s", async (_label, second, title) => {
+    mockAgent();
+    await refreshPresence();
+    await db.accounts.add(account("beta"));
+    if (second) await db.accounts.add(account("alpha"));
+    await createManualAlert(db, "beta", { ticker: "AAPL", price: 245, direction: "below" });
+    renderProvider("beta");
+    await screen.findByText("alerts 1 / triggered 0");
+    act(() => mergeQuotes(new Map([["AAPL", { last: 244, change: null }]])));
+    await screen.findByText("alerts 1 / triggered 1");
+    await settle();
+    expect(FakeNotification.created).toEqual([title]);
   });
 
   it("evaluates nothing without the agent, even on a stored agent snapshot past the threshold", async () => {

@@ -40,16 +40,18 @@ function body(alert: Alert, t: TFunction): string | undefined {
 /**
  * Une alerte vient de se déclencher : titre « ZXAB ↑ 38,20 », le seuil écrit dans la langue
  * `locale`, un clic ramène sur l'onglet puis `onOpen`. `price`, le cours qui l'a déclenchée, choisit l'aile d'un condor : le seuil qu'il
- * franchit, sinon le premier.
+ * franchit, sinon le premier. `account`, à partir de deux comptes dans le navigateur
+ * (sous-projet 43) : le titre le nomme.
  */
-export function notifyTriggered(alert: Alert, onOpen: () => void, t: TFunction, locale: string, price?: number): void {
+export function notifyTriggered(alert: Alert, onOpen: () => void, t: TFunction, locale: string, price?: number, account?: string): void {
   const notification = api();
   if (notification === null || isDemo() || notification.permission !== "granted" || alert.thresholds === null) return;
   const threshold = alert.thresholds.find((th) => price !== undefined && isCrossed([th], price)) ?? alert.thresholds[0];
-  const title = t(threshold.direction === "above" ? "alerts.notify.title_above" : "alerts.notify.title_below", {
+  const bare = t(threshold.direction === "above" ? "alerts.notify.title_above" : "alerts.notify.title_below", {
     ticker: alert.ticker,
     price: formatLocalePrice(threshold.price, locale),
   });
+  const title = account === undefined ? bare : t("alerts.notify.title_account", { account, title: bare, interpolation: { escapeValue: false } });
   try {
     const shown = new notification(title, { body: body(alert, t) });
     shown.onclick = () => {

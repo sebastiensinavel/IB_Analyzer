@@ -198,7 +198,7 @@ describe("useFlexAutoSync", () => {
 
     agentUp = true;
     await act(async () => {
-      await refreshPresence(); // what useAgentPolling or the Sources page does
+      await refreshPresence(); // what the watcher's probe or the Sources page does
     });
     await waitFor(() => expect(syncAccount).toHaveBeenCalledTimes(1));
   });

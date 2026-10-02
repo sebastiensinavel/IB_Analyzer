@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ib/ui/select";
+import { AlertBadge } from "@/components/alerts/AlertBadge";
 import { useDb } from "@/db/DbProvider";
+import { useTriggeredAlertCounts } from "@/db/hooks";
 import { isDemo, leaveDemo } from "@/demo/mode";
 import type { AccountRecord } from "@/db/schema";
 
@@ -19,6 +21,8 @@ export function AccountSwitcher({ accountId, accounts }: AccountSwitcherProps) {
   const { pathname } = useLocation();
   const db = useDb();
   const demo = isDemo();
+  const counts = useTriggeredAlertCounts();
+  const others = accounts.reduce((sum, a) => sum + (a.id === accountId ? 0 : (counts?.get(a.id) ?? 0)), 0);
 
   // Switching keeps the page: /accounts/alpha/positions/leaps becomes
   // /accounts/beta/positions/leaps. Settings and Help carry no account, so they open the
@@ -36,12 +40,17 @@ export function AccountSwitcher({ accountId, accounts }: AccountSwitcherProps) {
   return (
     <Select value={accountId} onValueChange={handleChange}>
       <SelectTrigger className="w-full font-medium" aria-label={t("accountSwitcher.label")}>
-        <SelectValue />
+        {/* The value alone: the item's badge must not follow it into the button. */}
+        <SelectValue>{(value: string) => value}</SelectValue>
+        <AlertBadge count={others} />
       </SelectTrigger>
       <SelectContent>
         {accounts.map((account) => (
           <SelectItem key={account.id} value={account.id}>
-            {account.id}
+            <span className="flex w-full items-center justify-between gap-2">
+              {account.id}
+              <AlertBadge count={counts?.get(account.id) ?? 0} />
+            </span>
           </SelectItem>
         ))}
         {demo ? (

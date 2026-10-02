@@ -3,7 +3,6 @@ import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Separator } from "@ib/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@ib/ui/sidebar";
-import { useAgentPolling } from "@/agent/useAgentSync";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DemoBanner } from "@/components/DemoBanner";
 import { ConsistencyIndicators } from "@/components/ConsistencyIndicators";
@@ -22,13 +21,13 @@ export function AppLayout() {
   const accounts = useAccounts();
   const scoped = accountId !== undefined && accounts?.some((a) => a.id === accountId) ? accountId : null;
 
-  // Entering an account's pages is the trigger (spec: sub-project 3, palier C): AppLayout is
-  // the component mounted at that point. An empty accountId (no account currently scoped, e.g.
+  // Entering an account's pages triggers its Flex sync (spec: sub-project 3, palier C): AppLayout
+  // is the component mounted at that point. An empty accountId (no account currently scoped, e.g.
   // /accounts or /settings) is a harmless no-op for the hook — its own checks bail out before
   // ever reading anything meaningful from an empty id. Called unconditionally, before either
-  // early return below, as React's rules of hooks require.
+  // early return below, as React's rules of hooks require. The agent's passes are the watcher's
+  // (`alerts/watcher.ts`, sub-project 43), started by `main.tsx` whatever the route.
   useFlexAutoSync(scoped ?? "");
-  useAgentPolling(scoped ?? "");
 
   useEffect(() => {
     if (scoped) setLastAccountId(scoped);

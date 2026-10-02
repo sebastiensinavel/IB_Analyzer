@@ -712,7 +712,7 @@
         "Wheel: a covered call sold below your assignment price. The alert fires once the price has covered 70% of the way between its level at the time of the sale and the strike: the position probably needs rolling. No alert at or above the strike.",
         "Condors: the alert fires when the price nears a sold wing, within 15% of the gap between the sold strikes. Both percentages are set per account, and per alert, on the Alerts page.",
         "Placing an alert: on a price chart, click the \"+\" bell that follows the cursor at the right of the chart, just before the price scale, or Alt+click in the chart; on a touch screen, a long press. Drag the line to move it, click its bell to adjust, delete or reactivate it.",
-        "An alert is checked on every agent pass (every 5 minutes), only while one of the account's pages is open and the agent present: without the agent, with the tab closed or on Settings and Help, nothing is evaluated, and there is no catch-up between two passes. The price of a stock you do not hold is delayed by about 15 minutes.",
+        "An alert is checked on every agent pass (every 5 minutes), for all your accounts that have a TWS port, whatever page is open and even with the tab in the background. Without the agent or without an open tab, nothing is evaluated, and there is no catch-up between two passes. The price of a stock you do not hold is delayed by about 15 minutes.",
         "A browser notification accompanies each triggered alert, if you allowed it. The menu shows a badge per strategy; the Alerts page lists them all."
       ]
     },
@@ -1042,6 +1042,7 @@
     },
     "notify": {
       "title_above": "{{ticker}} ↑ {{price}}",
+      "title_account": "{{account}} · {{title}}",
       "title_below": "{{ticker}} ↓ {{price}}",
       "wheel": "Wheel — call {{strike}}",
       "condor": "Condor {{put}}/{{call}}"

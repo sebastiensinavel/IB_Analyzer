@@ -1,9 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
-  buildIdentities,
-  buildJournals,
-  pairCorporateActions,
   sortTransactions,
   type ActivableStrategy,
   type IdentityInput,
@@ -15,6 +12,7 @@ import { buildRiskReport, type RiskReport } from "@ib/coverage";
 import { activeStrategies } from "@/lib/strategies";
 import { readIdentityInputs } from "./contracts";
 import { useDb } from "./DbProvider";
+import { computeJournals } from "./journals";
 import { heldTickers } from "./sectors";
 import type { AccountRecord, CashPointRecord, ImportRecord, SectorRecord, SnapshotRecord, StatementRecord } from "./schema";
 
@@ -178,15 +176,22 @@ export function useJournals(accountId: string, active: readonly ActivableStrateg
   const inputs = useContractIdentities(accountId);
   return useMemo<JournalsView>(() => {
     if (ledger === undefined || snapshot === undefined || inputs === undefined || active === undefined) return { status: "loading" };
-    // The events date the ambiguous tickers, and the same events are paired
-    // again inside `buildJournals`: pairing is pure and cheap, and passing a
-    // pre-built list in would make the engine's own input ambiguous.
-    const { events, issues: actionIssues } = pairCorporateActions(ledger);
-    const identities = buildIdentities(inputs, events);
-    return {
-      status: "ready",
-      report: buildJournals(ledger, snapshot ? { asOf: snapshot.asOf, positions: snapshot.positions } : undefined, identities, active),
-      identityIssues: [...identities.issues, ...actionIssues],
-    };
+    return computeJournals(ledger, snapshot, inputs, active);
   }, [ledger, snapshot, inputs, active]);
+}
+
+/**
+ * Triggered and unseen alerts by account, every account at once (sub-project 43, §6.1): the
+ * status reads on the stored state alone, and the watcher purges the states of vanished alerts
+ * at every pass. `undefined` while loading.
+ */
+export function useTriggeredAlertCounts(): ReadonlyMap<string, number> | undefined {
+  const db = useDb();
+  const states = useLiveQuery(() => db.alertStates.filter((s) => s.triggeredAt !== null && s.acknowledgedAt === null).toArray(), [db]);
+  return useMemo(() => {
+    if (states === undefined) return undefined;
+    const counts = new Map<string, number>();
+    for (const s of states) counts.set(s.accountId, (counts.get(s.accountId) ?? 0) + 1);
+    return counts;
+  }, [states]);
 }

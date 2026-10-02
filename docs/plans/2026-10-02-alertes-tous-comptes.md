@@ -50,7 +50,7 @@
   - `type ReadyJournals = Extract<JournalsView, { status: "ready" }>` (exporté depuis `db/journals.ts`) ;
   - `loadAccountJournals(db: AppDatabase, accountId: string): Promise<{ account: AccountRecord; snapshot: SnapshotRecord | null; journals: ReadyJournals } | null>` — `null` si le compte n'existe pas.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // apps/web/src/db/journals.test.tsx
@@ -113,12 +113,12 @@ describe("useJournals across accounts", () => {
 
 Si `SAMPLE_JOURNAL_TRANSACTIONS` porte déjà `accountId: "beta"`, le `map` le réécrit : garder tel quel.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run (depuis `apps/web`) : `npx vitest run src/db/journals.test.tsx`
 Expected: FAIL — `Cannot find module './journals'`. (Le test « across accounts » peut déjà passer : il fige un comportement, Review Focus 4.)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```ts
 // apps/web/src/db/journals.ts
@@ -189,12 +189,12 @@ export function useJournals(accountId: string, active: readonly ActivableStrateg
 
 et `useLedger` garde sa requête live (elle doit rester scopée) mais trie toujours par `sortTransactions` — inchangé. Retirer de `hooks.ts` les imports devenus inutiles (`buildIdentities`, `buildJournals`, `pairCorporateActions`). L'import circulaire de type `JournalsView` (`journals.ts` → `hooks.ts`) est un `import type`, sans effet à l'exécution.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/db/journals.test.tsx src/db/hooks src/alerts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/db/journals.ts apps/web/src/db/journals.test.tsx apps/web/src/db/hooks.ts docs/plans/2026-10-02-alertes-tous-comptes.md
@@ -217,7 +217,7 @@ Refactor sans changement de comportement : `useAlertEngine.test.tsx` doit passer
   - `pass.ts` : `interface PassInputs { db; accountId; rows: readonly JournalRow[]; margins: AlertMargins; priceOf: (ticker: string) => PriceQuote | null }`, `interface Triggered { alert: Alert; price: number | undefined }`, `runPass(inputs: PassInputs): Promise<Triggered[]>`, `noPrice: () => null` ;
   - `anchors.ts` : `interface AnchorInputs { snapshot: SnapshotRecord | null; priceOf: (ticker: string) => PriceQuote | null; port: number | undefined; agentPresent: boolean; syncedAt: string | undefined; observedAt: string; fetchBars: (port: number, symbol: string, currency?: string) => Promise<BarsResult> }`, `anchorPending(db, accountId, alerts: readonly Alert[], inputs: AnchorInputs): Promise<void>`, `resetAnchorGuards(): void`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // apps/web/src/alerts/anchors.test.ts
@@ -272,12 +272,12 @@ describe("anchorPending", () => {
 
 `saleWhen` est une heure IB (New York stampée UTC) ; `observedAt` vrai UTC le lendemain : la fenêtre live (`ANCHOR_LIVE_WINDOW_MS`) est passée.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/alerts/anchors.test.ts`
 Expected: FAIL — `Cannot find module './anchors'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `pass.ts` : déplacer **tel quel** depuis `useAlertEngine.ts` le commentaire, `PassInputs` et `runPass`, plus `noPrice`, et nommer son type de retour `Triggered[]`. Le hook les importe.
 
@@ -378,12 +378,12 @@ Dans `useAlertEngine.ts`, l'effet S₀ devient :
 
 Le `barsAsked` ref du hook disparaît. Dans `useAlertEngine.test.tsx`, ajouter `resetAnchorGuards()` au `beforeEach` (le garde est désormais de module) — aucune autre modification.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/alerts`
 Expected: PASS, `useAlertEngine.test.tsx` compris.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/alerts docs/plans/2026-10-02-alertes-tous-comptes.md
@@ -415,7 +415,7 @@ git commit -m "Alertes : la passe et la pose de S₀ sortent du hook"
   export function evaluateAccountAlerts(db: AppDatabase, accountId: string, deps: EvaluateAccountDeps): Promise<Triggered[]>;
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Reprendre les fabriques `account`, `trade`, `position`, `CONDOR_TRANSACTIONS` et `WHEEL_TRANSACTIONS` de `useAlertEngine.test.tsx` (les copier en tête du fichier : elles n'y sont pas exportées).
 
@@ -492,12 +492,12 @@ describe("evaluateAccountAlerts", () => {
 
 Adapter la forme de `createManualAlert` et d'une entrée de `QuoteMap` à leurs signatures réelles (`db/alerts.ts`, `agent/quotes.ts`) ; l'assertion, elle, ne change pas. Pour le condor : 615 est sous le seuil 616 calculé dans `useAlertEngine.test.tsx` (« alert under 616 ») — si le test du hook sème le condor autrement (stratégies actives, snapshot), reprendre exactement son semis.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/alerts/evaluateAccount.test.ts`
 Expected: FAIL — `Cannot find module './evaluateAccount'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```ts
 // apps/web/src/alerts/evaluateAccount.ts
@@ -556,12 +556,12 @@ export async function evaluateAccountAlerts(db: AppDatabase, accountId: string, 
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/alerts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/alerts/evaluateAccount.ts apps/web/src/alerts/evaluateAccount.test.ts docs/plans/2026-10-02-alertes-tous-comptes.md
@@ -583,7 +583,7 @@ git commit -m "Alertes : un compte s'évalue hors React"
   - `runAgentSync(db: AppDatabase, accountId: string): Promise<AgentSyncOutcome | null>` — `null` si l'id est vide, le compte inconnu ou déjà en cours de synchro ;
   - `class FakeLocks implements Pick<LockManager, "request">` + `held(name): boolean` pour les tests.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // apps/web/src/test/fakeLocks.ts
@@ -696,12 +696,12 @@ describe("runAgentSync", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/agent/client.test.ts src/agent/useAgentSync.test.tsx`
 Expected: FAIL — `TWS_LOCK` et `runAgentSync` non exportés.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `client.ts` :
 
@@ -751,12 +751,12 @@ export async function runAgentSync(db: AppDatabase, accountId: string): Promise<
 
 et dans `useAgentSync`, `run` devient `useCallback(async () => { lastRunAt.set(accountId, Date.now()); await runAgentSync(db, accountId); }, [accountId, db])` — `lastRunAt` reste jusqu'à la tâche 6, qui le retire avec `useAgentPolling`. Importer `AgentSyncOutcome` depuis `./sync` et `AppDatabase` depuis `@/db/schema`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/agent`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/test/fakeLocks.ts apps/web/src/agent docs/plans/2026-10-02-alertes-tous-comptes.md
@@ -774,7 +774,7 @@ git commit -m "Agent : une connexion TWS à la fois entre onglets, runAgentSync 
 **Interfaces:**
 - Produces: `notifyTriggered(alert: Alert, onOpen: () => void, t: TFunction, locale: string, price?: number, account?: string): void` — `account` défini ⇒ titre préfixé.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // notify.test.ts — dans describe("notifyTriggered")
@@ -787,12 +787,12 @@ git commit -m "Agent : une connexion TWS à la fois entre onglets, runAgentSync 
 
 Et un test de `useAlertEngine.test.tsx` (le fichier a déjà `FakeNotification`) : deux comptes en base, le compte affiché `beta`, une alerte manuelle déclenchée ⇒ titre `"beta · …"` ; un seul compte ⇒ titre sans préfixe. Suivre la structure du test de notification existant du fichier et n'ajouter que le second compte et l'assertion de titre.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/alerts/notify.test.ts src/alerts/useAlertEngine.test.tsx`
 Expected: FAIL — titre sans préfixe.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `fr.json` et `en.json`, dans `alerts.notify` : `"title_account": "{{account}} · {{title}}"` (identique dans les deux langues).
 
@@ -814,12 +814,12 @@ Compléter la doc du paramètre : « `account`, à partir de deux comptes dans l
 
 `useAlertEngine.ts` : lire le nombre de comptes par `useAccounts()` (`db/hooks.ts`), le garder dans `tRef` (`named: (accounts?.length ?? 0) > 1`), et passer `tRef.current.named ? accountId : undefined` en dernier argument de `notifyTriggered`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/alerts src/i18n`
 Expected: PASS (parité fr/en comprise).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/alerts apps/web/src/i18n docs/plans/2026-10-02-alertes-tous-comptes.md
@@ -849,7 +849,7 @@ git commit -m "Alertes : la notification nomme le compte dès deux comptes"
   export function startAlertWatcher(deps: WatcherDeps): () => void; // returns stop
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // apps/web/src/alerts/watcher.test.ts
@@ -1052,12 +1052,12 @@ describe("startAlertWatcher", () => {
 Une correction à faire en écrivant le fichier, sans changer ce que les tests affirment :
 - adapter `PAYLOAD`, la forme de `/quotes` et la lecture du port aux réponses réelles de l'agent (voir `apps/web/src/mocks/agent-snapshot.json`, `agent-quotes.json` et `agent/client.ts` : si le port voyage dans un en-tête ou un autre paramètre, compter par ce moyen).
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/alerts/watcher.test.ts`
 Expected: FAIL — `Cannot find module './watcher'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```ts
 // apps/web/src/alerts/watcher.ts
@@ -1233,12 +1233,12 @@ import { router } from "@/routes/router";
 
 `useAgentSync.test.tsx` : retirer `describe("useAgentPolling")`, `setVisibility` s'il n'a plus d'usage, et `useAgentPolling(accountId)` du `Probe`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/alerts src/agent src/routes src/flex`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src docs/plans/2026-10-02-alertes-tous-comptes.md
@@ -1256,7 +1256,7 @@ git commit -m "Alertes : un veilleur vérifie tous les comptes, onglet masqué c
 **Interfaces:**
 - Produces: `useTriggeredAlertCounts(): ReadonlyMap<string, number> | undefined` — par `accountId`, les états `triggeredAt !== null && acknowledgedAt === null`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Dans `AccountSwitcher.test.tsx`, suivre le rendu existant (`MemoryRouter`, comptes semés) :
 
@@ -1298,12 +1298,12 @@ describe("AccountSwitcher alert badges", () => {
 
 Adapter les noms à l'aide de rendu, aux comptes déjà semés et au libellé `alerts.badge` du fichier ; le `getByLabelText` vise l'`aria-label` d'`AlertBadge`.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/components/AccountSwitcher.test.tsx`
 Expected: FAIL — aucune pastille.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `hooks.ts` :
 
@@ -1349,12 +1349,12 @@ export function useTriggeredAlertCounts(): ReadonlyMap<string, number> | undefin
 
 Si le `SelectItem` de `@ib/ui` enveloppe ses enfants dans un `ItemText` qui ne prend pas toute la largeur, poser la classe sur ce qui la prend, sans toucher à `packages/ui`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/components/AccountSwitcher.test.tsx src/components/app-sidebar`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/db/hooks.ts apps/web/src/components/AccountSwitcher.tsx apps/web/src/components/AccountSwitcher.test.tsx docs/plans/2026-10-02-alertes-tous-comptes.md
@@ -1368,32 +1368,32 @@ git commit -m "Alertes : le sélecteur de compte signale les alertes des autres 
 **Files:**
 - Modify: `apps/web/src/i18n/fr.json`, `apps/web/src/i18n/en.json` (texte d'aide des alertes, la clé dont la valeur fr commence par « Une alerte se vérifie à chaque passe de l'agent »), `CLAUDE.md`, `docs/specs/2026-10-02-alertes-tous-comptes-design.md` (statut)
 
-- [ ] **Step 1: Aide**
+- [x] **Step 1: Aide**
 
 fr : « Une alerte se vérifie à chaque passe de l'agent (toutes les 5 minutes), pour tous vos comptes qui ont un port TWS, quelle que soit la page ouverte et même onglet en arrière-plan. Sans agent ou sans onglet ouvert, rien n'est évalué, et aucun rattrapage n'a lieu entre deux passes. Le cours d'un titre que vous ne détenez pas est différé d'environ 15 minutes. »
 
 en : la même chose en anglais, sur la valeur en actuelle de la même clé (garder son ton et sa dernière phrase).
 
-- [ ] **Step 2: CLAUDE.md**
+- [x] **Step 2: CLAUDE.md**
 
 - Règle des alertes : remplacer « **L'évaluation n'a lieu que sur une page de compte ouverte, agent présent** : sans agent (`useAgentPresence`), la passe purge toujours mais ne déclenche ni ne réarme rien — le snapshot `agent` stocké et les cotations peuvent dater de la veille. » par : « **Le veilleur évalue tous les comptes** (sous-projet 43) : `startAlertWatcher` (`src/alerts/watcher.ts`), démarré par `main.tsx`, tient le verrou Web Locks `ib2:watcher:<base>` — un seul onglet passe, un autre reprend à sa fermeture — et toutes les `AGENT_POLL_MS`, onglet masqué compris, fait pour chaque compte qui a un port `runAgentSync` puis `evaluateAccountAlerts` (`alerts/evaluateAccount.ts`, sans React : journaux par `loadAccountJournals`, `runPass`, `anchorPending`). Chaque onglet sonde l'agent, élu ou non. Une synchro en échec purge mais ne déclenche ni ne réarme rien. `useAlertEngine` reste monté pour le compte affiché, pour l'affichage et la réaction immédiate ; la double évaluation est sans effet, la passe relisant les états dans sa transaction. Le sélecteur de compte porte les alertes déclenchées des autres comptes (`useTriggeredAlertCounts`) ; à partir de deux comptes, la notification nomme le compte. `useAgentPolling` n'existe plus. »
 - Règle de `exclusiveTws` (« **Une connexion TWS à la fois** ») : ajouter « entre onglets aussi, par le verrou Web Locks `ib2:tws` (`TWS_LOCK`), la file en mémoire seulement sans `navigator.locks` ».
 - Registre : `| 43 | Les alertes de tous les comptes | fait (2026-10-02) |`.
 
-- [ ] **Step 3: Statut de la spec** : « Statut : implémenté (2026-10-02). »
+- [x] **Step 3: Statut de la spec** : « Statut : implémenté (2026-10-02). »
 
-- [ ] **Step 4: Vérification complète**
+- [x] **Step 4: Vérification complète**
 
 Run (racine) : `pnpm check`
 Expected: lint, typage, build et tous les tests verts. Corriger tout écart, relancer **une** fois.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add CLAUDE.md apps/web/src/i18n docs
 git commit -m "Sous-projet 43 : Aide, CLAUDE.md et registre"
 ```
 
-- [ ] **Step 6: Instance de relecture**
+- [x] **Step 6: Instance de relecture**
 
 Dans le worktree : `pnpm dev:start`, puis donner les deux URL à Seb (CLAUDE.md, Workflow). Rappeler qu'un worktree servi sur un autre port que 5173 doit être autorisé par l'agent : `ib-tws-agent origin add http://127.0.0.1:<port>`, puis relancer l'agent.

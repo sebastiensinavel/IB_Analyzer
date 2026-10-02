@@ -2,14 +2,10 @@ import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
-  ANCHOR_LIVE_WINDOW_MS,
   alertBadgeCounts,
   alertStatus,
   autoAlerts,
-  chooseAnchor,
-  evaluateAlerts,
   manualAlerts,
-  staleStateIds,
   stateOf,
   type Alert,
   type AlertBadgeCounts,
@@ -17,19 +13,17 @@ import {
   type AlertState,
   type AlertStatus,
   type PriceQuote,
-  type WheelAlert,
 } from "@ib/alerts";
-import { toReportTime } from "@ib/ib-parsers";
-import type { JournalRow } from "@ib/ledger";
 import { fetchBars } from "@/agent/client";
 import { useUnderlyingQuotesMap } from "@/agent/quotes";
 import { useAgentPresence } from "@/agent/useAgentSync";
-import { deleteAlertStates, patchAlertStates, setAlertAnchor } from "@/db/alerts";
 import { useDb } from "@/db/DbProvider";
-import { useAccount, useScopedLiveQuery, type JournalsView } from "@/db/hooks";
-import type { AppDatabase, SnapshotRecord } from "@/db/schema";
+import { useAccount, useAccounts, useScopedLiveQuery, type JournalsView } from "@/db/hooks";
+import type { SnapshotRecord } from "@/db/schema";
 import { alertMargins } from "@/lib/alertMargins";
+import { anchorPending } from "./anchors";
 import { notifyTriggered } from "./notify";
+import { noPrice, runPass, type PassInputs } from "./pass";
 import { alertPriceOf } from "./prices";
 
 export interface AlertView {
@@ -53,45 +47,6 @@ function distanceOf(alert: Alert, price: PriceQuote | null): number | null {
   );
 }
 
-const noPrice = (): PriceQuote | null => null;
-
-interface PassInputs {
-  db: AppDatabase;
-  accountId: string;
-  rows: readonly JournalRow[];
-  margins: AlertMargins;
-  priceOf: (ticker: string) => PriceQuote | null;
-}
-
-/**
- * Une passe : purge des états d'alertes automatiques disparues et transitions dues au cours, lues
- * sur les états **de la base** dans la même transaction que leur écriture — jamais sur ceux du
- * dernier rendu, qu'une écriture précédente n'a peut-être pas encore rafraîchis : une passe
- * rejouée n'écrit donc jamais deux fois la même transition, ni ne notifie deux fois.
- */
-async function runPass({ db, accountId, rows, margins, priceOf }: PassInputs): Promise<{ alert: Alert; price: number | undefined }[]> {
-  return db.transaction("rw", [db.alerts, db.alertStates], async () => {
-    const [defs, stored] = await Promise.all([
-      db.alerts.where("accountId").equals(accountId).toArray(),
-      db.alertStates.where("accountId").equals(accountId).toArray(),
-    ]);
-    const states = new Map(stored.map((s) => [s.alertId, s]));
-    const alerts: Alert[] = [...manualAlerts(defs), ...autoAlerts(rows, margins, states)];
-    const stale = staleStateIds(alerts, stored);
-    if (stale.length > 0) await deleteAlertStates(db, accountId, stale);
-    const now = new Date().toISOString();
-    const patches = evaluateAlerts(alerts, states, priceOf, now);
-    await patchAlertStates(db, accountId, patches);
-    const byId = new Map(alerts.map((a) => [a.id, a]));
-    return patches
-      .filter((p) => p.patch.triggeredAt != null)
-      .map((p) => {
-        const alert = byId.get(p.alertId) as Alert;
-        return { alert, price: priceOf(alert.ticker)?.price };
-      });
-  });
-}
-
 /**
  * Les alertes du compte à l'écran, évaluées dans la coquille (spec §6) : monté une fois par
  * `AccountDataProvider`. Rien ne s'écrit avant que journaux, alertes, états, compte et snapshot
@@ -101,6 +56,7 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
   const db = useDb();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const accounts = useAccounts();
   const account = useAccount(accountId);
   const defs = useScopedLiveQuery(accountId, () => db.alerts.where("accountId").equals(accountId).toArray(), [db, accountId]);
   const stored = useScopedLiveQuery(accountId, () => db.alertStates.where("accountId").equals(accountId).toArray(), [db, accountId]);
@@ -139,11 +95,11 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
   const latest = useRef<PassInputs | null>(null);
   const queue = useRef<{ tail: Promise<void>; scheduled: boolean }>({ tail: Promise.resolve(), scheduled: false });
   const openAlerts = useRef<() => void>(() => {});
-  const tRef = useRef({ t, locale: i18n.language });
+  const tRef = useRef({ t, locale: i18n.language, named: false });
   useEffect(() => {
     openAlerts.current = () => void navigate(`/accounts/${accountId}/alerts`);
-    tRef.current = { t, locale: i18n.language };
-  }, [navigate, accountId, t, i18n.language]);
+    tRef.current = { t, locale: i18n.language, named: (accounts?.length ?? 0) > 1 };
+  }, [navigate, accountId, t, i18n.language, accounts]);
 
   useEffect(() => {
     if (!ready || rows === null || margins === null) {
@@ -163,7 +119,7 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
       if (inputs === null) return;
       try {
         const triggered = await runPass(inputs);
-        for (const { alert, price } of triggered) notifyTriggered(alert, () => openAlerts.current(), tRef.current.t, tRef.current.locale, price);
+        for (const { alert, price } of triggered) notifyTriggered(alert, () => openAlerts.current(), tRef.current.t, tRef.current.locale, price, tRef.current.named ? inputs.accountId : undefined);
       } catch {
         // Une base fermée (onglet dépassé par un schéma plus récent) : la passe suivante réessaie.
       }
@@ -174,47 +130,12 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
   // S₀ : le prix du moment si la vente est fraîche, sinon la barre du jour de la vente (spec §6.2).
   const port = account?.twsPort;
   const syncedAt = account?.lastAgentSyncAt;
-  const barsAsked = useRef(new Set<string>());
   useEffect(() => {
     if (!ready || alerts === null) return;
-    const pending = alerts.filter((a): a is WheelAlert => a.kind === "wheel" && a.anchor === null);
-    if (pending.length === 0) return;
-    const live = (ticker: string) => {
-      if (ownSnapshot?.source !== "agent") return null;
-      const quote = priceOf(ticker);
-      return quote?.realtime ? { price: quote.price, at: ownSnapshot.asOf } : null;
-    };
-    const needBars = new Map<string, WheelAlert[]>();
-    const observedAt = new Date().toISOString();
-    // `saleWhen` est une heure IB : l'instant présent s'y compare une fois passé par `toReportTime`.
-    const nowReport = Date.parse(toReportTime(observedAt));
-    for (const alert of pending) {
-      const anchor = chooseAnchor({ saleWhen: alert.saleWhen, observedAt, live: live(alert.ticker), dayBar: null });
-      if (anchor !== null) void setAlertAnchor(db, accountId, alert.id, anchor).catch(() => {});
-      // Tant que la fenêtre est ouverte, seul le prix du moment vaut S₀ : un VWAP de journée
-      // entamée serait figé à sa place. On attend un snapshot `agent` pris dans la fenêtre.
-      else if (nowReport - Date.parse(alert.saleWhen) > ANCHOR_LIVE_WINDOW_MS) needBars.set(`${alert.ticker}|${alert.currency}`, [...(needBars.get(`${alert.ticker}|${alert.currency}`) ?? []), alert]);
-    }
-    if (presence !== "present" || port === undefined) return;
-    for (const [key, group] of needBars) {
-      const guard = `${accountId}|${key}|${syncedAt ?? ""}`;
-      if (barsAsked.current.has(guard)) continue;
-      barsAsked.current.add(guard);
-      const { ticker, currency } = group[0];
-      void fetchBars(port, ticker, currency).then(async (result) => {
-        if (!result.ok) return;
-        for (const alert of group) {
-          const bar = result.payload.bars.find((b) => b.date === alert.saleWhen.slice(0, 10));
-          const anchor = chooseAnchor({
-            saleWhen: alert.saleWhen,
-            observedAt,
-            live: null,
-            dayBar: bar ? { average: bar.average, close: bar.close } : null,
-          });
-          if (anchor !== null) await setAlertAnchor(db, accountId, alert.id, anchor);
-        }
-      }).catch(() => {});
-    }
+    void anchorPending(db, accountId, alerts, {
+      snapshot: ownSnapshot ?? null, priceOf, port, agentPresent: presence === "present", syncedAt,
+      observedAt: new Date().toISOString(), fetchBars,
+    });
   }, [ready, alerts, ownSnapshot, priceOf, presence, port, syncedAt, db, accountId]);
 
   return view;

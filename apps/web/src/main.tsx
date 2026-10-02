@@ -1,12 +1,14 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "@/App";
+import { startAlertWatcher } from "@/alerts/watcher";
 import { applyStoredTheme } from "@/hooks/useTheme";
 import { db } from "@/db/schema";
 import { isDemo } from "@/demo/mode";
 import { startApp } from "@/startup";
 import { reloadOnControllerChange } from "@/pwa/updates";
 import { reloadOnVersionChange } from "@/db/reloadOnVersionChange";
+import { router } from "@/routes/router";
 import "@/index.css";
 
 // Sync <html class="dark"> from localStorage before the first render: since sub-project 28
@@ -29,10 +31,14 @@ void startApp(
   async () => {
     if (isDemo()) await (await import("@/demo/seed")).ensureDemoSeeded(db);
   },
-  () =>
+  () => {
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
         <App />
       </StrictMode>,
-    ),
+    );
+    // Les alertes de tous les comptes, sur toutes les pages, onglet masqué compris (sous-projet 43) :
+    // après la graine de démonstration, jamais avant.
+    startAlertWatcher({ db, open: (path) => void router.navigate(path) });
+  },
 );

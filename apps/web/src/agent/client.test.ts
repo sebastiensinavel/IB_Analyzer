@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { FakeLocks } from "@/test/fakeLocks";
 import {
   AGENT_FETCH_TIMEOUT_MS,
   AGENT_PROBE_TIMEOUT_MS,
   AGENT_URL,
   exclusiveTws,
+  TWS_LOCK,
   fetchBars,
   fetchQuotes,
   fetchSnapshot,
@@ -18,6 +20,7 @@ function mockFetch(handler: (url: string, init?: RequestInit) => Response | Prom
 }
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -173,5 +176,44 @@ describe("fetchQuotes", () => {
   it("maps a 503 to tws-unreachable", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 503 }));
     expect(await fetchQuotes(7496, ["AAPL"])).toEqual({ ok: false, code: "tws-unreachable" });
+  });
+});
+
+describe("exclusiveTws across tabs", () => {
+  it("goes through the browser-wide lock when there is one, one call at a time", async () => {
+    const locks = new FakeLocks();
+    const request = vi.spyOn(locks, "request");
+    vi.stubGlobal("navigator", { ...navigator, locks });
+    let running = 0;
+    let most = 0;
+    const call = async () => {
+      running += 1;
+      most = Math.max(most, running);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      running -= 1;
+    };
+    await Promise.all([exclusiveTws(call), exclusiveTws(call), exclusiveTws(call)]);
+    expect(request).toHaveBeenCalledTimes(3);
+    expect(most).toBe(1);
+    expect(request.mock.calls.every(([name]) => name === TWS_LOCK)).toBe(true);
+  });
+
+  it("still serializes without navigator.locks", async () => {
+    let running = 0;
+    let most = 0;
+    const call = async () => {
+      running += 1;
+      most = Math.max(most, running);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      running -= 1;
+    };
+    await Promise.all([exclusiveTws(call), exclusiveTws(call)]);
+    expect(most).toBe(1);
+  });
+
+  it("lets the next call run after one that throws", async () => {
+    vi.stubGlobal("navigator", { ...navigator, locks: new FakeLocks() });
+    await expect(exclusiveTws(async () => { throw new Error("x"); })).rejects.toThrow("x");
+    await expect(exclusiveTws(async () => 1)).resolves.toBe(1);
   });
 });

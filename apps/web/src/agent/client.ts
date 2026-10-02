@@ -39,12 +39,19 @@ export async function probeAgent(): Promise<AgentInfo | null> {
 /** Same ceiling as the agent's QUOTES_MAX_SYMBOLS (apps/tws-agent), one per language. */
 export const QUOTES_MAX_SYMBOLS = 90;
 
+/** The browser-wide lock every TWS connection takes (sub-project 43, §5). */
+export const TWS_LOCK = "ib2:tws";
+
 // Every agent call that opens a TWS connection goes through here, one after the other: the agent
 // connects with clientId 0 each time, and TWS refuses a second connection on the same clientId
-// while the first lives (spec of sub-project 35, §4). A call's own timeout only starts on its turn.
+// while the first lives (spec of sub-project 35, §4). Across tabs too (sub-project 43, §5): two
+// tabs may each poll, and the watcher passes with its tab hidden. Without the Web Locks API, the
+// tab's own queue. A call's own timeout only starts on its turn.
 let twsQueue: Promise<unknown> = Promise.resolve();
 
 export function exclusiveTws<T>(call: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === "undefined" ? undefined : navigator.locks;
+  if (locks) return locks.request(TWS_LOCK, () => call());
   const turn = twsQueue.then(call, call);
   twsQueue = turn.catch(() => undefined);
   return turn;
