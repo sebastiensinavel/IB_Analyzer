@@ -57,6 +57,14 @@ un onglet de démonstration veille sur sa base, un onglet normal sur la sienne.
 
 Sans `navigator.locks`, l'onglet veille seul, sans élection.
 
+**La présence de l'agent reste sondée dans chaque onglet.** `useAgentPresence` est un état de
+module, propre à l'onglet : un onglet non élu qui ne sonderait jamais resterait « inconnu » —
+plus de cotations (`useUnderlyingQuotes`), plus de bouton Actualiser, plus de relais Flex par
+l'agent. Chaque onglet, élu ou non, appelle donc `refreshPresence()` au démarrage, toutes les
+`AGENT_POLL_MS` et au retour au premier plan d'un onglet dont la dernière sonde date de plus de
+`AGENT_POLL_MS`, tant qu'au moins un compte a un `twsPort` : `/health` n'ouvre aucune connexion
+TWS. Seules les passes (§3.3) sont réservées à l'onglet élu.
+
 ### 3.2 Cadence
 
 Une passe au démarrage (verrou obtenu), puis une `AGENT_POLL_MS` (5 min) après la **fin** de la
@@ -134,7 +142,7 @@ Le délai d'un appel ne court toujours qu'à son tour.
 
 ### 6.1 La pastille du sélecteur de compte
 
-`useTriggeredByAccount()` (`db/alerts.ts`) : une requête live sur toute la table `alertStates`,
+`useTriggeredAlertCounts()` (`db/hooks.ts` ; `db/alerts.ts` reste le seul écrivain) : une requête live sur toute la table `alertStates`,
 `triggeredAt !== null && acknowledgedAt === null`, comptée par `accountId`. Aucun journal : le
 statut « déclenchée » se lit sur l'état seul (`alertStatus`), et le veilleur purge à chaque passe
 les états des alertes disparues.
@@ -152,8 +160,9 @@ les états des alertes disparues.
 - au moins deux comptes : titre préfixé du compte, « beta · ZXAB ↑ 38,20 »
   (`alerts.notify.title_account`) ; un seul compte : inchangé ;
 - un clic ramène sur l'onglet et ouvre `/accounts/<compte de l'alerte>/alerts`. Le veilleur vit
-  hors du routeur : `AlertOpener`, monté une fois dans le routeur, lui confie `navigate`
-  (`setAlertOpener`, `src/alerts/opener.ts`) ; sans lui, `location.assign`.
+  hors de React : `main.tsx` lui passe `open: (path) => router.navigate(path)`, le routeur de
+  `routes/router.tsx` — aucune route commune n'enveloppe `/welcome`, `/accounts` et les pages de
+  compte, où un composant aurait pu lui confier `navigate`.
 
 `useAlertEngine` passe par la même fonction, son compte en paramètre.
 
