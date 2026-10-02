@@ -72,8 +72,9 @@ export function useAgentSync(accountId: string) {
   const agentPresence = useAgentPresence();
 
   const run = useCallback(async () => {
-    lastRunAt.set(accountId, Date.now());
-    await runAgentSync(db, accountId);
+    const outcome = await runAgentSync(db, accountId);
+    // Only a pass that really ran restarts the polling countdown.
+    if (outcome) lastRunAt.set(accountId, Date.now());
     // `db` is the module singleton `useDb()` always returns: listing it here is exhaustive-deps
     // correctness, not a real dependency — it never changes, so it never re-creates `run`.
   }, [accountId, db]);

@@ -13,16 +13,22 @@ export class FakeLocks {
 
   request<T>(name: string, ...args: [(lock: Lock | null) => T | Promise<T>] | [LockOptions, (lock: Lock | null) => T | Promise<T>]): Promise<T> {
     const [options, callback] = args.length === 1 ? [{} as LockOptions, args[0]] : args;
+    const signal = options.signal;
+    if (signal?.aborted) return Promise.reject(new DOMException("Aborted", "AbortError"));
     const previous = this.tails.get(name) ?? Promise.resolve();
+    let granted = false;
     let aborted = false;
     const abortion = new Promise<never>((_, reject) => {
-      options.signal?.addEventListener("abort", () => {
+      // Like the real API: an abort only counts while the request waits; once granted it is ignored.
+      signal?.addEventListener("abort", () => {
+        if (granted) return;
         aborted = true;
         reject(new DOMException("Aborted", "AbortError"));
       });
     });
     const turn = previous.then(async () => {
       if (aborted) return undefined as T;
+      granted = true;
       this.holders.set(name, (this.holders.get(name) ?? 0) + 1);
       try {
         return await callback({ name, mode: "exclusive" } as Lock);
