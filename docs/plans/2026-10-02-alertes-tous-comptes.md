@@ -1256,7 +1256,7 @@ git commit -m "Alertes : un veilleur vérifie tous les comptes, onglet masqué c
 **Interfaces:**
 - Produces: `useTriggeredAlertCounts(): ReadonlyMap<string, number> | undefined` — par `accountId`, les états `triggeredAt !== null && acknowledgedAt === null`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Dans `AccountSwitcher.test.tsx`, suivre le rendu existant (`MemoryRouter`, comptes semés) :
 
@@ -1298,12 +1298,12 @@ describe("AccountSwitcher alert badges", () => {
 
 Adapter les noms à l'aide de rendu, aux comptes déjà semés et au libellé `alerts.badge` du fichier ; le `getByLabelText` vise l'`aria-label` d'`AlertBadge`.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/components/AccountSwitcher.test.tsx`
 Expected: FAIL — aucune pastille.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `hooks.ts` :
 
@@ -1349,12 +1349,12 @@ export function useTriggeredAlertCounts(): ReadonlyMap<string, number> | undefin
 
 Si le `SelectItem` de `@ib/ui` enveloppe ses enfants dans un `ItemText` qui ne prend pas toute la largeur, poser la classe sur ce qui la prend, sans toucher à `packages/ui`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/components/AccountSwitcher.test.tsx src/components/app-sidebar`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/db/hooks.ts apps/web/src/components/AccountSwitcher.tsx apps/web/src/components/AccountSwitcher.test.tsx docs/plans/2026-10-02-alertes-tous-comptes.md

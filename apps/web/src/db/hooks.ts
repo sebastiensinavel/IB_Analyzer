@@ -179,3 +179,19 @@ export function useJournals(accountId: string, active: readonly ActivableStrateg
     return computeJournals(ledger, snapshot, inputs, active);
   }, [ledger, snapshot, inputs, active]);
 }
+
+/**
+ * Triggered and unseen alerts by account, every account at once (sub-project 43, §6.1): the
+ * status reads on the stored state alone, and the watcher purges the states of vanished alerts
+ * at every pass. `undefined` while loading.
+ */
+export function useTriggeredAlertCounts(): ReadonlyMap<string, number> | undefined {
+  const db = useDb();
+  const states = useLiveQuery(() => db.alertStates.filter((s) => s.triggeredAt !== null && s.acknowledgedAt === null).toArray(), [db]);
+  return useMemo(() => {
+    if (states === undefined) return undefined;
+    const counts = new Map<string, number>();
+    for (const s of states) counts.set(s.accountId, (counts.get(s.accountId) ?? 0) + 1);
+    return counts;
+  }, [states]);
+}
