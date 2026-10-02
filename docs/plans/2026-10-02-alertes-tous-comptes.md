@@ -583,7 +583,7 @@ git commit -m "Alertes : un compte s'évalue hors React"
   - `runAgentSync(db: AppDatabase, accountId: string): Promise<AgentSyncOutcome | null>` — `null` si l'id est vide, le compte inconnu ou déjà en cours de synchro ;
   - `class FakeLocks implements Pick<LockManager, "request">` + `held(name): boolean` pour les tests.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // apps/web/src/test/fakeLocks.ts
@@ -696,12 +696,12 @@ describe("runAgentSync", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/agent/client.test.ts src/agent/useAgentSync.test.tsx`
 Expected: FAIL — `TWS_LOCK` et `runAgentSync` non exportés.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `client.ts` :
 
@@ -751,12 +751,12 @@ export async function runAgentSync(db: AppDatabase, accountId: string): Promise<
 
 et dans `useAgentSync`, `run` devient `useCallback(async () => { lastRunAt.set(accountId, Date.now()); await runAgentSync(db, accountId); }, [accountId, db])` — `lastRunAt` reste jusqu'à la tâche 6, qui le retire avec `useAgentPolling`. Importer `AgentSyncOutcome` depuis `./sync` et `AppDatabase` depuis `@/db/schema`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/agent`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/test/fakeLocks.ts apps/web/src/agent docs/plans/2026-10-02-alertes-tous-comptes.md

@@ -2,7 +2,7 @@ import { render, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db, type AccountRecord } from "@/db/schema";
-import { AGENT_POLL_MS, resetAgentState, useAgentPolling, useAgentSync } from "./useAgentSync";
+import { AGENT_POLL_MS, resetAgentState, runAgentSync, useAgentPolling, useAgentSync } from "./useAgentSync";
 
 const ACCOUNT: AccountRecord = {
   id: "beta",
@@ -215,5 +215,25 @@ describe("useAgentSync", () => {
       await Promise.all([runHandle(), runHandle()]);
     });
     expect(calls.snapshot).toBe(2);
+  });
+});
+
+describe("runAgentSync", () => {
+  it("syncs the account and answers the outcome", async () => {
+    const calls = mockAgent();
+    expect(await runAgentSync(db, "beta")).toMatchObject({ status: "ok" });
+    expect(calls.snapshot).toBe(1);
+  });
+
+  it("answers null for an account already syncing, and does not call the agent twice", async () => {
+    const calls = mockAgent();
+    const [first, second] = await Promise.all([runAgentSync(db, "beta"), runAgentSync(db, "beta")]);
+    expect([first?.status, second]).toEqual(["ok", null]);
+    expect(calls.snapshot).toBe(1);
+  });
+
+  it("answers null for an unknown account", async () => {
+    mockAgent();
+    expect(await runAgentSync(db, "nobody")).toBeNull();
   });
 });
