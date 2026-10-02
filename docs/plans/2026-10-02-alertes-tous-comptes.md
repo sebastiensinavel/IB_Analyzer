@@ -50,7 +50,7 @@
   - `type ReadyJournals = Extract<JournalsView, { status: "ready" }>` (exporté depuis `db/journals.ts`) ;
   - `loadAccountJournals(db: AppDatabase, accountId: string): Promise<{ account: AccountRecord; snapshot: SnapshotRecord | null; journals: ReadyJournals } | null>` — `null` si le compte n'existe pas.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // apps/web/src/db/journals.test.tsx
@@ -113,12 +113,12 @@ describe("useJournals across accounts", () => {
 
 Si `SAMPLE_JOURNAL_TRANSACTIONS` porte déjà `accountId: "beta"`, le `map` le réécrit : garder tel quel.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run (depuis `apps/web`) : `npx vitest run src/db/journals.test.tsx`
 Expected: FAIL — `Cannot find module './journals'`. (Le test « across accounts » peut déjà passer : il fige un comportement, Review Focus 4.)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```ts
 // apps/web/src/db/journals.ts
@@ -189,12 +189,12 @@ export function useJournals(accountId: string, active: readonly ActivableStrateg
 
 et `useLedger` garde sa requête live (elle doit rester scopée) mais trie toujours par `sortTransactions` — inchangé. Retirer de `hooks.ts` les imports devenus inutiles (`buildIdentities`, `buildJournals`, `pairCorporateActions`). L'import circulaire de type `JournalsView` (`journals.ts` → `hooks.ts`) est un `import type`, sans effet à l'exécution.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/db/journals.test.tsx src/db/hooks src/alerts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/db/journals.ts apps/web/src/db/journals.test.tsx apps/web/src/db/hooks.ts docs/plans/2026-10-02-alertes-tous-comptes.md
