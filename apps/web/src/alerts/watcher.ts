@@ -24,12 +24,15 @@ function defaultLocks(): Pick<LockManager, "request"> | null {
  * agent pass, then the account's alerts, then a notification per alert triggered. An account's
  * failure never stops the next one.
  */
-async function pass(db: AppDatabase, open: (path: string) => void): Promise<void> {
-  if ((await refreshPresence()).status !== "present") return;
+async function pass(db: AppDatabase, open: (path: string) => void, stopped: () => boolean): Promise<void> {
   const accounts = await db.accounts.orderBy("id").toArray();
   const named = accounts.length > 1;
-  for (const account of accounts) {
-    if (account.twsPort === undefined) continue;
+  const watched = accounts.filter((account) => account.twsPort !== undefined);
+  // No port, no probe: a visitor without TWS never sees a request towards 127.0.0.1 (§3.1).
+  if (watched.length === 0 || stopped()) return;
+  if ((await refreshPresence()).status !== "present") return;
+  for (const account of watched) {
+    if (stopped()) return;
     try {
       const outcome = await runAgentSync(db, account.id);
       // Already syncing in this tab (the Refresh button), or deleted meanwhile: skipped this pass.
@@ -60,13 +63,15 @@ async function pass(db: AppDatabase, open: (path: string) => void): Promise<void
  */
 export function startAlertWatcher({ db, open, locks = defaultLocks() }: WatcherDeps): () => void {
   let stopped = false;
+  let running = false;
 
   // Presence, in every tab: `/health` opens no TWS connection, and a tab that never probed would
   // stay "unknown" — no quotes, no Refresh button, no Flex relay through the agent (§3.1).
   let hasPort = false;
   let lastProbe = 0;
   const probe = () => {
-    if (stopped || !hasPort) return;
+    // A pass in flight probes on its own: one /health at a time from this tab.
+    if (stopped || !hasPort || running) return;
     lastProbe = Date.now();
     void refreshPresence();
   };
@@ -79,7 +84,6 @@ export function startAlertWatcher({ db, open, locks = defaultLocks() }: WatcherD
   // Passes, in the leading tab only. Never two at once: one asked for while another runs is played
   // right after it, once; the next one is armed only at the end of a pass (§3.2).
   let leading = false;
-  let running = false;
   let again = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const request = async (): Promise<void> => {
@@ -94,7 +98,7 @@ export function startAlertWatcher({ db, open, locks = defaultLocks() }: WatcherD
       do {
         again = false;
         lastProbe = Date.now();
-        await pass(db, open);
+        await pass(db, open, () => stopped);
       } while (again && !stopped);
     } finally {
       running = false;
@@ -117,6 +121,7 @@ export function startAlertWatcher({ db, open, locks = defaultLocks() }: WatcherD
         void request();
       }
     },
+    // A closed base: a newer schema reloads the tab (`reloadOnVersionChange`), nothing to keep alive.
     error: () => {},
   });
 

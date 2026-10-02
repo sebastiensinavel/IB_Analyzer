@@ -19,18 +19,31 @@ const account = (id: string, fields: Partial<AccountRecord> = {}): AccountRecord
 // `syncAgent` checks the snapshot's single account against the account's `ibAccountId`.
 const PAYLOAD = { accounts: ["U1234567"], fetchedAt: "2026-09-30T18:00:00.000Z", cashAvailable: 1, positions: [], executions: [] };
 
+/** The most /health calls in flight at once since the last `mockAgent`: nothing but the watcher serializes them. */
+let healthInFlight = 0;
+let healthMost = 0;
+
 /**
  * The agent: /health (absent unless `present`), /snapshot per port (`down` ports answer 503,
  * each answer after `snapshotDelayMs`), /quotes answering `last` for every asked symbol. Counts
  * calls by path and port (`?port=N`, as `agent/client.ts` sends it).
  */
-function mockAgent({ present = true, down = [] as number[], last = 244, snapshotDelayMs = 0 } = {}) {
+function mockAgent({ present = true, down = [] as number[], last = 244, snapshotDelayMs = 0, healthDelayMs = 0 } = {}) {
   const calls: string[] = [];
+  healthInFlight = 0;
+  healthMost = 0;
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const url = new URL(String(input instanceof Request ? input.url : input));
     const port = url.searchParams.get("port");
     calls.push(`${url.pathname}${port ? `:${port}` : ""}`);
     if (url.pathname === "/health") {
+      healthInFlight += 1;
+      healthMost = Math.max(healthMost, healthInFlight);
+      try {
+        if (healthDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, healthDelayMs));
+      } finally {
+        healthInFlight -= 1;
+      }
       if (!present) throw new TypeError("Failed to fetch");
       return new Response(JSON.stringify({ version: "0.1.0" }), { status: 200 });
     }
@@ -186,6 +199,33 @@ describe("startAlertWatcher", () => {
     expect(snapshots(calls)).toEqual([]);
     await db.accounts.update("beta", { twsPort: 7502 });
     await vi.waitFor(() => expect(snapshots(calls)).toEqual(["/snapshot:7502"]));
+  });
+
+  it("never probes the agent while no account has a TWS port", async () => {
+    const calls = mockAgent();
+    await db.accounts.bulkAdd([account("alpha"), account("beta")]);
+    start();
+    await flush();
+    await vi.advanceTimersByTimeAsync(AGENT_POLL_MS);
+    await flush();
+    expect(calls.filter((c) => c === "/health")).toEqual([]);
+  });
+
+  it("never starts a pass while another runs, even when one is asked for", async () => {
+    // /health opens each pass and nothing else serializes it: two passes at once would overlap there.
+    const calls = mockAgent({ healthDelayMs: 30_000 });
+    await db.accounts.bulkAdd([account("alpha"), account("beta", { twsPort: 7502 })]);
+    const stop = start();
+    await vi.waitFor(() => expect(calls.filter((c) => c === "/health")).toHaveLength(1));
+    await db.accounts.update("alpha", { twsPort: 7501 });
+    await vi.waitFor(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(snapshots(calls)).toEqual(["/snapshot:7502", "/snapshot:7501", "/snapshot:7502"]);
+    });
+    expect(healthMost).toBe(1);
+    stop();
+    await vi.advanceTimersByTimeAsync(60_000);
+    await flush();
   });
 
   it("plays a pass asked for during another right after it", async () => {
