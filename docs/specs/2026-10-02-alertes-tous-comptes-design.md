@@ -1,6 +1,6 @@
 # Sous-projet 43 — Les alertes de tous les comptes
 
-Statut : conception validée (2026-10-02).
+Statut : implémenté (2026-10-02).
 
 Depuis le sous-projet 42, une alerte n'est évaluée que pour le compte à l'écran : `useAlertEngine`
 est monté par `AccountDataProvider`, et l'agent n'est sondé que pour ce compte (`useAgentPolling`,

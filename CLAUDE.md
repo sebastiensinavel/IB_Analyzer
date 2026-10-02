@@ -321,7 +321,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   se cote comme un **indice** CBOE, en différé (`indices=XSP:CBOE`, `INDEX_EXCHANGES` dans
   `lib/marketIndices.ts`, `quotedTicker` ne le traduit plus). **Une connexion TWS à la fois** : `fetchSnapshot`,
   `fetchBars` et `fetchQuotes` passent par `exclusiveTws` (`agent/client.ts`), parce que TWS
-  refuse deux connexions `clientId 0` simultanées. Côté agent, `collect_quotes` qualifie chaque
+  refuse deux connexions `clientId 0` simultanées, entre onglets aussi, par le verrou Web Locks `ib2:tws` (`TWS_LOCK`), la file en mémoire seulement sans `navigator.locks`. Côté agent, `collect_quotes` qualifie chaque
   symbole (`qualifyContractsAsync`, `Stock(symbole, 'SMART', 'USD')`) avant de l'abonner, et
   l'abonne toujours sur sa place principale, jamais sur `SMART` : sur `SMART`, une valeur NASDAQ
   passe par un abonnement que l'API n'a pas et TWS ne sert rien du tout, pas même en différé
@@ -532,9 +532,7 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   états (`staleStateIds`) que journaux prêts, et `useScopedLiveQuery` (`db/hooks.ts`) rend « en
   chargement » après un changement de compte au lieu des données du précédent, ce qui protège S₀
   d'une purge sur des journaux périmés. Aucun rattrapage entre deux passes de l'agent.
-  **L'évaluation n'a lieu que sur une page de compte ouverte, agent présent** : sans agent
-  (`useAgentPresence`), la passe purge toujours mais ne déclenche ni ne réarme rien — le snapshot
-  `agent` stocké et les cotations peuvent dater de la veille. L'identifiant d'une alerte de condor
+  **Le veilleur évalue tous les comptes** (sous-projet 43) : `startAlertWatcher` (`src/alerts/watcher.ts`), démarré par `main.tsx`, tient le verrou Web Locks `ib2:watcher:<base>` — un seul onglet passe, un autre reprend à sa fermeture — et toutes les `AGENT_POLL_MS`, onglet masqué compris, fait pour chaque compte qui a un port `runAgentSync` puis `evaluateAccountAlerts` (`alerts/evaluateAccount.ts`, sans React : journaux par `loadAccountJournals`, `runPass`, `anchorPending`). Sans aucun port TWS, la passe ne fait rien, pas même une sonde ; sans agent présent, elle s'arrête. Chaque onglet sonde l'agent, élu ou non, dès qu'un compte a un port — sa sonde saute pendant une passe, qui sonde d'elle-même. Une synchro en échec purge mais ne déclenche ni ne réarme rien. `useAlertEngine` reste monté pour le compte affiché, pour l'affichage et la réaction immédiate ; la double évaluation est sans effet, la passe relisant les états dans sa transaction. Le sélecteur de compte porte les alertes déclenchées des autres comptes (`useTriggeredAlertCounts`) ; à partir de deux comptes, la notification nomme le compte. `useAgentPolling` n'existe plus. L'identifiant d'une alerte de condor
   est `condor:<row.id>` ; une clôture partielle renumérote les lignes composites, si bien que son
   état peut passer à la ligne partielle (limite connue). Désactiver la Wheel ou « Supprimer les
   transactions » fait disparaître les alertes automatiques et, par la purge, leur S₀ : revenues,
@@ -669,6 +667,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 40 | L'application s'ouvre serveur coupé, et s'installe | fait (2026-09-29) |
 | 41 | La page d'accueil, la démonstration et ses captures | fait (2026-09-29) |
 | 42 | Les alertes de prix | fait (2026-09-30) |
+| 43 | Les alertes de tous les comptes | fait (2026-10-02) |
 
 ## Outillage
 

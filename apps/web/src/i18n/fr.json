@@ -712,7 +712,7 @@
         "Wheel : un call couvert vendu sous votre prix d'assignation. L'alerte sonne quand le cours a parcouru 70 % du chemin entre son niveau au moment de la vente et le strike : il faut sans doute rouler la position. Aucune alerte au strike ou au-dessus.",
         "Condors : l'alerte sonne quand le cours s'approche d'une aile vendue, à 15 % de l'écart entre les strikes vendus. Les deux pourcentages se règlent par compte, et par alerte, dans la page Alertes.",
         "Poser une alerte : sur un graphe de cours, cliquez sur la cloche « + » qui suit le curseur à droite du graphe, juste avant l'échelle des prix, ou Alt+clic dans le graphe ; sur écran tactile, un appui long. Glissez la ligne pour la déplacer, cliquez sur sa cloche pour la régler, la supprimer ou la réactiver.",
-        "Une alerte se vérifie à chaque passe de l'agent (toutes les 5 minutes), seulement quand une page d'un compte est ouverte et l'agent présent : sans agent, onglet fermé ou sur Paramètres et l'Aide, rien n'est évalué, et aucun rattrapage n'a lieu entre deux passes. Le cours d'un titre que vous ne détenez pas est différé d'environ 15 minutes.",
+        "Une alerte se vérifie à chaque passe de l'agent (toutes les 5 minutes), pour tous vos comptes qui ont un port TWS, quelle que soit la page ouverte et même onglet en arrière-plan. Sans agent ou sans onglet ouvert, rien n'est évalué, et aucun rattrapage n'a lieu entre deux passes. Le cours d'un titre que vous ne détenez pas est différé d'environ 15 minutes.",
         "Une notification du navigateur accompagne chaque alerte déclenchée, si vous l'avez autorisée. Le menu affiche une pastille par stratégie ; la page Alertes les liste toutes."
       ]
     },

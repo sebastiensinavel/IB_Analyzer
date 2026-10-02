@@ -1368,26 +1368,26 @@ git commit -m "Alertes : le sélecteur de compte signale les alertes des autres 
 **Files:**
 - Modify: `apps/web/src/i18n/fr.json`, `apps/web/src/i18n/en.json` (texte d'aide des alertes, la clé dont la valeur fr commence par « Une alerte se vérifie à chaque passe de l'agent »), `CLAUDE.md`, `docs/specs/2026-10-02-alertes-tous-comptes-design.md` (statut)
 
-- [ ] **Step 1: Aide**
+- [x] **Step 1: Aide**
 
 fr : « Une alerte se vérifie à chaque passe de l'agent (toutes les 5 minutes), pour tous vos comptes qui ont un port TWS, quelle que soit la page ouverte et même onglet en arrière-plan. Sans agent ou sans onglet ouvert, rien n'est évalué, et aucun rattrapage n'a lieu entre deux passes. Le cours d'un titre que vous ne détenez pas est différé d'environ 15 minutes. »
 
 en : la même chose en anglais, sur la valeur en actuelle de la même clé (garder son ton et sa dernière phrase).
 
-- [ ] **Step 2: CLAUDE.md**
+- [x] **Step 2: CLAUDE.md**
 
 - Règle des alertes : remplacer « **L'évaluation n'a lieu que sur une page de compte ouverte, agent présent** : sans agent (`useAgentPresence`), la passe purge toujours mais ne déclenche ni ne réarme rien — le snapshot `agent` stocké et les cotations peuvent dater de la veille. » par : « **Le veilleur évalue tous les comptes** (sous-projet 43) : `startAlertWatcher` (`src/alerts/watcher.ts`), démarré par `main.tsx`, tient le verrou Web Locks `ib2:watcher:<base>` — un seul onglet passe, un autre reprend à sa fermeture — et toutes les `AGENT_POLL_MS`, onglet masqué compris, fait pour chaque compte qui a un port `runAgentSync` puis `evaluateAccountAlerts` (`alerts/evaluateAccount.ts`, sans React : journaux par `loadAccountJournals`, `runPass`, `anchorPending`). Chaque onglet sonde l'agent, élu ou non. Une synchro en échec purge mais ne déclenche ni ne réarme rien. `useAlertEngine` reste monté pour le compte affiché, pour l'affichage et la réaction immédiate ; la double évaluation est sans effet, la passe relisant les états dans sa transaction. Le sélecteur de compte porte les alertes déclenchées des autres comptes (`useTriggeredAlertCounts`) ; à partir de deux comptes, la notification nomme le compte. `useAgentPolling` n'existe plus. »
 - Règle de `exclusiveTws` (« **Une connexion TWS à la fois** ») : ajouter « entre onglets aussi, par le verrou Web Locks `ib2:tws` (`TWS_LOCK`), la file en mémoire seulement sans `navigator.locks` ».
 - Registre : `| 43 | Les alertes de tous les comptes | fait (2026-10-02) |`.
 
-- [ ] **Step 3: Statut de la spec** : « Statut : implémenté (2026-10-02). »
+- [x] **Step 3: Statut de la spec** : « Statut : implémenté (2026-10-02). »
 
-- [ ] **Step 4: Vérification complète**
+- [x] **Step 4: Vérification complète**
 
 Run (racine) : `pnpm check`
 Expected: lint, typage, build et tous les tests verts. Corriger tout écart, relancer **une** fois.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add CLAUDE.md apps/web/src/i18n docs
