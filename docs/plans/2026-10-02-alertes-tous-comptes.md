@@ -415,7 +415,7 @@ git commit -m "Alertes : la passe et la pose de S₀ sortent du hook"
   export function evaluateAccountAlerts(db: AppDatabase, accountId: string, deps: EvaluateAccountDeps): Promise<Triggered[]>;
   ```
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Reprendre les fabriques `account`, `trade`, `position`, `CONDOR_TRANSACTIONS` et `WHEEL_TRANSACTIONS` de `useAlertEngine.test.tsx` (les copier en tête du fichier : elles n'y sont pas exportées).
 
@@ -492,12 +492,12 @@ describe("evaluateAccountAlerts", () => {
 
 Adapter la forme de `createManualAlert` et d'une entrée de `QuoteMap` à leurs signatures réelles (`db/alerts.ts`, `agent/quotes.ts`) ; l'assertion, elle, ne change pas. Pour le condor : 615 est sous le seuil 616 calculé dans `useAlertEngine.test.tsx` (« alert under 616 ») — si le test du hook sème le condor autrement (stratégies actives, snapshot), reprendre exactement son semis.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/alerts/evaluateAccount.test.ts`
 Expected: FAIL — `Cannot find module './evaluateAccount'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```ts
 // apps/web/src/alerts/evaluateAccount.ts
@@ -556,12 +556,12 @@ export async function evaluateAccountAlerts(db: AppDatabase, accountId: string, 
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/alerts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/alerts/evaluateAccount.ts apps/web/src/alerts/evaluateAccount.test.ts docs/plans/2026-10-02-alertes-tous-comptes.md
