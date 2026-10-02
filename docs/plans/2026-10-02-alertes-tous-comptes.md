@@ -1394,6 +1394,6 @@ git add CLAUDE.md apps/web/src/i18n docs
 git commit -m "Sous-projet 43 : Aide, CLAUDE.md et registre"
 ```
 
-- [ ] **Step 6: Instance de relecture**
+- [x] **Step 6: Instance de relecture**
 
 Dans le worktree : `pnpm dev:start`, puis donner les deux URL à Seb (CLAUDE.md, Workflow). Rappeler qu'un worktree servi sur un autre port que 5173 doit être autorisé par l'agent : `ib-tws-agent origin add http://127.0.0.1:<port>`, puis relancer l'agent.
