@@ -11,6 +11,7 @@ import { createManualAlert } from "@/db/alerts";
 import { useActiveStrategies, useJournals } from "@/db/hooks";
 import { db, type AccountRecord, type AlertStateRecord, type SnapshotRecord } from "@/db/schema";
 import { SAMPLE_JOURNAL_TRANSACTIONS } from "@/mocks/journals";
+import { resetAnchorGuards } from "./anchors";
 import { useAlertEngine, type AlertsView } from "./useAlertEngine";
 
 const account = (id: string, fields: Partial<AccountRecord> = {}): AccountRecord => ({
@@ -134,6 +135,7 @@ const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 60))
 const stateOf = (accountId: string, alertId: string) => db.alertStates.get([accountId, alertId]);
 
 beforeEach(async () => {
+  resetAnchorGuards();
   resetQuotes();
   resetAgentState();
   await db.open();

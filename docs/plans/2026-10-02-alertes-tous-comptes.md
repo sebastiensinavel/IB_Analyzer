@@ -217,7 +217,7 @@ Refactor sans changement de comportement : `useAlertEngine.test.tsx` doit passer
   - `pass.ts` : `interface PassInputs { db; accountId; rows: readonly JournalRow[]; margins: AlertMargins; priceOf: (ticker: string) => PriceQuote | null }`, `interface Triggered { alert: Alert; price: number | undefined }`, `runPass(inputs: PassInputs): Promise<Triggered[]>`, `noPrice: () => null` ;
   - `anchors.ts` : `interface AnchorInputs { snapshot: SnapshotRecord | null; priceOf: (ticker: string) => PriceQuote | null; port: number | undefined; agentPresent: boolean; syncedAt: string | undefined; observedAt: string; fetchBars: (port: number, symbol: string, currency?: string) => Promise<BarsResult> }`, `anchorPending(db, accountId, alerts: readonly Alert[], inputs: AnchorInputs): Promise<void>`, `resetAnchorGuards(): void`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // apps/web/src/alerts/anchors.test.ts
@@ -272,12 +272,12 @@ describe("anchorPending", () => {
 
 `saleWhen` est une heure IB (New York stampée UTC) ; `observedAt` vrai UTC le lendemain : la fenêtre live (`ANCHOR_LIVE_WINDOW_MS`) est passée.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/alerts/anchors.test.ts`
 Expected: FAIL — `Cannot find module './anchors'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `pass.ts` : déplacer **tel quel** depuis `useAlertEngine.ts` le commentaire, `PassInputs` et `runPass`, plus `noPrice`, et nommer son type de retour `Triggered[]`. Le hook les importe.
 
@@ -378,12 +378,12 @@ Dans `useAlertEngine.ts`, l'effet S₀ devient :
 
 Le `barsAsked` ref du hook disparaît. Dans `useAlertEngine.test.tsx`, ajouter `resetAnchorGuards()` au `beforeEach` (le garde est désormais de module) — aucune autre modification.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/alerts`
 Expected: PASS, `useAlertEngine.test.tsx` compris.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/alerts docs/plans/2026-10-02-alertes-tous-comptes.md
