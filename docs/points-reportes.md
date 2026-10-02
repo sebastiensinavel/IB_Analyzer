@@ -1220,6 +1220,20 @@ Vus pendant les captures, non corrigés.
 - **Les jours de marché de la démonstration ne sautent que les week-ends**, pas les jours fériés
   américains.
 
+## Reporté par le sous-projet 43 (les alertes de tous les comptes)
+
+- **Le moteur de la coquille ne se garde que sur la présence de l'agent.** Agent présent mais TWS
+  non lancé, le snapshot `agent` de la veille détient encore l'action : le veilleur, lui, ne fait
+  que purger (`outcome.status !== "ok"`), mais `useAlertEngine` du compte affiché peut déclencher
+  sur ce `marketPrice` périmé. Antérieur au sous-projet 42. Piste : garder la coquille aussi sur
+  `account.lastAgentSyncStatus`.
+- **`refreshQuotes` saute en silence un lot en échec**, et une passe `fresh` d'`evaluateAccountAlerts`
+  (`apps/web/src/alerts/evaluateAccount.ts`) lit alors ce qui reste dans la table des cotations en
+  mémoire de l'onglet, peut-être vieille de plusieurs heures dans un onglet meneur de longue vie.
+  Antérieur au sous-projet 43 pour la coquille aussi.
+
+---
+
 ## Sans échéance
 
 - **Aucune intégration continue.** Décidé au brainstorming du sous-projet 3 : `origin` est un

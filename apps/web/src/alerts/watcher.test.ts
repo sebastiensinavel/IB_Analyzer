@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetQuotes } from "@/agent/quotes";
 import { AGENT_POLL_MS, agentPresence, resetAgentState } from "@/agent/useAgentSync";
 import { createManualAlert } from "@/db/alerts";
-import { db, type AccountRecord } from "@/db/schema";
+import { AppDatabase, db, type AccountRecord } from "@/db/schema";
 import { FakeLocks } from "@/test/fakeLocks";
 import { resetAnchorGuards } from "./anchors";
 import { startAlertWatcher } from "./watcher";
@@ -280,5 +280,24 @@ describe("startAlertWatcher", () => {
     await flush();
     expect(locks.held("ib2:watcher:" + db.name)).toBe(false);
     expect(snapshots(calls)).toHaveLength(1);
+  });
+
+  it("takes one lock per base: the demo base's watcher does not wait behind the real one's", async () => {
+    mockAgent();
+    const demo = new AppDatabase("ib-analyzer-demo-locktest");
+    await demo.open();
+    const locks = new FakeLocks();
+    try {
+      start({ locks });
+      start({ db: demo, locks });
+      await vi.waitFor(() => {
+        expect(locks.held("ib2:watcher:" + db.name)).toBe(true);
+        expect(locks.held("ib2:watcher:ib-analyzer-demo-locktest")).toBe(true);
+      });
+    } finally {
+      while (stops.length > 0) stops.pop()?.();
+      demo.close();
+      await AppDatabase.delete("ib-analyzer-demo-locktest");
+    }
   });
 });
