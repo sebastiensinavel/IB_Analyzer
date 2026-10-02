@@ -1042,6 +1042,7 @@
     },
     "notify": {
       "title_above": "{{ticker}} ↑ {{price}}",
+      "title_account": "{{account}} · {{title}}",
       "title_below": "{{ticker}} ↓ {{price}}",
       "wheel": "Wheel — call {{strike}}",
       "condor": "Condor {{put}}/{{call}}"

@@ -774,7 +774,7 @@ git commit -m "Agent : une connexion TWS à la fois entre onglets, runAgentSync 
 **Interfaces:**
 - Produces: `notifyTriggered(alert: Alert, onOpen: () => void, t: TFunction, locale: string, price?: number, account?: string): void` — `account` défini ⇒ titre préfixé.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 // notify.test.ts — dans describe("notifyTriggered")
@@ -787,12 +787,12 @@ git commit -m "Agent : une connexion TWS à la fois entre onglets, runAgentSync 
 
 Et un test de `useAlertEngine.test.tsx` (le fichier a déjà `FakeNotification`) : deux comptes en base, le compte affiché `beta`, une alerte manuelle déclenchée ⇒ titre `"beta · …"` ; un seul compte ⇒ titre sans préfixe. Suivre la structure du test de notification existant du fichier et n'ajouter que le second compte et l'assertion de titre.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run : `npx vitest run src/alerts/notify.test.ts src/alerts/useAlertEngine.test.tsx`
 Expected: FAIL — titre sans préfixe.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `fr.json` et `en.json`, dans `alerts.notify` : `"title_account": "{{account}} · {{title}}"` (identique dans les deux langues).
 
@@ -814,12 +814,12 @@ Compléter la doc du paramètre : « `account`, à partir de deux comptes dans l
 
 `useAlertEngine.ts` : lire le nombre de comptes par `useAccounts()` (`db/hooks.ts`), le garder dans `tRef` (`named: (accounts?.length ?? 0) > 1`), et passer `tRef.current.named ? accountId : undefined` en dernier argument de `notifyTriggered`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run : `npx vitest run src/alerts src/i18n`
 Expected: PASS (parité fr/en comprise).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/src/alerts apps/web/src/i18n docs/plans/2026-10-02-alertes-tous-comptes.md

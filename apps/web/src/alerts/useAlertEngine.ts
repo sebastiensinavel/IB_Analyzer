@@ -18,7 +18,7 @@ import { fetchBars } from "@/agent/client";
 import { useUnderlyingQuotesMap } from "@/agent/quotes";
 import { useAgentPresence } from "@/agent/useAgentSync";
 import { useDb } from "@/db/DbProvider";
-import { useAccount, useScopedLiveQuery, type JournalsView } from "@/db/hooks";
+import { useAccount, useAccounts, useScopedLiveQuery, type JournalsView } from "@/db/hooks";
 import type { SnapshotRecord } from "@/db/schema";
 import { alertMargins } from "@/lib/alertMargins";
 import { anchorPending } from "./anchors";
@@ -56,6 +56,7 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
   const db = useDb();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const accounts = useAccounts();
   const account = useAccount(accountId);
   const defs = useScopedLiveQuery(accountId, () => db.alerts.where("accountId").equals(accountId).toArray(), [db, accountId]);
   const stored = useScopedLiveQuery(accountId, () => db.alertStates.where("accountId").equals(accountId).toArray(), [db, accountId]);
@@ -94,11 +95,11 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
   const latest = useRef<PassInputs | null>(null);
   const queue = useRef<{ tail: Promise<void>; scheduled: boolean }>({ tail: Promise.resolve(), scheduled: false });
   const openAlerts = useRef<() => void>(() => {});
-  const tRef = useRef({ t, locale: i18n.language });
+  const tRef = useRef({ t, locale: i18n.language, named: false });
   useEffect(() => {
     openAlerts.current = () => void navigate(`/accounts/${accountId}/alerts`);
-    tRef.current = { t, locale: i18n.language };
-  }, [navigate, accountId, t, i18n.language]);
+    tRef.current = { t, locale: i18n.language, named: (accounts?.length ?? 0) > 1 };
+  }, [navigate, accountId, t, i18n.language, accounts]);
 
   useEffect(() => {
     if (!ready || rows === null || margins === null) {
@@ -118,7 +119,7 @@ export function useAlertEngine(accountId: string, journals: JournalsView, snapsh
       if (inputs === null) return;
       try {
         const triggered = await runPass(inputs);
-        for (const { alert, price } of triggered) notifyTriggered(alert, () => openAlerts.current(), tRef.current.t, tRef.current.locale, price);
+        for (const { alert, price } of triggered) notifyTriggered(alert, () => openAlerts.current(), tRef.current.t, tRef.current.locale, price, tRef.current.named ? inputs.accountId : undefined);
       } catch {
         // Une base fermée (onglet dépassé par un schéma plus récent) : la passe suivante réessaie.
       }

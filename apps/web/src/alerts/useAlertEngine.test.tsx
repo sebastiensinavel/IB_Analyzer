@@ -182,6 +182,23 @@ describe("useAlertEngine", () => {
     expect(FakeNotification.created).toEqual(["AAPL ↓ 245,00", "MSFT ↑ 400,00"]);
   });
 
+  it.each([
+    ["two accounts", true, "beta · AAPL ↓ 245,00"],
+    ["one account", false, "AAPL ↓ 245,00"],
+  ])("names the account in the notification title with %s", async (_label, second, title) => {
+    mockAgent();
+    await refreshPresence();
+    await db.accounts.add(account("beta"));
+    if (second) await db.accounts.add(account("alpha"));
+    await createManualAlert(db, "beta", { ticker: "AAPL", price: 245, direction: "below" });
+    renderProvider("beta");
+    await screen.findByText("alerts 1 / triggered 0");
+    act(() => mergeQuotes(new Map([["AAPL", { last: 244, change: null }]])));
+    await screen.findByText("alerts 1 / triggered 1");
+    await settle();
+    expect(FakeNotification.created).toEqual([title]);
+  });
+
   it("evaluates nothing without the agent, even on a stored agent snapshot past the threshold", async () => {
     mockAgent({ present: false });
     await refreshPresence();
