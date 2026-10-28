@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture IB Analyzer</title>
+<style>
+:root {
+  --bg:#F5F7F8; --panel:#FFFFFF; --panel-2:#EEF2F4; --line:#D9E1E6;
+  --tx:#13202A; --tx-2:#4D5E6A; --tx-3:#7A8A95;
+  --teal:#1A8F86; --gold:#B7801F; --red:#C9453E; --blue:#3A6FD8; --violet:#6E55D6;
+  --code:#EEF2F4;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#080D12; --panel:#0E151C; --panel-2:#121B23; --line:#1C2731;
+    --tx:#E7EEF2; --tx-2:#9AA9B3; --tx-3:#63727D;
+    --teal:#2BC4B4; --gold:#E6B04A; --red:#F0716A; --blue:#6C9EF8; --violet:#A28BF5;
+    --code:#121B23;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#080D12; --panel:#0E151C; --panel-2:#121B23; --line:#1C2731;
+  --tx:#E7EEF2; --tx-2:#9AA9B3; --tx-3:#63727D;
+  --teal:#2BC4B4; --gold:#E6B04A; --red:#F0716A; --blue:#6C9EF8; --violet:#A28BF5;
+  --code:#121B23;
+}
+* { box-sizing: border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--tx);
+  font:15px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 20px; margin: 44px 0 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+h3 { font-size: 16px; margin: 24px 0 8px; }
+p, li { color: var(--tx); }
+.lede { color: var(--tx-2); margin: 0 0 24px; max-width: 70ch; }
+code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.88em; background: var(--code); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--teal); }
+nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 18px; }
+nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+@media (max-width: 640px) { nav.toc ol { columns: 1; } }
+.principle { border-left: 3px solid var(--teal); background: var(--panel); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); margin: 12px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--panel-2); color: var(--tx-2); font-weight: 600; font-size: 13px; }
+tr:last-child td { border-bottom: none; }
+td code { white-space: nowrap; }
+figure { margin: 16px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+figcaption { color: var(--tx-3); font-size: 13px; margin-top: 8px; }
+svg { width: 100%; height: auto; display: block; }
+svg text { font-family: Inter, system-ui, sans-serif; fill: var(--tx); }
+svg .muted { fill: var(--tx-2); }
+svg .box { fill: var(--panel-2); stroke: var(--line); }
+svg .teal { stroke: var(--teal); }
+svg .gold { stroke: var(--gold); }
+svg .blue { stroke: var(--blue); }
+svg .violet { stroke: var(--violet); }
+svg .red { stroke: var(--red); }
+svg .arrow { stroke: var(--tx-3); stroke-width: 1.5; fill: none; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; }
+.card h3 { margin-top: 4px; }
+.tag { display: inline-block; font-size: 12px; padding: 0 7px; border-radius: 10px; border: 1px solid var(--line); color: var(--tx-2); margin-left: 6px; vertical-align: 1px; }
+footer { color: var(--tx-3); font-size: 13px; margin-top: 48px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Architecture technique d'IB Analyzer</h1>
+<p class="lede">Vue d'ensemble de l'application d'analyse de portefeuilles Interactive Brokers :
+ce qui tourne dans le navigateur, ce que fait le serveur, ce qu'apporte l'agent local. La
+source de vérité reste <code>docs/specs/2026-09-03-architecture-design.md</code> et les règles
+de travail <code>CLAUDE.md</code> ; ce document en est une carte, état au sous-projet 43
+(octobre 2026).</p>
+
+<nav class="toc" aria-label="Sommaire">
+<ol>
+  <li><a href="#principe">Le principe</a></li>
+  <li><a href="#ensemble">Vue d'ensemble</a></li>
+  <li><a href="#navigateur">L'application embarquée</a></li>
+  <li><a href="#bibliotheques">Bibliothèques du navigateur</a></li>
+  <li><a href="#paquets">Les paquets métier</a></li>
+  <li><a href="#src">Organisation de <code>apps/web/src</code></a></li>
+  <li><a href="#stockage">Stockage local (IndexedDB)</a></li>
+  <li><a href="#flux">Flux de données</a></li>
+  <li><a href="#serveur">Le serveur Django</a></li>
+  <li><a href="#agent">L'agent local TWS</a></li>
+  <li><a href="#outillage">Outillage, tests, déploiement</a></li>
+</ol>
+</nav>
+
+<h2 id="principe">1. Le principe</h2>
+<div class="principle">
+<strong>Tout le métier tourne dans le navigateur.</strong> Transactions, positions, journaux,
+couverture, alertes et jetons Flex vivent dans l'IndexedDB du navigateur. Le serveur
+authentifie, relaie Flex quand le compte l'autorise et garde au plus un blob chiffré qu'il ne
+sait pas lire. L'agent local, optionnel, fournit des données brutes de TWS.
+</div>
+<p>Conséquences directes :</p>
+<ul>
+  <li>L'application fonctionne <strong>sans connexion</strong> et même <strong>serveur coupé</strong> (Service Worker) ; la connexion n'ouvre que le proxy Flex et la sauvegarde.</li>
+  <li>Le code métier est écrit en <strong>TypeScript pur</strong>, sans framework, dans des paquets <code>packages/*</code> testables isolément.</li>
+  <li><code>apps/api</code> n'a <strong>aucune table de portefeuille</strong>, et n'en aura jamais.</li>
+</ul>
+
+<h2 id="ensemble">2. Vue d'ensemble</h2>
+<figure>
+<svg viewBox="0 0 960 400" role="img" aria-label="Trois composants : navigateur, agent local et serveur VPS">
+  <!-- Machine utilisateur -->
+  <rect x="10" y="10" width="560" height="380" rx="10" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+  <text x="26" y="34" font-size="13" class="muted">Machine de l'utilisateur</text>
+
+  <rect x="30" y="50" width="330" height="320" rx="8" class="box teal" stroke-width="2"/>
+  <text x="46" y="76" font-size="15" font-weight="600">Navigateur — SPA React</text>
+  <text x="46" y="100" font-size="13" class="muted">Pages, routes, composants (React 19, base-ui)</text>
+  <text x="46" y="122" font-size="13" class="muted">Moteurs TS : ledger, ib-parsers,</text>
+  <text x="46" y="140" font-size="13" class="muted">coverage, alerts</text>
+  <text x="46" y="162" font-size="13" class="muted">Graphes : ECharts, lightweight-charts</text>
+  <rect x="46" y="182" width="298" height="60" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+  <text x="60" y="206" font-size="13" font-weight="600">IndexedDB (Dexie)</text>
+  <text x="60" y="226" font-size="12" class="muted">ledger, snapshots, relevés, alertes…</text>
+  <rect x="46" y="254" width="298" height="46" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+  <text x="60" y="282" font-size="13" font-weight="600">Service Worker (Workbox)</text>
+  <text x="46" y="330" font-size="12" class="muted">Fichiers importés : relevé HTML, Flex XML,</text>
+  <text x="46" y="348" font-size="12" class="muted">CSV sectoriel — lus sur place</text>
+
+  <rect x="400" y="60" width="150" height="70" rx="8" class="box gold" stroke-width="2"/>
+  <text x="414" y="86" font-size="14" font-weight="600">TWS</text>
+  <text x="414" y="108" font-size="12" class="muted">Trader Workstation</text>
+
+  <rect x="400" y="190" width="150" height="110" rx="8" class="box gold" stroke-width="2"/>
+  <text x="414" y="216" font-size="14" font-weight="600">ib-tws-agent</text>
+  <text x="414" y="238" font-size="12" class="muted">FastAPI, ib_async</text>
+  <text x="414" y="256" font-size="12" class="muted">127.0.0.1:8100</text>
+  <text x="414" y="274" font-size="12" class="muted">optionnel, sans état</text>
+
+  <!-- VPS -->
+  <rect x="600" y="10" width="350" height="380" rx="10" fill="none" stroke="var(--line)" stroke-dasharray="5 4"/>
+  <text x="616" y="34" font-size="13" class="muted">VPS</text>
+  <rect x="620" y="50" width="310" height="54" rx="8" class="box" />
+  <text x="636" y="82" font-size="14" font-weight="600">Traefik (TLS)</text>
+  <rect x="620" y="124" width="310" height="80" rx="8" class="box violet" stroke-width="2"/>
+  <text x="636" y="150" font-size="14" font-weight="600">nginx — build statique du SPA</text>
+  <text x="636" y="172" font-size="12" class="muted">+ roue de l'agent sous /agent/</text>
+  <rect x="620" y="220" width="310" height="96" rx="8" class="box blue" stroke-width="2"/>
+  <text x="636" y="246" font-size="14" font-weight="600">api — Django 5.2 mince</text>
+  <text x="636" y="268" font-size="12" class="muted">invitations, 2FA, proxy Flex,</text>
+  <text x="636" y="286" font-size="12" class="muted">sauvegarde chiffrée opaque</text>
+  <rect x="620" y="330" width="310" height="44" rx="8" class="box"/>
+  <text x="636" y="358" font-size="13" font-weight="600">PostgreSQL : utilisateurs + blobs</text>
+
+  <path class="arrow" d="M475 130 V190" marker-end="url(#a)"/>
+  <text x="482" y="145" font-size="11" class="muted">API TWS</text>
+  <path class="arrow" d="M400 245 H360" marker-end="url(#a)"/>
+  <path class="arrow" d="M360 265 H400" marker-end="url(#a)"/>
+  <text x="365" y="312" font-size="11" class="muted">HTTP local</text>
+  <path class="arrow" d="M360 160 H620" marker-end="url(#a)"/>
+  <path class="arrow" d="M360 176 H582 V262 H620" marker-end="url(#a)"/>
+  <text x="370" y="152" font-size="11" class="muted">HTTPS</text>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--tx-3)"/></marker></defs>
+</svg>
+<figcaption>Le navigateur est le seul lieu où vivent les données de portefeuille. Les flèches vers le VPS ne portent que l'application elle-même, l'authentification, un jeton Flex en transit et un blob chiffré.</figcaption>
+</figure>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Composant</th><th>Technologie</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td><code>apps/web</code></td><td>React 19 + Vite 8, TypeScript 6</td><td>L'application proprement dite, installable (PWA).</td></tr>
+<tr><td><code>packages/*</code></td><td>TypeScript pur, aucune dépendance UI</td><td>Modèle et calculs métier, parseurs IB, couverture, alertes, composants shadcn.</td></tr>
+<tr><td><code>apps/api</code></td><td>Django 5.2 LTS, django-ninja, allauth, PostgreSQL</td><td>Comptes sur invitation, 2FA, proxy Flex sans état, blob de sauvegarde.</td></tr>
+<tr><td><code>apps/tws-agent</code></td><td>Python 3.14, FastAPI, uvicorn, ib_async</td><td>Lit TWS (positions, exécutions, P&amp;L du jour, barres, cotations), relaie Flex.</td></tr>
+</tbody></table></div>
+
+<h2 id="navigateur">3. L'application embarquée dans le navigateur</h2>
+<p>Le SPA est construit en couches. Le sens des dépendances est strict : l'interface dépend des
+moteurs, jamais l'inverse ; <code>@ib/ledger</code> ne dépend de rien.</p>
+
+<figure>
+<svg viewBox="0 0 960 470" role="img" aria-label="Couches de l'application dans le navigateur">
+  <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--tx-3)"/></marker></defs>
+  <!-- Couche UI -->
+  <rect x="10" y="10" width="940" height="92" rx="8" class="box violet" stroke-width="2"/>
+  <text x="26" y="36" font-size="14" font-weight="600">Interface</text>
+  <text x="26" y="58" font-size="12" class="muted">routes/ (React Router 8, AppLayout, StrategyRoute) · pages/ · components/ · @ib/ui (shadcn sur base-ui) · Tailwind 4</text>
+  <text x="26" y="78" font-size="12" class="muted">Graphes : ECharts (statistiques, capital) · lightweight-charts (cours, niveaux, alertes) · TanStack Virtual (Historique) · i18next (fr/en)</text>
+
+  <!-- Coquille -->
+  <rect x="10" y="118" width="940" height="74" rx="8" class="box teal" stroke-width="2"/>
+  <text x="26" y="144" font-size="14" font-weight="600">Coquille de compte — AccountDataProvider</text>
+  <text x="26" y="166" font-size="12" class="muted">useJournals · useRiskReport · useAlertEngine · useUnderlyingQuotes : calculés une fois par compte affiché, lus par toutes les pages</text>
+
+  <!-- Services -->
+  <rect x="10" y="208" width="300" height="110" rx="8" class="box"/>
+  <text x="26" y="234" font-size="14" font-weight="600">db/</text>
+  <text x="26" y="256" font-size="12" class="muted">Dexie, imports, relecture,</text>
+  <text x="26" y="274" font-size="12" class="muted">snapshot, secteurs, alertes,</text>
+  <text x="26" y="292" font-size="12" class="muted">sauvegarde chiffrée</text>
+
+  <rect x="330" y="208" width="300" height="110" rx="8" class="box gold" stroke-width="2"/>
+  <text x="346" y="234" font-size="14" font-weight="600">Mondes extérieurs</text>
+  <text x="346" y="256" font-size="12" class="muted">agent/ : client TWS (verrou ib2:tws)</text>
+  <text x="346" y="274" font-size="12" class="muted">flex/ : synchro, choix du relais</text>
+  <text x="346" y="292" font-size="12" class="muted">api/ : openapi-fetch, allauth</text>
+
+  <rect x="650" y="208" width="300" height="110" rx="8" class="box"/>
+  <text x="666" y="234" font-size="14" font-weight="600">Tâches de fond</text>
+  <text x="666" y="256" font-size="12" class="muted">alerts/watcher : tous les comptes,</text>
+  <text x="666" y="274" font-size="12" class="muted">un onglet élu (Web Locks)</text>
+  <text x="666" y="292" font-size="12" class="muted">pwa/ : mises à jour du SW</text>
+
+  <!-- Moteurs -->
+  <rect x="10" y="334" width="940" height="126" rx="8" class="box blue" stroke-width="2"/>
+  <text x="26" y="360" font-size="14" font-weight="600">Moteurs métier — TypeScript pur, sans I/O</text>
+  <rect x="26" y="374" width="210" height="70" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+  <text x="40" y="398" font-size="13" font-weight="600">@ib/ib-parsers</text>
+  <text x="40" y="418" font-size="11" class="muted">Flex XML, relevé HTML, agent</text>
+  <rect x="256" y="374" width="210" height="70" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+  <text x="270" y="398" font-size="13" font-weight="600">@ib/coverage</text>
+  <text x="270" y="418" font-size="11" class="muted">couverture, rachat, suggestions</text>
+  <rect x="486" y="374" width="210" height="70" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+  <text x="500" y="398" font-size="13" font-weight="600">@ib/alerts</text>
+  <text x="500" y="418" font-size="11" class="muted">alertes auto et manuelles</text>
+  <rect x="716" y="374" width="218" height="70" rx="6" fill="var(--panel)" stroke="var(--teal)" stroke-width="2"/>
+  <text x="730" y="398" font-size="13" font-weight="600">@ib/ledger</text>
+  <text x="730" y="418" font-size="11" class="muted">transactions, cash, journaux</text>
+</svg>
+<figcaption>Couches du SPA. Les trois paquets du bas dépendent tous de <code>@ib/ledger</code>, qui ne dépend de rien ; aucun paquet ne produit de texte visible (les libellés sont dans <code>src/i18n</code>).</figcaption>
+</figure>
+
+<h3>Démarrage</h3>
+<p><code>main.tsx</code> applique le thème stocké, branche le rechargement sur changement de
+Service Worker et de schéma Dexie, puis passe par <code>startApp</code> (<code>src/startup.ts</code>) :
+en mode démonstration, la base <code>ib-analyzer-demo</code> est semée avant le premier rendu,
+puis l'application est montée — même si la graine échoue — et le veilleur d'alertes démarre.</p>
+
+<h3>Ce qui est calculé, jamais stocké</h3>
+<p>Le stockage ne contient que des faits importés. Tout le reste est une vue recalculée à chaque
+changement de la base (<code>useLiveQuery</code> de Dexie) : journaux de stratégie, positions par
+stratégie, rapport de risque et couverture, capital et rendements, totaux, stratégie de chaque
+ligne de l'Historique, alertes automatiques, niveaux dessinés sur les graphes.</p>
+
+<h3>Trois sources, propriété de plage</h3>
+<p>L'historique arrive par trois chemins — relevé HTML, Flex, agent — et se fusionne par
+<strong>propriété de plage</strong>, jamais par comparaison de contenu : Flex possède ses jours,
+le relevé n'écrit qu'avant, l'agent qu'après (en jour de marché New York).</p>
+
+<h2 id="bibliotheques">4. Bibliothèques du navigateur</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Domaine</th><th>Bibliothèque</th><th>Usage dans l'application</th></tr></thead>
+<tbody>
+<tr><td>Interface</td><td><code>react</code> 19, <code>react-dom</code></td><td>Rendu de toute l'application, en <code>StrictMode</code>.</td></tr>
+<tr><td>Routage</td><td><code>react-router</code> 8</td><td><code>createBrowserRouter</code> ; toute vue scopée <code>/accounts/:accountId/…</code>, aucune route protégée.</td></tr>
+<tr><td>Composants</td><td><code>@base-ui/react</code> + <code>shadcn</code> (dans <code>@ib/ui</code>)</td><td>Primitives accessibles (menus, popovers, dialogues). shadcn version base-ui, pas Radix : <code>render={…}</code> au lieu de <code>asChild</code>.</td></tr>
+<tr><td>Style</td><td><code>tailwindcss</code> 4 (<code>@tailwindcss/vite</code>), <code>tailwind-merge</code>, <code>clsx</code>, <code>class-variance-authority</code>, <code>tw-animate-css</code></td><td>Tokens de couleur dans <code>src/index.css</code>, thèmes clair et sombre.</td></tr>
+<tr><td>Polices, icônes</td><td><code>@fontsource-variable/inter</code>, <code>…/jetbrains-mono</code>, <code>lucide-react</code></td><td>Polices embarquées (aucun appel à un CDN), icônes SVG.</td></tr>
+<tr><td>Base locale</td><td><code>dexie</code> 4, <code>dexie-react-hooks</code></td><td>IndexedDB typée, migrations versionnées, requêtes réactives (<code>useLiveQuery</code>).</td></tr>
+<tr><td>Graphes statistiques</td><td><code>echarts</code> 6, <code>echarts-for-react</code></td><td>Capital, rendements, P/L mensuel, montants par ticker, exposition.</td></tr>
+<tr><td>Graphes de cours</td><td><code>lightweight-charts</code> 5</td><td>Bougies journalières de TWS ; primitives maison pour les niveaux de stratégie et les alertes (<code>levelsPrimitive</code>, <code>alertsPrimitive</code>).</td></tr>
+<tr><td>Tableaux</td><td><code>@tanstack/react-virtual</code></td><td>Historique virtualisé à hauteur de ligne constante, sans pagination.</td></tr>
+<tr><td>Traduction</td><td><code>i18next</code>, <code>react-i18next</code></td><td><code>fr.json</code> / <code>en.json</code> ; les paquets n'émettent que des codes.</td></tr>
+<tr><td>Cryptographie</td><td><code>@noble/hashes</code> + WebCrypto natif</td><td>SHA-256 synchrone pour les identifiants de transaction (parseurs) ; Argon2id pour dériver la clé d'enveloppe de la sauvegarde ; AES-GCM 256 et gzip (<code>CompressionStream</code>) par l'API du navigateur.</td></tr>
+<tr><td>API serveur</td><td><code>openapi-fetch</code> (+ <code>openapi-typescript</code> en dev)</td><td>Client typé depuis <code>apps/api/openapi.json</code> → <code>src/api/schema.d.ts</code>.</td></tr>
+<tr><td>Hors ligne</td><td><code>vite-plugin-pwa</code> (Workbox, <code>generateSW</code>), <code>workbox-window</code></td><td>Pré-cache de l'enveloppe, aucun cache des réponses serveur ou agent, mise à jour au clic du bandeau.</td></tr>
+</tbody></table></div>
+
+<p>API natives du navigateur utilisées directement : <strong>IndexedDB</strong>,
+<strong>WebCrypto</strong>, <strong>Compression Streams</strong>, <strong>DOMParser</strong>
+(lecture du XML Flex et du HTML des relevés), <strong>Web Locks</strong> (une seule connexion
+TWS à la fois entre onglets, un seul veilleur d'alertes), <strong>Notification</strong>
+(alertes déclenchées), <strong>Service Worker</strong>, <code>localStorage</code> et
+<code>sessionStorage</code> (préférences d'affichage, drapeau de démonstration).</p>
+
+<h2 id="paquets">5. Les paquets métier</h2>
+<p>Consommés en source (<code>workspace:*</code>, <code>exports</code> vers <code>src/index.ts</code>) :
+rien n'est construit avant usage, Vite les compile avec l'application.</p>
+<div class="grid">
+<div class="card">
+<h3>@ib/ledger <span class="tag">aucune dépendance</span></h3>
+<p>Le modèle : <code>Transaction</code>, <code>Position</code>, import et filtre par propriété de
+plage (<code>filter.ts</code>, <code>marketDayOf</code>), solde de cash calé sur les Cash Reports,
+totaux par devise. Le sous-dossier <code>journals/</code> rejoue le ledger en journaux Wheel, LEAPS,
+Condors et Autres : carnet de lots, fusion des tranches, inférence des assignations et
+expirations, opérations sur titres, ordre de sortie des lots, capital, statistiques.</p>
+</div>
+<div class="card">
+<h3>@ib/ib-parsers <span class="tag">ledger, @noble/hashes</span></h3>
+<p>Parseurs des trois sources : réponse Flex XML (et son enveloppe), relevé d'activité HTML,
+charges utiles de l'agent. Identité des contrats (conid, ISIN, symboles OSI), conversion des
+heures IB (heure murale New York), rapport des lignes ignorées.</p>
+</div>
+<div class="card">
+<h3>@ib/coverage <span class="tag">ledger</span></h3>
+<p>Moteur de couverture des options vendues (cash, actions, LEAPS, spread), rapport de risque,
+décision de rachat (<code>evaluateBuyback</code>), positions par stratégie et par condor,
+encadrés des pages de stratégie, suggestions de position, valeur de liquidation.</p>
+</div>
+<div class="card">
+<h3>@ib/alerts <span class="tag">ledger</span></h3>
+<p>Alertes de prix : automatiques (call couvert sous le prix d'assignation, aile vendue d'un
+condor) calculées depuis les journaux, manuelles évaluées sur les cotations, ancrage S₀ à la vente.</p>
+</div>
+<div class="card">
+<h3>@ib/ui <span class="tag">base-ui, lucide</span></h3>
+<p>Composants shadcn générés puis rendus relatifs (aucun alias <code>@</code>), partagés par
+l'application.</p>
+</div>
+</div>
+
+<h2 id="src">6. Organisation de <code>apps/web/src</code></h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Dossier</th><th>Contenu</th></tr></thead>
+<tbody>
+<tr><td><code>routes/</code></td><td>Routeur, <code>AppLayout</code> (coquille, barre latérale, verdicts permanents), <code>RootRedirect</code>, <code>StrategyRoute</code>.</td></tr>
+<tr><td><code>pages/</code></td><td>Accueil, Comptes, Tableau de bord, Positions et positions par stratégie, Historique, Journaux, Statistiques, Alertes, Consistance, Secteurs, Sources, Paramètres, Aide, connexion et invitation.</td></tr>
+<tr><td><code>components/</code></td><td>Cartes, tableaux, graphes, barre latérale ; sous-dossiers <code>history</code>, <code>stats</code>, <code>table</code>, <code>alerts</code>, <code>charts</code>, <code>settings</code>…</td></tr>
+<tr><td><code>db/</code></td><td>Schéma Dexie, <code>DbProvider</code>, <code>AccountDataProvider</code>, import de fichiers sous verrou, relecture des relevés, purge du dérivé, snapshot, secteurs, alertes, <code>backup/</code> (chiffrement, paquet, déclencheurs, synchro).</td></tr>
+<tr><td><code>flex/</code></td><td>Synchro Flex en deux temps (<code>send-request</code>, <code>get-statement</code>), choix du relais agent ou serveur, synchro automatique.</td></tr>
+<tr><td><code>agent/</code></td><td>Client de l'agent local, sérialisé par <code>exclusiveTws</code>, synchro des passes, magasin en mémoire des cotations.</td></tr>
+<tr><td><code>alerts/</code></td><td>Évaluation par compte hors React, veilleur multi-comptes, notifications.</td></tr>
+<tr><td><code>api/</code></td><td>Client typé du serveur, session allauth, CSRF, sauvegarde.</td></tr>
+<tr><td><code>lib/</code>, <code>hooks/</code></td><td>Présentation : colonnes des tableaux, moteur de tri et filtres, couleurs des graphes, formats, état de vue en <code>localStorage</code>.</td></tr>
+<tr><td><code>demo/</code></td><td>Démonstration : scénario, génération du snapshot et du cash, faux agent ; chargé par <code>import()</code>.</td></tr>
+<tr><td><code>pwa/</code>, <code>welcome/</code>, <code>i18n/</code></td><td>Bandeau de mise à jour, manifeste des captures de l'accueil, traductions.</td></tr>
+</tbody></table></div>
+
+<h2 id="stockage">7. Stockage local (IndexedDB)</h2>
+<p>Une base <code>ib-analyzer</code> par origine (<code>ib-analyzer-demo</code> en démonstration),
+qui appartient au navigateur et non à un compte serveur. Schéma Dexie en douze versions
+(<code>src/db/schema.ts</code>).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Table</th><th>Clé</th><th>Contenu</th></tr></thead>
+<tbody>
+<tr><td><code>accounts</code></td><td><code>id</code></td><td>Fiche du compte : libellé, identifiant IB, jeton et requête Flex, port TWS, stratégies actives, marges d'alerte, état des synchros.</td></tr>
+<tr><td><code>transactions</code></td><td><code>[accountId+externalId]</code></td><td>Le ledger, toutes sources confondues.</td></tr>
+<tr><td><code>contracts</code></td><td><code>[accountId+conid]</code></td><td>Identité des contrats, fusionnée import après import.</td></tr>
+<tr><td><code>snapshots</code></td><td><code>accountId</code></td><td>Positions courantes, un document par compte (Flex, relevé ou agent).</td></tr>
+<tr><td><code>cashPoints</code></td><td><code>[accountId+currency+kind]</code></td><td>Points de début et de fin des Cash Reports, pour caler le solde.</td></tr>
+<tr><td><code>statements</code></td><td><code>id</code> (compte|début|fin)</td><td>HTML brut des relevés, pour tout reconstruire quand le parseur évolue.</td></tr>
+<tr><td><code>imports</code></td><td><code>++id</code></td><td>Compte rendu de chaque import de fichier ou synchro Flex.</td></tr>
+<tr><td><code>sectors</code></td><td><code>ticker</code></td><td>Table sectorielle, commune à tous les comptes.</td></tr>
+<tr><td><code>alerts</code>, <code>alertStates</code></td><td><code>id</code>, <code>[accountId+alertId]</code></td><td>Alertes manuelles et états de toutes les alertes (dont S₀).</td></tr>
+<tr><td><code>backup</code></td><td><code>id</code></td><td>Clé AES et son enveloppe, état de la sauvegarde ; hors du paquet sauvegardé.</td></tr>
+</tbody></table></div>
+
+<h2 id="flux">8. Flux de données</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Source</th><th>Chemin</th><th>Écrit</th></tr></thead>
+<tbody>
+<tr><td>Relevé HTML</td><td>Fichier lu par le navigateur → <code>parseStatement</code> → <code>importFiles</code> (tri par période, une transaction Dexie par fichier)</td><td>Transactions avant la plage Flex, snapshot de fin de période, points de cash, HTML brut.</td></tr>
+<tr><td>Flex</td><td>Navigateur → agent local (ou proxy Django si le compte l'autorise) → IB Flex Web Service → XML → <code>parseFlex</code></td><td>Ses jours entiers, snapshot, points de cash. La réponse n'est pas conservée.</td></tr>
+<tr><td>Agent TWS</td><td>Interrogé toutes les <code>AGENT_POLL_MS</code> : <code>/snapshot</code>, <code>/quotes</code>, à la demande <code>/bars</code></td><td>Exécutions après le dernier jour Flex, snapshot « En direct », P&amp;L du jour ; cotations et barres restent en mémoire.</td></tr>
+<tr><td>CSV sectoriel</td><td>Fichier → <code>db/sectors.ts</code></td><td>Fusion par ticker, jamais de remplacement.</td></tr>
+<tr><td>Sauvegarde</td><td>Paquet gzip → AES-GCM → <code>POST /api/backup</code></td><td>Côté serveur, un blob opaque de 20 Mo au plus.</td></tr>
+</tbody></table></div>
+
+<h2 id="serveur">9. Le serveur Django (<code>apps/api</code>)</h2>
+<p>Django 5.2 LTS sur Python 3.14, API en <strong>django-ninja</strong> (schéma OpenAPI exporté
+vers le client), authentification <strong>django-allauth</strong> en mode headless avec 2FA
+(TOTP), <strong>gunicorn</strong> et <strong>whitenoise</strong>, <strong>httpx</strong> pour
+appeler IB.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>App</th><th>Modèles</th><th>Endpoints</th></tr></thead>
+<tbody>
+<tr><td><code>core</code></td><td><code>User</code>, <code>Invitation</code>, <code>Backup</code> (octets chiffrés, taille, date)</td><td><code>/invitations/accept</code>, <code>/backup</code> (GET, POST, DELETE), <code>/backup/status</code></td></tr>
+<tr><td><code>ib</code></td><td>aucun</td><td><code>/flex/send-request</code>, <code>/flex/get-statement</code> : proxy sans état, limité en débit, jeton jamais journalisé</td></tr>
+<tr><td><code>config</code></td><td>—</td><td><code>/health</code>, <code>/csrf</code> ; <code>/_allauth/…</code> pour la session</td></tr>
+</tbody></table></div>
+
+<h2 id="agent">10. L'agent local (<code>apps/tws-agent</code>)</h2>
+<p>Paquet Python <code>ib-tws-agent</code> installé par <code>uv</code> depuis la roue servie
+sous <code>/agent/</code>. FastAPI + uvicorn sur <code>127.0.0.1:8100</code>, CORS limité aux
+origines de sa configuration (<code>ib-tws-agent origin add</code>), connexion à TWS par
+<strong>ib_async</strong> en <code>clientId 0</code>. Il ne stocke rien.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Endpoint</th><th>Rend</th></tr></thead>
+<tbody>
+<tr><td><code>GET /health</code></td><td>Présence et version.</td></tr>
+<tr><td><code>GET /snapshot</code></td><td>Positions, exécutions du jour, P&amp;L du jour (<code>reqPnLSingle</code>).</td></tr>
+<tr><td><code>GET /bars</code></td><td>Deux ans de barres journalières <code>TRADES</code> d'un sous-jacent.</td></tr>
+<tr><td><code>GET /quotes</code></td><td><code>last</code> et <code>close</code> différés des actions et indices demandés.</td></tr>
+<tr><td><code>POST /flex/send-request</code>, <code>/flex/get-statement</code></td><td>Relais Flex, jeton dans le corps de la requête.</td></tr>
+</tbody></table></div>
+
+<h2 id="outillage">11. Outillage, tests, déploiement</h2>
+<ul>
+  <li><strong>Monorepo</strong> : pnpm (Node 22) pour <code>apps/*</code> et <code>packages/*</code>, uv pour les deux projets Python. Lint par <code>oxlint</code>, typage <code>tsc -b</code>.</li>
+  <li><strong>Tests</strong> : Vitest à côté du code (<code>fake-indexeddb</code>, Testing Library, jsdom), oracles rejoués sur des corpus IB anonymisés, pytest pour l'API et pour l'agent (sur un <code>FakeIB</code>), Playwright en bout en bout et pour le Service Worker contre un vrai build.</li>
+  <li><strong><code>pnpm check</code></strong> : lint, typage, fraîcheur des types d'API, build, tests TypeScript.</li>
+  <li><strong>Déploiement</strong> : VPS, un Traefik partagé, deux piles Docker Compose (<code>iba-prod</code>, <code>iba-dev</code>) avec nginx pour le SPA, Django et PostgreSQL ; exploitation par <code>deploy/iba</code>. Détails dans <code>docs/deploiement-vps.md</code>.</li>
+</ul>
+
+<footer>Document de synthèse — à mettre à jour quand un sous-projet change la structure ou les bibliothèques principales.</footer>
+</main>
+</body>
+</html>
