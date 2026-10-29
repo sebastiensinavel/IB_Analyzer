@@ -553,6 +553,16 @@ importé seul garde un écart USD dû à deux corrections antidatées, figé par
   (`UnderlyingDayChangeCell`) : `rowAlertMarks` (`lib/rowAlerts.ts`) y apparie une manuelle à
   toute ligne de son ticker, une Wheel à son call par `contractId`, un condor à sa ligne sur la page
   Condors (`condor:<CondorLine.id>`) et ailleurs aux lignes de ses jambes (`CondorAlert.legs`).
+- **L'export TradingView est une vue calculée, hors compte** (sous-projet 44) : `/export`,
+  « Export » juste au-dessus de Paramètres, `accountScoped: false`. `loadExport`
+  (`apps/web/src/export/loadExport.ts`) lit **tous les comptes** : les tickers détenus par
+  `heldTickers`, la lecture de « En cours », et par compte, via `loadAccountJournals`, les niveaux
+  de `strategyLevels` (stratégies actives plus Autres) et les seuils des alertes non désactivées ;
+  un achat LEAPS, sans prix, est omis. Les générateurs sont purs (`lib/tradingview.ts`) : la liste
+  est le `.txt` d'import de TradingView, une ligne à virgules, ticker nu sauf un indice de
+  `INDEX_EXCHANGES` préfixé de sa place (`CBOE:XSP`) ; l'indicateur Pine v6 branche sur
+  `syminfo.ticker` et se recolle quand les positions changent. Rien n'est stocké ni envoyé : seul
+  ce que l'utilisateur copie ou télécharge sort du navigateur.
 - **Les graphes de cours viennent de TWS par l'agent, jamais d'un fournisseur tiers ni du
   serveur** : `/bars` (`apps/tws-agent`), deux ans de journalier `TRADES`, sans cache. Les
   niveaux dessinés sont une vue calculée des journaux (`strategyLevels`,
@@ -668,6 +678,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 41 | La page d'accueil, la démonstration et ses captures | fait (2026-09-29) |
 | 42 | Les alertes de prix | fait (2026-09-30) |
 | 43 | Les alertes de tous les comptes | fait (2026-10-02) |
+| 44 | Export vers TradingView : liste des titres détenus et indicateur des niveaux | fait (2026-10-29) |
 
 ## Outillage
 

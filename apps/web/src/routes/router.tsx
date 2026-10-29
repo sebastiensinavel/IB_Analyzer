@@ -5,6 +5,7 @@ import { AccountsPage } from "@/pages/AccountsPage";
 import { AlertsPage } from "@/pages/AlertsPage";
 import { ConsistencyPage } from "@/pages/ConsistencyPage";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { ExportPage } from "@/pages/ExportPage";
 import { HelpPage } from "@/pages/HelpPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import InvitationPage from "@/pages/InvitationPage";
@@ -134,6 +135,11 @@ export const router = createBrowserRouter([
       // Kept so bookmarks of the former "Primes" screen keep working.
       { path: "premiums", element: <Navigate to="../journal/wheel" replace /> },
     ],
+  },
+  {
+    path: "/export",
+    element: <AppLayout />,
+    children: [{ index: true, element: <ExportPage /> }],
   },
   {
     path: "/settings",

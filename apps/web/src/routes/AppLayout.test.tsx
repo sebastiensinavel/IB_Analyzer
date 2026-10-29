@@ -146,6 +146,7 @@ describe("AppLayout", () => {
       "/accounts/beta/sources",
       "/accounts/beta/sectors",
       "/accounts/beta/consistency",
+      "/export",
       "/settings",
       "/help",
       // The footer: the welcome page, then the alerts page.
@@ -285,12 +286,12 @@ describe("AppLayout", () => {
     expect(await screen.findByText("accounts page")).toBeInTheDocument();
   });
 
-  it("hides every account link in the sidebar with no account at all, keeping Settings and Help", async () => {
+  it("hides every account link in the sidebar with no account at all, keeping Export, Settings and Help", async () => {
     await db.accounts.clear();
     renderAt("/settings");
     await screen.findByText("settings content");
     // The two header links (add an account, discover) come before the account-less nav entries.
-    expect(navHrefs()).toEqual(["/accounts", "/welcome", "/settings", "/help"]);
+    expect(navHrefs()).toEqual(["/accounts", "/welcome", "/export", "/settings", "/help"]);
   });
 });
 

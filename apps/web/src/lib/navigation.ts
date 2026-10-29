@@ -5,6 +5,7 @@ import {
   CircleQuestionMark,
   Coins,
   Database,
+  Download,
   History,
   Layers,
   LayoutDashboard,
@@ -20,7 +21,7 @@ import type { ActivableStrategy } from "@ib/ledger";
 export interface NavItem {
   labelKey: string;
   icon: LucideIcon;
-  /** False for account-less entries (Settings, Help): `to` ignores the account id it is given,
+  /** False for account-less entries (Export, Settings, Help): `to` ignores the account id it is given,
    *  and the sidebar keeps showing them even with no account at all, unlike every other entry. */
   accountScoped: boolean;
   to: (accountId: string) => string;
@@ -90,6 +91,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { labelKey: "nav.sources", icon: Database, accountScoped: true, to: accountPath("sources") },
       { labelKey: "nav.sectors", icon: Tags, accountScoped: true, to: accountPath("sectors") },
       { labelKey: "nav.consistency", icon: ShieldCheck, accountScoped: true, to: accountPath("consistency") },
+      { labelKey: "nav.export", icon: Download, accountScoped: false, to: () => "/export" },
       { labelKey: "nav.settings", icon: Settings, accountScoped: false, to: () => "/settings" },
       { labelKey: "nav.help", icon: CircleQuestionMark, accountScoped: false, to: () => "/help" },
     ],
