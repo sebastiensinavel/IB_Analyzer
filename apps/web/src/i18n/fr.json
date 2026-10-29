@@ -26,6 +26,7 @@
     "sources": "Sources de données",
     "sectors": "Secteur et Score",
     "consistency": "Consistance",
+    "export": "Export",
     "settings": "Paramètres",
     "help": "Aide"
   },
@@ -1046,6 +1047,29 @@
       "title_below": "{{ticker}} ↓ {{price}}",
       "wheel": "Wheel — call {{strike}}",
       "condor": "Condor {{put}}/{{call}}"
+    }
+  },
+  "export": {
+    "title": "Export",
+    "copy": "Copier",
+    "copied": "Copié",
+    "download": "Télécharger le fichier",
+    "levels": {
+      "condor": "Condor",
+      "alert": "Alerte"
+    },
+    "watchlist": {
+      "title": "Liste de surveillance TradingView",
+      "how_one": "{{count}} titre détenu, tous comptes confondus. Dans TradingView, menu de la liste de surveillance → « Importer une liste », puis choisissez le fichier téléchargé.",
+      "how_other": "{{count}} titres détenus, tous comptes confondus. Dans TradingView, menu de la liste de surveillance → « Importer une liste », puis choisissez le fichier téléchargé.",
+      "empty": "Aucun titre détenu : importez un relevé, une réponse Flex ou lancez l'agent pour connaître vos positions."
+    },
+    "script": {
+      "title": "Indicateur Pine Script des niveaux",
+      "how_one": "Les niveaux de {{count}} titre : actions Wheel, puts et calls vendus, ailes des condors et seuils des alertes. Dans TradingView, ouvrez l'éditeur Pine, collez le script, enregistrez-le puis « Ajouter au graphique » : il trace les niveaux du titre affiché quand vous parcourez la liste.",
+      "how_other": "Les niveaux de {{count}} titres : actions Wheel, puts et calls vendus, ailes des condors et seuils des alertes. Dans TradingView, ouvrez l'éditeur Pine, collez le script, enregistrez-le puis « Ajouter au graphique » : il trace les niveaux du titre affiché quand vous parcourez la liste.",
+      "frozen": "Les niveaux sont figés dans le script et n'apparaissent que sur le graphique, jamais dans la liste : recollez-le quand vos positions changent.",
+      "empty": "Aucun niveau à tracer : ni position ouverte dans les journaux, ni alerte active."
     }
   }
 }

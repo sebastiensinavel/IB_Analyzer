@@ -26,6 +26,7 @@
     "sources": "Data sources",
     "sectors": "Sectors & scores",
     "consistency": "Consistency",
+    "export": "Export",
     "settings": "Settings",
     "help": "Help"
   },
@@ -1046,6 +1047,29 @@
       "title_below": "{{ticker}} ↓ {{price}}",
       "wheel": "Wheel — call {{strike}}",
       "condor": "Condor {{put}}/{{call}}"
+    }
+  },
+  "export": {
+    "title": "Export",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download the file",
+    "levels": {
+      "condor": "Condor",
+      "alert": "Alert"
+    },
+    "watchlist": {
+      "title": "TradingView watchlist",
+      "how_one": "{{count}} ticker held, across all accounts. In TradingView, open the watchlist menu → “Import list”, then pick the downloaded file.",
+      "how_other": "{{count}} tickers held, across all accounts. In TradingView, open the watchlist menu → “Import list”, then pick the downloaded file.",
+      "empty": "No ticker held: import a statement or a Flex response, or start the agent, to know your positions."
+    },
+    "script": {
+      "title": "Pine Script levels indicator",
+      "how_one": "The levels of {{count}} ticker: Wheel shares, sold puts and calls, condor wings and alert thresholds. In TradingView, open the Pine Editor, paste the script, save it, then “Add to chart”: it draws the levels of the ticker shown as you browse the list.",
+      "how_other": "The levels of {{count}} tickers: Wheel shares, sold puts and calls, condor wings and alert thresholds. In TradingView, open the Pine Editor, paste the script, save it, then “Add to chart”: it draws the levels of the ticker shown as you browse the list.",
+      "frozen": "The levels are frozen into the script and only show on the chart, never in the list: paste it again when your positions change.",
+      "empty": "No level to draw: no open position in the journals and no active alert."
     }
   }
 }
