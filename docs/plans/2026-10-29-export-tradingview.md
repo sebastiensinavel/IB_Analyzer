@@ -8,4 +8,4 @@ Spec : `docs/specs/2026-10-29-export-tradingview-design.md`. TDD, une case par c
       par compte via `loadAccountJournals`, testé sur `fake-indexeddb`.
 - [x] 3. `pages/ExportPage.tsx`, route `/export`, entrée « Export » au-dessus de Paramètres,
       i18n fr/en, testés.
-- [ ] 4. CLAUDE.md (règle et registre), `pnpm check`, instance de relecture démarrée.
+- [x] 4. CLAUDE.md (règle et registre), `pnpm check`, instance de relecture démarrée.
