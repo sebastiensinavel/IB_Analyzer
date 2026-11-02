@@ -82,7 +82,7 @@ de travail <code>CLAUDE.md</code> ; ce document en est une carte, état au sous-
   <li><a href="#principe">Le principe</a></li>
   <li><a href="#ensemble">Vue d'ensemble</a></li>
   <li><a href="#navigateur">L'application embarquée</a></li>
-  <li><a href="#bibliotheques">Bibliothèques du navigateur</a></li>
+  <li><a href="#bibliotheques">Les bibliothèques : le rôle de chacune</a></li>
   <li><a href="#paquets">Les paquets métier</a></li>
   <li><a href="#src">Organisation de <code>apps/web/src</code></a></li>
   <li><a href="#stockage">Stockage local (IndexedDB)</a></li>
@@ -248,25 +248,168 @@ ligne de l'Historique, alertes automatiques, niveaux dessinés sur les graphes.<
 <strong>propriété de plage</strong>, jamais par comparaison de contenu : Flex possède ses jours,
 le relevé n'écrit qu'avant, l'agent qu'après (en jour de marché New York).</p>
 
-<h2 id="bibliotheques">4. Bibliothèques du navigateur</h2>
+<h2 id="bibliotheques">4. Les bibliothèques : le rôle de chacune</h2>
+<p>La question utile devant une bibliothèque est d'abord <strong>quand elle agit</strong>. Certaines
+travaillent sur la machine du développeur et disparaissent une fois le build fait ; d'autres
+partent dans le navigateur de l'utilisateur et y tournent à chaque clic ; d'autres encore tournent
+sur le VPS ou à côté de TWS. Les noms se ressemblent, les moments n'ont rien à voir.</p>
+
+<figure>
+<svg viewBox="0 0 960 236" role="img" aria-label="Du code source au navigateur : Vite construit, nginx sert, React s'exécute">
+  <defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--tx-3)"/></marker></defs>
+  <text x="10" y="20" font-size="13" class="muted">Sur la machine de développement ou dans l'image Docker</text>
+  <text x="730" y="20" font-size="13" class="muted">Chez l'utilisateur</text>
+  <line x1="712" y1="8" x2="712" y2="228" stroke="var(--line)" stroke-dasharray="5 4"/>
+
+  <rect x="10" y="36" width="200" height="184" rx="8" class="box" />
+  <text x="26" y="62" font-size="14" font-weight="600">Le code source</text>
+  <text x="26" y="86" font-size="12" class="muted">.tsx : composants React</text>
+  <text x="26" y="106" font-size="12" class="muted">.ts : packages/* métier</text>
+  <text x="26" y="126" font-size="12" class="muted">index.css : tokens, Tailwind</text>
+  <text x="26" y="146" font-size="12" class="muted">fr.json, en.json</text>
+  <text x="26" y="176" font-size="12" class="muted">Illisible tel quel par</text>
+  <text x="26" y="194" font-size="12" class="muted">un navigateur.</text>
+
+  <rect x="250" y="36" width="210" height="184" rx="8" class="box teal" stroke-width="2"/>
+  <text x="266" y="62" font-size="14" font-weight="600">Vite (vite build)</text>
+  <text x="266" y="86" font-size="12" class="muted">enlève les types, traduit le JSX</text>
+  <text x="266" y="106" font-size="12" class="muted">assemble tout (Rolldown)</text>
+  <text x="266" y="126" font-size="12" class="muted">greffons : Tailwind, PWA</text>
+  <text x="266" y="146" font-size="12" class="muted">minifie, hache les noms</text>
+  <text x="266" y="176" font-size="12" class="muted">tsc, juste avant, vérifie</text>
+  <text x="266" y="194" font-size="12" class="muted">les types.</text>
+
+  <rect x="500" y="36" width="190" height="184" rx="8" class="box violet" stroke-width="2"/>
+  <text x="516" y="62" font-size="14" font-weight="600">dist/</text>
+  <text x="516" y="86" font-size="12" class="muted">index.html, .js, .css,</text>
+  <text x="516" y="106" font-size="12" class="muted">polices, sw.js</text>
+  <text x="516" y="136" font-size="12" class="muted">De simples fichiers, servis</text>
+  <text x="516" y="154" font-size="12" class="muted">par nginx. Plus de Vite,</text>
+  <text x="516" y="172" font-size="12" class="muted">plus de Node, plus de</text>
+  <text x="516" y="190" font-size="12" class="muted">TypeScript en production.</text>
+
+  <rect x="730" y="36" width="220" height="184" rx="8" class="box gold" stroke-width="2"/>
+  <text x="746" y="62" font-size="14" font-weight="600">Navigateur</text>
+  <text x="746" y="86" font-size="12" class="muted">React dessine l'interface</text>
+  <text x="746" y="106" font-size="12" class="muted">React Router, Base UI</text>
+  <text x="746" y="126" font-size="12" class="muted">Dexie lit et écrit la base</text>
+  <text x="746" y="146" font-size="12" class="muted">ECharts, lightweight-charts</text>
+  <text x="746" y="176" font-size="12" class="muted">Moteurs @ib/* : tournent ici,</text>
+  <text x="746" y="194" font-size="12" class="muted">eux aussi.</text>
+
+  <path class="arrow" d="M210 128 H250" marker-end="url(#c)"/>
+  <path class="arrow" d="M460 128 H500" marker-end="url(#c)"/>
+  <path class="arrow" d="M690 128 H730" marker-end="url(#c)"/>
+</svg>
+<figcaption>React fait partie des fichiers livrés ; Vite est l'outil qui les fabrique et n'en fait pas partie.</figcaption>
+</figure>
+
+<h3>React et Vite : deux métiers différents</h3>
+<div class="grid">
+<div class="card">
+<h3>React <span class="tag">dans le navigateur</span></h3>
+<p>Une bibliothèque d'interface, écrite en JavaScript et livrée à l'utilisateur. On décrit l'écran
+comme une fonction de l'état, en composants ; quand l'état change, React recalcule la description
+et ne modifie que ce qui diffère dans la page. Ici, quand Dexie signale que le ledger a changé,
+les journaux sont recalculés et chaque tableau se redessine sans qu'aucun code ne touche le DOM à
+la main. <code>react-dom</code> est la moitié qui applique ce résultat à la page.</p>
+<p>React ne sait ni lire un fichier <code>.tsx</code>, ni assembler une application, ni servir une
+page.</p>
+</div>
+<div class="card">
+<h3>Vite <span class="tag">chez le développeur</span></h3>
+<p>Un outil de construction, qui ne sait rien de l'interface. Il a deux modes. <code>pnpm dev</code>
+lance un serveur local qui traduit chaque fichier à la demande et recharge à chaud le composant
+modifié, sans perdre l'état de la page ; il relaie aussi <code>/api</code> et
+<code>/_allauth</code> vers Django, pour reconstituer l'origine unique de la production.
+<code>vite build</code> produit <code>dist/</code>.</p>
+<p>Vite ne vérifie pas les types : il les efface. C'est pourquoi le build est
+<code>tsc -b &amp;&amp; vite build</code>.</p>
+</div>
+</div>
+<p>Vite ne se limite pas à React : <code>@vitejs/plugin-react</code> est le greffon qui lui apprend
+le JSX et le rechargement à chaud des composants. <code>@tailwindcss/vite</code> et
+<code>vite-plugin-pwa</code> sont deux autres greffons du même genre
+(<code>apps/web/vite.config.ts</code>). Vitest réutilise cette configuration pour les tests.</p>
+
+<h3>Interface : Base UI, shadcn et Tailwind s'empilent</h3>
+<p>Ces trois noms reviennent ensemble parce qu'ils font chacun une partie d'un même bouton : le
+comportement, le code du composant, l'apparence.</p>
 <div class="table-wrap"><table>
-<thead><tr><th>Domaine</th><th>Bibliothèque</th><th>Usage dans l'application</th></tr></thead>
+<thead><tr><th>Bibliothèque</th><th>Ce qu'elle apporte</th><th>Ici</th></tr></thead>
 <tbody>
-<tr><td>Interface</td><td><code>react</code> 19, <code>react-dom</code></td><td>Rendu de toute l'application, en <code>StrictMode</code>.</td></tr>
-<tr><td>Routage</td><td><code>react-router</code> 8</td><td><code>createBrowserRouter</code> ; toute vue scopée <code>/accounts/:accountId/…</code>, aucune route protégée.</td></tr>
-<tr><td>Composants</td><td><code>@base-ui/react</code> + <code>shadcn</code> (dans <code>@ib/ui</code>)</td><td>Primitives accessibles (menus, popovers, dialogues). shadcn version base-ui, pas Radix : <code>render={…}</code> au lieu de <code>asChild</code>.</td></tr>
-<tr><td>Style</td><td><code>tailwindcss</code> 4 (<code>@tailwindcss/vite</code>), <code>tailwind-merge</code>, <code>clsx</code>, <code>class-variance-authority</code>, <code>tw-animate-css</code></td><td>Tokens de couleur dans <code>src/index.css</code>, thèmes clair et sombre.</td></tr>
-<tr><td>Polices, icônes</td><td><code>@fontsource-variable/inter</code>, <code>…/jetbrains-mono</code>, <code>lucide-react</code></td><td>Polices embarquées (aucun appel à un CDN), icônes SVG.</td></tr>
-<tr><td>Base locale</td><td><code>dexie</code> 4, <code>dexie-react-hooks</code></td><td>IndexedDB typée, migrations versionnées, requêtes réactives (<code>useLiveQuery</code>).</td></tr>
-<tr><td>Graphes statistiques</td><td><code>echarts</code> 6, <code>echarts-for-react</code></td><td>Capital, rendements, P/L mensuel, montants par ticker, exposition.</td></tr>
-<tr><td>Graphes de cours</td><td><code>lightweight-charts</code> 5</td><td>Bougies journalières de TWS ; primitives maison pour les niveaux de stratégie et les alertes (<code>levelsPrimitive</code>, <code>alertsPrimitive</code>).</td></tr>
-<tr><td>Tableaux</td><td><code>@tanstack/react-virtual</code></td><td>Historique virtualisé à hauteur de ligne constante, sans pagination.</td></tr>
-<tr><td>Traduction</td><td><code>i18next</code>, <code>react-i18next</code></td><td><code>fr.json</code> / <code>en.json</code> ; les paquets n'émettent que des codes.</td></tr>
-<tr><td>Cryptographie</td><td><code>@noble/hashes</code> + WebCrypto natif</td><td>SHA-256 synchrone pour les identifiants de transaction (parseurs) ; Argon2id pour dériver la clé d'enveloppe de la sauvegarde ; AES-GCM 256 et gzip (<code>CompressionStream</code>) par l'API du navigateur.</td></tr>
-<tr><td>API serveur</td><td><code>openapi-fetch</code> (+ <code>openapi-typescript</code> en dev)</td><td>Client typé depuis <code>apps/api/openapi.json</code> → <code>src/api/schema.d.ts</code>.</td></tr>
-<tr><td>Hors ligne</td><td><code>vite-plugin-pwa</code> (Workbox, <code>generateSW</code>), <code>workbox-window</code></td><td>Pré-cache de l'enveloppe, aucun cache des réponses serveur ou agent, mise à jour au clic du bandeau.</td></tr>
+<tr><td><code>react</code> 19, <code>react-dom</code></td><td>Rendu de l'interface à partir de l'état.</td><td>Toute l'application, en <code>StrictMode</code>.</td></tr>
+<tr><td><code>react-router</code> 8</td><td>Fait correspondre l'adresse à une page sans recharger, et rend le bouton Retour utile dans une application à page unique.</td><td><code>createBrowserRouter</code> ; toute vue scopée <code>/accounts/:accountId/…</code>, aucune route protégée.</td></tr>
+<tr><td><code>@base-ui/react</code></td><td>Le comportement sans l'apparence : clavier, focus, accessibilité, positionnement des menus, popovers et dialogues, ce qui est long à réussir à la main.</td><td>Socle de <code>@ib/ui</code>. <code>render={…}</code> au lieu du <code>asChild</code> de Radix.</td></tr>
+<tr><td><code>shadcn</code></td><td>Pas vraiment une bibliothèque : un outil en ligne de commande qui <strong>copie le code source</strong> de composants prêts à l'emploi dans le dépôt, où ils nous appartiennent et se modifient.</td><td>Composants dans <code>packages/ui</code>, imports réécrits en relatifs ; seule sa feuille <code>shadcn/tailwind.css</code> est importée telle quelle.</td></tr>
+<tr><td><code>tailwindcss</code> 4, <code>@tailwindcss/vite</code></td><td>Le style s'écrit par petites classes dans le JSX (<code>flex gap-2</code>) ; au build, seul le CSS réellement utilisé est généré.</td><td>Tokens de couleur dans <code>src/index.css</code>, thèmes clair et sombre.</td></tr>
+<tr><td><code>clsx</code>, <code>tailwind-merge</code></td><td>Le premier assemble des classes selon des conditions ; le second résout leurs conflits (<code>p-2</code> contre <code>p-4</code> : la dernière gagne).</td><td>Réunis dans la fonction <code>cn()</code> de <code>@ib/ui</code>.</td></tr>
+<tr><td><code>class-variance-authority</code></td><td>Déclare les variantes d'un composant (taille, teinte) au lieu d'une suite de conditions.</td><td>Boutons, badges et autres composants de <code>@ib/ui</code>.</td></tr>
+<tr><td><code>tw-animate-css</code></td><td>Classes d'animation d'entrée et de sortie pour Tailwind.</td><td>Ouverture des menus et dialogues.</td></tr>
+<tr><td><code>@fontsource-variable/inter</code>, <code>…/jetbrains-mono</code></td><td>Les polices sous forme de paquets, livrées avec l'application.</td><td>Aucun appel à un CDN : rien ne fuit, et elles marchent hors ligne.</td></tr>
+<tr><td><code>lucide-react</code></td><td>Icônes SVG en composants React ; seules celles importées sont livrées.</td><td>Toute l'interface.</td></tr>
+<tr><td><code>@tanstack/react-virtual</code></td><td>Ne crée dans la page que les lignes visibles, quelle que soit la longueur de la liste.</td><td>Historique à hauteur de ligne constante, sans pagination.</td></tr>
+<tr><td><code>i18next</code>, <code>react-i18next</code></td><td>Le premier résout une clé en texte traduit, le second l'expose aux composants et les redessine au changement de langue.</td><td><code>fr.json</code> / <code>en.json</code> ; les paquets n'émettent que des codes.</td></tr>
 </tbody></table></div>
 
+<h3>Données, graphes et réseau</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Bibliothèque</th><th>Ce qu'elle apporte</th><th>Ici</th></tr></thead>
+<tbody>
+<tr><td><code>dexie</code> 4</td><td>IndexedDB est une API native puissante mais pénible : Dexie lui donne des requêtes lisibles, des transactions simples et des migrations versionnées.</td><td>Toutes les tables de la <a href="#stockage">section 7</a>.</td></tr>
+<tr><td><code>dexie-react-hooks</code></td><td>Le lien entre la base et React : <code>useLiveQuery</code> relance une requête et redessine dès que les données lues changent.</td><td>Ce qui fait de tout le dérivé une vue, jamais stockée.</td></tr>
+<tr><td><code>echarts</code> 6, <code>echarts-for-react</code></td><td>Graphes statistiques complets : barres empilées, courbes, infobulles, légendes. Le second paquet l'enveloppe en composant React.</td><td>Capital, rendements, P/L mensuel, montants par ticker, exposition.</td></tr>
+<tr><td><code>lightweight-charts</code> 5</td><td>Spécialiste des cours financiers (celui de TradingView) : bougies, axe du temps boursier, zoom fluide. Ne sait faire que cela.</td><td>Bougies journalières de TWS ; primitives maison pour les niveaux et les alertes (<code>levelsPrimitive</code>, <code>alertsPrimitive</code>).</td></tr>
+<tr><td><code>openapi-fetch</code></td><td>Mince couche sur <code>fetch</code> : chemins, paramètres et réponses vérifiés à la compilation.</td><td>Appels à Django, typés par <code>src/api/schema.d.ts</code>.</td></tr>
+<tr><td><code>openapi-typescript</code> <span class="tag">dev</span></td><td>Génère ces types depuis le schéma de l'API : un changement côté serveur casse la compilation au lieu de casser en production.</td><td><code>pnpm gen:api</code>, depuis <code>apps/api/openapi.json</code>.</td></tr>
+<tr><td><code>@noble/hashes</code></td><td>Hachage en JavaScript pur. WebCrypto n'offre que de l'asynchrone et pas d'Argon2.</td><td>SHA-256 synchrone des identifiants de transaction ; Argon2id pour la clé d'enveloppe de la sauvegarde. AES-GCM 256 et gzip restent à l'API du navigateur.</td></tr>
+<tr><td><code>vite-plugin-pwa</code> <span class="tag">dev</span></td><td>Génère au build le Service Worker (par Workbox) et le manifeste qui rendent l'application installable et disponible serveur coupé.</td><td><code>generateSW</code> : pré-cache de l'enveloppe, aucun cache des réponses serveur ou agent.</td></tr>
+<tr><td><code>workbox-window</code> <span class="tag">dev</span></td><td>Le dialogue entre la page et son Service Worker.</td><td>Jamais importé directement : <code>virtual:pwa-register</code> s'en sert, pour la mise à jour au clic du bandeau.</td></tr>
+</tbody></table></div>
+
+<h3>Le serveur Django</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Bibliothèque</th><th>Ce qu'elle apporte</th><th>Ici</th></tr></thead>
+<tbody>
+<tr><td><code>django</code> 5.2 LTS</td><td>Le cadre complet : modèles, migrations, sessions, CSRF, administration.</td><td>Utilisateurs, invitations, blob de sauvegarde.</td></tr>
+<tr><td><code>django-ninja</code></td><td>Écrit une API JSON avec des types Python, validation incluse, et en déduit le schéma OpenAPI.</td><td>Point de départ de la chaîne de types vers le navigateur.</td></tr>
+<tr><td><code>django-allauth[mfa]</code></td><td>Connexion, sessions, 2FA, déjà éprouvés.</td><td>Mode headless : aucune page HTML, le SPA parle à <code>/_allauth/…</code>.</td></tr>
+<tr><td><code>gunicorn</code></td><td>Le serveur HTTP de production : <code>runserver</code> n'est fait que pour le développement.</td><td>Fait tourner Django dans le conteneur <code>api</code>.</td></tr>
+<tr><td><code>whitenoise</code></td><td>Permet à Django de servir lui-même ses fichiers statiques.</td><td>Fichiers de Django ; le SPA, lui, passe par nginx.</td></tr>
+<tr><td><code>psycopg</code></td><td>Le pilote qui parle à PostgreSQL.</td><td>Sous l'ORM de Django.</td></tr>
+<tr><td><code>dj-database-url</code></td><td>Transforme une URL de connexion en réglages Django.</td><td>La base se règle dans le <code>.env</code> de chaque instance.</td></tr>
+<tr><td><code>httpx</code></td><td>Client HTTP Python.</td><td>Proxy vers IB Flex ; son journal reste à <code>WARNING</code>, le jeton étant dans l'URL d'IB.</td></tr>
+</tbody></table></div>
+
+<h3>L'agent local</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Bibliothèque</th><th>Ce qu'elle apporte</th><th>Ici</th></tr></thead>
+<tbody>
+<tr><td><code>ib_async</code></td><td>Client Python asynchrone de l'API TWS : cache le protocole par socket derrière des appels attendus (<code>await</code>).</td><td>Positions, exécutions, <code>reqPnLSingle</code>, barres, cotations.</td></tr>
+<tr><td><code>fastapi</code></td><td>Décrit les routes HTTP et valide les paramètres, en asynchrone, comme <code>ib_async</code>.</td><td><code>/snapshot</code>, <code>/bars</code>, <code>/quotes</code>, relais Flex, CORS.</td></tr>
+<tr><td><code>uvicorn</code></td><td>Le serveur qui fait tourner FastAPI : FastAPI décrit l'application, uvicorn écoute le port. Même partage que Django et gunicorn.</td><td><code>127.0.0.1:8100</code>, jamais <code>0.0.0.0</code>.</td></tr>
+<tr><td><code>platformdirs</code></td><td>Donne le bon dossier de configuration sur Linux, macOS et Windows.</td><td>Emplacement de <code>config.toml</code>.</td></tr>
+<tr><td><code>httpx</code></td><td>Le même client HTTP, ici en asynchrone.</td><td>Relais Flex sans passer par le serveur.</td></tr>
+</tbody></table></div>
+
+<h3>Outils de développement, jamais livrés</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Outil</th><th>Ce qu'il apporte</th><th>Ici</th></tr></thead>
+<tbody>
+<tr><td><code>pnpm</code>, <code>uv</code></td><td>Gestionnaires de paquets, le premier pour JavaScript, le second pour Python ; ils fixent aussi les versions (<code>pnpm-lock.yaml</code>, <code>uv.lock</code>).</td><td>Un monorepo pnpm, un workspace uv à la racine.</td></tr>
+<tr><td><code>typescript</code> (<code>tsc</code>)</td><td>Le contrôle des types. Il n'alimente pas le build : Vite efface les types sans les lire.</td><td><code>pnpm typecheck</code>.</td></tr>
+<tr><td><code>oxlint</code></td><td>Détecte les erreurs courantes sans exécuter le code, très vite.</td><td><code>pnpm lint</code>.</td></tr>
+<tr><td><code>vitest</code></td><td>Lance les tests unitaires, avec la même chaîne que Vite : TypeScript et alias marchent sans réglage.</td><td>Tests à côté du code, paquets et <code>apps/web</code>.</td></tr>
+<tr><td><code>jsdom</code></td><td>Imite un navigateur dans Node : <code>document</code>, <code>DOMParser</code>…</td><td>Tests des composants et des parseurs.</td></tr>
+<tr><td><code>@testing-library/*</code></td><td>Teste un composant comme un utilisateur : on cherche un texte, on clique.</td><td><code>react</code>, <code>user-event</code>, <code>jest-dom</code>.</td></tr>
+<tr><td><code>fake-indexeddb</code></td><td>Un IndexedDB en mémoire pour Node.</td><td>Ledger semé en base au lieu de moquer les hooks.</td></tr>
+<tr><td><code>playwright</code></td><td>Pilote un vrai navigateur.</td><td>Tests de bout en bout, Service Worker, captures, icônes.</td></tr>
+<tr><td><code>sharp</code></td><td>Traitement d'images.</td><td>Conversion des captures de <code>/welcome</code> en WebP.</td></tr>
+<tr><td><code>pytest</code>, <code>pytest-django</code>, <code>respx</code></td><td>Tests Python ; le dernier simule les appels <code>httpx</code>.</td><td>API et agent : aucun appel réel à IB.</td></tr>
+<tr><td><code>hatchling</code></td><td>Construit le paquet Python.</td><td>La roue de l'agent servie sous <code>/agent/</code>.</td></tr>
+</tbody></table></div>
+
+<h3>Ce qui ne demande aucune bibliothèque</h3>
 <p>API natives du navigateur utilisées directement : <strong>IndexedDB</strong>,
 <strong>WebCrypto</strong>, <strong>Compression Streams</strong>, <strong>DOMParser</strong>
 (lecture du XML Flex et du HTML des relevés), <strong>Web Locks</strong> (une seule connexion
