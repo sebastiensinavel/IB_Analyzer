@@ -159,6 +159,10 @@ en concurrence, §3 de `deploiement-vps.md`) : elles passent toujours par ce scr
 
 ## 6. L'infrastructure partagée, `/srv/infra`
 
+> Depuis le 2026-11-04, `/srv/infra` est piloté par le dépôt d'infrastructure privé du VPS, et
+> ce dépôt n'en garde que le contrat (`docs/deploiement-vps.md`). Les §6 et §7 restent comme
+> trace de la conception d'origine.
+
 Dépôt git **local** (`git init`, sans dépôt distant), propriété d'`infra`. Il porte des noms de
 domaine, donc n'entre jamais dans ce dépôt ; ses fichiers sont préparés pendant
 l'implémentation dans un dossier de travail, et la procédure les fait copier par

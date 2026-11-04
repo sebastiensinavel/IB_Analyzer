@@ -666,7 +666,7 @@ d'origine arrêtée au sous-projet 6 (spec §12) :
 | 29 | Les tableaux de la Wheel et des LEAPS rangés par point de contrôle | fait (2026-09-22) |
 | 30 | Les stratégies actives d'un compte | fait (2026-09-23) |
 | 31 | Habillage « finance-desktop » : tokens, polices, tableaux, graphes, barres de défilement | fait (2026-09-24) |
-| 32 | Publication : une prod et une dev sur le VPS | fait (2026-09-25), mise en ligne en attente de la tâche 5 du plan 32 |
+| 32 | Publication : une prod et une dev sur le VPS | fait (2026-09-25), prod en ligne ; dev jamais installée et reboot jamais testé (tâche 5 du plan 32) |
 | 33 | L'ordre de sortie des lots d'actions | fait (2026-09-28) |
 | 34 | La page Positions Condors, un condor par ligne | fait (2026-09-28) |
 | 35 | Var. jour action : la variation du jour du sous-jacent | fait (2026-09-28), sonde hors séance en attente |
@@ -783,11 +783,13 @@ qui écarte le serveur temporaire d'initdb). `deploy/systemd/iba-prod.service` d
 prod au boot ; la dev n'a pas d'unité. `test_iba_script.py` pilote le script sur un faux
 `docker` et un faux `git`.
 
-**Traefik et le site vitrine vivent dans `/srv/infra`**, dépôt git local de l'utilisateur
-`infra`, **hors de ce dépôt** parce qu'ils portent des noms de domaine. Le site vitrine a été le
-deuxième occupant qui a fait déménager `deploy/traefik/`. Caddy, qui servait le site vitrine
-avant, est arrêté et désactivé, pas désinstallé. Le groupe `docker` vaut root : la séparation
-`iba`/`infra` est organisationnelle. Procédure complète dans `docs/deploiement-vps.md`.
+**Le Traefik partagé du VPS n'appartient pas à ce dépôt** : il tourne dans `/srv/infra`
+(utilisateur `infra`), piloté depuis le dépôt d'infrastructure privé du VPS
+(`~seb/IA/Infrastructure`), qui recense aussi les autres occupants du serveur. Ce dépôt n'en
+connaît que le contrat : réseau Docker externe `traefik`, entrypoint `websecure`, certresolver
+`letsencrypt`, unité `infra-traefik.service` (attendue par `iba-prod.service`), noms de routeurs uniques sur tout le VPS (d'où le préfixe `iba-${IBA_INSTANCE}`),
+ports publiés sur `127.0.0.1` inscrits à l'inventaire de l'infrastructure. Le groupe `docker` vaut root :
+la séparation `iba`/`infra` est organisationnelle. Procédure complète dans `docs/deploiement-vps.md`.
 
 L'image `web` construit aussi la roue de l'agent et la sert sous `/agent/` : un utilisateur
 n'a besoin que d'`uv` et du site pour installer l'agent, jamais d'un accès direct à ce dépôt.

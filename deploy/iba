@@ -39,7 +39,9 @@ fi
 
 [ -d "$dir" ] || fail "$dir introuvable"
 cd "$dir"
-declared=$(sed -n 's/^IBA_INSTANCE=//p' .env 2>/dev/null || true)
+# Une instance jamais installée a son clone mais pas de .env : le dire, plutôt qu'une valeur vide.
+[ -r .env ] || fail "$dir/.env introuvable : instance jamais installée (docs/deploiement-vps.md)"
+declared=$(sed -n 's/^IBA_INSTANCE=//p' .env)
 [ "$declared" = "$instance" ] \
   || fail "$dir/.env déclare IBA_INSTANCE=« $declared », attendu « $instance »"
 # COMPOSE_PROJECT_NAME écraserait `name: iba-<instance>` de docker-compose.yml.

@@ -1129,13 +1129,8 @@ Trouvés en revue des tâches 1 à 11, non corrigés :
 - **Une session d'admin sur la dev déconnecte celle de la prod** : les deux tunnels arrivent
   sur `localhost`, et les cookies ne séparent pas les ports. Rendre `SESSION_COOKIE_NAME`
   réglable par instance le fermerait.
-- **`seb` est dans le groupe `docker`**, donc root de fait, et contourne la séparation `iba` /
-  `infra`. Le retirer ferait passer toute opération par `sudo -iu`.
-- **`/srv/infra` n'a pas de dépôt distant** : son historique vit sur le VPS seul.
-- **Aucun tableau de trafic** : les journaux d'accès JSON de Traefik permettent GoAccess ou
-  Prometheus, rien n'est posé.
-- **Caddy est arrêté et désactivé, pas désinstallé** : `/etc/caddy/Caddyfile` ne sert plus
-  rien et peut tromper un lecteur.
+- Les points qui concernent tout le VPS (groupe `docker`, Traefik, Caddy) sont suivis par le
+  dépôt d'infrastructure privé du VPS.
 - **`deploy/iba` n'est vérifié que par `bash -n` et ses tests** : `shellcheck` n'est pas
   installé sur le VPS.
 

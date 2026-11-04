@@ -111,6 +111,15 @@ def test_an_env_naming_another_project_is_refused(env):
     assert calls(env) == []
 
 
+def test_a_missing_env_says_so_and_points_to_the_install_procedure(env):
+    Path(env["IBA_HOME"], "dev", ".env").unlink()
+    result = run(env, "dev", "reset", stdin="iba-dev\n")
+    assert result.returncode == 1
+    assert ".env introuvable" in result.stderr
+    assert "deploiement-vps.md" in result.stderr
+    assert calls(env) == []
+
+
 @pytest.mark.parametrize("args", [[], ["prod"], ["staging", "up"], ["prod", "explode"]])
 def test_bad_usage_exits_2(env, args):
     assert run(env, *args).returncode == 2
