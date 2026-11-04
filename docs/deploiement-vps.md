@@ -1,8 +1,9 @@
 # Déploiement sur le VPS
 
 Aucun nom de domaine n'apparaît dans ce dépôt : `<domaine-prod>`, `<domaine-dev>` et `<vps>`
-sont à remplacer par les vôtres, dans les `.env` du VPS uniquement. Un sous-domaine porte des **tirets**, jamais d'underscore : un underscore n'est pas
-valide dans un nom d'hôte et Let's Encrypt refuserait d'émettre le certificat.
+sont à remplacer par les vôtres, dans les `.env` du VPS uniquement. Un sous-domaine porte des
+**tirets**, jamais d'underscore : un underscore n'est pas valide dans un nom d'hôte et Let's
+Encrypt refuserait d'émettre le certificat.
 
 Conception : `docs/specs/2026-09-25-publication-prod-dev-design.md`.
 
@@ -27,7 +28,8 @@ Traefik partagé du VPS (/srv/infra, hors de ce dépôt)
 - **Le Traefik est un prérequis, pas une partie de ce dépôt.** Il est installé et exploité par
   le dépôt d'infrastructure privé du VPS (`~seb/IA/Infrastructure`, déployé dans `/srv/infra`).
   IB Analyzer n'en attend que le contrat : réseau Docker externe `traefik`, entrypoint
-  `websecure` (80 redirigé vers 443), certresolver `letsencrypt`, et des noms de routeurs
+  `websecure` (80 redirigé vers 443), certresolver `letsencrypt`, l'unité systemd
+  `infra-traefik.service` — `iba-prod.service` démarre après elle —, et des noms de routeurs
   uniques sur tout le VPS.
 - Prod et dev ne partagent que le réseau `traefik`. Volumes, base, secret Django, `.env` : tout
   est propre à chaque instance. Côté navigateur, les deux domaines sont deux origines, donc

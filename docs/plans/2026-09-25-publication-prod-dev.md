@@ -1129,20 +1129,24 @@ Après merge sur `main` et `git push`. Chaque commande `sudo` est tapée par Seb
 fournit la commande, lit la sortie, et vérifie par `curl` depuis le VPS. Cocher chaque case
 dans un commit de suivi sur `main`.
 
-- [ ] DNS : `dig +short <domaine-prod>` et `dig +short <domaine-dev>` rendent l'IP du VPS.
-- [ ] `/srv/iba/prod` et `/srv/iba/dev` à jour (`sudo -iu iba git -C /srv/iba/prod pull`, idem
-  dev).
-- [ ] Infrastructure copiée dans `/srv/infra`, `git init`, `.env` remplis, unités installées
-  (`docs/deploiement-vps.md` §2).
-- [ ] Bascule depuis Caddy (§3) : vitrine en 200 sur HTTPS, `www` en 301, 404 hors liste
-  blanche ; Caddy désactivé.
-- [ ] Prod (§4) : `https://<domaine-prod>/` en 200, `/api/health` en `{"status":"ok"}`,
-  `/admin/` sert le SPA (pas l'admin Django), aucun `X-Robots-Tag` ; admin par tunnel,
-  super-utilisateur créé ; unité `iba-prod` activée ; crontab posée ; `iba prod backup`
-  produit un fichier.
-- [ ] Dev (§5) : `https://<domaine-dev>/` en 200 avec `X-Robots-Tag: noindex` ; admin par
-  tunnel sur 8211.
-- [ ] `sudo reboot` : la vitrine et la prod répondent, `iba dev status` montre la dev arrêtée.
-- [ ] `iba dev reset` : la dev repart vide ; `iba prod reset` refusé.
+État au 2026-11-04. L'infrastructure du VPS (Traefik, vitrine, sortie de Caddy) est passée au
+dépôt d'infrastructure privé du VPS, et ses sections ont quitté `docs/deploiement-vps.md` :
+les renvois §2 à §5 ci-dessous désignent l'ancienne numérotation.
+
+- [x] DNS du domaine de la prod (la prod répond en HTTPS) ; celui de la dev, à vérifier avec elle.
+- [x] `/srv/iba/prod` à jour : `v2026.10.29` déployé.
+- [x] Infrastructure copiée dans `/srv/infra` — faite et suivie par le dépôt d'infrastructure.
+- [x] Bascule depuis Caddy — faite en septembre 2026, suivie par le dépôt d'infrastructure.
+- [x] Prod, partie vérifiable de l'extérieur : `https://<domaine-prod>/` en 200, `/api/health`
+  en `{"status": "ok"}`, `/admin/` sert le SPA, aucun `X-Robots-Tag` ; `iba prod status` :
+  `api` et `db` `healthy`.
+- [ ] Prod, reste : super-utilisateur créé, unité `iba-prod` activée, crontab posée,
+  `iba prod backup` produit un fichier.
+- [ ] Dev (§5) : **jamais installée**, `/srv/iba/dev/.env` absent — reportée par Seb le
+  2026-11-04. `https://<domaine-dev>/` en 200 avec `X-Robots-Tag: noindex` ; admin par tunnel
+  sur 8211.
+- [ ] `sudo reboot` : la prod répond, `iba dev status` montre la dev arrêtée. `iba-prod.service`
+  n'a encore jamais été démarré par systemd.
+- [ ] `iba dev reset` : la dev repart vide ; `iba prod reset` refusé. Demande la dev installée.
 - [ ] Agent local : les deux origines dans `config.toml`, badge « En direct » sur la prod.
-- [ ] `CLAUDE.md` : retirer la mention « en attente de la tâche 5 » si elle a été écrite.
+- [ ] `CLAUDE.md` : retirer du registre la mention de la tâche 5 une fois les cases ci-dessus cochées.
