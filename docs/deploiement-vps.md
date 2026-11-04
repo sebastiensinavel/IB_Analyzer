@@ -1,8 +1,7 @@
 # Déploiement sur le VPS
 
-Aucun nom de domaine n'apparaît dans ce dépôt : `<domaine-prod>`, `<domaine-dev>`, `<vitrine>`
-et `<vps>` sont à remplacer par les vôtres, dans les `.env` du VPS et dans `/srv/infra`
-uniquement. Un sous-domaine porte des **tirets**, jamais d'underscore : un underscore n'est pas
+Aucun nom de domaine n'apparaît dans ce dépôt : `<domaine-prod>`, `<domaine-dev>` et `<vps>`
+sont à remplacer par les vôtres, dans les `.env` du VPS uniquement. Un sous-domaine porte des **tirets**, jamais d'underscore : un underscore n'est pas
 valide dans un nom d'hôte et Let's Encrypt refuserait d'émettre le certificat.
 
 Conception : `docs/specs/2026-09-25-publication-prod-dev-design.md`.
@@ -12,21 +11,24 @@ Conception : `docs/specs/2026-09-25-publication-prod-dev-design.md`.
 ```
 Internet :80 / :443
    │
-Traefik (/srv/infra/traefik, utilisateur infra)
+Traefik partagé du VPS (/srv/infra, hors de ce dépôt)
    │   réseau Docker partagé « traefik »
-   ├── <vitrine>, www → <vitrine>  (/srv/infra/vitrine : nginx, dossier du site en lecture seule)
-   ├── <domaine-prod>              (/srv/iba/prod, projet Compose iba-prod)
-   └── <domaine-dev>               (/srv/iba/dev,  projet Compose iba-dev, X-Robots-Tag noindex)
+   ├── <domaine-prod>   (/srv/iba/prod, projet Compose iba-prod)
+   ├── <domaine-dev>    (/srv/iba/dev,  projet Compose iba-dev, X-Robots-Tag noindex)
+   └── … les autres occupants du VPS, qui ne concernent pas ce dépôt
 
 127.0.0.1 seulement, par tunnel SSH :
-   8201 → admin de la prod · 8211 → admin de la dev · 8080 → tableau de bord Traefik
+   8201 → admin de la prod · 8211 → admin de la dev
 ```
 
-- **`iba`** possède `/srv/iba` : les deux clones, leurs `.env`, les sauvegardes.
-- **`infra`** possède `/srv/infra` : Traefik et le site vitrine, dans un dépôt git local, hors
-  de ce dépôt parce qu'ils portent des noms de domaine.
-- Tous deux sont dans le groupe `docker`, sans `sudo`. **Le groupe `docker` vaut root** : la
-  séparation est organisationnelle, pas une frontière de sécurité.
+- **`iba`** possède `/srv/iba` : les deux clones, leurs `.env`, les sauvegardes. Il est dans le
+  groupe `docker`, sans `sudo`. **Le groupe `docker` vaut root** : la séparation d'avec les
+  autres utilisateurs du VPS est organisationnelle, pas une frontière de sécurité.
+- **Le Traefik est un prérequis, pas une partie de ce dépôt.** Il est installé et exploité par
+  le dépôt d'infrastructure privé du VPS (`~seb/IA/Infrastructure`, déployé dans `/srv/infra`).
+  IB Analyzer n'en attend que le contrat : réseau Docker externe `traefik`, entrypoint
+  `websecure` (80 redirigé vers 443), certresolver `letsencrypt`, et des noms de routeurs
+  uniques sur tout le VPS.
 - Prod et dev ne partagent que le réseau `traefik`. Volumes, base, secret Django, `.env` : tout
   est propre à chaque instance. Côté navigateur, les deux domaines sont deux origines, donc
   deux bases IndexedDB.
@@ -39,17 +41,13 @@ Traefik (/srv/infra/traefik, utilisateur infra)
       dig +short <domaine-prod>
       dig +short <domaine-dev>
 
-- ufw : `deny incoming`, ports 80, 443 et 2002 ouverts. Docker démarré au boot :
+- Le Traefik du VPS démarré (`docker network inspect traefik` répond), ufw ouvert sur 80 et 443.
 
-      sudo systemctl enable docker
-
-- Les deux utilisateurs :
+- L'utilisateur `iba` :
 
       sudo useradd --system --create-home --home-dir /srv/iba --shell /bin/bash iba
-      sudo useradd --system --create-home --home-dir /srv/infra --shell /bin/bash infra
       sudo usermod -aG docker iba
-      sudo usermod -aG docker infra
-      sudo chmod 750 /srv/iba /srv/infra
+      sudo chmod 750 /srv/iba
 
 - Les clones, sous `iba`, chacun avec sa **clé de déploiement GitHub en lecture seule** :
 
@@ -64,65 +62,7 @@ Traefik (/srv/infra/traefik, utilisateur infra)
       git clone git@github-iba-prod:<compte>/<dépôt>.git prod
       git clone git@github-iba-dev:<compte>/<dépôt>.git dev
 
-## 2. L'infrastructure
-
-Les fichiers ont été préparés dans `~seb/infra-staging` (sous-projet 32, tâche 3) : Traefik,
-le site vitrine, leurs unités systemd.
-
-    sudo cp -r ~seb/infra-staging/. /srv/infra/
-    sudo chown -R infra:infra /srv/infra
-    sudo -iu infra
-    cd /srv/infra
-    git init
-    git config user.name infra && git config user.email infra@localhost
-    git add -A && git commit -m "Infrastructure du VPS"
-    # .gitignore n'admet que traefik/, vitrine/, systemd/ et README.md : /srv/infra est aussi
-    # le dossier personnel d'infra (.bashrc, .ssh…), et les .env restent hors de l'historique.
-    cp traefik/.env.example traefik/.env && chmod 600 traefik/.env      # ACME_EMAIL
-    cat vitrine/.env                                                    # VITRINE_HOST, VITRINE_ROOT
-    exit
-
-    sudo cp /srv/infra/systemd/*.service /etc/systemd/system/
-    sudo systemctl daemon-reload
-
-`vitrine/.env` a été écrit à la préparation, depuis `/etc/caddy/Caddyfile`. Traefik est
-épinglé sur une version précise (`traefik/docker-compose.yml`), jamais `v3` ni `latest`.
-
-## 3. La bascule depuis Caddy
-
-Caddy sert le site vitrine sur 80 et 443 : Traefik ne peut démarrer qu'une fois Caddy arrêté.
-
-**Avant**, vérifier le site vitrine à part, sur un port temporaire, contre sa liste blanche :
-
-    sudo -iu infra
-    cd /srv/infra/vitrine
-    docker compose -p vitrine-test -f docker-compose.yml -f docker-compose.test.yml up -d
-    for p in / /index.html /logo/logo.svg /img/ /.git/HEAD /nope; do
-      printf '%-16s %s\n' "$p" "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8090$p)"
-    done     # 200 200 200 404 404 404
-    docker compose -p vitrine-test -f docker-compose.yml -f docker-compose.test.yml down
-    exit
-
-**La bascule**, quelques secondes de coupure :
-
-    sudo systemctl stop caddy
-    sudo systemctl enable --now infra-traefik infra-vitrine
-    curl -sI https://<vitrine>/ | head -1                      # 200, certificat valide
-    curl -sI https://www.<vitrine>/ | grep -iE '^HTTP|location' # 301 vers https://<vitrine>/
-    curl -s -o /dev/null -w '%{http_code}\n' https://<vitrine>/.git/HEAD   # 404
-    sudo systemctl disable caddy
-
-Le premier certificat peut prendre quelques secondes : `docker logs traefik-traefik-1` sous
-`infra` montre l'échange avec Let's Encrypt.
-
-**Retour arrière** :
-
-    sudo systemctl stop infra-vitrine infra-traefik
-    sudo systemctl start caddy
-
-Caddy n'est ni désinstallé ni son Caddyfile modifié.
-
-## 4. La prod
+## 2. La prod
 
     sudo -iu iba
     cd /srv/iba/prod
@@ -152,7 +92,7 @@ La pile s'appelle `iba-<IBA_INSTANCE>` (`name:` de `docker-compose.yml`). **Ne j
 `DJANGO_ALLOWED_HOSTS` garde `127.0.0.1` : la sonde de santé du service `api` appelle
 `http://127.0.0.1:8000/api/health` depuis l'intérieur du conteneur. Sans lui, Django répond 400
 et le conteneur reste `unhealthy` indéfiniment. `localhost` et l'origine
-`http://localhost:<ADMIN_PORT>` servent l'admin par tunnel (§6).
+`http://localhost:<ADMIN_PORT>` servent l'admin par tunnel (§4).
 
 Installer la commande `iba`, démarrer, créer l'administrateur :
 
@@ -181,7 +121,7 @@ Démarrage au boot et sauvegarde nocturne :
 Les sauvegardes (`pg_dump` compressé) vont dans `/srv/iba/backups`, 14 gardées par instance.
 Elles restent sur le VPS : elles ne protègent pas de sa perte.
 
-## 5. La dev
+## 3. La dev
 
 Même `.env` que la prod avec les valeurs de la colonne dev, et **de nouveaux secrets** :
 
@@ -208,15 +148,14 @@ est refusé.
 La dev a `restart: no` et aucune unité systemd : après un redémarrage du VPS, elle reste
 arrêtée jusqu'au prochain `iba dev up`.
 
-## 6. L'admin par tunnel SSH
+## 4. L'admin par tunnel SSH
 
 `/admin` n'est pas routé par Traefik — la 2FA ne protège pas le formulaire de connexion de
 l'admin Django — : depuis internet, `/admin/` sert l'application. Depuis votre machine :
 
-    ssh -p 2002 -L 8201:127.0.0.1:8201 -L 8211:127.0.0.1:8211 -L 8080:127.0.0.1:8080 <vps>
+    ssh -p 2002 -L 8201:127.0.0.1:8201 -L 8211:127.0.0.1:8211 <vps>
 
-puis `http://localhost:8201/admin/` (prod), `http://localhost:8211/admin/` (dev),
-`http://localhost:8080/` (tableau de bord Traefik, en lecture seule).
+puis `http://localhost:8201/admin/` (prod) et `http://localhost:8211/admin/` (dev).
 
 Les cookies ne séparent pas les ports : se connecter à l'admin de la dev déconnecte celui de
 la prod, et inversement.
@@ -224,7 +163,7 @@ la prod, et inversement.
 **Inviter quelqu'un** : dans l'admin, créer une `Invitation` avec son email. La fiche affiche
 le lien : le transmettre soi-même. **Aucun email n'est envoyé.**
 
-## 7. Livrer
+## 5. Livrer
 
     # sur le poste de développement, une fois la branche validée sur la dev
     git switch main && git merge <branche> && git push
@@ -256,7 +195,7 @@ déjà migré : ce n'est pas celle-là.
 `ON_ERROR_STOP` arrête la restauration à la première erreur au lieu de laisser une base à
 moitié chargée.
 
-## 8. L'agent local
+## 6. L'agent local
 
 Pour utiliser les deux sites, ajouter les deux origines, puis relancer l'agent :
 
@@ -267,7 +206,7 @@ Pour utiliser les deux sites, ajouter les deux origines, puis relancer l'agent :
 
 Un testeur externe n'a besoin que de l'origine de la dev.
 
-## 9. Vérifier
+## 7. Vérifier
 
     curl -sI https://<domaine-prod>/ | head -1                  # 200, certificat valide
     curl -s https://<domaine-prod>/api/health                   # {"status":"ok"}
@@ -277,11 +216,11 @@ Un testeur externe n'a besoin que de l'origine de la dev.
     iba prod status                                             # api : healthy
     iba prod backup                                             # un fichier dans /srv/iba/backups
 
-Puis `sudo reboot` : le site vitrine et la prod répondent, `iba dev status` montre la dev
+Puis `sudo reboot` : la prod répond, `iba dev status` montre la dev
 arrêtée. Enfin, dans un navigateur : ouvrir un lien d'invitation, choisir un mot de passe, se
 retrouver connecté.
 
-## 10. Service Worker
+## 8. Service Worker
 
 Une maintenance n'empêche pas les navigateurs déjà venus d'ouvrir l'application : le Service
 Worker leur sert l'enveloppe depuis son cache, et leurs données sont dans IndexedDB. Seules la

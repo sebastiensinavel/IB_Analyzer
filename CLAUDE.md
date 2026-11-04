@@ -783,11 +783,13 @@ qui écarte le serveur temporaire d'initdb). `deploy/systemd/iba-prod.service` d
 prod au boot ; la dev n'a pas d'unité. `test_iba_script.py` pilote le script sur un faux
 `docker` et un faux `git`.
 
-**Traefik et le site vitrine vivent dans `/srv/infra`**, dépôt git local de l'utilisateur
-`infra`, **hors de ce dépôt** parce qu'ils portent des noms de domaine. Le site vitrine a été le
-deuxième occupant qui a fait déménager `deploy/traefik/`. Caddy, qui servait le site vitrine
-avant, est arrêté et désactivé, pas désinstallé. Le groupe `docker` vaut root : la séparation
-`iba`/`infra` est organisationnelle. Procédure complète dans `docs/deploiement-vps.md`.
+**Le Traefik partagé du VPS n'appartient pas à ce dépôt** : il tourne dans `/srv/infra`
+(utilisateur `infra`), piloté depuis le dépôt d'infrastructure privé du VPS
+(`~seb/IA/Infrastructure`), qui recense aussi les autres occupants du serveur. Ce dépôt n'en
+connaît que le contrat : réseau Docker externe `traefik`, entrypoint `websecure`, certresolver
+`letsencrypt`, noms de routeurs uniques sur tout le VPS (d'où le préfixe `iba-${IBA_INSTANCE}`),
+ports publiés sur `127.0.0.1` inscrits à l'inventaire de l'infrastructure. Le groupe `docker` vaut root :
+la séparation `iba`/`infra` est organisationnelle. Procédure complète dans `docs/deploiement-vps.md`.
 
 L'image `web` construit aussi la roue de l'agent et la sert sous `/agent/` : un utilisateur
 n'a besoin que d'`uv` et du site pour installer l'agent, jamais d'un accès direct à ce dépôt.
